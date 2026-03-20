@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@yield('title', __('site.meta.default_title'))</title>
+    <meta name="description" content="{{ __('site.meta.description') }}">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="selection:bg-amber-400/30 selection:text-white">
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute inset-0 grid-pattern opacity-25"></div>
+        <div class="absolute left-[12%] top-[8rem] h-[22rem] w-[22rem] rounded-full bg-sky-500/10 blur-3xl"></div>
+        <div class="absolute right-[-4rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-amber-400/8 blur-3xl"></div>
+    </div>
+
+    <div class="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+        @include('partials.dashboard-sidebar')
+
+        <div class="relative min-w-0">
+            @include('partials.dashboard-topbar')
+
+            <main class="px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+                @yield('content')
+            </main>
+        </div>
+    </div>
+</body>
+</html>

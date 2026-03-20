@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Space Grotesk', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+    --page-bg: #050b13;
+    --page-bg-soft: #0b1421;
+    --panel-top: rgba(15, 23, 37, 0.95);
+    --panel-bottom: rgba(6, 11, 20, 0.88);
+    --panel-border: rgba(148, 163, 184, 0.14);
+    --muted: #94a3b8;
+    --ink: #f8fafc;
+    --gold: #f4b74a;
+    --gold-strong: #f7c96a;
+    --gold-soft: rgba(244, 183, 74, 0.14);
+    --blue-soft: rgba(54, 104, 173, 0.2);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top left, rgba(31, 78, 139, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(244, 183, 74, 0.08), transparent 26%),
+        linear-gradient(180deg, #04080f 0%, var(--page-bg) 48%, #08111d 100%);
+    color: var(--ink);
+    font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display);
+}
+
+.surface-panel {
+    background: linear-gradient(180deg, var(--panel-top) 0%, var(--panel-bottom) 100%);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 30px 80px rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(18px);
+}
+
+.surface-card {
+    background: linear-gradient(180deg, rgba(10, 18, 31, 0.95) 0%, rgba(7, 12, 22, 0.86) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    box-shadow: 0 22px 60px rgba(2, 6, 23, 0.34);
+}
+
+.section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold-strong);
+}
+
+.section-label::before {
+    content: '';
+    width: 2.5rem;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(244, 183, 74, 0), rgba(244, 183, 74, 0.85));
+}
+
+.gold-pill {
+    border: 1px solid rgba(244, 183, 74, 0.24);
+    background: var(--gold-soft);
+    color: var(--gold-strong);
+}
+
+.grid-pattern {
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+}
+
+.flash-transition {
+    transition:
+        opacity 0.45s ease,
+        transform 0.45s ease;
+}
+
+summary::-webkit-details-marker {
+    display: none;
+}

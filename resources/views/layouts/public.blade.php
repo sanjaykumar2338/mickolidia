@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@yield('title', __('site.meta.default_title'))</title>
+    <meta name="description" content="@yield('description', __('site.meta.description'))">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="selection:bg-amber-400/30 selection:text-white">
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute inset-0 grid-pattern opacity-40"></div>
+        <div class="absolute left-[8%] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-amber-400/8 blur-3xl"></div>
+        <div class="absolute right-[6%] top-[8rem] h-[24rem] w-[24rem] rounded-full bg-sky-500/8 blur-3xl"></div>
+    </div>
+
+    @include('partials.public-nav')
+
+    @if (session('checkout_success'))
+        <div class="relative z-30 mx-auto mt-5 max-w-7xl px-6 lg:px-8">
+            <div data-flash class="flash-transition rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
+                {{ session('checkout_success') }}
+            </div>
+        </div>
+    @endif
+
+    <main class="relative z-10 pb-20">
+        @yield('content')
+    </main>
+
+    @include('partials.public-footer')
+</body>
+</html>

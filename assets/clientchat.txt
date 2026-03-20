@@ -1,0 +1,1166 @@
+
+mickolidia
+
+Mar 19, 12:13 PM
+Replied
+
+Me
+
+Mar 19, 11:30 AM
+
+Brief-related message
+
+I Sanjay, thanks for you reply. 
+
+I want to create the funding website and automations with the following specifications:
+	1.	Trading Platforms: Integration with MetaTrader 4 (MT4), MetaTrader 5 (MT5), and cTrader.
+	2.	Full Automation:
+	•	When a client purchases a plan, their MT4/MT5/cTrader account should be automatically created, and the login credentials sent via email.
+	•	Track the Challenge progress and send automatic alerts for expirations or status changes.
+	•	Automatic account invalidation if the user breaks any Challenge rules.
+	3.	FTMO-style Interface:
+	•	Personal user dashboard, visual, professional, and easy to use.
+	•	Must show the Challenge status at all times, including completed steps, current profits/losses, and alerts if approaching daily loss or total loss limits.
+	•	Clear indicator if the account has been invalidated.
+	4.	Payment Gateway Integration: Stripe, PayPal, or other, with immediate purchase confirmation.
+	5.	Security: HTTPS, data encryption, and protection of trading credentials.
+	6.	Own Domain: The website should be ready to run on wolforix.com.
+	7.	Pre-launch Testing: Validate that purchases, automations, credential delivery, account invalidations, and the dashboard all function correctly.
+
+What do You think? Can you help me? 
+Regards
+
+M
+mickolidia
+
+Mar 19, 12:26 PM
+Maybe you already have developed templates ready to integrate into the website we’ll build? Of course, I would also need you to develop the website for me, like we discussed, FTMO or FundedNext style.
+
+S
+Profile Image
+Me
+
+Mar 19, 12:29 PM
+Thank you for the detailed explanation. Yes, I can help you with this.
+
+Your project involves building a full funded trading platform with both the website and the automation system behind it. This would include the FTMO-style frontend/dashboard, integration with MT4, MT5, and cTrader, automatic account creation after purchase, credential delivery by email, challenge tracking, rule-based account invalidation, payment gateway integration, and pre-launch testing for the full user flow.
+
+I do not have a ready-made copy of FTMO or FundedNext, but I can build a custom platform with a similar professional structure and user experience tailored to your brand and domain, wolforix.com. That approach is better because it gives you a scalable and unique system rather than depending on a generic template.
+
+Before starting, I would just need to confirm a few technical points such as:
+
+1. Which provider or server access you have for MT4/MT5 and cTrader
+2. Whether account creation can be done through API or manager access
+3. Your challenge rules, plan types, and account sizes
+4. Which payment gateway you want as primary
+5. Hosting/server preference for deployment
+
+If you want, I can also break the project into phases so we can start with the core platform first and then complete the advanced automations step by step.
+
+M
+mickolidia
+
+Mar 19, 12:39 PM
+Thanks for you reply. 
+
+Here are the answers to the technical points you asked:
+	1.	Provider / Server Access for MT4/MT5 and cTrader:
+	•	We do not have our own server at the moment.
+	•	Our plan is to use a white-label account provider for MT4/MT5.
+	•	To simplify the first phase, we could start only with cTrader and add MT4/MT5 later once the server setup is ready.
+	2.	Account Creation:
+	•	Preferably via API for full automation.
+	3.	Challenge Rules, Plan Types, and Account Sizes:
+	•	Four Challenge plans: 10,000 €, 25,000 €, 50,000 €, 100,000 €
+	•	Rules:
+	•	Profit target: 8%
+	•	Daily loss: 5%
+	•	Total loss: 10%
+	•	Steps: 2
+	•	Rewards: 80%
+	•	First withdrawal: 14 days
+	•	Minimum trader days: 3
+	4.	Primary Payment Gateway:
+	•	Stripe as primary, with PayPal optional as secondary.
+	5.	Hosting / Server Preference:
+	•	Website will run on wolforix.com
+	•	Secure hosting with HTTPS, database support (MySQL/PostgreSQL), and API connectivity for trading accounts.
+
+S
+Profile Image
+Me
+
+Mar 19, 12:46 PM
+Yes, starting with cTrader in Phase 1 is a very good approach. It will allow us to build the full system (dashboard, automation, challenge logic, payments) while keeping the trading integration manageable, and later we can extend it to MT4/MT5 once your server or white-label setup is ready.
+
+Based on your requirements, I would suggest structuring the project in phases:
+
+Phase 1 – Core Platform (cTrader + Website)
+• Full website (FTMO-style UI/UX) on wolforix.com
+• User registration & secure authentication
+• Stripe integration (with optional PayPal)
+• Automatic account creation via cTrader API
+• Email delivery of credentials
+• User dashboard with:
+
+Challenge progress
+
+Profit/loss tracking
+
+Rule monitoring (8% target, 5% daily loss, 10% total loss)
+• Challenge logic (2-step system, minimum days, status tracking)
+• Automatic alerts (email / dashboard notifications)
+• Account invalidation when rules are broken
+
+Phase 2 – Advanced Automation & Scaling
+• Enhanced reporting & analytics
+• Admin panel for managing users and accounts
+• Performance optimization and monitoring
+• Preparation for MT4/MT5 integration
+
+Phase 3 – MT4/MT5 Integration
+• Integration with your white-label provider
+• Unified dashboard for all platforms
+
+From a technical perspective, I will design the system with:
+• Scalable backend (API-driven architecture)
+• Secure data handling (encrypted credentials, HTTPS)
+• Background workers/cron jobs for rule evaluation and automation
+• Clean and modern frontend similar to FTMO / FundedNext
+
+Before I send a formal offer, I’d just like to confirm:
+
+Do you already have access to the cTrader Open API for account creation?
+
+Do you want real-time tracking or interval-based updates (e.g., every few seconds/minutes)?
+
+Once confirmed, I can provide a clear timeline and cost for Phase 1 and we can proceed step by step.
+
+M
+mickolidia
+
+Mar 19, 12:55 PM
+Hi Rajibul,
+
+Regarding your questions:
+	1.	cTrader Open API: We currently do not have access yet, but we plan to use cTrader for Phase 1. If you can help us set up the API for account creation, that would be perfect.
+	2.	Tracking: For Phase 1, interval-based updates every few seconds or minutes are fine. This will allow accurate dashboard and leaderboard tracking without overcomplicating the system initially.
+
+Once these are set, we can move forward with Phase 1, and later consider adding MT4/MT5 integration and advanced real-time features.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:00 PM
+Starting with cTrader + interval-based tracking is a solid approach for Phase 1. I can also assist you in setting up the cTrader Open API access, as it’s required for automated account creation and data synchronization.
+
+Just to set expectations clearly:
+cTrader integration depends on API credentials from your provider (or Spotware), so part of Phase 1 will include configuring and validating that connection before automation is fully enabled.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:01 PM
+For Phase 1, I will deliver:
+
+• Full website (FTMO-style UI) on wolforix.com
+• User registration & secure login
+• Stripe integration (PayPal optional)
+• cTrader API integration (including setup guidance)
+• Automatic account creation after purchase
+• Email delivery of trading credentials
+• User dashboard with:
+
+Challenge progress tracking
+
+Profit/loss monitoring
+
+Rule validation (8% target, 5% daily, 10% total loss)
+• Automated alerts (status changes, warnings)
+• Account invalidation logic
+• Interval-based sync system (cron/background jobs)
+• Pre-launch testing of full flow
+
+S
+Profile Image
+Me
+
+Mar 19, 1:01 PM
+Estimated timeline: 2–3 weeks
+Phase 1 cost: $600
+
+We can keep this flexible and move step-by-step if needed.
+
+If you're comfortable with this, I can send a formal offer and we can get started with the API setup and project structure.
+
+M
+mickolidia
+
+Mar 19, 1:11 PM
+Hi Sanjay,
+
+Thank you for your detailed summary of Phase 1. Before we start, we want to make sure everything is fully clear and agreed, and that we can proceed step by step.
+
+Here’s our understanding of Phase 1:
+	1.	Trading Platform: cTrader integration only (MT4/MT5 will be added in future phases).
+	2.	Automation:
+	•	Automatic account creation after purchase
+	•	Email delivery of trading credentials
+	•	Challenge progress tracking
+	•	Alerts for status changes or warnings
+	•	Account invalidation logic if rules are broken
+	3.	Dashboard / User Interface:
+	•	FTMO-style UI on wolforix.com
+	•	Displays Challenge progress, profit/loss, alerts, account status
+	•	Leaderboard with interval-based updates
+	4.	Payments:
+	•	Stripe integration (PayPal optional)
+	•	Automatic account creation after purchase
+	•	Manual withdrawals handled by admin
+	5.	Security: HTTPS, data encryption, credential protection
+	6.	Pre-launch Testing: Validate full user flow (purchase, automation, alerts, account invalidation, dashboard)
+
+To ensure smooth progress and reduce risks, we would like to propose payment in milestones based on completed work. Could you please provide a breakdown of Phase 1 into payment tranches, specifying:
+	•	What will be delivered in each milestone
+	•	The detailed scope for each milestone
+	•	Any specific deliverables for testing and setup
+
+This will help us track progress, review results, and pay step by step while making sure the project advances correctly.
+
+Thanks again for your support and guidance.
+
+M
+mickolidia
+
+Mar 19, 1:20 PM
+And then you can send me a formal offer and we can get started. 
+
+I have an other question.  To make sure I can manage the platform properly, could you please provide the following:
+	1.	Access and credentials: admin panel, hosting/database access, and cTrader API credentials with instructions.
+	2.	Code and documentation: full source code or repository access, technical documentation (automation, Challenge rules, sync, alerts), and an admin guide (creating accounts, checking leaderboard, approving withdrawals, handling invalidations).
+	3.	Security: HTTPS/SSL, encryption of sensitive data, and logging of critical actions.
+	4.	Testing confirmation: that all key functions (account creation, dashboard, alerts, automation) are tested and working.
+	5.	Ownership confirmation: that I retain full ownership of code and data.
+
+Additionally, I would like to continue working with you after the website is live for any future processes, occasional promotions, or updates to the platform, if you are open to that.
+
+This will help me manage the platform safely and efficiently, and keep things smooth going forward.
+
+Thank you very much!
+
+S
+Profile Image
+Me
+
+Mar 19, 1:26 PM
+After reviewing everything more carefully, especially the cTrader API setup, automation flow, security requirements, documentation, and full handover expectations, I realized that Phase 1 involves a bit more depth than my initial estimate.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:26 PM
+To ensure everything is built properly (not rushed) and delivered with the quality, documentation, and stability you’re expecting, I would suggest adjusting the Phase 1 cost to $900.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:26 PM
+This includes:
+• Full implementation as discussed
+• Proper API integration and automation setup
+• Clean and scalable architecture
+• Documentation and admin guidance
+• Testing and deployment support
+
+I believe this will ensure we build a solid foundation that can scale easily into Phase 2 and MT4/MT5 integration later.
+
+If you’re comfortable with this, I’ll proceed with the milestone-based offer accordingly.
+
+M
+mickolidia
+
+Mar 19, 1:29 PM
+Hi Sanjay,
+
+Thank you for confirming. This sounds perfect and exactly what we need to build a solid foundation for Phase 1.
+
+I’m happy to proceed, and I would like to work with a milestone-based payment structure, so we can review progress step by step.
+
+Also, I would like to continue collaborating with you after the website is live for any future processes, promotions, or updates, if you are open to that.
+
+Please let me know the milestone breakdown and deliverables for each step, so we can get started smoothly.
+
+Thank you very much!
+
+S
+Profile Image
+Me
+
+Mar 19, 1:32 PM
+Here is the finalized milestone structure for Phase 1:
+
+Milestone 1 – Foundation & Core Setup ($150)
+• Project architecture + database design
+• Authentication system
+• Base FTMO-style UI
+
+Milestone 2 – Payments & Plan System ($150)
+• Stripe integration
+• Plan setup + purchase flow
+• Email system
+
+Milestone 3 – cTrader Integration & Automation ($250)
+• API setup assistance
+• Automatic account creation
+• Data sync + background jobs
+
+Milestone 4 – Challenge Logic & Dashboard ($250)
+• Rule engine (profit/loss, limits, steps)
+• Dashboard + alerts + leaderboard
+
+Milestone 5 – Testing, Security & Deployment Prep ($100)
+• End-to-end testing
+• Security setup
+• Documentation + handover
+
+Total: $900 | Timeline: 2–3 weeks
+
+If everything looks good to you, I’ll send the formal offer with this milestone breakdown and we can begin with Milestone 1.
+
+Looking forward to working together on this.
+
+M
+mickolidia
+
+Mar 19, 1:36 PM
+Hi Sanjay,
+
+Thank you for the detailed milestone breakdown. Everything looks great, and I’m very excited to get started.
+
+I was wondering if we could adjust the Phase 1 total to $700. In Phase 2, when we implement additional features like MT4/MT5 integration or more advanced automations, we can increase the compensation so you also benefit from the growth of the project.
+
+This way, we can proceed step by step, ensuring the platform grows steadily while keeping it feasible for us at this stage.
+
+Please let me know if this works for you, and we can move forward with the formal offer and Milestone 1.
+
+Thank you very much!
+
+S
+Profile Image
+Me
+
+Mar 19, 1:41 PM
+To keep things balanced while still ensuring proper quality and time investment for Phase 1, I can adjust the total to $800 instead of $900.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:42 PM
+This way:
+• We keep the full scope and quality intact
+• You can move forward comfortably in Phase 1
+• And we continue scaling together in Phase 2 with expanded features
+
+S
+Profile Image
+Me
+
+Mar 19, 1:42 PM
+I believe this is a fair middle ground for both of us and will allow us to build a strong foundation without compromising on implementation.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:42 PM
+If this works for you, I’ll send the formal offer with the milestone breakdown and we can begin with Milestone 1.
+
+M
+mickolidia
+
+Mar 19, 1:45 PM
+Hi Sanjay,
+
+Thank you for your flexibility. $800 sounds fair, and I’m happy to proceed with this.
+
+Please go ahead and send the formal offer with the milestone breakdown, and we can start with Milestone 1. I’m excited to get started and build a strong foundation together.
+
+Thank you very much!
+
+S
+Profile Image
+Me
+
+Mar 19, 1:47 PM
+As discussed, this offer covers Phase 1 development of your funded trading platform using cTrader integration.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:47 PM
+Scope includes:
+
+• Full website with FTMO-style dashboard (wolforix.com)
+• User authentication system
+• Stripe payment integration (PayPal optional)
+• Automated account creation via cTrader API
+• Email delivery of trading credentials
+• Challenge system (profit target, loss limits, steps, tracking)
+• User dashboard with progress, alerts, and leaderboard
+• Interval-based data sync (background jobs)
+• Account invalidation logic
+• Security setup (HTTPS, credential protection, logging)
+• End-to-end testing and deployment preparation.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:47 PM
+The project will be delivered in milestone phases as agreed, ensuring clear progress tracking and validation at each step.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:47 PM
+I will also provide code access, documentation, and support for smooth handover.
+
+M
+mickolidia
+
+Mar 19, 1:50 PM
+Hi Sanjay,
+
+Thank you for the detailed scope. Everything looks perfect and covers exactly what we need for Phase 1.
+
+S
+Profile Image
+Me
+
+Mar 19, 1:52 PM
+Here's your custom offer
+
+$700
+I will build or customize PHP web applications in laravel, codeigniter, mysql
+As discussed, this offer covers Phase 1 development of your funded trading platform using cTrader integration.
+
+Scope includes:
+
+• Full website with FTMO-style dashboard (wolforix.com)
+• User authentication system
+• Stripe payment integration (PayPal optional)
+• Automated account creation via cTrader API
+• Email delivery of trading credentials
+• Challenge system (profit target, loss limits, steps, tracking)
+• User dashboard with progress, alerts, and leaderboard
+• Interval-based data sync (background jobs)
+• Account invalidation logic
+• Security setup (HTTPS, credential protection, logging)
+• End-to-end testing and deployment preparation
+
+Read more
+Your offer includes
+
+19 Days Delivery
+
+Milestones
+Foundation & Core Setup1 Revision
+
+5 days
+$150
+Payments & Plan System1 Revision
+
+4 days
+$150
+cTrader Integration & Automation1 Revision
+
+5 days
+$200
+Challenge Logic & Dashboard1 Revision
+
+5 days
+$200
+19 days
+$700
+S
+Profile Image
+Me
+
+Mar 19, 1:53 PM
+sorry wait one milestone wrong implemented sending new offer
+
+S
+Profile Image
+Me
+
+Mar 19, 1:55 PM
+Here's your custom offer
+
+$800
+I will build custom python automation scripts and API integrations
+As discussed, this offer covers Phase 1 development of your funded trading platform using cTrader integration.
+
+Scope includes:
+
+• Full website with FTMO-style dashboard (wolforix.com)
+• User authentication system
+• Stripe payment integration (PayPal optional)
+• Automated account creation via cTrader API
+• Email delivery of trading credentials
+• Challenge system (profit target, loss limits, steps, tracking)
+• User dashboard with progress, alerts, and leaderboard
+• Interval-based data sync (background jobs)
+• Account invalidation logic
+• Security setup (HTTPS, credential protection, logging)
+• End-to-end testing and deployment preparation
+
+Read more
+Your offer includes
+
+20 Days Delivery
+
+Milestones
+Foundation & Core Setup1 Revision
+
+5 days
+$150
+Payments & Plan System
+
+4 days
+$150
+cTrader Integration & Automation1 Revision
+
+5 days
+$200
+Challenge Logic & Dashboard1 Revision
+
+5 days
+$200
+Testing, Security & Deployment Prep1 Revision
+
+1 day
+$100
+20 days
+$800
+View order
+S
+Profile Image
+Me
+
+Mar 19, 1:56 PM
+Check this
+
+M
+mickolidia
+
+Mar 19, 2:06 PM
+Done!
+
+S
+Profile Image
+Me
+
+Mar 19, 2:18 PM
+Thanks,
+
+S
+Profile Image
+Me
+
+Mar 19, 2:19 PM
+I’ve received the order — excited to get started.
+
+To begin Milestone 1 (Foundation & Core Setup), I’ll start setting up the project structure, database schema, and authentication system.
+
+To proceed smoothly, could you please share the following:
+
+Preferred tech stack (or I can proceed with Laravel + MySQL
+
+Hosting details (or we can use a temporary dev server first)
+
+Domain access for wolforix.com (only needed later for deployment)
+
+Branding assets (logo, colors, reference websites like FTMO/FundedNext if any preference)
+
+I’ll start immediately with the base setup and keep you updated with progress.
+
+Looking forward to building this together.
+
+M
+mickolidia
+
+Mar 19, 2:32 PM
+Perfect! Thanks for getting started with Milestone 1.
+	•	Tech stack: Laravel + MySQL works fine.
+	•	Hosting: We can use a temporary development server for now.
+	•	Domain: I’ll provide access when it’s time for deployment.
+	•	Branding: I’ll send the one logo, colors, and FTMO/FundedNext references you can think about I think colour black or Blau we can change und could be good.
+
+M
+mickolidia
+
+Mar 19, 2:32 PM
+3 Files
+
+Download All
+
+IMG_8365.jpeg
+
+(69.97 kB)
+
+
+659E27F6-E56C-4991-8383-F0E0B8FA9FBB.png
+
+(1.31 MB)
+
+
+8CEF4630-CD6F-4268-A22C-84ADF210A0CA.png
+
+(1.24 MB)
+
+M
+mickolidia
+
+Mar 19, 2:33 PM
+Maybe we change the colour? What do you think about more profesional?
+
+S
+Profile Image
+Me
+
+Mar 19, 2:35 PM
+For a prop firm platform, the design plays a big role in trust and professionalism. Based on platforms like FTMO and FundedNext, I would recommend going with a dark theme (black base) with blue accents. It looks modern, premium, and aligns well with the trading industry.
+
+S
+Profile Image
+Me
+
+Mar 19, 2:37 PM
+the logo and gold style look very strong and premium.
+
+My suggestion would be to keep the gold for branding (logo, highlights, important elements), but for the actual platform UI, use a dark theme with subtle blue/neutral tones.
+
+S
+Profile Image
+Me
+
+Mar 19, 2:37 PM
+If we use too much gold everywhere, it can feel more like a marketing poster rather than a professional trading platform. Most top prop firms keep the UI clean and use accent colors only for important actions.
+
+S
+Profile Image
+Me
+
+Mar 19, 2:37 PM
+So the best approach would be:
+• Black/dark background (main UI)
+• Blue or neutral tones for structure
+• Gold only for highlights (buttons, key stats, branding)
+
+This will make the platform look more modern, professional, and trustworthy.
+
+I can start with this direction for the dashboard and share you the first preview.
+
+M
+mickolidia
+
+Mar 19, 3:13 PM
+, thanks for the guidance, Sanjay.
+
+I agree with your suggestion:
+	•	Use gold only for the logo and key highlights (buttons, key stats, branding).
+	•	Keep the main UI dark with subtle blue/neutral tones for structure.
+
+Please go ahead and start with this direction for the dashboard. I’m looking forward to seeing the first preview.
+
+M
+mickolidia
+
+Mar 19, 5:09 PM
+Hi Sanjay,
+When you need it, let me know and I’ll send you access to my Ionos.de account so you can get the hosting and domain details, okay? Once you have it, please let me know so I know you’ve got everything.
+
+S
+Profile Image
+Me
+
+Mar 19, 5:14 PM
+Hi,
+
+Perfect, thank you — that sounds good.
+
+For now, I’ll continue with the development locally and start working on the dashboard UI and core structure. Once we’re ready for deployment or need to connect the domain, I’ll let you know and you can share the IONOS access.
+
+I’ll also share the first dashboard preview with you soon
+
+M
+mickolidia
+
+Mar 19, 6:23 PM
+Perfect. Good Job and See You soon. Thank You.
+
+M
+mickolidia
+
+Mar 19, 7:16 PM
+Hi Sanjay,
+
+We forgot to speak about the Language.
+
+The website will be available in multiple Languages, yes? 
+
+And Here Maybe to help
+You about the Disclaimer for the footer:
+
+Company Information
+Wolforix Ltd. is a company incorporated in the United Kingdom, with its registered office in London, United Kingdom.
+
+Nature of Services
+Wolforix operates as a proprietary trading evaluation and education company. We are not a broker, financial institution, investment firm, or custodian. We do not accept deposits, manage client funds, or execute trades on behalf of users.
+
+Simulated Trading Environment
+All trading activities provided by Wolforix take place in a simulated environment using virtual funds. These funds are fictitious, have no monetary value, and cannot be withdrawn, transferred, or used for real market trading.
+Any “funded accounts” provided are part of a simulated evaluation program. They do not represent real capital, and no trades are executed in live financial markets.
+
+No Investment Services
+Nothing on this website constitutes financial advice, investment recommendation, or an offer to buy or sell any financial instrument. Wolforix does not provide investment services under applicable financial regulations.
+
+Risk Disclaimer
+Trading financial markets involves significant risk and may not be suitable for all individuals. Past or simulated performance does not guarantee future results. Hypothetical results have inherent limitations and may differ from real market conditions due to factors such as liquidity, slippage, and execution delays.
+
+Performance & Payouts
+Any payouts, testimonials, or performance examples shown are illustrative only and do not guarantee future results. Eligibility for payouts depends on meeting specific performance criteria and complying with program rules.
+
+Fees
+All fees paid to Wolforix are for access to software, evaluation services, and educational tools only. Fees are not investments and are non-refundable unless otherwise stated in our policies.
+
+Regulatory Notice
+Wolforix operates outside the scope of financial regulatory authorities as it does not provide brokerage or investment services. Users are responsible for ensuring compliance with local laws before using our services.
+
+M
+mickolidia
+
+Mar 19, 7:17 PM
+Restricted Jurisdictions
+
+Our services are not available in jurisdictions where such use would violate local laws or regulations.
+
+Limitation of Liability
+
+Wolforix shall not be held liable for any direct or indirect losses arising from the use of its platform, services, or information provided.
+
+By accessing this website, you acknowledge that you understand and agree to these terms.
+
+M
+mickolidia
+
+Mar 19, 7:17 PM
+That all could be for the footer. 
+
+Thanks.
+
+S
+Profile Image
+Me
+
+Mar 19, 10:07 PM
+Thank you for sharing this — this is very helpful.
+
+Yes, we can definitely make the platform available in multiple languages. I will structure the system in a way that allows easy switching between languages (for example, English first, and then we can add others like German, etc.).
+
+Regarding the disclaimer, this is perfect. I will add a dedicated footer section and also structure it properly so it’s clean and readable (possibly with a “Read more” or expandable section to avoid overcrowding the page).
+
+I’ll include:
+• Company information
+• Risk disclaimer
+• Regulatory notice
+• Terms and limitations
+
+I’ll start implementing this along with the dashboard structure and share the first preview soon.
+
+Let me know if you have a priority language to start with
+
+M
+mickolidia
+
+Mar 19, 10:14 PM
+We can start with English, Spanisch and German. Maybe you can continué with an other like Hindi, Italian, Portugiese. 
+
+I Write You Here the Terms for the footer. 
+
+•	Terms & Conditions
+	•	Risk Disclosure
+	•	Payout Policy
+	•	Refund Policy
+	•	Privacy Policy
+	•	AML & KYC Policy
+	•	Company Information
+
+⸻
+ 1. Terms & Conditions
+
+Wolforix Ltd. operates as a proprietary trading evaluation and educational platform. By accessing our services, you agree to the following terms.
+
+Nature of Services
+All trading activities are conducted in a simulated environment. No real funds are allocated to users, and no investment services are provided.
+
+Eligibility
+Users must be at least 18 years old and comply with all applicable laws in their jurisdiction.
+
+Evaluation Program
+Users participate in a trading evaluation designed to assess trading skills. Successful completion does not constitute employment or investment allocation.
+
+Trading Rules
+Users must adhere to all trading rules, including maximum drawdown, daily loss limits, and consistency requirements.
+
+Consistency Rule
+To qualify for payouts, no more than 40% of total profits may be generated in a single trading day. If exceeded, additional trading activity is required.
+
+Prohibited Practices
+Any form of abuse, arbitrage exploitation, or manipulation of the trading environment will result in account termination.
+
+Limitation of Liability
+Wolforix Ltd. shall not be liable for any losses, damages, or inability to use the platform.
+
+ Risk Disclaimer
+
+Risk Disclosure
+
+Trading financial markets involves significant risk.
+All activities on this platform are conducted in a simulated environment for educational purposes only.
+
+Wolforix Ltd. does not provide investment advice, portfolio management, or brokerage services.
+
+Past performance does not guarantee future results.
+
+3. Payout Policy 
+
+Payouts are processed in bi-weekly cycles and are subject to internal risk management policies.
+
+To ensure long-term sustainability, payouts may be distributed progressively across multiple payout cycles.
+
+Payout Limits
+Each payout request may be subject to a maximum withdrawal limit based on account size and performance.
+
+Eligibility Requirements
+	•	Minimum trading days must be met
+	•	Consistency rule must be satisfied
+	•	No rule violations
+
+Wolforix Ltd. reserves the right to review all trading activity before approving payouts.
+
+M
+mickolidia
+
+Mar 19, 10:15 PM
+4. Refund Policy
+
+All purchases are final and non-refundable once the trading challenge has been accessed.
+
+Refunds may only be issued in cases of technical errors or duplicate payments.
+
+⸻
+5. Privacy Policy
+
+⸻
+
+Privacy Policy
+
+Wolforix Ltd. collects and processes personal data in accordance with applicable data protection laws.
+
+User data is used for account management, verification, and compliance purposes.
+
+We do not sell or share personal data with third parties without consent.
+
+⸻
+6. AML & KYC Policy
+
+To comply with anti-money laundering regulations, users may be required to verify their identity before receiving payouts.
+
+Wolforix Ltd. reserves the right to request documentation at any time.
+
+Failure to comply may result in account suspension.
+
+7. Company Information
+
+Wolforix Ltd. is a company incorporated in the United Kingdom, with its registered office in London, United Kingdom.
+
+M
+mickolidia
+
+Mar 19, 10:18 PM
+Before the User pay: 
+
+Checkbox obligatory:
+
+“I agree to the Terms & Conditions and understand that this is a simulated trading evaluation.”
+
+M
+mickolidia
+
+Mar 19, 10:25 PM
+And important, that to incluyed in Point 3: 
+3. payout policy 
+Payout Eligibility
+Payouts are processed in bi-weekly cycles and are subject to internal risk management policies.
+Payout eligibility requires compliance with the consistency rule, ensuring profits are distributed across multiple trading days.
+To ensure long-term sustainability, payouts may be distributed progressively across multiple payout cycles.
+Each payout request may be subject to a maximum withdrawal limit based on account size and performance. Wolforix Ltd. reserves the right to review all trading activity before approving payouts.
+
+M
+mickolidia
+
+Mar 19, 10:40 PM
+Trader Consistency Rule – Implementation Brief
+
+Purpose:
+This system is designed to control payouts for traders according to the “consistency rule.” The rule ensures that profits are spread across multiple trading days and prevents traders from generating most of their profit in a single day, which could risk the company’s cash flow.
+
+⸻
+
+1. What the rule is
+	•	Consistency Rule: No more than 40% of total account profit can come from a single trading day.
+	•	If a trader exceeds this limit, the excess profit is not eligible for payout until additional trading days are completed.
+	•	This protects the company and ensures payouts remain sustainable and progressive.
+
+⸻
+
+2. Where it appears
+	1.	Terms & Conditions: Already included.
+	2.	Payout Policy: Add this line:
+“Payout eligibility requires compliance with the consistency rule, ensuring profits are distributed across multiple trading days.”
+	3.	Dashboard: Display a warning when the trader approaches or exceeds the limit.
+	4.	Email Alerts: Notify the trader automatically when they are close to the limit.
+
+⸻
+
+3. Dashboard Warning
+	•	Show a visible message in the trader’s dashboard if today’s profit is approaching 40% of total profit.
+	•	Example message:
+“⚠ You are approaching the consistency rule limit. Profits must be spread across multiple trading days to be eligible for payout.”
+	•	Placement: above the account balance, or near daily profit metrics.
+	•	Optional: use a colored warning banner (yellow background, bold text).
+
+⸻
+
+4. Email Notification
+	•	Send an email if the trader is close to the limit (for example 90% of 40% of total profit).
+
+M
+mickolidia
+
+Mar 19, 10:41 PM
+•	Example email content:
+Subject: ⚠ Consistency Rule Alert
+
+Hello [Trader Name],
+
+You are approaching the consistency rule limit on your trading account.
+
+Today's profit: [Today’s profit]  
+Consistency limit: [Calculated limit]
+
+Please note that profits must be distributed across multiple trading days to be eligible for payout.
+
+Thank you,  
+Wolforix Ltd.
+
+M
+mickolidia
+
+Mar 19, 10:41 PM
+•	The purpose of the email is informational, not punitive. It reminds the trader to trade according to the rules.
+
+⸻
+
+5. Key Metrics to Use
+
+The system should calculate:
+	•	Total Profit = sum of all profits in the account
+	•	Today’s Profit = profit made in the current trading day
+	•	Consistency Limit = 40% of total profit
+	•	Optional alert threshold = 90% of consistency limit for email notification
+
+⸻
+
+6. Workflow Overview
+	1.	The system retrieves total and daily profits from the database.
+	2.	Compares daily profit with the consistency limit.
+	3.	If the limit is approached or exceeded:
+	•	Show the dashboard warning
+	•	Trigger an email notification if above alert threshold
+	4.	Payouts will be handled according to the Payout Policy, progressively, respecting the rule.
+
+⸻
+
+7. Why This Is Important
+	•	Ensures payouts never exceed sustainable limits (10–20% of monthly income).
+	•	Prevents abuse of the system by traders who try to withdraw large profits in a single day.
+	•	Keeps operations transparent and legally safe, aligned with Terms & Conditions and Payout Policy.
+	•	Improves trader trust by giving clear warnings and notifications.
+
+M
+mickolidia
+
+Mar 19, 10:42 PM
+I Hope this helps you. Thanks.
+
+M
+mickolidia
+
+Mar 19, 10:57 PM
+FAQ / Frequently Asked Questions
+
+Search:
+
+[Search bar placeholder: “Search FAQs…”]
+
+⸻
+
+1. General
+
+Q1: What is Wolforix?
+A: Wolforix Ltd. is a proprietary trading evaluation and education company. All trading activities are conducted in a simulated environment for educational purposes.
+
+Q2: Is this real money or simulated trading?
+A: All accounts operate in a simulated trading environment. No real funds are allocated to users.
+
+Q3: Who can participate?
+A: Users must be at least 18 years old and comply with all applicable laws in their jurisdiction.
+
+⸻
+
+2. Trading Rules
+
+Q4: What is the consistency rule?
+A: No more than 40% of total profits can be generated in a single trading day. Profits must be spread across multiple trading days to be eligible for payout.
+
+Q5: How is daily profit limit calculated?
+A: The system compares today’s profit to your total account profit. If today’s profit exceeds 40%, it will trigger a dashboard warning and may affect your payout eligibility.
+
+Q6: What are maximum drawdowns?
+A: Each account has defined drawdown limits. Exceeding these limits may result in account disqualification from the evaluation program.
+
+⸻
+
+3. Payouts
+
+Q7: How often are payouts processed?
+A: Payouts are processed in bi-weekly cycles. Payments are progressive and may be split over multiple cycles based on performance and internal risk management policies.
+
+Q8: How is my payout calculated?
+A: Payouts depend on total profits, consistency rule compliance, and internal payout limits. The amount eligible for withdrawal may be lower than total profits if daily limits are exceeded.
+
+Q9: Why might my payout be split into multiple cycles?
+A: To maintain long-term sustainability, payouts are distributed progressively. This ensures the company can honor all eligible profits without overextending funds.
+
+⸻
+
+4. Accounts / Dashboard
+
+Q10: How do I see my profit and balance?
+A: Your dashboard displays total profit, daily profit, and account balance in real time.
+
+Q11: What happens if I approach the consistency limit?
+A: A dashboard warning will appear:
+
+“⚠ You are approaching the consistency rule limit. Profits must be spread across multiple trading days to be eligible for payout.”
+Additionally, an automated email alert may be sent if you approach the critical threshold.
+
+Q12: How can I request a payout?
+A: The payout request button is in your dashboard. Only profits eligible under the consistency rule and payout limits will be included.
+
+M
+mickolidia
+
+Mar 19, 10:57 PM
+5. Support / Contact
+
+Q13: How do I contact support?
+A: All support requests are handled via email or ticket system within your dashboard.
+
+Q14: Do you have a phone number?
+A: No, Wolforix Ltd. does not provide phone support. All communications are documented via email or tickets for compliance and safety reasons.
+
+⸻
+
+6. Legal / Compliance
+
+Q15: Do I need to verify my identity?
+A: Yes, identity verification (KYC) may be required before processing payouts to comply with anti-money laundering regulations.
+
+Q16: Are there rules for fraud or abuse?
+A: Any attempt to manipulate the system, exploit loopholes, or commit fraudulent activity will result in account termination and may be reported to authorities.
+
+⸻
+
+ Search Bar Implementation (Suggestion)
+	•	Place a search bar at the top of the FAQ page.
+	•	As the user types, dynamically filter the FAQ items to show only questions containing the typed keywords (e.g., “payout”, “consistency”, “drawdown”).
+
+S
+Profile Image
+Me
+
+Mar 19, 11:06 PM
+You’ve now given me a very clear structure for the platform, both from the legal side and the user experience side. I’ve noted everything carefully, including:
+
+Languages to start with: English, German, and Spanish
+
+Footer/legal pages:
+Terms & Conditions, Risk Disclosure, Payout Policy, Refund Policy, Privacy Policy, AML & KYC Policy, Company Information
+
+Mandatory checkbox before payment
+
+Consistency rule logic for dashboard warnings and email alerts
+
+FAQ page with search functionality
+
+The consistency rule brief is especially helpful because it also defines how this should appear in the dashboard and notifications, not only in the policy text. I will keep the implementation aligned with this structure.
+
+For the first phase, I will begin by setting up the platform foundation with:
+
+multi-language-ready structure
+
+dashboard layout
+
+legal/footer page structure
+
+FAQ page structure
+
+payment checkbox requirement
+
+consistency warning area in the dashboard
+
+Then I will share the first preview with you soon.
+
+M
+mickolidia
+
+Mar 19, 11:32 PM
+Perfect. Thanks you. Regards
+
+S
+Profile Image
+Me
+
+Mar 20, 1:08 PM
+I’ve prepared the initial dashboard structure and UI based on our discussion, including the layout, basic metrics, language structure, and footer links.
+
+This is the first preview to align on design and structure before moving into full functionality.
+
+I’ll share the screenshots shortly — let me know your feedback and if you’d like any adjustments.
+
+S
+Profile Image
+Me
+
+Mar 20, 1:08 PM
+Your welcome
