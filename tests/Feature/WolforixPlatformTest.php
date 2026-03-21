@@ -31,7 +31,10 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('2-Step Challenge')
             ->assertSee('5K')
             ->assertSee('100K')
-            ->assertSee('Payout Policy');
+            ->assertSee('Payout Policy')
+            ->assertSee('Dismiss notice')
+            ->assertSee('Street address')
+            ->assertSee('Country');
     }
 
     public function test_dashboard_foundation_pages_render_successfully(): void
@@ -66,6 +69,12 @@ class WolforixPlatformTest extends TestCase
 
         $response
             ->assertRedirect(route('home'))
+            ->assertSessionHasErrors([
+                'street_address',
+                'city',
+                'postal_code',
+                'country',
+            ])
             ->assertSessionHasErrors('accept_terms');
     }
 
@@ -74,6 +83,10 @@ class WolforixPlatformTest extends TestCase
         $response = $this->from(route('home'))->post(route('challenge.checkout.store'), [
             'full_name' => 'Test Trader',
             'email' => 'trader@example.com',
+            'street_address' => '1 Market Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
             'plan' => 'two-step-50000',
             'accept_terms' => '1',
         ]);

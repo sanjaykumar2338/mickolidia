@@ -1,6 +1,33 @@
 import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
+
+    if (fixedDisclaimer instanceof HTMLElement) {
+        const closeButton = fixedDisclaimer.querySelector('[data-fixed-disclaimer-close]');
+        const storageKey = 'wolforix-fixed-disclaimer-dismissed';
+
+        try {
+            if (window.localStorage.getItem(storageKey) === '1') {
+                fixedDisclaimer.classList.add('hidden');
+            }
+        } catch (error) {
+            // Ignore storage access issues and keep the disclaimer visible.
+        }
+
+        if (closeButton instanceof HTMLButtonElement) {
+            closeButton.addEventListener('click', () => {
+                fixedDisclaimer.classList.add('hidden');
+
+                try {
+                    window.localStorage.setItem(storageKey, '1');
+                } catch (error) {
+                    // Ignore storage access issues; hiding for the current session is sufficient.
+                }
+            });
+        }
+    }
+
     const localeSwitchers = document.querySelectorAll('[data-locale-switcher]');
 
     localeSwitchers.forEach((switcher) => {

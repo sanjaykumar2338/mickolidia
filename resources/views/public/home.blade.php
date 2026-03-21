@@ -259,6 +259,9 @@
                 <div class="mt-8 surface-card rounded-[2rem] p-6">
                     <h3 class="text-lg font-semibold text-white">{{ __('site.checkout.supporting_title') }}</h3>
                     <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.checkout.supporting_copy') }}</p>
+                    <div class="mt-4 rounded-[1.6rem] border border-amber-400/18 bg-amber-400/10 px-4 py-4 text-sm leading-7 text-amber-50">
+                        {{ __('site.checkout.kyc_notice') }}
+                    </div>
                     <ul class="mt-5 space-y-3 text-sm text-slate-300">
                         @foreach (trans('site.checkout.helper_points') as $point)
                             <li class="rounded-2xl border border-white/6 bg-white/3 px-4 py-3">{{ $point }}</li>
@@ -303,6 +306,57 @@
                                 placeholder="trader@example.com"
                             >
                         </label>
+                    </div>
+
+                    <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.client_data_title') }}</p>
+                        <div class="mt-5 grid gap-5 md:grid-cols-2">
+                            <label class="block md:col-span-2">
+                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.street_address') }}</span>
+                                <input
+                                    type="text"
+                                    name="street_address"
+                                    value="{{ old('street_address') }}"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+                                    placeholder="{{ __('site.checkout.street_address') }}"
+                                >
+                            </label>
+
+                            <label class="block">
+                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.city') }}</span>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    value="{{ old('city') }}"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+                                    placeholder="{{ __('site.checkout.city') }}"
+                                >
+                            </label>
+
+                            <label class="block">
+                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.postal_code') }}</span>
+                                <input
+                                    type="text"
+                                    name="postal_code"
+                                    value="{{ old('postal_code') }}"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+                                    placeholder="{{ __('site.checkout.postal_code') }}"
+                                >
+                            </label>
+
+                            <label class="block md:col-span-2">
+                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.country') }}</span>
+                                <select
+                                    name="country"
+                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition focus:border-amber-400/35"
+                                >
+                                    <option value="">{{ __('site.checkout.select_country') }}</option>
+                                    @foreach ($checkoutCountries as $code => $country)
+                                        <option value="{{ $code }}" @selected(old('country') === $code)>{{ $country }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="grid gap-5 md:grid-cols-2">

@@ -23,6 +23,7 @@ class PublicPageController extends Controller
             'challengeSizes' => config('wolforix.challenge_sizes', []),
             'defaultChallengeType' => $defaultChallengeType,
             'defaultChallengeSize' => $defaultChallengeSize,
+            'checkoutCountries' => config('wolforix.checkout_countries', []),
         ]);
     }
 
@@ -50,10 +51,15 @@ class PublicPageController extends Controller
         $planSlugs = collect(config('wolforix.challenge_plans'))
             ->pluck('slug')
             ->all();
+        $countryCodes = array_keys(config('wolforix.checkout_countries', []));
 
         $request->validate([
             'full_name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
+            'street_address' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:120'],
+            'postal_code' => ['required', 'string', 'max:32'],
+            'country' => ['required', Rule::in($countryCodes)],
             'plan' => ['required', Rule::in($planSlugs)],
             'accept_terms' => ['accepted'],
         ], [
