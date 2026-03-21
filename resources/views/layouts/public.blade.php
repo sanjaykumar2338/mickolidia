@@ -24,10 +24,11 @@
         </div>
     @endif
 
-    <main class="relative z-10 pb-20">
+    <main class="relative z-10 pb-40 md:pb-32">
         @yield('content')
     </main>
 
     @include('partials.public-footer')
+    @include('partials.fixed-disclaimer')
 </body>
 </html>

@@ -13,6 +13,12 @@ return [
         'es' => 'Español',
     ],
 
+    'locale' => [
+        'current_label' => 'Idioma',
+        'menu_title' => 'Seleccionar idioma',
+        'future_label' => 'Preparado para más idiomas',
+    ],
+
     'public_layout' => [
         'preview_badge' => 'Base del hito 1',
         'simulated_notice' => 'Solo evaluación de trading simulado',
@@ -30,7 +36,7 @@ return [
         'eyebrow' => 'Evaluación Prop de Wolforix',
         'title' => 'Infraestructura de challenge oscura y premium para traders disciplinados.',
         'description' => 'El hito 1 establece la presencia pública y la base del dashboard de Wolforix con estructura multilingüe, claridad legal, comunicación de payouts y una interfaz SaaS limpia para prop firms.',
-        'primary_cta' => 'Explorar planes',
+        'primary_cta' => 'Iniciar Challenge',
         'secondary_cta' => 'Abrir vista previa del dashboard',
         'days' => 'días',
         'badges' => [
@@ -61,12 +67,47 @@ return [
                 'value' => '80 %',
             ],
             [
-                'label' => 'Primer payout',
-                'value' => '14 días',
+                'label' => 'Primer retiro',
+                'value' => '21 días',
             ],
             [
                 'label' => 'Días mínimos de trading',
                 'value' => '3',
+            ],
+        ],
+        'challenge_selector' => [
+            'type_label' => 'Tipo de challenge',
+            'size_label' => 'Tamaño de cuenta',
+            'insight_title' => 'Resumen del challenge',
+            'entry_fee' => 'Cuota del challenge',
+            'start_button' => 'Iniciar Challenge',
+            'profit_share_note' => 'Participación en beneficios: 80 % / 85 % para el challenge de 100K.',
+            'payout_cycle_note' => 'Los payouts se procesan en ciclos quincenales con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
+            'review_policy' => 'Revisar política de payout',
+            'faq_link' => 'Leer FAQ',
+            'unlimited' => 'Ilimitado',
+            'highlights' => [
+                'Cambio instantáneo de challenge',
+                'Primer retiro después de 21 días',
+                'Sin límite máximo de días de trading',
+            ],
+            'metrics' => [
+                'profit_share' => 'Participación en beneficios',
+                'daily_loss' => 'Límite de pérdida diaria',
+                'total_loss' => 'Límite de pérdida total',
+                'minimum_days' => 'Días mínimos de trading',
+                'first_withdrawal' => 'Primer retiro',
+                'max_trading_days' => 'Días máximos de trading',
+            ],
+            'types' => [
+                'one_step' => [
+                    'label' => '1-Step Challenge',
+                    'description' => 'Una ruta de evaluación directa con límites de drawdown más ajustados y una sola fase de progresión.',
+                ],
+                'two_step' => [
+                    'label' => '2-Step Challenge',
+                    'description' => 'Una estructura de challenge más tradicional con 2 fases de evaluación y límites de pérdida más amplios.',
+                ],
             ],
         ],
         'plans' => [
@@ -80,7 +121,7 @@ return [
             'max_loss' => 'Pérdida total',
             'steps' => 'Pasos',
             'profit_share' => 'Participación en beneficios',
-            'first_payout' => 'Primer payout',
+            'first_payout' => 'Primer retiro',
             'minimum_days' => 'Días mínimos de trading',
         ],
         'foundation' => [
@@ -198,7 +239,7 @@ return [
                 'items' => [
                     [
                         'question' => '¿Con qué frecuencia se procesan los payouts?',
-                        'answer' => 'Los payouts se procesan en ciclos quincenales. Los pagos son progresivos y pueden dividirse en varios ciclos según el rendimiento y las políticas internas de gestión de riesgo.',
+                        'answer' => 'Los payouts se procesan en ciclos quincenales con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
                     ],
                     [
                         'question' => '¿Cómo se calcula mi payout?',
@@ -355,14 +396,14 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Política de Payout',
-                'intro' => 'Los payouts se procesan en ciclos quincenales y están sujetos a políticas internas de gestión de riesgo.',
+                'intro' => 'Los payouts se procesan en ciclos quincenales con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
                 'sections' => [
                     [
                         'title' => 'Elegibilidad para payout',
                         'paragraphs' => [
+                            'Los payouts se procesan en ciclos quincenales con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
                             'La elegibilidad para payout requiere cumplir la regla de consistencia, asegurando que los beneficios se distribuyan en varios días de trading.',
                             'Para garantizar la sostenibilidad a largo plazo, los payouts pueden distribuirse progresivamente en varios ciclos.',
-                            'Cada solicitud de payout puede estar sujeta a un límite máximo de retiro según el tamaño de la cuenta y el rendimiento.',
                         ],
                     ],
                     [
@@ -483,6 +524,13 @@ return [
         'copyright' => 'Todos los derechos reservados.',
     ],
 
+    'fixed_disclaimer' => [
+        'label' => 'Aviso de entorno simulado',
+        'text' => 'Wolforix opera en un entorno de trading simulado. Revisa la FAQ y la política de payout antes de comprar un challenge.',
+        'faq_link' => 'FAQ',
+        'policy_link' => 'Política de Payout',
+    ],
+
     'dashboard' => [
         'preview_title' => 'Base del Dashboard',
         'preview_subtitle' => 'Solo datos simulados. El diseño está preparado para sincronización real del challenge, lógica de payout e integraciones futuras.',
@@ -542,7 +590,7 @@ return [
             'rules_title' => 'Conjunto de reglas',
             'rules_copy' => 'Los límites más importantes del challenge se mantienen cerca de las métricas de la cuenta para que la elegibilidad del payout y los límites de riesgo sean evidentes.',
             'payout_title' => 'Sección de payout',
-            'payout_copy' => 'Los payouts manuales, la distribución progresiva y la revisión interna se representan aquí como placeholders listos para lógica posterior.',
+            'payout_copy' => 'La vista previa de payout ya refleja ciclos quincenales, límites máximos por ciclo, ciclos posteriores para importes restantes y placeholders de revisión interna.',
             'settings_title' => 'Perfil y ajustes',
             'settings_copy' => 'Un área de perfil placeholder deja el dashboard listo para preferencias de idioma, KYC y controles de seguridad de cuenta.',
         ],
@@ -561,10 +609,10 @@ return [
         'payouts' => [
             'next_window' => 'Próxima ventana de payout',
             'next_window_value' => 'Próxima revisión quincenal en 3 días',
-            'cycle_note' => 'La elegibilidad para payout requiere días mínimos de trading, cumplimiento de la regla de consistencia y ausencia de violaciones.',
+            'cycle_note' => 'Los payouts se procesan en ciclos quincenales con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
             'placeholder_status' => 'Placeholder de revisión manual',
             'queue_title' => 'Vista previa de la cola de payouts',
-            'queue_copy' => 'Los ciclos quincenales, la distribución progresiva y las revisiones internas se representan aquí sin motor de payout real.',
+            'queue_copy' => 'Los ciclos quincenales, los límites máximos por ciclo, los ciclos posteriores para importes restantes y las revisiones internas se representan aquí sin motor de payout real.',
             'progressive_note' => 'Para apoyar la sostenibilidad a largo plazo, los payouts pueden distribuirse progresivamente en varios ciclos.',
             'requirements_title' => 'Lista de elegibilidad',
             'requirements' => [

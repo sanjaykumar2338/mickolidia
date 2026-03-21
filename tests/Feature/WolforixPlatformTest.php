@@ -23,6 +23,17 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('1-Step Challenge')
+            ->assertSee('2-Step Challenge')
+            ->assertSee('5K')
+            ->assertSee('100K')
+            ->assertSee('Payout Policy');
+    }
+
     public function test_dashboard_foundation_pages_render_successfully(): void
     {
         foreach ([
@@ -50,7 +61,7 @@ class WolforixPlatformTest extends TestCase
         $response = $this->from(route('home'))->post(route('challenge.checkout.store'), [
             'full_name' => 'Test Trader',
             'email' => 'trader@example.com',
-            'plan' => 'wolf-50000',
+            'plan' => 'two-step-50000',
         ]);
 
         $response
@@ -63,12 +74,19 @@ class WolforixPlatformTest extends TestCase
         $response = $this->from(route('home'))->post(route('challenge.checkout.store'), [
             'full_name' => 'Test Trader',
             'email' => 'trader@example.com',
-            'plan' => 'wolf-50000',
+            'plan' => 'two-step-50000',
             'accept_terms' => '1',
         ]);
 
         $response
             ->assertRedirect(route('home'))
             ->assertSessionHas('checkout_success');
+    }
+
+    public function test_payout_policy_contains_the_updated_cycle_wording(): void
+    {
+        $this->get(route('payout-policy'))
+            ->assertOk()
+            ->assertSee('Payouts are processed in bi-weekly cycles with a maximum limit per cycle.');
     }
 }

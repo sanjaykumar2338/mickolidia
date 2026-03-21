@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
             'kyc_status' => 'pending',
         ]);
 
-        $plan = ChallengePlan::query()->where('slug', 'wolf-50000')->first()
+        $plan = ChallengePlan::query()->where('slug', 'two-step-50000')->first()
             ?? ChallengePlan::query()->first();
 
         if ($plan instanceof ChallengePlan) {

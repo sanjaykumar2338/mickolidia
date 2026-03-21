@@ -13,6 +13,12 @@ return [
         'es' => 'Spanisch',
     ],
 
+    'locale' => [
+        'current_label' => 'Sprache',
+        'menu_title' => 'Sprache auswählen',
+        'future_label' => 'Bereit für weitere Sprachen',
+    ],
+
     'public_layout' => [
         'preview_badge' => 'Meilenstein-1-Grundlage',
         'simulated_notice' => 'Nur simulierte Trading-Evaluation',
@@ -30,7 +36,7 @@ return [
         'eyebrow' => 'Wolforix Prop-Evaluation',
         'title' => 'Dunkle, hochwertige Challenge-Infrastruktur für disziplinierte Trader.',
         'description' => 'Meilenstein 1 schafft die öffentliche Präsenz und das Dashboard-Fundament von Wolforix mit mehrsprachiger Struktur, rechtlicher Klarheit, Auszahlungs-Kommunikation und einer sauberen Prop-Firm-SaaS-Oberfläche.',
-        'primary_cta' => 'Pläne ansehen',
+        'primary_cta' => 'Challenge starten',
         'secondary_cta' => 'Dashboard-Vorschau öffnen',
         'days' => 'Tage',
         'badges' => [
@@ -62,11 +68,46 @@ return [
             ],
             [
                 'label' => 'Erste Auszahlung',
-                'value' => '14 Tage',
+                'value' => '21 Tage',
             ],
             [
                 'label' => 'Mindesthandelstage',
                 'value' => '3',
+            ],
+        ],
+        'challenge_selector' => [
+            'type_label' => 'Challenge-Typ',
+            'size_label' => 'Kontogröße',
+            'insight_title' => 'Challenge-Überblick',
+            'entry_fee' => 'Challenge-Gebühr',
+            'start_button' => 'Challenge starten',
+            'profit_share_note' => 'Gewinnbeteiligung: 80 % / 85 % für die 100K-Challenge.',
+            'payout_cycle_note' => 'Auszahlungen werden in zweiwöchentlichen Zyklen mit einem Höchstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet.',
+            'review_policy' => 'Auszahlungsrichtlinie ansehen',
+            'faq_link' => 'FAQ lesen',
+            'unlimited' => 'Unbegrenzt',
+            'highlights' => [
+                'Sofortiger Wechsel zwischen Challenges',
+                'Erste Auszahlung nach 21 Tagen',
+                'Keine maximale Handelsdauer',
+            ],
+            'metrics' => [
+                'profit_share' => 'Gewinnbeteiligung',
+                'daily_loss' => 'Tagesverlust-Limit',
+                'total_loss' => 'Gesamtverlust-Limit',
+                'minimum_days' => 'Mindesthandelstage',
+                'first_withdrawal' => 'Erste Auszahlung',
+                'max_trading_days' => 'Maximale Handelstage',
+            ],
+            'types' => [
+                'one_step' => [
+                    'label' => '1-Step Challenge',
+                    'description' => 'Ein direkter Evaluationsweg mit engeren Drawdown-Grenzen und nur einer Fortschrittsstufe.',
+                ],
+                'two_step' => [
+                    'label' => '2-Step Challenge',
+                    'description' => 'Eine klassischere Prop-Challenge-Struktur mit 2 Evaluationsphasen und breiteren Verlustgrenzen.',
+                ],
             ],
         ],
         'plans' => [
@@ -198,7 +239,7 @@ return [
                 'items' => [
                     [
                         'question' => 'Wie oft werden Auszahlungen verarbeitet?',
-                        'answer' => 'Auszahlungen werden in zweiwöchentlichen Zyklen verarbeitet. Zahlungen erfolgen progressiv und können abhängig von Performance und internen Risikorichtlinien auf mehrere Zyklen verteilt werden.',
+                        'answer' => 'Auszahlungen werden in zweiwöchentlichen Zyklen mit einem Höchstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet.',
                     ],
                     [
                         'question' => 'Wie wird meine Auszahlung berechnet?',
@@ -355,14 +396,14 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Auszahlungsrichtlinie',
-                'intro' => 'Auszahlungen werden in zweiwöchentlichen Zyklen verarbeitet und unterliegen internen Risikomanagement-Richtlinien.',
+                'intro' => 'Auszahlungen werden in zweiwöchentlichen Zyklen mit einem Höchstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet.',
                 'sections' => [
                     [
                         'title' => 'Auszahlungsberechtigung',
                         'paragraphs' => [
+                            'Auszahlungen werden in zweiwöchentlichen Zyklen mit einem Höchstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet.',
                             'Die Auszahlungsberechtigung setzt die Einhaltung der Konsistenzregel voraus, damit Gewinne auf mehrere Handelstage verteilt sind.',
                             'Zur langfristigen Nachhaltigkeit können Auszahlungen schrittweise über mehrere Auszahlungszyklen verteilt werden.',
-                            'Jede Auszahlungsanforderung kann abhängig von Kontogröße und Performance einer maximalen Auszahlungsgrenze unterliegen.',
                         ],
                     ],
                     [
@@ -483,6 +524,13 @@ return [
         'copyright' => 'Alle Rechte vorbehalten.',
     ],
 
+    'fixed_disclaimer' => [
+        'label' => 'Hinweis zur simulierten Umgebung',
+        'text' => 'Wolforix arbeitet in einer simulierten Trading-Umgebung. Bitte lesen Sie vor dem Kauf einer Challenge die FAQ und die Auszahlungsrichtlinie.',
+        'faq_link' => 'FAQ',
+        'policy_link' => 'Auszahlungsrichtlinie',
+    ],
+
     'dashboard' => [
         'preview_title' => 'Dashboard-Grundlage',
         'preview_subtitle' => 'Nur Mock-Daten. Das Layout ist für Live-Challenge-Sync, Auszahlungslogik und spätere Plattform-Integrationen vorbereitet.',
@@ -542,7 +590,7 @@ return [
             'rules_title' => 'Regelstruktur',
             'rules_copy' => 'Die wichtigsten Challenge-Grenzen bleiben nahe an den Kontokennzahlen, damit Auszahlungsberechtigung und Risikogrenzen jederzeit klar sind.',
             'payout_title' => 'Auszahlungsbereich',
-            'payout_copy' => 'Manuelle Auszahlungen, progressive Verteilung und interne Prüfung werden hier als Platzhalter für spätere Backend-Logik dargestellt.',
+            'payout_copy' => 'Die Auszahlungs-Vorschau spiegelt bereits zweiwöchentliche Zyklen, Höchstbeträge pro Zyklus, Folgezyklen für Restbeträge und interne Prüfungs-Platzhalter wider.',
             'settings_title' => 'Profil & Einstellungen',
             'settings_copy' => 'Ein Profil-Platzhalter hält das Dashboard bereit für Spracheinstellungen, KYC und Kontosicherheitsfunktionen.',
         ],
@@ -561,10 +609,10 @@ return [
         'payouts' => [
             'next_window' => 'Nächstes Auszahlungsfenster',
             'next_window_value' => 'Nächste zweiwöchentliche Prüfung in 3 Tagen',
-            'cycle_note' => 'Die Auszahlungsberechtigung erfordert Mindesthandelstage, Einhaltung der Konsistenzregel und keine Regelverstöße.',
+            'cycle_note' => 'Auszahlungen werden in zweiwöchentlichen Zyklen mit einem Höchstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet.',
             'placeholder_status' => 'Platzhalter für manuelle Prüfung',
             'queue_title' => 'Vorschau der Auszahlungswarteschlange',
-            'queue_copy' => 'Zweiwöchentliche Zyklen, progressive Verteilung und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
+            'queue_copy' => 'Zweiwöchentliche Zyklen, Höchstbeträge pro Zyklus, Folgezyklen für Restbeträge und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
             'progressive_note' => 'Zur Unterstützung langfristiger Nachhaltigkeit können Auszahlungen progressiv über mehrere Zyklen verteilt werden.',
             'requirements_title' => 'Berechtigungs-Checkliste',
             'requirements' => [

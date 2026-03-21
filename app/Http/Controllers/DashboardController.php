@@ -33,7 +33,7 @@ class DashboardController extends Controller
     {
         $primaryAccount = [
             'reference' => 'WFX-CT-50021',
-            'plan' => 'Wolf 50K',
+            'plan' => '2-Step 50K',
             'platform' => 'cTrader',
             'stage' => __('site.dashboard.account.stage'),
             'status' => __('site.dashboard.account.status'),
@@ -97,7 +97,7 @@ class DashboardController extends Controller
                 ],
                 [
                     'reference' => 'WFX-CT-25014',
-                    'plan' => 'Wolf 25K',
+                    'plan' => '1-Step 25K',
                     'status' => __('site.dashboard.account.review_status'),
                     'stage' => __('site.dashboard.account.review_stage'),
                     'balance' => $this->formatMoney(26880.00),

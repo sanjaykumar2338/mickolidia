@@ -1,20 +1,221 @@
 <?php
 
+$supportedLocales = [
+    'en' => [
+        'native' => 'English',
+        'short' => 'EN',
+        'flag' => '🇬🇧',
+    ],
+    'de' => [
+        'native' => 'Deutsch',
+        'short' => 'DE',
+        'flag' => '🇩🇪',
+    ],
+    'es' => [
+        'native' => 'Español',
+        'short' => 'ES',
+        'flag' => '🇪🇸',
+    ],
+];
+
+$challengeCatalog = [
+    'one_step' => [
+        'steps' => 1,
+        'plans' => [
+            5000 => [
+                'slug' => 'one-step-5000',
+                'name' => '1-Step 5K',
+                'account_size' => 5000,
+                'currency' => 'EUR',
+                'entry_fee' => 59,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 6,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            10000 => [
+                'slug' => 'one-step-10000',
+                'name' => '1-Step 10K',
+                'account_size' => 10000,
+                'currency' => 'EUR',
+                'entry_fee' => 99,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 6,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            25000 => [
+                'slug' => 'one-step-25000',
+                'name' => '1-Step 25K',
+                'account_size' => 25000,
+                'currency' => 'EUR',
+                'entry_fee' => 189,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 6,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            50000 => [
+                'slug' => 'one-step-50000',
+                'name' => '1-Step 50K',
+                'account_size' => 50000,
+                'currency' => 'EUR',
+                'entry_fee' => 329,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 6,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            100000 => [
+                'slug' => 'one-step-100000',
+                'name' => '1-Step 100K',
+                'account_size' => 100000,
+                'currency' => 'EUR',
+                'entry_fee' => 549,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 6,
+                'profit_share' => 85,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+        ],
+    ],
+    'two_step' => [
+        'steps' => 2,
+        'plans' => [
+            5000 => [
+                'slug' => 'two-step-5000',
+                'name' => '2-Step 5K',
+                'account_size' => 5000,
+                'currency' => 'EUR',
+                'entry_fee' => 49,
+                'profit_target' => 8,
+                'daily_loss_limit' => 5,
+                'max_loss_limit' => 10,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            10000 => [
+                'slug' => 'two-step-10000',
+                'name' => '2-Step 10K',
+                'account_size' => 10000,
+                'currency' => 'EUR',
+                'entry_fee' => 79,
+                'profit_target' => 8,
+                'daily_loss_limit' => 5,
+                'max_loss_limit' => 10,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            25000 => [
+                'slug' => 'two-step-25000',
+                'name' => '2-Step 25K',
+                'account_size' => 25000,
+                'currency' => 'EUR',
+                'entry_fee' => 149,
+                'profit_target' => 8,
+                'daily_loss_limit' => 5,
+                'max_loss_limit' => 10,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            50000 => [
+                'slug' => 'two-step-50000',
+                'name' => '2-Step 50K',
+                'account_size' => 50000,
+                'currency' => 'EUR',
+                'entry_fee' => 269,
+                'profit_target' => 8,
+                'daily_loss_limit' => 5,
+                'max_loss_limit' => 10,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+            100000 => [
+                'slug' => 'two-step-100000',
+                'name' => '2-Step 100K',
+                'account_size' => 100000,
+                'currency' => 'EUR',
+                'entry_fee' => 449,
+                'profit_target' => 8,
+                'daily_loss_limit' => 5,
+                'max_loss_limit' => 10,
+                'profit_share' => 85,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'maximum_trading_days' => null,
+            ],
+        ],
+    ],
+];
+
+$challengeSizes = [];
+$challengePlans = [];
+
+foreach ($challengeCatalog as $challengeType => $challengeTypeData) {
+    foreach ($challengeTypeData['plans'] as $size => $plan) {
+        $challengeSizes[(string) $size] = (int) $size;
+        $challengePlans[] = array_merge($plan, [
+            'challenge_type' => $challengeType,
+            'steps' => $challengeTypeData['steps'],
+        ]);
+    }
+}
+
+ksort($challengeSizes);
+
 return [
     'default_locale' => 'en',
 
-    'supported_locales' => [
-        'en' => [
-            'native' => 'English',
-            'short' => 'EN',
+    'supported_locales' => $supportedLocales,
+
+    'future_locales' => [
+        [
+            'native' => 'हिंदी',
+            'short' => 'HI',
+            'flag' => '🇮🇳',
         ],
-        'de' => [
-            'native' => 'Deutsch',
-            'short' => 'DE',
+        [
+            'native' => 'Italiano',
+            'short' => 'IT',
+            'flag' => '🇮🇹',
         ],
-        'es' => [
-            'native' => 'Español',
-            'short' => 'ES',
+        [
+            'native' => 'Português',
+            'short' => 'PT',
+            'flag' => '🇵🇹',
         ],
     ],
 
@@ -49,66 +250,9 @@ return [
         ],
     ],
 
-    'challenge_plans' => [
-        [
-            'slug' => 'wolf-10000',
-            'name' => 'Wolf 10K',
-            'account_size' => 10000,
-            'currency' => 'EUR',
-            'entry_fee' => 89,
-            'profit_target' => 8,
-            'daily_loss_limit' => 5,
-            'max_loss_limit' => 10,
-            'steps' => 2,
-            'profit_share' => 80,
-            'first_payout_days' => 14,
-            'minimum_trading_days' => 3,
-            'payout_cycle_days' => 14,
-        ],
-        [
-            'slug' => 'wolf-25000',
-            'name' => 'Wolf 25K',
-            'account_size' => 25000,
-            'currency' => 'EUR',
-            'entry_fee' => 159,
-            'profit_target' => 8,
-            'daily_loss_limit' => 5,
-            'max_loss_limit' => 10,
-            'steps' => 2,
-            'profit_share' => 80,
-            'first_payout_days' => 14,
-            'minimum_trading_days' => 3,
-            'payout_cycle_days' => 14,
-        ],
-        [
-            'slug' => 'wolf-50000',
-            'name' => 'Wolf 50K',
-            'account_size' => 50000,
-            'currency' => 'EUR',
-            'entry_fee' => 289,
-            'profit_target' => 8,
-            'daily_loss_limit' => 5,
-            'max_loss_limit' => 10,
-            'steps' => 2,
-            'profit_share' => 80,
-            'first_payout_days' => 14,
-            'minimum_trading_days' => 3,
-            'payout_cycle_days' => 14,
-        ],
-        [
-            'slug' => 'wolf-100000',
-            'name' => 'Wolf 100K',
-            'account_size' => 100000,
-            'currency' => 'EUR',
-            'entry_fee' => 489,
-            'profit_target' => 8,
-            'daily_loss_limit' => 5,
-            'max_loss_limit' => 10,
-            'steps' => 2,
-            'profit_share' => 80,
-            'first_payout_days' => 14,
-            'minimum_trading_days' => 3,
-            'payout_cycle_days' => 14,
-        ],
-    ],
+    'challenge_catalog' => $challengeCatalog,
+
+    'challenge_sizes' => array_values($challengeSizes),
+
+    'challenge_plans' => $challengePlans,
 ];

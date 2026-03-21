@@ -11,8 +11,18 @@ class PublicPageController extends Controller
 {
     public function home(): View
     {
+        $challengeCatalog = config('wolforix.challenge_catalog', []);
+        $defaultChallengeType = array_key_first($challengeCatalog);
+        $defaultChallengeSize = $defaultChallengeType !== null
+            ? (string) array_key_first($challengeCatalog[$defaultChallengeType]['plans'])
+            : null;
+
         return view('public.home', [
             'plans' => config('wolforix.challenge_plans'),
+            'challengeCatalog' => $challengeCatalog,
+            'challengeSizes' => config('wolforix.challenge_sizes', []),
+            'defaultChallengeType' => $defaultChallengeType,
+            'defaultChallengeSize' => $defaultChallengeSize,
         ]);
     }
 

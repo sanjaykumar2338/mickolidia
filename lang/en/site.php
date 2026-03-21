@@ -13,6 +13,12 @@ return [
         'es' => 'Spanish',
     ],
 
+    'locale' => [
+        'current_label' => 'Language',
+        'menu_title' => 'Select language',
+        'future_label' => 'Ready for future additions',
+    ],
+
     'public_layout' => [
         'preview_badge' => 'Milestone 1 foundation',
         'simulated_notice' => 'Simulated trading evaluation only',
@@ -30,7 +36,7 @@ return [
         'eyebrow' => 'Wolforix Prop Evaluation',
         'title' => 'Dark, premium challenge infrastructure for disciplined traders.',
         'description' => 'Milestone 1 establishes the Wolforix public presence and dashboard foundation with multilingual structure, legal clarity, payout messaging, and a clean prop-firm SaaS interface.',
-        'primary_cta' => 'Explore Plans',
+        'primary_cta' => 'Start Challenge',
         'secondary_cta' => 'Open Dashboard Preview',
         'days' => 'days',
         'badges' => [
@@ -61,12 +67,47 @@ return [
                 'value' => '80%',
             ],
             [
-                'label' => 'First payout',
-                'value' => '14 days',
+                'label' => 'First withdrawal',
+                'value' => '21 days',
             ],
             [
                 'label' => 'Minimum trading days',
                 'value' => '3',
+            ],
+        ],
+        'challenge_selector' => [
+            'type_label' => 'Challenge type',
+            'size_label' => 'Account size',
+            'insight_title' => 'Challenge overview',
+            'entry_fee' => 'Challenge fee',
+            'start_button' => 'Start Challenge',
+            'profit_share_note' => 'Profit share: 80% / 85% for 100K Challenge.',
+            'payout_cycle_note' => 'Payouts are processed in bi-weekly cycles with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
+            'review_policy' => 'Review payout policy',
+            'faq_link' => 'Read FAQ',
+            'unlimited' => 'Unlimited',
+            'highlights' => [
+                'Instant challenge switching',
+                '21-day first withdrawal',
+                'No maximum trading days',
+            ],
+            'metrics' => [
+                'profit_share' => 'Profit share',
+                'daily_loss' => 'Daily loss limit',
+                'total_loss' => 'Total loss limit',
+                'minimum_days' => 'Minimum trading days',
+                'first_withdrawal' => 'First withdrawal',
+                'max_trading_days' => 'Maximum trading days',
+            ],
+            'types' => [
+                'one_step' => [
+                    'label' => '1-Step Challenge',
+                    'description' => 'A direct evaluation route with tighter drawdown limits and a single progression step.',
+                ],
+                'two_step' => [
+                    'label' => '2-Step Challenge',
+                    'description' => 'A more traditional prop challenge structure with 2 evaluation phases and wider loss thresholds.',
+                ],
             ],
         ],
         'plans' => [
@@ -80,7 +121,7 @@ return [
             'max_loss' => 'Total loss',
             'steps' => 'Steps',
             'profit_share' => 'Profit share',
-            'first_payout' => 'First payout',
+            'first_payout' => 'First withdrawal',
             'minimum_days' => 'Minimum trading days',
         ],
         'foundation' => [
@@ -198,7 +239,7 @@ return [
                 'items' => [
                     [
                         'question' => 'How often are payouts processed?',
-                        'answer' => 'Payouts are processed in bi-weekly cycles. Payments are progressive and may be split over multiple cycles based on performance and internal risk management policies.',
+                        'answer' => 'Payouts are processed in bi-weekly cycles with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
                     ],
                     [
                         'question' => 'How is my payout calculated?',
@@ -355,14 +396,14 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Payout Policy',
-                'intro' => 'Payouts are processed in bi-weekly cycles and are subject to internal risk management policies.',
+                'intro' => 'Payouts are processed in bi-weekly cycles with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
                 'sections' => [
                     [
                         'title' => 'Payout Eligibility',
                         'paragraphs' => [
+                            'Payouts are processed in bi-weekly cycles with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
                             'Payout eligibility requires compliance with the consistency rule, ensuring profits are distributed across multiple trading days.',
                             'To ensure long-term sustainability, payouts may be distributed progressively across multiple payout cycles.',
-                            'Each payout request may be subject to a maximum withdrawal limit based on account size and performance.',
                         ],
                     ],
                     [
@@ -483,6 +524,13 @@ return [
         'copyright' => 'All rights reserved.',
     ],
 
+    'fixed_disclaimer' => [
+        'label' => 'Simulated environment notice',
+        'text' => 'Wolforix operates in a simulated trading environment. Review the FAQ and payout policy before purchasing a challenge.',
+        'faq_link' => 'FAQ',
+        'policy_link' => 'Payout Policy',
+    ],
+
     'dashboard' => [
         'preview_title' => 'Dashboard Foundation',
         'preview_subtitle' => 'Mock data only. The layout is prepared for live challenge sync, payout logic, and future platform integrations.',
@@ -542,7 +590,7 @@ return [
             'rules_title' => 'Rule stack',
             'rules_copy' => 'The most important challenge limits stay near the account metrics so payout eligibility and risk boundaries remain obvious.',
             'payout_title' => 'Payout section',
-            'payout_copy' => 'Manual payouts, progressive distribution, and internal review are represented here as placeholders ready for later backend logic.',
+            'payout_copy' => 'Payout previews already reflect bi-weekly cycles, maximum-per-cycle wording, progressive follow-up cycles, and internal review placeholders.',
             'settings_title' => 'Profile & settings',
             'settings_copy' => 'A placeholder profile area keeps the dashboard ready for language preferences, KYC, and account security controls.',
         ],
@@ -561,10 +609,10 @@ return [
         'payouts' => [
             'next_window' => 'Next payout window',
             'next_window_value' => 'Next bi-weekly review in 3 days',
-            'cycle_note' => 'Payout eligibility requires minimum trading days, consistency rule compliance, and no rule violations.',
+            'cycle_note' => 'Payouts are processed in bi-weekly cycles with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
             'placeholder_status' => 'Manual review placeholder',
             'queue_title' => 'Payout queue preview',
-            'queue_copy' => 'Bi-weekly cycles, progressive distribution, and internal review checks are represented here without live payout engine logic.',
+            'queue_copy' => 'Bi-weekly cycles, maximum-per-cycle limits, progressive follow-up cycles, and internal review checks are represented here without live payout engine logic.',
             'progressive_note' => 'To support long-term sustainability, payouts may be distributed progressively across multiple payout cycles.',
             'requirements_title' => 'Eligibility checklist',
             'requirements' => [
