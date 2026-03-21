@@ -34,8 +34,8 @@ return [
 
     'home' => [
         'eyebrow' => 'Wolforix Prop Evaluation',
-        'title' => 'Dark, premium challenge infrastructure for disciplined traders.',
-        'description' => 'Milestone 1 establishes the Wolforix public presence and dashboard foundation with multilingual structure, legal clarity, payout messaging, and a clean prop-firm SaaS interface.',
+        'title' => 'Become a Funded Trader',
+        'description' => 'Prove your strategy. Get funded. Scale your performance.',
         'primary_cta' => 'Start Challenge',
         'secondary_cta' => 'Open Dashboard Preview',
         'days' => 'days',

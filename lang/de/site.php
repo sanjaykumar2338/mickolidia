@@ -34,8 +34,8 @@ return [
 
     'home' => [
         'eyebrow' => 'Wolforix Prop-Evaluation',
-        'title' => 'Dunkle, hochwertige Challenge-Infrastruktur für disziplinierte Trader.',
-        'description' => 'Meilenstein 1 schafft die öffentliche Präsenz und das Dashboard-Fundament von Wolforix mit mehrsprachiger Struktur, rechtlicher Klarheit, Auszahlungs-Kommunikation und einer sauberen Prop-Firm-SaaS-Oberfläche.',
+        'title' => 'Werde ein finanzierter Trader',
+        'description' => 'Beweise deine Strategie. Lass dich finanzieren. Skaliere deine Performance.',
         'primary_cta' => 'Challenge starten',
         'secondary_cta' => 'Dashboard-Vorschau öffnen',
         'days' => 'Tage',

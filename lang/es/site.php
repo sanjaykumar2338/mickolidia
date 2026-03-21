@@ -34,8 +34,8 @@ return [
 
     'home' => [
         'eyebrow' => 'Evaluación Prop de Wolforix',
-        'title' => 'Infraestructura de challenge oscura y premium para traders disciplinados.',
-        'description' => 'El hito 1 establece la presencia pública y la base del dashboard de Wolforix con estructura multilingüe, claridad legal, comunicación de payouts y una interfaz SaaS limpia para prop firms.',
+        'title' => 'Conviértete en un trader financiado',
+        'description' => 'Demuestra tu estrategia. Consigue financiación. Escala tu rendimiento.',
         'primary_cta' => 'Iniciar Challenge',
         'secondary_cta' => 'Abrir vista previa del dashboard',
         'days' => 'días',
