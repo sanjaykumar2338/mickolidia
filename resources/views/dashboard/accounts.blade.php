@@ -44,10 +44,17 @@
             <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.home.plans.eyebrow') }}</p>
             <div class="mt-6 grid gap-4 xl:grid-cols-4 md:grid-cols-2">
                 @foreach (config('wolforix.challenge_plans') as $plan)
+                    @php
+                        $currencyPrefix = match ($plan['currency']) {
+                            'USD' => '$',
+                            'EUR' => '€',
+                            default => $plan['currency'].' ',
+                        };
+                    @endphp
                     <div class="rounded-3xl border border-white/8 bg-white/3 p-5">
                         <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $plan['name'] }}</p>
-                        <p class="mt-3 text-3xl font-semibold text-white">€{{ number_format($plan['account_size']) }}</p>
-                        <p class="mt-4 text-sm text-slate-400">{{ __('site.home.plans.entry_fee') }} €{{ number_format($plan['entry_fee'], 0) }}</p>
+                        <p class="mt-3 text-3xl font-semibold text-white">{{ $currencyPrefix }}{{ number_format($plan['account_size']) }}</p>
+                        <p class="mt-4 text-sm text-slate-400">{{ __('site.home.plans.entry_fee') }} {{ $currencyPrefix }}{{ number_format($plan['entry_fee'], 0) }}</p>
                     </div>
                 @endforeach
             </div>

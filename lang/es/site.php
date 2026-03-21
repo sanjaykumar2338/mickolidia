@@ -57,23 +57,11 @@ return [
         ],
         'image_caption' => 'Integración de branding',
         'image_copy' => 'Las piezas gráficas proporcionadas por el cliente definen la identidad dorada mientras la plataforma se mantiene oscura, sobria y enfocada en SaaS.',
-        'metrics' => [
-            [
-                'label' => 'Capital hasta',
-                'value' => '€100.000',
-            ],
-            [
-                'label' => 'Participación en beneficios',
-                'value' => '80 %',
-            ],
-            [
-                'label' => 'Primer retiro',
-                'value' => '21 días',
-            ],
-            [
-                'label' => 'Días mínimos de trading',
-                'value' => '3',
-            ],
+        'feature_cards' => [
+            'Hasta 85 % de profit split',
+            'Hasta $100K de capital simulado',
+            'Payouts rápidos y confiables',
+            'Sin límites de tiempo - Fase de evaluación',
         ],
         'challenge_selector' => [
             'type_label' => 'Tipo de challenge',

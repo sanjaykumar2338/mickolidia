@@ -104,14 +104,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const planFirstWithdrawal = challengeSelector.querySelector('[data-plan-first-withdrawal]');
             const planMaxDays = challengeSelector.querySelector('[data-plan-max-days]');
 
-            const formatCurrency = (amount, currency = 'EUR') => {
+            const formatCurrency = (amount, currency = 'USD') => {
                 const normalized = Number(amount);
 
-                if (currency === 'EUR') {
-                    return `€${normalized.toLocaleString()}`;
+                if (!Number.isFinite(normalized)) {
+                    return '';
                 }
 
-                return `${currency} ${normalized.toLocaleString()}`;
+                try {
+                    return new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency,
+                        maximumFractionDigits: 0,
+                    }).format(normalized);
+                } catch (error) {
+                    return `${currency} ${normalized.toLocaleString('en-US')}`;
+                }
             };
 
             const formatSize = (amount) => `${Number(amount) / 1000}K`;

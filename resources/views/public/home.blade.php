@@ -6,6 +6,13 @@
     $initialPlan = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? $challengeCatalog[$defaultChallengeType]['plans'][(int) $defaultChallengeSize]
         : null;
+    $initialPricePrefix = $initialPlan !== null
+        ? match ($initialPlan['currency']) {
+            'USD' => '$',
+            'EUR' => '€',
+            default => $initialPlan['currency'].' ',
+        }
+        : '';
 @endphp
 
 @section('content')
@@ -69,11 +76,13 @@
         </div>
 
         <div class="mx-auto mt-14 grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
-            @foreach (trans('site.home.metrics') as $metric)
-                <div class="surface-card rounded-3xl p-5">
-                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ $metric['label'] }}</p>
-                    <p class="mt-4 text-3xl font-semibold text-white">{{ $metric['value'] }}</p>
-                </div>
+            @foreach (trans('site.home.feature_cards') as $card)
+                <article class="surface-panel rounded-[2rem] p-6">
+                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-sm font-semibold text-amber-200">
+                        {{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}
+                    </span>
+                    <p class="mt-5 max-w-xs text-xl font-semibold leading-8 text-white">{{ $card }}</p>
+                </article>
             @endforeach
         </div>
     </section>
@@ -155,7 +164,7 @@
                                     <h3 data-plan-title class="mt-2 text-3xl font-semibold text-white sm:text-4xl">
                                         {{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.label') }} / {{ (int) ($initialPlan['account_size'] / 1000) }}K
                                     </h3>
-                                    <p data-plan-price class="mt-4 text-4xl font-semibold text-white">€{{ number_format($initialPlan['entry_fee'], 0) }}</p>
+                                    <p data-plan-price class="mt-4 text-4xl font-semibold text-white">{{ $initialPricePrefix }}{{ number_format($initialPlan['entry_fee'], 0) }}</p>
                                     <p class="mt-2 text-sm text-slate-400">{{ __('site.home.challenge_selector.entry_fee') }}</p>
                                 </div>
 

@@ -57,23 +57,11 @@ return [
         ],
         'image_caption' => 'Branding integration',
         'image_copy' => 'The supplied client artwork drives the gold identity while the platform UI stays dark, restrained, and SaaS-focused.',
-        'metrics' => [
-            [
-                'label' => 'Capital up to',
-                'value' => '€100,000',
-            ],
-            [
-                'label' => 'Profit share',
-                'value' => '80%',
-            ],
-            [
-                'label' => 'First withdrawal',
-                'value' => '21 days',
-            ],
-            [
-                'label' => 'Minimum trading days',
-                'value' => '3',
-            ],
+        'feature_cards' => [
+            'Up to 85% Profit Split',
+            'Up to $100K Simulated Capital',
+            'Fast & Reliable Payouts',
+            'No Time Limits - Evaluation Phase',
         ],
         'challenge_selector' => [
             'type_label' => 'Challenge type',

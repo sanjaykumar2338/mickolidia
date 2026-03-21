@@ -57,23 +57,11 @@ return [
         ],
         'image_caption' => 'Branding-Integration',
         'image_copy' => 'Die gelieferten Kunden-Grafiken bestimmen die goldene Markenidentität, während die Plattform dunkel, zurückhaltend und SaaS-orientiert bleibt.',
-        'metrics' => [
-            [
-                'label' => 'Kapital bis zu',
-                'value' => '€100.000',
-            ],
-            [
-                'label' => 'Gewinnbeteiligung',
-                'value' => '80 %',
-            ],
-            [
-                'label' => 'Erste Auszahlung',
-                'value' => '21 Tage',
-            ],
-            [
-                'label' => 'Mindesthandelstage',
-                'value' => '3',
-            ],
+        'feature_cards' => [
+            'Bis zu 85 % Gewinnbeteiligung',
+            'Bis zu $100K simuliertes Kapital',
+            'Schnelle und zuverlässige Auszahlungen',
+            'Keine Zeitlimits - Evaluationsphase',
         ],
         'challenge_selector' => [
             'type_label' => 'Challenge-Typ',
