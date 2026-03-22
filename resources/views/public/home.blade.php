@@ -6,13 +6,24 @@
     $initialPlan = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? $challengeCatalog[$defaultChallengeType]['plans'][(int) $defaultChallengeSize]
         : null;
-    $initialPricePrefix = $initialPlan !== null
-        ? match ($initialPlan['currency']) {
-            'USD' => '$',
-            'EUR' => '€',
-            default => $initialPlan['currency'].' ',
-        }
-        : '';
+    $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
+        return match ($currency) {
+            'USD' => '$'.number_format($amount, 0),
+            'EUR' => '€'.number_format($amount, 0),
+            default => $currency.' '.number_format($amount, 0),
+        };
+    };
+    $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $initialPlan['currency']) : '';
+    $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $initialPlan['currency']) : '';
+    $challengeUi = [
+        'unlimited' => __('site.home.challenge_selector.unlimited'),
+        'discount_badge' => __('site.home.challenge_selector.discount_badge'),
+        'discount_urgency' => __('site.home.challenge_selector.discount_urgency'),
+        'phase_titles' => trans('site.home.challenge_selector.phase_titles'),
+        'metrics' => trans('site.home.challenge_selector.metrics'),
+        'value_templates' => trans('site.home.challenge_selector.value_templates'),
+        'consistency_required' => __('site.home.challenge_selector.consistency_required'),
+    ];
 @endphp
 
 @section('content')
@@ -110,6 +121,7 @@
                     class="mt-10"
                 >
                     <script type="application/json" data-challenge-catalog>@json($challengeCatalog)</script>
+                    <script type="application/json" data-challenge-ui>@json($challengeUi)</script>
 
                     <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
                         <div class="surface-panel rounded-[2rem] p-6">
@@ -121,6 +133,8 @@
                                         data-challenge-type="{{ $challengeTypeKey }}"
                                         data-label="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}"
                                         data-description="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.description') }}"
+                                        data-note-title="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_title') }}"
+                                        data-note-body="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_body') }}"
                                         class="challenge-type-button rounded-[1.8rem] border border-white/8 bg-white/3 p-5 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
                                     >
                                         <span class="block text-lg font-semibold text-white">{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}</span>
@@ -164,8 +178,22 @@
                                     <h3 data-plan-title class="mt-2 text-3xl font-semibold text-white sm:text-4xl">
                                         {{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.label') }} / {{ (int) ($initialPlan['account_size'] / 1000) }}K
                                     </h3>
-                                    <p data-plan-price class="mt-4 text-4xl font-semibold text-white">{{ $initialPricePrefix }}{{ number_format($initialPlan['entry_fee'], 0) }}</p>
-                                    <p class="mt-2 text-sm text-slate-400">{{ __('site.home.challenge_selector.entry_fee') }}</p>
+                                    <div class="mt-5 flex flex-wrap items-center gap-3">
+                                        <span data-plan-discount-badge class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">
+                                            {{ __('site.home.challenge_selector.discount_badge') }}
+                                        </span>
+                                        <span class="text-xs font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.current_price') }}</span>
+                                    </div>
+                                    <p data-plan-price class="mt-4 text-4xl font-semibold text-white">{{ $initialPrice }}</p>
+                                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                                        <span data-plan-original-wrap class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}rounded-full border border-white/8 bg-white/3 px-4 py-2 text-sm text-slate-400">
+                                            {{ __('site.home.challenge_selector.original_price') }}
+                                            <span data-plan-original-price class="ml-2 font-semibold line-through">{{ $initialListPrice }}</span>
+                                        </span>
+                                        <span data-plan-discount-urgency class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}text-sm font-medium text-amber-100">
+                                            {{ __('site.home.challenge_selector.discount_urgency') }}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <a href="#checkout" class="primary-cta rounded-full px-6 py-3 text-sm font-semibold">
@@ -173,36 +201,77 @@
                                 </a>
                             </div>
 
-                            <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</p>
-                                    <p data-plan-profit-share class="mt-3 text-2xl font-semibold text-white">{{ number_format($initialPlan['profit_share'], 0) }}%</p>
-                                </div>
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.daily_loss') }}</p>
-                                    <p data-plan-daily-loss class="mt-3 text-2xl font-semibold text-white">{{ number_format($initialPlan['daily_loss_limit'], 0) }}%</p>
-                                </div>
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.total_loss') }}</p>
-                                    <p data-plan-total-loss class="mt-3 text-2xl font-semibold text-white">{{ number_format($initialPlan['max_loss_limit'], 0) }}%</p>
-                                </div>
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.minimum_days') }}</p>
-                                    <p data-plan-minimum-days class="mt-3 text-2xl font-semibold text-white">{{ $initialPlan['minimum_trading_days'] }}</p>
-                                </div>
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</p>
-                                    <p data-plan-first-withdrawal class="mt-3 text-2xl font-semibold text-white">{{ $initialPlan['first_payout_days'] }} {{ __('site.home.days') }}</p>
-                                </div>
-                                <div class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</p>
-                                    <p data-plan-max-days class="mt-3 text-2xl font-semibold text-white">{{ __('site.home.challenge_selector.unlimited') }}</p>
-                                </div>
+                            <div data-plan-detail-groups class="mt-8 grid gap-4 xl:grid-cols-3">
+                                @foreach ($initialPlan['phases'] as $phase)
+                                    <section class="surface-card rounded-[1.6rem] p-5">
+                                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.'.$phase['key']) }}</p>
+                                        <dl class="mt-4 space-y-3 text-sm">
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_target') }}</dt>
+                                                <dd class="font-semibold text-white">{{ $phase['profit_target'] }}%</dd>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.daily_loss') }}</dt>
+                                                <dd class="font-semibold text-white">{{ $phase['daily_loss_limit'] }}%</dd>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.total_loss') }}</dt>
+                                                <dd class="font-semibold text-white">{{ $phase['max_loss_limit'] }}%</dd>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.minimum_days') }}</dt>
+                                                <dd class="font-semibold text-white">{{ $phase['minimum_trading_days'] }}</dd>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</dt>
+                                                <dd class="font-semibold text-white">{{ $phase['maximum_trading_days'] === null ? __('site.home.challenge_selector.unlimited') : $phase['maximum_trading_days'] }}</dd>
+                                            </div>
+                                            @if ($phase['leverage'])
+                                                <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                    <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.leverage') }}</dt>
+                                                    <dd class="font-semibold text-white">{{ $phase['leverage'] }}</dd>
+                                                </div>
+                                            @endif
+                                        </dl>
+                                    </section>
+                                @endforeach
+
+                                <section class="surface-card rounded-[1.6rem] p-5">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.funded') }}</p>
+                                    <dl class="mt-4 space-y-3 text-sm">
+                                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                            <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
+                                            <dd class="font-semibold text-white">{{ $initialPlan['funded']['profit_split'] }}%</dd>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                            <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</dt>
+                                            <dd class="font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['payout_cycle_days'], __('site.home.challenge_selector.value_templates.days')) }}</dd>
+                                        </div>
+                                        @if ($initialPlan['funded']['first_withdrawal_days'])
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
+                                                <dd class="font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['first_withdrawal_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($initialPlan['funded']['scaling_capital_percent'] && $initialPlan['funded']['scaling_interval_months'])
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.scaling') }}</dt>
+                                                <dd class="max-w-[11rem] text-right font-semibold text-white">{{ str_replace([':percent', ':months'], [(string) $initialPlan['funded']['scaling_capital_percent'], (string) $initialPlan['funded']['scaling_interval_months']], __('site.home.challenge_selector.value_templates.scaling')) }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($initialPlan['funded']['consistency_rule_required'])
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.consistency_rule') }}</dt>
+                                                <dd class="font-semibold text-white">{{ __('site.home.challenge_selector.consistency_required') }}</dd>
+                                            </div>
+                                        @endif
+                                    </dl>
+                                </section>
                             </div>
 
                             <div class="mt-8 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 p-5">
-                                <p class="text-sm font-semibold text-amber-50">{{ __('site.home.challenge_selector.profit_share_note') }}</p>
-                                <p class="mt-3 text-sm leading-7 text-slate-200">{{ __('site.home.challenge_selector.payout_cycle_note') }}</p>
+                                <p data-plan-note-title class="text-sm font-semibold text-amber-50">{{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.note_title') }}</p>
+                                <p data-plan-note-body class="mt-3 text-sm leading-7 text-slate-200">{{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.note_body') }}</p>
                                 <div class="mt-4 flex flex-wrap gap-3">
                                     <a href="{{ route('payout-policy') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                                         {{ __('site.home.challenge_selector.review_policy') }}

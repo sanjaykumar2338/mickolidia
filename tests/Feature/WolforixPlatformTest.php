@@ -31,9 +31,14 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('2-Step Challenge')
             ->assertSee('5K')
             ->assertSee('100K')
-            ->assertSee('Up to 85% Profit Split')
+            ->assertSee('80% Profit Split')
             ->assertSee('$100K Simulated Capital')
-            ->assertSee('$59')
+            ->assertSee('Single Phase')
+            ->assertSee('Funded Account')
+            ->assertSee('20% OFF - Limited Launch Offer')
+            ->assertSee('Launch Discount - Limited Time Only')
+            ->assertSee('$49')
+            ->assertSee('$39')
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
             ->assertSee('Street address')
@@ -103,6 +108,13 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('payout-policy'))
             ->assertOk()
-            ->assertSee('Payouts are processed in bi-weekly cycles with a maximum limit per cycle.');
+            ->assertSee('Payouts are processed every 14 days with a maximum limit per cycle.');
+    }
+
+    public function test_company_information_contains_the_updated_address(): void
+    {
+        $this->get(route('company-info'))
+            ->assertOk()
+            ->assertSee('Suite RA01, 195-197 Wood Street, London, E17 3NU');
     }
 }

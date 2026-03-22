@@ -18,174 +18,130 @@ $supportedLocales = [
     ],
 ];
 
-$challengeCatalog = [
+$launchDiscount = [
+    'enabled' => true,
+    'type' => 'percentage',
+    'percent' => 20,
+];
+
+$challengeModels = [
     'one_step' => [
         'steps' => 1,
-        'plans' => [
-            5000 => [
-                'slug' => 'one-step-5000',
-                'name' => '1-Step 5K',
-                'account_size' => 5000,
-                'currency' => 'USD',
-                'entry_fee' => 59,
+        'pricing' => [
+            5000 => 49,
+            10000 => 99,
+            25000 => 199,
+            50000 => 349,
+            100000 => 599,
+        ],
+        'phases' => [
+            [
+                'key' => 'single_phase',
                 'profit_target' => 10,
                 'daily_loss_limit' => 4,
-                'max_loss_limit' => 6,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
+                'max_loss_limit' => 8,
                 'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
                 'maximum_trading_days' => null,
+                'leverage' => null,
             ],
-            10000 => [
-                'slug' => 'one-step-10000',
-                'name' => '1-Step 10K',
-                'account_size' => 10000,
-                'currency' => 'USD',
-                'entry_fee' => 99,
-                'profit_target' => 10,
-                'daily_loss_limit' => 4,
-                'max_loss_limit' => 6,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
-            25000 => [
-                'slug' => 'one-step-25000',
-                'name' => '1-Step 25K',
-                'account_size' => 25000,
-                'currency' => 'USD',
-                'entry_fee' => 189,
-                'profit_target' => 10,
-                'daily_loss_limit' => 4,
-                'max_loss_limit' => 6,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
-            50000 => [
-                'slug' => 'one-step-50000',
-                'name' => '1-Step 50K',
-                'account_size' => 50000,
-                'currency' => 'USD',
-                'entry_fee' => 329,
-                'profit_target' => 10,
-                'daily_loss_limit' => 4,
-                'max_loss_limit' => 6,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
-            100000 => [
-                'slug' => 'one-step-100000',
-                'name' => '1-Step 100K',
-                'account_size' => 100000,
-                'currency' => 'USD',
-                'entry_fee' => 549,
-                'profit_target' => 10,
-                'daily_loss_limit' => 4,
-                'max_loss_limit' => 6,
-                'profit_share' => 85,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
+        ],
+        'funded' => [
+            'profit_split' => 80,
+            'payout_cycle_days' => 14,
+            'first_withdrawal_days' => null,
+            'scaling_capital_percent' => null,
+            'scaling_interval_months' => null,
+            'consistency_rule_required' => true,
         ],
     ],
     'two_step' => [
         'steps' => 2,
-        'plans' => [
-            5000 => [
-                'slug' => 'two-step-5000',
-                'name' => '2-Step 5K',
-                'account_size' => 5000,
-                'currency' => 'USD',
-                'entry_fee' => 49,
-                'profit_target' => 8,
+        'pricing' => [
+            5000 => 39,
+            10000 => 79,
+            25000 => 169,
+            50000 => 289,
+            100000 => 489,
+        ],
+        'phases' => [
+            [
+                'key' => 'phase_1',
+                'profit_target' => 10,
                 'daily_loss_limit' => 5,
                 'max_loss_limit' => 10,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
                 'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
                 'maximum_trading_days' => null,
+                'leverage' => '1:100',
             ],
-            10000 => [
-                'slug' => 'two-step-10000',
-                'name' => '2-Step 10K',
-                'account_size' => 10000,
-                'currency' => 'USD',
-                'entry_fee' => 79,
-                'profit_target' => 8,
+            [
+                'key' => 'phase_2',
+                'profit_target' => 5,
                 'daily_loss_limit' => 5,
                 'max_loss_limit' => 10,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
                 'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
                 'maximum_trading_days' => null,
+                'leverage' => null,
             ],
-            25000 => [
-                'slug' => 'two-step-25000',
-                'name' => '2-Step 25K',
-                'account_size' => 25000,
-                'currency' => 'USD',
-                'entry_fee' => 149,
-                'profit_target' => 8,
-                'daily_loss_limit' => 5,
-                'max_loss_limit' => 10,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
-            50000 => [
-                'slug' => 'two-step-50000',
-                'name' => '2-Step 50K',
-                'account_size' => 50000,
-                'currency' => 'USD',
-                'entry_fee' => 269,
-                'profit_target' => 8,
-                'daily_loss_limit' => 5,
-                'max_loss_limit' => 10,
-                'profit_share' => 80,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
-            100000 => [
-                'slug' => 'two-step-100000',
-                'name' => '2-Step 100K',
-                'account_size' => 100000,
-                'currency' => 'USD',
-                'entry_fee' => 449,
-                'profit_target' => 8,
-                'daily_loss_limit' => 5,
-                'max_loss_limit' => 10,
-                'profit_share' => 85,
-                'first_payout_days' => 21,
-                'minimum_trading_days' => 3,
-                'payout_cycle_days' => 14,
-                'maximum_trading_days' => null,
-            ],
+        ],
+        'funded' => [
+            'profit_split' => 80,
+            'payout_cycle_days' => 14,
+            'first_withdrawal_days' => 14,
+            'scaling_capital_percent' => 25,
+            'scaling_interval_months' => 3,
+            'consistency_rule_required' => false,
         ],
     ],
 ];
 
+$challengeCatalog = [];
+
 $challengeSizes = [];
 $challengePlans = [];
 
-foreach ($challengeCatalog as $challengeType => $challengeTypeData) {
-    foreach ($challengeTypeData['plans'] as $size => $plan) {
+foreach ($challengeModels as $challengeType => $challengeTypeData) {
+    $challengeCatalog[$challengeType] = [
+        'steps' => $challengeTypeData['steps'],
+        'phases' => array_values($challengeTypeData['phases']),
+        'funded' => $challengeTypeData['funded'],
+        'plans' => [],
+    ];
+
+    foreach ($challengeTypeData['pricing'] as $size => $listPrice) {
+        $discountedPrice = $launchDiscount['enabled']
+            ? (int) round($listPrice * ((100 - $launchDiscount['percent']) / 100))
+            : $listPrice;
+
+        $firstPhase = $challengeTypeData['phases'][0];
+        $plan = [
+            'slug' => str_replace('_', '-', $challengeType).'-'.$size,
+            'name' => $challengeTypeData['steps'].'-Step '.((int) ($size / 1000)).'K',
+            'account_size' => $size,
+            'currency' => 'USD',
+            'list_price' => $listPrice,
+            'discounted_price' => $discountedPrice,
+            'entry_fee' => $discountedPrice,
+            'discount' => [
+                'enabled' => $launchDiscount['enabled'],
+                'type' => $launchDiscount['type'],
+                'percent' => $launchDiscount['percent'],
+                'amount' => $launchDiscount['enabled'] ? $listPrice - $discountedPrice : 0,
+            ],
+            'steps' => $challengeTypeData['steps'],
+            'phases' => array_values($challengeTypeData['phases']),
+            'funded' => $challengeTypeData['funded'],
+            'profit_target' => $firstPhase['profit_target'],
+            'daily_loss_limit' => $firstPhase['daily_loss_limit'],
+            'max_loss_limit' => $firstPhase['max_loss_limit'],
+            'profit_share' => $challengeTypeData['funded']['profit_split'],
+            'first_payout_days' => $challengeTypeData['funded']['first_withdrawal_days'] ?? $challengeTypeData['funded']['payout_cycle_days'],
+            'minimum_trading_days' => $firstPhase['minimum_trading_days'],
+            'payout_cycle_days' => $challengeTypeData['funded']['payout_cycle_days'],
+            'maximum_trading_days' => $firstPhase['maximum_trading_days'],
+            'leverage' => $firstPhase['leverage'],
+        ];
+
+        $challengeCatalog[$challengeType]['plans'][$size] = $plan;
         $challengeSizes[(string) $size] = (int) $size;
         $challengePlans[] = array_merge($plan, [
             'challenge_type' => $challengeType,
@@ -289,6 +245,10 @@ return [
             'route_name' => 'company-info',
         ],
     ],
+
+    'launch_discount' => $launchDiscount,
+
+    'challenge_models' => $challengeModels,
 
     'challenge_catalog' => $challengeCatalog,
 

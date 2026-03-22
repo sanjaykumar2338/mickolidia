@@ -56,24 +56,36 @@
                     <dl class="mt-6 space-y-3 text-sm">
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.target') }}</dt>
-                            <dd class="font-semibold text-white">8%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['profit_target'] }}%</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.daily_loss') }}</dt>
-                            <dd class="font-semibold text-white">5%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['daily_loss_limit'] }}%</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.max_loss') }}</dt>
-                            <dd class="font-semibold text-white">10%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['max_loss_limit'] }}%</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.min_days') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryAccount['minimum_trading_days'] }}</dd>
+                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['minimum_trading_days'] }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.cycle') }}</dt>
-                            <dd class="font-semibold text-white">14 {{ __('site.home.days') }}</dd>
+                            <dd class="font-semibold text-white">{{ $primaryPlan['funded']['payout_cycle_days'] }} {{ __('site.home.days') }}</dd>
                         </div>
+                        @if ($primaryPlan['phases'][0]['leverage'])
+                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.leverage') }}</dt>
+                                <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['leverage'] }}</dd>
+                            </div>
+                        @endif
+                        @if ($primaryPlan['funded']['first_withdrawal_days'])
+                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
+                                <dd class="font-semibold text-white">{{ $primaryPlan['funded']['first_withdrawal_days'] }} {{ __('site.home.days') }}</dd>
+                            </div>
+                        @endif
                     </dl>
                 </div>
 

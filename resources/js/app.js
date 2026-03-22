@@ -79,12 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (challengeSelector instanceof HTMLElement) {
         const catalogScript = challengeSelector.querySelector('[data-challenge-catalog]');
+        const uiScript = challengeSelector.querySelector('[data-challenge-ui]');
         const typeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-type]'));
         const sizeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-size]'));
         const checkoutSelect = document.querySelector('[data-checkout-plan-select]');
 
         if (catalogScript instanceof HTMLScriptElement) {
             const catalog = JSON.parse(catalogScript.textContent ?? '{}');
+            const ui = uiScript instanceof HTMLScriptElement ? JSON.parse(uiScript.textContent ?? '{}') : {};
             let activeType = challengeSelector.dataset.defaultType ?? Object.keys(catalog)[0];
             let activeSize = challengeSelector.dataset.defaultSize ?? Object.keys(catalog[activeType]?.plans ?? {})[0];
 
@@ -96,13 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const planBadge = challengeSelector.querySelector('[data-challenge-badge]');
             const planTitle = challengeSelector.querySelector('[data-plan-title]');
             const planPrice = challengeSelector.querySelector('[data-plan-price]');
+            const planOriginalWrap = challengeSelector.querySelector('[data-plan-original-wrap]');
+            const planOriginalPrice = challengeSelector.querySelector('[data-plan-original-price]');
+            const planDiscountBadge = challengeSelector.querySelector('[data-plan-discount-badge]');
+            const planDiscountUrgency = challengeSelector.querySelector('[data-plan-discount-urgency]');
             const description = challengeSelector.querySelector('[data-challenge-description-text]');
-            const planProfitShare = challengeSelector.querySelector('[data-plan-profit-share]');
-            const planDailyLoss = challengeSelector.querySelector('[data-plan-daily-loss]');
-            const planTotalLoss = challengeSelector.querySelector('[data-plan-total-loss]');
-            const planMinimumDays = challengeSelector.querySelector('[data-plan-minimum-days]');
-            const planFirstWithdrawal = challengeSelector.querySelector('[data-plan-first-withdrawal]');
-            const planMaxDays = challengeSelector.querySelector('[data-plan-max-days]');
+            const detailGroups = challengeSelector.querySelector('[data-plan-detail-groups]');
+            const planNoteTitle = challengeSelector.querySelector('[data-plan-note-title]');
+            const planNoteBody = challengeSelector.querySelector('[data-plan-note-body]');
 
             const formatCurrency = (amount, currency = 'USD') => {
                 const normalized = Number(amount);
@@ -123,6 +126,83 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             const formatSize = (amount) => `${Number(amount) / 1000}K`;
+            const replaceTokens = (template, replacements) => Object.entries(replacements).reduce(
+                (result, [key, value]) => result.replace(`:${key}`, String(value)),
+                template,
+            );
+            const formatDays = (days) => replaceTokens(ui.value_templates?.days ?? ':days days', { days });
+            const formatAfterDays = (days) => replaceTokens(ui.value_templates?.after_days ?? ':days days', { days });
+            const formatScaling = (percent, months) => replaceTokens(
+                ui.value_templates?.scaling ?? '+:percent% capital every :months months if profitable',
+                { percent, months },
+            );
+            const renderMetricRows = (rows) => rows.map(([label, value]) => `
+                <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                    <dt class="text-slate-400">${label}</dt>
+                    <dd class="font-semibold text-white">${value}</dd>
+                </div>
+            `).join('');
+            const renderDetailGroups = (plan) => {
+                if (!(detailGroups instanceof HTMLElement)) {
+                    return;
+                }
+
+                const phaseCards = (plan.phases ?? []).map((phase) => {
+                    const phaseRows = [
+                        [ui.metrics?.profit_target ?? 'Profit target', `${phase.profit_target}%`],
+                        [ui.metrics?.daily_loss ?? 'Max daily loss', `${phase.daily_loss_limit}%`],
+                        [ui.metrics?.total_loss ?? 'Max total loss', `${phase.max_loss_limit}%`],
+                        [ui.metrics?.minimum_days ?? 'Min trading days', String(phase.minimum_trading_days)],
+                        [ui.metrics?.max_trading_days ?? 'Max trading days', phase.maximum_trading_days === null ? (ui.unlimited ?? 'Unlimited') : String(phase.maximum_trading_days)],
+                    ];
+
+                    if (phase.leverage) {
+                        phaseRows.push([ui.metrics?.leverage ?? 'Leverage', phase.leverage]);
+                    }
+
+                    return `
+                        <section class="surface-card rounded-[1.6rem] p-5">
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.[phase.key] ?? phase.key}</p>
+                            <dl class="mt-4 space-y-3 text-sm">
+                                ${renderMetricRows(phaseRows)}
+                            </dl>
+                        </section>
+                    `;
+                }).join('');
+
+                const fundedRows = [
+                    [ui.metrics?.profit_share ?? 'Profit split', `${plan.funded.profit_split}%`],
+                    [ui.metrics?.payout_cycle ?? 'Payout cycle', formatDays(plan.funded.payout_cycle_days)],
+                ];
+
+                if (plan.funded.first_withdrawal_days) {
+                    fundedRows.push([ui.metrics?.first_withdrawal ?? 'First withdrawal', formatAfterDays(plan.funded.first_withdrawal_days)]);
+                }
+
+                if (plan.funded.scaling_capital_percent && plan.funded.scaling_interval_months) {
+                    fundedRows.push([
+                        ui.metrics?.scaling ?? 'Scaling',
+                        formatScaling(plan.funded.scaling_capital_percent, plan.funded.scaling_interval_months),
+                    ]);
+                }
+
+                if (plan.funded.consistency_rule_required) {
+                    fundedRows.push([
+                        ui.metrics?.consistency_rule ?? 'Consistency rule',
+                        ui.consistency_required ?? 'Obligatory',
+                    ]);
+                }
+
+                detailGroups.innerHTML = `
+                    ${phaseCards}
+                    <section class="surface-card rounded-[1.6rem] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.funded ?? 'Funded Account'}</p>
+                        <dl class="mt-4 space-y-3 text-sm">
+                            ${renderMetricRows(fundedRows)}
+                        </dl>
+                    </section>
+                `;
+            };
 
             const updateTypeButtonState = (button, active) => {
                 button.classList.remove(...(active ? typeInactiveClasses : typeActiveClasses));
@@ -168,38 +248,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (planPrice) {
-                    planPrice.textContent = formatCurrency(plan.entry_fee, plan.currency);
+                    planPrice.textContent = formatCurrency(plan.discounted_price ?? plan.entry_fee, plan.currency);
+                }
+
+                if (planOriginalPrice) {
+                    planOriginalPrice.textContent = formatCurrency(plan.list_price ?? plan.entry_fee, plan.currency);
+                }
+
+                if (planOriginalWrap instanceof HTMLElement) {
+                    planOriginalWrap.classList.toggle('hidden', !plan.discount?.enabled);
+                }
+
+                if (planDiscountBadge instanceof HTMLElement) {
+                    planDiscountBadge.classList.toggle('hidden', !plan.discount?.enabled);
+                    planDiscountBadge.textContent = ui.discount_badge ?? planDiscountBadge.textContent ?? '';
+                }
+
+                if (planDiscountUrgency instanceof HTMLElement) {
+                    planDiscountUrgency.classList.toggle('hidden', !plan.discount?.enabled);
+                    planDiscountUrgency.textContent = ui.discount_urgency ?? planDiscountUrgency.textContent ?? '';
                 }
 
                 if (description) {
                     description.textContent = activeTypeDescription;
                 }
 
-                if (planProfitShare) {
-                    planProfitShare.textContent = `${plan.profit_share}%`;
+                if (planNoteTitle) {
+                    planNoteTitle.textContent = activeTypeButton?.dataset.noteTitle ?? '';
                 }
 
-                if (planDailyLoss) {
-                    planDailyLoss.textContent = `${plan.daily_loss_limit}%`;
+                if (planNoteBody) {
+                    planNoteBody.textContent = activeTypeButton?.dataset.noteBody ?? '';
                 }
 
-                if (planTotalLoss) {
-                    planTotalLoss.textContent = `${plan.max_loss_limit}%`;
-                }
-
-                if (planMinimumDays) {
-                    planMinimumDays.textContent = String(plan.minimum_trading_days);
-                }
-
-                if (planFirstWithdrawal) {
-                    planFirstWithdrawal.textContent = `${plan.first_payout_days} ${challengeSelector.dataset.daysLabel ?? 'days'}`;
-                }
-
-                if (planMaxDays) {
-                    planMaxDays.textContent = plan.maximum_trading_days === null
-                        ? challengeSelector.dataset.unlimitedLabel ?? 'Unlimited'
-                        : String(plan.maximum_trading_days);
-                }
+                renderDetailGroups(plan);
 
                 if (checkoutSelect instanceof HTMLSelectElement) {
                     checkoutSelect.value = plan.slug;

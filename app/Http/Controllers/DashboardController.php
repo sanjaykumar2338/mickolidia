@@ -31,9 +31,12 @@ class DashboardController extends Controller
      */
     private function dashboardViewData(): array
     {
+        $primaryPlan = config('wolforix.challenge_catalog.two_step.plans.50000');
+        $secondaryPlan = config('wolforix.challenge_catalog.one_step.plans.25000');
+
         $primaryAccount = [
             'reference' => 'WFX-CT-50021',
-            'plan' => '2-Step 50K',
+            'plan' => $primaryPlan['name'] ?? '2-Step 50K',
             'platform' => 'cTrader',
             'stage' => __('site.dashboard.account.stage'),
             'status' => __('site.dashboard.account.status'),
@@ -55,6 +58,8 @@ class DashboardController extends Controller
 
         return [
             'primaryAccount' => $primaryAccount,
+            'primaryPlan' => $primaryPlan,
+            'secondaryPlan' => $secondaryPlan,
             'summaryCards' => [
                 [
                     'label' => __('site.dashboard.cards.balance'),
@@ -89,19 +94,21 @@ class DashboardController extends Controller
             'accounts' => [
                 [
                     'reference' => $primaryAccount['reference'],
-                    'plan' => $primaryAccount['plan'],
+                    'plan' => $primaryPlan['name'] ?? $primaryAccount['plan'],
                     'status' => $primaryAccount['status'],
                     'stage' => $primaryAccount['stage'],
                     'balance' => $this->formatMoney($primaryAccount['balance']),
                     'progress' => '54%',
+                    'challenge_plan' => $primaryPlan,
                 ],
                 [
                     'reference' => 'WFX-CT-25014',
-                    'plan' => '1-Step 25K',
+                    'plan' => $secondaryPlan['name'] ?? '1-Step 25K',
                     'status' => __('site.dashboard.account.review_status'),
                     'stage' => __('site.dashboard.account.review_stage'),
                     'balance' => $this->formatMoney(26880.00),
                     'progress' => '81%',
+                    'challenge_plan' => $secondaryPlan,
                 ],
             ],
             'payoutSummary' => [

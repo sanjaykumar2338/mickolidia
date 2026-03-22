@@ -54,7 +54,18 @@
                     <div class="rounded-3xl border border-white/8 bg-white/3 p-5">
                         <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $plan['name'] }}</p>
                         <p class="mt-3 text-3xl font-semibold text-white">{{ $currencyPrefix }}{{ number_format($plan['account_size']) }}</p>
-                        <p class="mt-4 text-sm text-slate-400">{{ __('site.home.plans.entry_fee') }} {{ $currencyPrefix }}{{ number_format($plan['entry_fee'], 0) }}</p>
+                        <div class="mt-4 flex flex-wrap items-center gap-2">
+                            @if ($plan['discount']['enabled'])
+                                <span class="gold-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">{{ __('site.home.challenge_selector.discount_badge') }}</span>
+                            @endif
+                            <span class="text-sm font-semibold text-white">{{ __('site.home.challenge_selector.current_price') }} {{ $currencyPrefix }}{{ number_format($plan['entry_fee'], 0) }}</span>
+                        </div>
+                        @if ($plan['discount']['enabled'])
+                            <p class="mt-3 text-sm text-slate-400">
+                                {{ __('site.home.challenge_selector.original_price') }}
+                                <span class="ml-2 font-semibold line-through">{{ $currencyPrefix }}{{ number_format($plan['list_price'], 0) }}</span>
+                            </p>
+                        @endif
                     </div>
                 @endforeach
             </div>
