@@ -74,9 +74,10 @@ class WolforixPlatformTest extends TestCase
 
     public function test_locale_switch_updates_session_and_redirects_back(): void
     {
-        $response = $this->from(route('home'))->post(route('locale.update', 'fr'), [
+        $response = $this->from(route('home'))->get(route('locale.update', [
+            'locale' => 'fr',
             'redirect' => route('home'),
-        ]);
+        ]));
 
         $response->assertRedirect(route('home'));
         $response->assertSessionHas('locale', 'fr');

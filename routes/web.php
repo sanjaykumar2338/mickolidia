@@ -7,7 +7,7 @@ use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\TrialController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
+Route::match(['get', 'post'], '/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
 Route::post('/challenge-checkout', [PublicPageController::class, 'storeChallengeCheckout'])->name('challenge.checkout.store');
 
 Route::view('/login', 'public.login')->name('login');

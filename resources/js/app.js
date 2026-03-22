@@ -85,8 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
             toggle.setAttribute('aria-expanded', 'false');
         };
 
+        menu.addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+
         toggle.addEventListener('click', (event) => {
             event.preventDefault();
+            event.stopPropagation();
 
             const isClosed = menu.classList.contains('hidden');
 
@@ -100,8 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            menu.classList.toggle('hidden', !isClosed);
-            toggle.setAttribute('aria-expanded', String(isClosed));
+            if (isClosed) {
+                menu.classList.remove('hidden');
+                toggle.setAttribute('aria-expanded', 'true');
+            } else {
+                closeMenu();
+            }
         });
 
         document.addEventListener('click', (event) => {
@@ -115,6 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeMenu();
             }
         });
+
+        window.addEventListener('resize', closeMenu);
     });
 
     const challengeSelector = document.querySelector('[data-challenge-selector]');

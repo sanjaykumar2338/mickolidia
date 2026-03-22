@@ -5,7 +5,7 @@
 @php($fallbackLocale = config('wolforix.default_locale', 'en'))
 @php($current = $supportedLocales[$currentLocale] ?? $supportedLocales[$fallbackLocale] ?? reset($supportedLocales))
 
-<div data-locale-switcher {{ $attributes->class(['relative']) }}>
+<div data-locale-switcher {{ $attributes->class(['relative z-[80]']) }}>
     <button
         type="button"
         data-locale-toggle
@@ -22,25 +22,22 @@
         </svg>
     </button>
 
-    <div data-locale-menu class="absolute right-0 z-50 mt-3 hidden w-[18rem] rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+    <div data-locale-menu class="pointer-events-auto absolute right-0 top-full z-[140] mt-3 hidden w-[18rem] rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <p class="px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.locale.menu_title') }}</p>
 
         <div class="mt-1 space-y-1">
             @foreach (config('wolforix.supported_locales') as $code => $locale)
-                <form method="POST" action="{{ route('locale.update', $code) }}">
-                    @csrf
-                    <input type="hidden" name="redirect" value="{{ request()->fullUrl() }}">
-                    <button
-                        type="submit"
-                        class="{{ $currentLocale === $code ? 'border-amber-300/25 bg-amber-400/12 text-white' : 'border-transparent text-slate-300 hover:border-white/8 hover:bg-white/5 hover:text-white' }} flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition"
-                    >
-                        <span class="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-slate-900/80 text-base">{{ $locale['flag'] }}</span>
-                        <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-medium">{{ $locale['native'] }}</span>
-                            <span class="mt-0.5 block text-xs uppercase tracking-[0.22em] text-slate-400">{{ $locale['short'] }}</span>
-                        </span>
-                    </button>
-                </form>
+                <a
+                    href="{{ route('locale.update', ['locale' => $code, 'redirect' => request()->fullUrl()]) }}"
+                    data-locale-link
+                    class="{{ $currentLocale === $code ? 'border-amber-300/25 bg-amber-400/12 text-white' : 'border-transparent text-slate-300 hover:border-white/8 hover:bg-white/5 hover:text-white' }} flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition"
+                >
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-slate-900/80 text-base">{{ $locale['flag'] }}</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm font-medium">{{ $locale['native'] }}</span>
+                        <span class="mt-0.5 block text-xs uppercase tracking-[0.22em] text-slate-400">{{ $locale['short'] }}</span>
+                    </span>
+                </a>
             @endforeach
         </div>
 

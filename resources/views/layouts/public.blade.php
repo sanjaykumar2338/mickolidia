@@ -27,7 +27,7 @@
         </div>
     @endif
 
-    <main class="relative z-10 pb-40 md:pb-32">
+    <main class="relative z-0 pb-40 md:pb-32">
         @yield('content')
     </main>
 

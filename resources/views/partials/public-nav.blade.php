@@ -28,7 +28,7 @@
     ];
 @endphp
 
-<header class="z-30 border-b border-white/5 bg-slate-950/72 backdrop-blur-xl">
+<header class="relative z-50 overflow-visible border-b border-white/5 bg-slate-950/72 backdrop-blur-xl">
     <div class="mx-auto max-w-7xl px-6 py-4 lg:px-8">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
