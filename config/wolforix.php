@@ -1,5 +1,7 @@
 <?php
 
+$stripeProviderClass = \App\Services\Payments\StripePaymentGateway::class;
+
 $supportedLocales = [
     'en' => [
         'native' => 'English',
@@ -27,6 +29,8 @@ $launchDiscount = [
     'enabled' => true,
     'type' => 'percentage',
     'percent' => 20,
+    'badge' => '20% OFF - Limited Launch Offer',
+    'urgency_text' => 'Launch Discount - Limited Time Only',
 ];
 
 $currencies = [
@@ -176,6 +180,26 @@ return [
         'username' => env('ADMIN_USERNAME', 'admin'),
         'password' => env('ADMIN_PASSWORD', 'wolforix-admin'),
         'realm' => env('ADMIN_REALM', 'Wolforix Admin'),
+    ],
+
+    'payments' => [
+        'default_provider' => 'stripe',
+        'providers' => [
+            'stripe' => [
+                'class' => $stripeProviderClass,
+                'enabled' => true,
+                'label' => 'Stripe',
+                'description' => 'Secure card checkout powered by Stripe.',
+                'coming_soon' => false,
+            ],
+            'paypal' => [
+                'class' => null,
+                'enabled' => false,
+                'label' => 'PayPal',
+                'description' => 'PayPal will be connected in a later milestone.',
+                'coming_soon' => true,
+            ],
+        ],
     ],
 
     'client_statuses' => [

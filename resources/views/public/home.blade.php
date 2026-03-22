@@ -6,6 +6,13 @@
     $initialPlan = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? $challengeCatalog[$defaultChallengeType]['plans'][(int) $defaultChallengeSize]
         : null;
+    $defaultCheckoutUrl = $defaultChallengeType !== null && $defaultChallengeSize !== null
+        ? route('checkout.show', [
+            'challenge_type' => $defaultChallengeType,
+            'account_size' => $defaultChallengeSize,
+            'currency' => $defaultCurrency,
+        ])
+        : route('checkout.show');
     $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
         return match ($currency) {
             'USD' => '$'.number_format($amount, 0),
@@ -75,7 +82,12 @@
                 </div>
 
                 <div class="mt-8 flex flex-wrap items-start gap-4">
-                    <a href="#plans" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
+                    <a
+                        href="{{ $defaultCheckoutUrl }}"
+                        data-checkout-cta
+                        data-checkout-base="{{ route('checkout.show') }}"
+                        class="primary-cta rounded-full px-8 py-4 text-base font-semibold"
+                    >
                         {{ __('site.home.primary_cta') }}
                     </a>
                     <div class="flex flex-col items-start">
@@ -256,7 +268,12 @@
                                     </div>
                                 </div>
 
-                                <a href="#checkout" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
+                                <a
+                                    href="{{ $defaultCheckoutUrl }}"
+                                    data-checkout-cta
+                                    data-checkout-base="{{ route('checkout.show') }}"
+                                    class="primary-cta rounded-full px-8 py-4 text-base font-semibold"
+                                >
                                     {{ __('site.home.challenge_selector.start_button') }}
                                 </a>
                             </div>
@@ -387,7 +404,7 @@
         </div>
     </section>
 
-    <section id="checkout" class="px-6 pt-20 lg:px-8">
+    <section class="px-6 pt-20 lg:px-8">
         <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
             <div>
                 <span class="section-label">{{ __('site.checkout.eyebrow') }}</span>
@@ -409,150 +426,55 @@
             </div>
 
             <div class="surface-panel rounded-[2rem] p-6 sm:p-8">
-                @if ($errors->any())
-                    <div class="mb-6 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-100">
-                        <ul class="space-y-2">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
+                <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.current_selection') }}</p>
+                    <h3 data-checkout-plan-title class="mt-4 text-2xl font-semibold text-white">
+                        {{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.label') }} / {{ (int) ($initialPlan['account_size'] / 1000) }}K
+                    </h3>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                        <span data-checkout-plan-price class="text-3xl font-semibold text-white">{{ $initialPrice }}</span>
+                        <span data-checkout-plan-currency class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">{{ $defaultCurrency }}</span>
+                    </div>
+                    <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.checkout.redirect_note') }}</p>
+                </div>
+
+                <div class="mt-5 grid gap-4 md:grid-cols-2">
+                    <div class="surface-card rounded-[1.8rem] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.checkout.client_data_title') }}</p>
+                        <ul class="mt-4 space-y-3 text-sm text-slate-300">
+                            <li>{{ __('site.checkout.full_name') }}</li>
+                            <li>{{ __('site.checkout.email') }}</li>
+                            <li>{{ __('site.checkout.street_address') }}</li>
+                            <li>{{ __('site.checkout.city') }} / {{ __('site.checkout.postal_code') }}</li>
+                            <li>{{ __('site.checkout.country') }}</li>
                         </ul>
                     </div>
-                @endif
 
-                <form method="POST" action="{{ route('challenge.checkout.store') }}" class="space-y-5">
-                    @csrf
-
-                    <div class="grid gap-5 md:grid-cols-2">
-                        <label class="block">
-                            <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.full_name') }}</span>
-                            <input
-                                type="text"
-                                name="full_name"
-                                value="{{ old('full_name') }}"
-                                class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                placeholder="{{ __('site.checkout.full_name') }}"
-                            >
-                        </label>
-
-                        <label class="block">
-                            <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.email') }}</span>
-                            <input
-                                type="email"
-                                name="email"
-                                value="{{ old('email') }}"
-                                class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                placeholder="trader@example.com"
-                            >
-                        </label>
-                    </div>
-
-                    <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.client_data_title') }}</p>
-                        <div class="mt-5 grid gap-5 md:grid-cols-2">
-                            <label class="block md:col-span-2">
-                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.street_address') }}</span>
-                                <input
-                                    type="text"
-                                    name="street_address"
-                                    value="{{ old('street_address') }}"
-                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                    placeholder="{{ __('site.checkout.street_address') }}"
-                                >
-                            </label>
-
-                            <label class="block">
-                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.city') }}</span>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    value="{{ old('city') }}"
-                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                    placeholder="{{ __('site.checkout.city') }}"
-                                >
-                            </label>
-
-                            <label class="block">
-                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.postal_code') }}</span>
-                                <input
-                                    type="text"
-                                    name="postal_code"
-                                    value="{{ old('postal_code') }}"
-                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                    placeholder="{{ __('site.checkout.postal_code') }}"
-                                >
-                            </label>
-
-                            <label class="block md:col-span-2">
-                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.country') }}</span>
-                                <select
-                                    name="country"
-                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition focus:border-amber-400/35"
-                                >
-                                    <option value="">{{ __('site.checkout.select_country') }}</option>
-                                    @foreach ($checkoutCountries as $code => $country)
-                                        <option value="{{ $code }}" @selected(old('country') === $code)>{{ $country }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
+                    <div class="surface-card rounded-[1.8rem] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.checkout.payment_methods_title') }}</p>
+                        <div class="mt-4 space-y-3 text-sm">
+                            <div class="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-emerald-100">
+                                {{ __('site.checkout.buttons.stripe') }}
+                            </div>
+                            <div class="rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-slate-400">
+                                {{ __('site.checkout.buttons.paypal') }}
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="grid gap-5 md:grid-cols-2">
-                        <label class="block">
-                            <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.plan') }}</span>
-                            <select
-                                name="plan"
-                                data-checkout-plan-select
-                                class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition focus:border-amber-400/35"
-                            >
-                                <option value="">{{ __('site.checkout.select_plan') }}</option>
-                                @foreach ($challengeCatalog as $challengeTypeKey => $challengeType)
-                                    <optgroup label="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}">
-                                        @foreach ($challengeType['plans'] as $size => $plan)
-                                            <option value="{{ $plan['slug'] }}" @selected(old('plan', $initialPlan['slug'] ?? null) === $plan['slug'])>
-                                                {{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }} - {{ (int) ($size / 1000) }}K
-                                            </option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
-                            </select>
-                        </label>
+                <div class="mt-5 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 px-4 py-4 text-sm leading-7 text-amber-50">
+                    {{ __('site.checkout.agreement') }}
+                </div>
 
-                        <label class="block">
-                            <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.checkout.platform') }}</span>
-                            <input
-                                type="text"
-                                value="{{ __('site.checkout.platform_value') }}"
-                                readonly
-                                class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-slate-300 outline-none"
-                            >
-                        </label>
-                    </div>
-
-                    <label class="flex items-start gap-3 rounded-2xl border border-amber-400/18 bg-amber-400/10 px-4 py-4">
-                        <input
-                            type="checkbox"
-                            name="accept_terms"
-                            value="1"
-                            @checked(old('accept_terms'))
-                            class="mt-1 h-4 w-4 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300"
-                        >
-                        <span class="text-sm leading-7 text-amber-50">{{ __('site.checkout.agreement') }}</span>
-                    </label>
-
-                    <div class="grid gap-3 md:grid-cols-2">
-                        <button type="submit" class="rounded-full bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300">
-                            {{ __('site.checkout.submit') }}
-                        </button>
-                        <button type="button" disabled class="cursor-not-allowed rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-slate-400">
-                            {{ __('site.checkout.buttons.stripe') }}
-                        </button>
-                    </div>
-
-                    <button type="button" disabled class="w-full cursor-not-allowed rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-slate-400">
-                        {{ __('site.checkout.buttons.paypal') }}
-                    </button>
-                </form>
+                <a
+                    href="{{ $defaultCheckoutUrl }}"
+                    data-checkout-cta
+                    data-checkout-base="{{ route('checkout.show') }}"
+                    class="primary-cta mt-6 inline-flex rounded-full px-8 py-4 text-base font-semibold"
+                >
+                    {{ __('site.checkout.submit') }}
+                </a>
             </div>
         </div>
     </section>

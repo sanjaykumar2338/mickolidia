@@ -24,14 +24,17 @@
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.country') }}</th>
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.plan_selected') }}</th>
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.payment_amount') }}</th>
-                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.status') }}</th>
+                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.payment_provider') }}</th>
+                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.payment_status') }}</th>
+                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.order_date') }}</th>
+                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.account_status') }}</th>
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.metrics') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/6">
                     @forelse ($clients as $client)
                         @php
-                            $statusClass = match (strtolower($client['status'])) {
+                            $statusClass = match (strtolower($client['account_status'])) {
                                 'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
                                 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
                                 default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
@@ -45,9 +48,12 @@
                             <td class="px-6 py-5">{{ $client['country'] }}</td>
                             <td class="px-6 py-5">{{ $client['plan_selected'] }}</td>
                             <td class="px-6 py-5 font-semibold text-white">{{ $client['payment_amount'] }}</td>
+                            <td class="px-6 py-5">{{ $client['payment_provider'] }}</td>
+                            <td class="px-6 py-5">{{ $client['payment_status'] }}</td>
+                            <td class="px-6 py-5">{{ $client['order_date'] }}</td>
                             <td class="px-6 py-5">
                                 <span class="{{ $statusClass }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-                                    {{ $client['status'] }}
+                                    {{ $client['account_status'] }}
                                 </span>
                             </td>
                             <td class="px-6 py-5">
@@ -58,7 +64,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-slate-400">
+                            <td colspan="10" class="px-6 py-10 text-center text-slate-400">
                                 {{ __('site.admin.clients.empty') }}
                             </td>
                         </tr>

@@ -15,6 +15,8 @@ class UserProfile extends Model
         'preferred_language',
         'country',
         'city',
+        'street_address',
+        'postal_code',
         'timezone',
         'phone',
         'kyc_status',

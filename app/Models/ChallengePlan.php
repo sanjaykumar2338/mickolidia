@@ -44,4 +44,14 @@ class ChallengePlan extends Model
     {
         return $this->hasMany(TradingAccount::class);
     }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function challengePurchases(): HasMany
+    {
+        return $this->hasMany(ChallengePurchase::class);
+    }
 }

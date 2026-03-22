@@ -1,14 +1,21 @@
 <?php
 
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TrialController;
 use Illuminate\Support\Facades\Route;
 
 Route::match(['get', 'post'], '/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
-Route::post('/challenge-checkout', [PublicPageController::class, 'storeChallengeCheckout'])->name('challenge.checkout.store');
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
+Route::post('/checkout/order', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::post('/challenge-checkout', [CheckoutController::class, 'store'])->name('challenge.checkout.store');
+Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+Route::post('/payments/stripe/webhook', StripeWebhookController::class)->name('payments.stripe.webhook');
 
 Route::view('/login', 'public.login')->name('login');
 Route::get('/', [PublicPageController::class, 'home'])->name('home');

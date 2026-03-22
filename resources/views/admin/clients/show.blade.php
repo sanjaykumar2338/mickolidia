@@ -4,7 +4,7 @@
 
 @section('content')
     @php
-        $statusClass = match (strtolower($client['status'])) {
+        $statusClass = match (strtolower($client['account_status'])) {
             'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
             'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
             default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
@@ -43,10 +43,22 @@
                     <dd class="font-semibold text-white">{{ $client['payment_amount'] }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
-                    <dt class="text-slate-400">{{ __('site.admin.table.status') }}</dt>
+                    <dt class="text-slate-400">{{ __('site.admin.table.payment_provider') }}</dt>
+                    <dd class="font-semibold text-white">{{ $client['payment_provider'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.admin.table.payment_status') }}</dt>
+                    <dd class="font-semibold text-white">{{ $client['payment_status'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.admin.table.order_date') }}</dt>
+                    <dd class="font-semibold text-white">{{ $client['order_date'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.admin.table.account_status') }}</dt>
                     <dd>
                         <span class="{{ $statusClass }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-                            {{ $client['status'] }}
+                            {{ $client['account_status'] }}
                         </span>
                     </dd>
                 </div>
@@ -91,6 +103,56 @@
                     </dl>
                 </div>
             @endif
+        </section>
+    </div>
+
+    <div class="mt-8 grid gap-5 lg:grid-cols-2">
+        <section class="surface-panel rounded-[2rem] p-6">
+            <h2 class="text-lg font-semibold text-white">{{ __('site.admin.client_show.billing_summary') }}</h2>
+            <dl class="mt-5 space-y-3 text-sm">
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.full_name') }}</dt>
+                    <dd class="font-semibold text-white">{{ $billing['full_name'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.street_address') }}</dt>
+                    <dd class="font-semibold text-white">{{ $billing['street_address'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.city') }}</dt>
+                    <dd class="font-semibold text-white">{{ $billing['city'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.postal_code') }}</dt>
+                    <dd class="font-semibold text-white">{{ $billing['postal_code'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.country') }}</dt>
+                    <dd class="font-semibold text-white">{{ $billing['country'] }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="surface-panel rounded-[2rem] p-6">
+            <h2 class="text-lg font-semibold text-white">{{ __('site.admin.client_show.provider_references') }}</h2>
+            <dl class="mt-5 space-y-3 text-sm">
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">{{ __('site.checkout.success.order_number') }}</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['order_number'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Checkout ID</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['checkout_id'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Payment ID</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['payment_id'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Customer ID</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['customer_id'] }}</dd>
+                </div>
+            </dl>
         </section>
     </div>
 @endsection

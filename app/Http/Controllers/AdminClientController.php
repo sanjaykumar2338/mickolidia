@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -10,7 +11,12 @@ class AdminClientController extends Controller
     public function index(): View
     {
         $clients = User::query()
-            ->with(['profile', 'latestTradingAccount.challengePlan'])
+            ->with([
+                'profile',
+                'latestTradingAccount.challengePlan',
+                'latestOrder.paymentAttempts',
+                'latestChallengePurchase.order',
+            ])
             ->latest()
             ->get()
             ->map(fn (User $user): array => $this->clientTableRow($user));
@@ -22,20 +28,28 @@ class AdminClientController extends Controller
 
     public function show(User $user): View
     {
-        $user->loadMissing(['profile', 'latestTradingAccount.challengePlan']);
+        $user->loadMissing([
+            'profile',
+            'latestTradingAccount.challengePlan',
+            'latestOrder.paymentAttempts',
+            'latestChallengePurchase.order',
+        ]);
 
         $latestAccount = $user->latestTradingAccount;
-        $currentStatus = $this->resolveStatus($user);
+        $latestOrder = $user->latestOrder;
 
         return view('admin.clients.show', [
             'client' => [
                 'id' => $user->id,
                 'full_name' => $user->name,
                 'email' => $user->email,
-                'country' => $user->profile?->country ?? 'N/A',
+                'country' => $this->resolveCountry($user),
                 'plan_selected' => $this->resolvePlanLabel($user),
                 'payment_amount' => $this->resolvePaymentAmount($user),
-                'status' => $currentStatus,
+                'payment_provider' => $this->resolvePaymentProvider($user),
+                'payment_status' => $this->resolvePaymentStatus($user),
+                'order_date' => $this->resolveOrderDate($user),
+                'account_status' => $this->resolveAccountStatus($user),
             ],
             'metrics' => [
                 [
@@ -64,10 +78,25 @@ class AdminClientController extends Controller
                 ],
                 [
                     'label' => __('site.admin.metrics.current_status'),
-                    'value' => $currentStatus,
+                    'value' => $this->resolveAccountStatus($user),
                 ],
             ],
             'latestAccount' => $latestAccount,
+            'billing' => [
+                'full_name' => $latestOrder?->full_name ?? $user->name,
+                'street_address' => $latestOrder?->street_address ?? $user->profile?->street_address ?? 'N/A',
+                'city' => $latestOrder?->city ?? $user->profile?->city ?? 'N/A',
+                'postal_code' => $latestOrder?->postal_code ?? $user->profile?->postal_code ?? 'N/A',
+                'country' => $latestOrder instanceof Order
+                    ? $this->countryName($latestOrder->country)
+                    : $this->resolveCountry($user),
+            ],
+            'providerReferences' => [
+                'order_number' => $latestOrder?->order_number ?? 'N/A',
+                'checkout_id' => $latestOrder?->external_checkout_id ?? 'N/A',
+                'payment_id' => $latestOrder?->external_payment_id ?? 'N/A',
+                'customer_id' => $latestOrder?->external_customer_id ?? 'N/A',
+            ],
         ]);
     }
 
@@ -77,15 +106,38 @@ class AdminClientController extends Controller
             'id' => $user->id,
             'full_name' => $user->name,
             'email' => $user->email,
-            'country' => $user->profile?->country ?? 'N/A',
+            'country' => $this->resolveCountry($user),
             'plan_selected' => $this->resolvePlanLabel($user),
             'payment_amount' => $this->resolvePaymentAmount($user),
-            'status' => $this->resolveStatus($user),
+            'payment_provider' => $this->resolvePaymentProvider($user),
+            'payment_status' => $this->resolvePaymentStatus($user),
+            'order_date' => $this->resolveOrderDate($user),
+            'account_status' => $this->resolveAccountStatus($user),
         ];
     }
 
     private function resolvePlanLabel(User $user): string
     {
+        $purchase = $user->latestChallengePurchase;
+
+        if ($purchase !== null) {
+            return sprintf(
+                '%s / %dK',
+                $purchase->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge',
+                (int) ($purchase->account_size / 1000),
+            );
+        }
+
+        $order = $user->latestOrder;
+
+        if ($order !== null) {
+            return sprintf(
+                '%s / %dK',
+                $order->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge',
+                (int) ($order->account_size / 1000),
+            );
+        }
+
         if ($user->plan_type !== null && $user->account_size !== null) {
             return sprintf('%s / %dK', $user->plan_type, (int) ($user->account_size / 1000));
         }
@@ -101,6 +153,10 @@ class AdminClientController extends Controller
 
     private function resolvePaymentAmount(User $user): string
     {
+        if ($user->latestOrder instanceof Order) {
+            return $this->formatMoney((float) $user->latestOrder->final_price, $user->latestOrder->currency);
+        }
+
         $amount = $user->payment_amount;
 
         if ($amount === null) {
@@ -112,8 +168,34 @@ class AdminClientController extends Controller
             : '$0.00';
     }
 
-    private function resolveStatus(User $user): string
+    private function resolvePaymentProvider(User $user): string
     {
+        return $user->latestOrder?->payment_provider !== null
+            ? ucfirst((string) $user->latestOrder->payment_provider)
+            : 'N/A';
+    }
+
+    private function resolvePaymentStatus(User $user): string
+    {
+        return $user->latestOrder?->payment_status !== null
+            ? ucfirst((string) $user->latestOrder->payment_status)
+            : 'N/A';
+    }
+
+    private function resolveOrderDate(User $user): string
+    {
+        return $user->latestOrder?->created_at?->format('Y-m-d H:i') ?? 'N/A';
+    }
+
+    private function resolveAccountStatus(User $user): string
+    {
+        if ($user->latestChallengePurchase?->account_status !== null) {
+            return str($user->latestChallengePurchase->account_status)
+                ->replace('_', ' ')
+                ->title()
+                ->toString();
+        }
+
         $status = $user->status;
 
         if (($status === null || strtolower((string) $status) === 'active') && $user->latestTradingAccount?->status !== null) {
@@ -125,8 +207,30 @@ class AdminClientController extends Controller
         return ucfirst(strtolower((string) $status));
     }
 
-    private function formatMoney(float $amount): string
+    private function resolveCountry(User $user): string
     {
-        return '$'.number_format($amount, 2);
+        if ($user->profile?->country) {
+            return $user->profile->country;
+        }
+
+        if ($user->latestOrder?->country) {
+            return $this->countryName($user->latestOrder->country);
+        }
+
+        return 'N/A';
+    }
+
+    private function countryName(string $countryCode): string
+    {
+        return config("wolforix.checkout_countries.{$countryCode}", $countryCode);
+    }
+
+    private function formatMoney(float $amount, string $currency = 'USD'): string
+    {
+        return match (strtoupper($currency)) {
+            'EUR' => '€'.number_format($amount, 2),
+            'GBP' => '£'.number_format($amount, 2),
+            default => '$'.number_format($amount, 2),
+        };
     }
 }

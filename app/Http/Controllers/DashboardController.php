@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -123,11 +125,47 @@ class DashboardController extends Controller
                 'language' => __('site.languages.'.app()->getLocale()),
                 'timezone' => 'Europe/Berlin',
             ],
+            'purchasedChallenges' => $this->purchasedChallenges(),
         ];
     }
 
-    private function formatMoney(float $amount): string
+    /**
+     * @return Collection<int, array<string, string>>
+     */
+    private function purchasedChallenges(): Collection
     {
-        return '$'.number_format($amount, 2);
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return collect();
+        }
+
+        $user->loadMissing(['challengePurchases.order']);
+
+        return $user->challengePurchases
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function ($purchase): array {
+                $order = $purchase->order;
+
+                return [
+                    'reference' => $order?->order_number ?? 'N/A',
+                    'plan' => ($purchase->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge').' / '.((int) ($purchase->account_size / 1000)).'K',
+                    'amount' => $this->formatMoney((float) ($order?->final_price ?? 0), $purchase->currency),
+                    'payment_provider' => $order?->payment_provider ? ucfirst($order->payment_provider) : 'N/A',
+                    'payment_status' => $order?->payment_status ? ucfirst($order->payment_status) : 'N/A',
+                    'account_status' => str($purchase->account_status)->replace('_', ' ')->title()->toString(),
+                    'created_at' => $purchase->created_at?->format('M d, Y') ?? 'N/A',
+                ];
+            });
+    }
+
+    private function formatMoney(float $amount, string $currency = 'USD'): string
+    {
+        return match (strtoupper($currency)) {
+            'EUR' => '€'.number_format($amount, 2),
+            'GBP' => '£'.number_format($amount, 2),
+            default => '$'.number_format($amount, 2),
+        };
     }
 }

@@ -86,4 +86,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(PayoutRequest::class);
     }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function challengePurchases(): HasMany
+    {
+        return $this->hasMany(ChallengePurchase::class);
+    }
+
+    public function latestOrder(): HasOne
+    {
+        return $this->hasOne(Order::class)->latestOfMany();
+    }
+
+    public function latestChallengePurchase(): HasOne
+    {
+        return $this->hasOne(ChallengePurchase::class)->latestOfMany();
+    }
 }

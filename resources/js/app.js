@@ -137,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const currencyButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-currency]'));
         const typeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-type]'));
         const sizeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-size]'));
-        const checkoutSelect = document.querySelector('[data-checkout-plan-select]');
+        const checkoutCtas = Array.from(document.querySelectorAll('[data-checkout-cta]'));
+        const checkoutPlanTitle = document.querySelector('[data-checkout-plan-title]');
+        const checkoutPlanPrice = document.querySelector('[data-checkout-plan-price]');
+        const checkoutPlanCurrency = document.querySelector('[data-checkout-plan-currency]');
 
         if (catalogScript instanceof HTMLScriptElement) {
             const catalog = JSON.parse(catalogScript.textContent ?? '{}');
@@ -357,6 +360,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     description.textContent = activeTypeDescription;
                 }
 
+                if (checkoutPlanTitle) {
+                    checkoutPlanTitle.textContent = `${activeTypeLabel} / ${formatSize(plan.account_size)}`;
+                }
+
+                if (checkoutPlanPrice) {
+                    checkoutPlanPrice.textContent = formatCurrency(launchPrice, activeCurrency);
+                }
+
+                if (checkoutPlanCurrency) {
+                    checkoutPlanCurrency.textContent = activeCurrency;
+                }
+
                 if (planNoteTitle) {
                     planNoteTitle.textContent = activeTypeButton?.dataset.noteTitle ?? '';
                 }
@@ -367,9 +382,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 renderDetailGroups(plan);
 
-                if (checkoutSelect instanceof HTMLSelectElement) {
-                    checkoutSelect.value = plan.slug;
-                }
+                checkoutCtas.forEach((link) => {
+                    if (!(link instanceof HTMLAnchorElement)) {
+                        return;
+                    }
+
+                    const base = link.dataset.checkoutBase ?? link.href;
+                    const checkoutUrl = new URL(base, window.location.origin);
+
+                    checkoutUrl.searchParams.set('challenge_type', activeType);
+                    checkoutUrl.searchParams.set('account_size', String(plan.account_size));
+                    checkoutUrl.searchParams.set('currency', activeCurrency);
+
+                    link.href = checkoutUrl.toString();
+                });
 
                 currencyButtons.forEach((button) => {
                     updateToggleState(button, button.dataset.challengeCurrency === activeCurrency, currencyActiveClasses, currencyInactiveClasses);

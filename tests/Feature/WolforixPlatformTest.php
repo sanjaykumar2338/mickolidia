@@ -3,11 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\ChallengePlan;
+use App\Models\ChallengePurchase;
+use App\Models\Order;
+use App\Models\PaymentAttempt;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Pricing\ChallengePricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Fixtures\FakeStripePaymentGateway;
 
 class WolforixPlatformTest extends TestCase
 {
@@ -18,6 +23,7 @@ class WolforixPlatformTest extends TestCase
         foreach ([
             route('login'),
             route('home'),
+            route('checkout.show'),
             route('faq'),
             route('trial.register'),
             route('terms'),
@@ -53,11 +59,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('20% OFF - Limited Offer on all plans')
             ->assertSee('$49')
             ->assertSee('$39')
+            ->assertSee('Secure checkout')
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
             ->assertSee('Login')
-            ->assertSee('Street address')
-            ->assertSee('Country');
+            ->assertSee('Continue to Secure Checkout')
+            ->assertSee('Stripe card checkout is live in this milestone.');
     }
 
     public function test_dashboard_foundation_pages_render_successfully(): void
@@ -94,41 +101,205 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Challenge 1-Step');
     }
 
-    public function test_checkout_requires_the_mandatory_agreement(): void
+    public function test_checkout_page_renders_selected_plan_and_provider_options(): void
     {
-        $response = $this->from(route('home'))->post(route('challenge.checkout.store'), [
-            'full_name' => 'Test Trader',
-            'email' => 'trader@example.com',
-            'plan' => 'two-step-50000',
-        ]);
-
-        $response
-            ->assertRedirect(route('home'))
-            ->assertSessionHasErrors([
-                'street_address',
-                'city',
-                'postal_code',
-                'country',
-            ])
-            ->assertSessionHasErrors('accept_terms');
+        $this->get(route('checkout.show', [
+            'challenge_type' => 'two_step',
+            'account_size' => 50000,
+            'currency' => 'EUR',
+        ]))
+            ->assertOk()
+            ->assertSee('Complete your challenge order')
+            ->assertSee('Stripe')
+            ->assertSee('PayPal')
+            ->assertSee('EUR');
     }
 
-    public function test_checkout_stub_accepts_a_valid_payload(): void
+    public function test_checkout_requires_the_mandatory_agreement(): void
     {
-        $response = $this->from(route('home'))->post(route('challenge.checkout.store'), [
+        $this->useFakeStripeGateway();
+
+        $response = $this->from(route('checkout.show'))->post(route('checkout.store'), [
             'full_name' => 'Test Trader',
             'email' => 'trader@example.com',
             'street_address' => '1 Market Street',
             'city' => 'Berlin',
             'postal_code' => '10115',
             'country' => 'DE',
-            'plan' => 'two-step-50000',
-            'accept_terms' => '1',
+            'challenge_type' => 'two_step',
+            'account_size' => 50000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
         ]);
 
         $response
-            ->assertRedirect(route('home'))
-            ->assertSessionHas('checkout_success');
+            ->assertRedirect(route('checkout.show'))
+            ->assertSessionHasErrors('accept_terms');
+    }
+
+    public function test_checkout_creates_an_order_and_redirects_to_provider(): void
+    {
+        $this->useFakeStripeGateway();
+
+        $plan = app(ChallengePricingService::class)->resolvePlan('two_step', 50000, 'EUR');
+
+        $response = $this->post(route('checkout.store'), [
+            'full_name' => 'Test Trader',
+            'email' => 'trader@example.com',
+            'street_address' => '1 Market Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 50000,
+            'currency' => 'EUR',
+            'payment_provider' => 'stripe',
+            'accept_terms' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $response->assertRedirect('https://stripe.test/checkout/fake-session-'.$order->id);
+
+        $this->assertSame('EUR', $order->currency);
+        $this->assertSame('stripe', $order->payment_provider);
+        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+        $this->assertSame(number_format((float) $plan['discounted_price'], 2, '.', ''), (string) $order->final_price);
+        $this->assertSame('fake-session-'.$order->id, $order->external_checkout_id);
+        $this->assertCount(1, $order->paymentAttempts);
+    }
+
+    public function test_checkout_success_marks_order_paid_and_creates_purchase(): void
+    {
+        $this->useFakeStripeGateway();
+
+        $this->post(route('checkout.store'), [
+            'full_name' => 'Paid Trader',
+            'email' => 'paid@example.com',
+            'street_address' => '2 Trade Street',
+            'city' => 'London',
+            'postal_code' => 'E17 3NU',
+            'country' => 'GB',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'accept_terms' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+            ->assertOk()
+            ->assertSee('Challenge order confirmed')
+            ->assertSee($order->order_number);
+
+        $order->refresh();
+
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame(Order::STATUS_COMPLETED, $order->order_status);
+        $this->assertDatabaseHas('challenge_purchases', [
+            'order_id' => $order->id,
+            'challenge_type' => 'one_step',
+            'account_status' => 'pending_activation',
+        ]);
+    }
+
+    public function test_checkout_cancel_marks_order_canceled_and_preserves_retry(): void
+    {
+        $this->useFakeStripeGateway();
+
+        $this->post(route('checkout.store'), [
+            'full_name' => 'Retry Trader',
+            'email' => 'retry-order@example.com',
+            'street_address' => '3 Retry Lane',
+            'city' => 'Madrid',
+            'postal_code' => '28001',
+            'country' => 'ES',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'GBP',
+            'payment_provider' => 'stripe',
+            'accept_terms' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->get(route('checkout.cancel', ['order' => $order->order_number]))
+            ->assertOk()
+            ->assertSee('Retry Payment');
+
+        $order->refresh();
+
+        $this->assertSame(Order::PAYMENT_CANCELED, $order->payment_status);
+        $this->assertSame(Order::STATUS_CANCELED, $order->order_status);
+        $this->assertDatabaseMissing('challenge_purchases', [
+            'order_id' => $order->id,
+        ]);
+    }
+
+    public function test_stripe_webhook_is_idempotent_and_creates_one_purchase(): void
+    {
+        $this->useFakeStripeGateway();
+
+        $user = User::factory()->create([
+            'email' => 'webhook@example.com',
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => null,
+            'email' => $user->email,
+            'full_name' => 'Webhook Trader',
+            'street_address' => '4 Webhook Street',
+            'city' => 'Paris',
+            'postal_code' => '75001',
+            'country' => 'FR',
+            'challenge_type' => 'two_step',
+            'account_size' => 5000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 39.00,
+            'discount_percent' => 20,
+            'discount_amount' => 8.00,
+            'final_price' => 31.00,
+            'payment_status' => 'pending',
+            'order_status' => 'awaiting_payment',
+            'external_checkout_id' => 'fake-session-999',
+            'external_payment_id' => 'fake-payment-999',
+        ]);
+
+        PaymentAttempt::query()->create([
+            'order_id' => $order->id,
+            'provider' => 'stripe',
+            'provider_session_id' => 'fake-session-999',
+            'provider_payment_id' => 'fake-payment-999',
+            'amount' => 31.00,
+            'currency' => 'USD',
+            'status' => 'pending',
+        ]);
+
+        $payload = [
+            'provider' => 'stripe',
+            'event_id' => 'evt_test_1',
+            'type' => 'checkout.session.completed',
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'external_checkout_id' => 'fake-session-999',
+            'external_payment_id' => 'fake-payment-999',
+            'external_customer_id' => 'fake-customer-999',
+            'amount' => 31.00,
+            'currency' => 'USD',
+            'status' => 'paid',
+            'payload' => ['fake' => true],
+            'source' => 'webhook',
+        ];
+
+        $this->postJson(route('payments.stripe.webhook'), $payload)->assertOk();
+        $this->postJson(route('payments.stripe.webhook'), $payload)->assertOk();
+
+        $this->assertSame(1, ChallengePurchase::query()->where('order_id', $order->id)->count());
+        $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
     }
 
     public function test_payout_policy_contains_the_updated_cycle_wording(): void
@@ -217,6 +388,39 @@ class WolforixPlatformTest extends TestCase
             'trading_days_completed' => 4,
         ]);
 
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'email' => $user->email,
+            'full_name' => $user->name,
+            'street_address' => '5 Billing Street',
+            'city' => 'Madrid',
+            'postal_code' => '28001',
+            'country' => 'ES',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 199,
+            'discount_percent' => 20,
+            'discount_amount' => 40.00,
+            'final_price' => 159.00,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+            'external_checkout_id' => 'cs_admin_25000',
+            'external_payment_id' => 'pi_admin_25000',
+        ]);
+
+        ChallengePurchase::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'account_status' => 'active',
+        ]);
+
         $this->withBasicAuth('admin', 'secret')
             ->get(route('admin.clients.index'))
             ->assertOk()
@@ -224,16 +428,19 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Spain')
             ->assertSee('1-Step Challenge / 25K')
             ->assertSee('$159.00')
+            ->assertSee('Stripe')
+            ->assertSee('Paid')
             ->assertSee('View Metrics');
 
         $this->withBasicAuth('admin', 'secret')
             ->get(route('admin.clients.show', $user))
             ->assertOk()
             ->assertSee('Admin Review Trader')
+            ->assertSee('Billing Summary')
             ->assertSee('Profit')
             ->assertSee('$3,350.00')
             ->assertSee('Current Status')
-            ->assertSee('Completed');
+            ->assertSee('Active');
     }
 
     public function test_trial_registration_creates_a_trial_account_and_dashboard(): void
@@ -313,5 +520,10 @@ class WolforixPlatformTest extends TestCase
                 ->latest('id')
                 ->value('trial_status')
         );
+    }
+
+    private function useFakeStripeGateway(): void
+    {
+        config()->set('wolforix.payments.providers.stripe.class', FakeStripePaymentGateway::class);
     }
 }
