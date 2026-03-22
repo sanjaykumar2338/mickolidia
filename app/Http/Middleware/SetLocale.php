@@ -12,12 +12,16 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         $supportedLocales = array_keys(config('wolforix.supported_locales', []));
-        $locale = $request->session()->get('locale', config('app.locale'));
+        $defaultLocale = config('wolforix.default_locale', config('app.fallback_locale', 'en'));
+        $locale = $request->session()->get('locale')
+            ?? $request->cookie('wolforix_locale')
+            ?? config('app.locale');
 
         if (! in_array($locale, $supportedLocales, true)) {
-            $locale = config('wolforix.default_locale', config('app.fallback_locale', 'en'));
+            $locale = $defaultLocale;
         }
 
+        $request->session()->put('locale', $locale);
         App::setLocale($locale);
 
         return $next($request);

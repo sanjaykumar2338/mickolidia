@@ -11,6 +11,7 @@ return [
         'en' => 'English',
         'de' => 'German',
         'es' => 'Spanish',
+        'fr' => 'French',
     ],
 
     'locale' => [
@@ -38,6 +39,8 @@ return [
         'title' => 'Prove It. Get Funded. Scale Fast.',
         'description' => 'Prove your strategy. Get funded. Scale your performance.',
         'primary_cta' => 'Start Challenge',
+        'free_trial_cta' => 'Free Trial',
+        'free_trial_caption' => 'Practice risk-free under real market conditions.',
         'secondary_cta' => 'Open Dashboard Preview',
         'days' => 'days',
         'badges' => [
@@ -243,6 +246,65 @@ return [
         ],
     ],
 
+    'trial' => [
+        'eyebrow' => 'Free Trial',
+        'register' => [
+            'title' => 'Start Your Free Trial',
+            'description' => 'Register with your email and password to access a demo-only Wolforix trial account with the same displayed execution logic and rule visibility as the main challenge environment.',
+            'what_you_get_title' => 'Included instantly',
+            'balance_line' => 'Demo balance: :amount',
+            'markets_line' => 'Available markets: :markets',
+            'restrictions_line' => 'Demo only. No withdrawals. Not counted as a challenge.',
+            'email' => 'Email',
+            'password' => 'Password',
+            'password_placeholder' => 'Minimum 8 characters',
+            'submit' => 'Create Free Trial Account',
+            'success' => 'Your free trial account is ready.',
+        ],
+        'dashboard' => [
+            'title' => 'Trial Dashboard',
+            'description' => 'Monitor the current state of your free demo account before moving into a paid evaluation.',
+            'banner_title' => 'This is a Trial Account.',
+            'banner_copy' => 'The account uses demo-only conditions and is separated from paid challenges, payouts, and funded-account eligibility.',
+            'ended_title' => 'Your trial has ended.',
+            'ended_copy' => 'This demo account is no longer active. Start a fresh trial to continue practicing under the same displayed rule logic.',
+            'retry_button' => 'Retry Trial',
+            'restrictions_title' => 'Trial Restrictions',
+            'restrictions' => [
+                'No withdrawals',
+                'Not counted as a Challenge',
+                'Demo environment only',
+            ],
+            'markets_title' => 'Available Markets',
+            'rules_title' => 'Displayed Rule Logic',
+            'rule_labels' => [
+                'starting_balance' => 'Starting Balance',
+                'daily_limit' => 'Daily Drawdown Limit',
+                'max_limit' => 'Max Drawdown Limit',
+                'status' => 'Current Status',
+            ],
+            'metrics' => [
+                'balance' => 'Balance',
+                'equity' => 'Equity',
+                'daily_drawdown' => 'Daily Drawdown',
+                'max_drawdown' => 'Max Drawdown',
+                'profit_loss' => 'Profit / Loss',
+            ],
+        ],
+        'milestones' => [
+            'three' => 'You’re performing well.',
+            'five' => 'You’re performing well.',
+        ],
+        'encouragement_subject' => 'Keep going and improve your performance.',
+        'retry' => [
+            'success' => 'A fresh trial account has been created.',
+        ],
+        'statuses' => [
+            'active' => 'Active',
+            'ended' => 'Ended',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Checkout foundation',
         'title' => 'Purchase UI stub with required legal confirmation.',
@@ -318,6 +380,66 @@ return [
                     [
                         'question' => 'What are maximum drawdowns?',
                         'answer' => 'Each account has defined drawdown limits. Exceeding these limits may result in account disqualification from the evaluation program.',
+                    ],
+                    [
+                        'question' => 'Which instruments can I trade and what strategies are allowed?',
+                        'answer_paragraphs' => [
+                            'Wolforix allows discretionary trading, algorithmic trading, and Expert Advisors (EAs), as long as strategies are legitimate, reflect real market conditions, align with sound risk management, and do not involve prohibited practices.',
+                            'Strategies must be replicable under real market conditions and capable of producing consistent live results.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Tradable Instruments (CFDs)',
+                                'bullets' => [
+                                    'Forex: EUR/USD',
+                                    'Forex: USD/JPY',
+                                    'Commodities: Gold (XAU/USD) - Primary market',
+                                ],
+                            ],
+                            [
+                                'title' => 'Trading Conditions',
+                                'bullets' => [
+                                    'Stop Loss is not mandatory, but risk control is strongly recommended.',
+                                    'Trading must reflect realistic execution behavior and market conditions.',
+                                    'Strategies must be scalable and suitable for live capital.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Expert Advisors (EAs) & Algorithmic Trading',
+                                'bullets' => [
+                                    'EAs are permitted.',
+                                    'Third-party EA duplication may conflict with internal risk management.',
+                                    'Wolforix may limit or deny account allocation in such cases.',
+                                    'Platform activity must remain within reasonable limits.',
+                                    'Excessive order placement, modification, or server overload may require strategy adjustments.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Server & Execution Limits',
+                                'bullets' => [
+                                    'Maximum simultaneous open orders may apply.',
+                                    'Daily execution limits may be enforced.',
+                                    'Excessive trading frequency may trigger review.',
+                                    'Wolforix may request strategy adjustments if performance harms platform stability.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Scalping & Trade Duration Policy',
+                                'bullets' => [
+                                    'Trades closed in less than 60 seconds are strictly prohibited if they result in profit.',
+                                    'Such activity is considered non-replicable under real market conditions and may indicate latency exploitation or unrealistic execution.',
+                                    'Standard scalping is allowed if trade duration reflects genuine market exposure.',
+                                    'Wolforix may exclude such trades from profit calculations or take further action if repeated.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Prohibited Trading Practices',
+                                'paragraphs' => [
+                                    'If prohibited activity is found, Wolforix may remove or adjust positions, rebalance the account, reduce leverage, suspend or terminate the account, or end cooperation with the trader.',
+                                    'If you trade with genuine intent, a clear edge, and consistent rule-compliant behavior, Wolforix remains aligned with your success.',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -428,6 +550,13 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'Allowed Instruments & Strategy Standards',
+                        'paragraphs' => [
+                            'Wolforix allows discretionary trading, algorithmic trading, and Expert Advisors (EAs) provided the strategy is legitimate, reflects real market conditions, aligns with sound risk management, and remains suitable for live capital allocation.',
+                            'Tradable CFDs currently highlighted for the evaluation environment include EUR/USD, USD/JPY, and Gold (XAU/USD) as the primary commodities market.',
+                        ],
+                    ],
+                    [
                         'title' => 'Consistency Rule',
                         'paragraphs' => [
                             'To qualify for payouts, no more than 40% of total profits may be generated in a single trading day. If exceeded, additional trading activity is required.',
@@ -436,7 +565,14 @@ return [
                     [
                         'title' => 'Prohibited Practices',
                         'paragraphs' => [
-                            'Any form of abuse, arbitrage exploitation, or manipulation of the trading environment will result in account termination.',
+                            'Any form of abuse, arbitrage exploitation, latency exploitation, or manipulation of the trading environment will result in account review and may lead to account restriction or termination.',
+                            'Trades closed in less than 60 seconds are strictly prohibited if they result in profit. Wolforix may exclude such trades from profit calculations or take further action if repeated.',
+                        ],
+                        'bullets' => [
+                            'Third-party EA duplication may conflict with internal risk management and can result in restricted allocation.',
+                            'Maximum simultaneous open orders and daily execution limits may apply.',
+                            'Excessive order placement, modification, or server overload may trigger a strategy review.',
+                            'Wolforix may remove or adjust positions, rebalance the account, reduce leverage, suspend or terminate the account, or end cooperation with the trader if prohibited activity is found.',
                         ],
                     ],
                     [

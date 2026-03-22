@@ -16,6 +16,11 @@ $supportedLocales = [
         'short' => 'ES',
         'flag' => '🇪🇸',
     ],
+    'fr' => [
+        'native' => 'Français',
+        'short' => 'FR',
+        'flag' => '🇫🇷',
+    ],
 ];
 
 $launchDiscount = [
@@ -177,6 +182,26 @@ return [
         'active',
         'cancelled',
         'completed',
+    ],
+
+    'trial' => [
+        'starting_balance' => 10000,
+        'account_type' => 'Trial (Demo)',
+        'allowed_symbols' => [
+            'XAU/USD',
+            'EUR/USD',
+            'USD/JPY',
+        ],
+        'display_rules' => [
+            'daily_drawdown_limit' => 5,
+            'max_drawdown_limit' => 10,
+            'minimum_trading_days' => 3,
+        ],
+        'profit_milestones' => [
+            3,
+            5,
+        ],
+        'encouragement_after_days' => 3,
     ],
 
     'supported_locales' => $supportedLocales,

@@ -74,11 +74,20 @@
                     @endforeach
                 </div>
 
-                <div class="mt-8 flex flex-wrap gap-4">
+                <div class="mt-8 flex flex-wrap items-start gap-4">
                     <a href="#plans" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                         {{ __('site.home.primary_cta') }}
                     </a>
-                    <a href="{{ route('dashboard') }}" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
+                    <div class="flex flex-col items-start">
+                        <a href="{{ route('trial.register') }}" class="ghost-cta rounded-full px-8 py-4 text-base font-semibold">
+                            {{ __('site.home.free_trial_cta') }}
+                        </a>
+                        <p class="mt-3 max-w-xs text-sm leading-6 text-slate-400">{{ __('site.home.free_trial_caption') }}</p>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ route('dashboard') }}" class="inline-flex rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
                         {{ __('site.home.secondary_cta') }}
                     </a>
                 </div>

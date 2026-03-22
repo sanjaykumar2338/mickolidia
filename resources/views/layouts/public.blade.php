@@ -19,10 +19,10 @@
     @include('partials.public-nav')
     @include('partials.launch-popup')
 
-    @if (session('checkout_success'))
+    @if (session('checkout_success') || session('trial_success'))
         <div class="relative z-30 mx-auto mt-5 max-w-7xl px-6 lg:px-8">
             <div data-flash class="flash-transition rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-100">
-                {{ session('checkout_success') }}
+                {{ session('checkout_success') ?? session('trial_success') }}
             </div>
         </div>
     @endif

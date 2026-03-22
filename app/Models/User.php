@@ -70,6 +70,18 @@ class User extends Authenticatable
         return $this->hasOne(TradingAccount::class)->latestOfMany();
     }
 
+    public function trialAccounts(): HasMany
+    {
+        return $this->hasMany(TradingAccount::class)->where('is_trial', true);
+    }
+
+    public function latestTrialAccount(): HasOne
+    {
+        return $this->hasOne(TradingAccount::class)
+            ->where('is_trial', true)
+            ->latestOfMany();
+    }
+
     public function payoutRequests(): HasMany
     {
         return $this->hasMany(PayoutRequest::class);

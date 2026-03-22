@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminBasicAuth;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\EnsureTrialSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin.basic' => AdminBasicAuth::class,
+            'trial.session' => EnsureTrialSession::class,
         ]);
 
         $middleware->web(append: [

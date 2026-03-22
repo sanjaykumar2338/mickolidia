@@ -1,7 +1,9 @@
 @props(['compact' => false])
 
 @php($currentLocale = app()->getLocale())
-@php($current = config('wolforix.supported_locales')[$currentLocale])
+@php($supportedLocales = config('wolforix.supported_locales', []))
+@php($fallbackLocale = config('wolforix.default_locale', 'en'))
+@php($current = $supportedLocales[$currentLocale] ?? $supportedLocales[$fallbackLocale] ?? reset($supportedLocales))
 
 <div data-locale-switcher {{ $attributes->class(['relative']) }}>
     <button

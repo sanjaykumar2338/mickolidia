@@ -11,6 +11,7 @@ return [
         'en' => 'Englisch',
         'de' => 'Deutsch',
         'es' => 'Spanisch',
+        'fr' => 'Franzoesisch',
     ],
 
     'locale' => [
@@ -38,6 +39,8 @@ return [
         'title' => 'Beweise es. Werde finanziert. Skaliere schnell.',
         'description' => 'Beweise deine Strategie. Lass dich finanzieren. Skaliere deine Performance.',
         'primary_cta' => 'Challenge starten',
+        'free_trial_cta' => 'Kostenlos testen',
+        'free_trial_caption' => 'Uebe risikofrei unter realitaetsnahen Marktbedingungen.',
         'secondary_cta' => 'Dashboard-Vorschau öffnen',
         'days' => 'Tage',
         'badges' => [
@@ -243,6 +246,65 @@ return [
         ],
     ],
 
+    'trial' => [
+        'eyebrow' => 'Kostenloser Test',
+        'register' => [
+            'title' => 'Kostenlosen Test starten',
+            'description' => 'Registriere dich mit E-Mail und Passwort, um ein rein demobasiertes Wolforix-Testkonto zu erhalten.',
+            'what_you_get_title' => 'Direkt enthalten',
+            'balance_line' => 'Demo-Kapital: :amount',
+            'markets_line' => 'Verfuegbare Maerkte: :markets',
+            'restrictions_line' => 'Nur Demo. Keine Auszahlungen. Zaehlt nicht als Challenge.',
+            'email' => 'E-Mail',
+            'password' => 'Passwort',
+            'password_placeholder' => 'Mindestens 8 Zeichen',
+            'submit' => 'Testkonto erstellen',
+            'success' => 'Dein kostenloses Testkonto ist bereit.',
+        ],
+        'dashboard' => [
+            'title' => 'Test-Dashboard',
+            'description' => 'Verfolge den aktuellen Status deines kostenlosen Demokontos, bevor du in eine bezahlte Evaluation wechselst.',
+            'banner_title' => 'Dies ist ein Testkonto.',
+            'banner_copy' => 'Das Konto ist rein demo-basiert und von bezahlten Challenges, Auszahlungen und Funded-Berechtigung getrennt.',
+            'ended_title' => 'Dein Test ist beendet.',
+            'ended_copy' => 'Dieses Demokonto ist nicht mehr aktiv. Starte einen neuen Test, um weiter unter denselben angezeigten Regeln zu ueben.',
+            'retry_button' => 'Test neu starten',
+            'restrictions_title' => 'Test-Beschraenkungen',
+            'restrictions' => [
+                'Keine Auszahlungen',
+                'Zaehlt nicht als Challenge',
+                'Nur Demo-Umgebung',
+            ],
+            'markets_title' => 'Verfuegbare Maerkte',
+            'rules_title' => 'Angezeigte Regellogik',
+            'rule_labels' => [
+                'starting_balance' => 'Startkapital',
+                'daily_limit' => 'Tages-Drawdown-Limit',
+                'max_limit' => 'Max. Drawdown-Limit',
+                'status' => 'Aktueller Status',
+            ],
+            'metrics' => [
+                'balance' => 'Kontostand',
+                'equity' => 'Equity',
+                'daily_drawdown' => 'Tages-Drawdown',
+                'max_drawdown' => 'Max. Drawdown',
+                'profit_loss' => 'Gewinn / Verlust',
+            ],
+        ],
+        'milestones' => [
+            'three' => 'Du entwickelst dich gut.',
+            'five' => 'Du entwickelst dich gut.',
+        ],
+        'encouragement_subject' => 'Bleib dran und verbessere deine Performance.',
+        'retry' => [
+            'success' => 'Ein neues Testkonto wurde erstellt.',
+        ],
+        'statuses' => [
+            'active' => 'Aktiv',
+            'ended' => 'Beendet',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Checkout-Grundlage',
         'title' => 'Kauf-UI-Platzhalter mit verpflichtender rechtlicher Bestätigung.',
@@ -318,6 +380,66 @@ return [
                     [
                         'question' => 'Was sind maximale Drawdowns?',
                         'answer' => 'Jedes Konto hat definierte Drawdown-Grenzen. Das Überschreiten dieser Grenzen kann zur Disqualifikation aus dem Evaluationsprogramm führen.',
+                    ],
+                    [
+                        'question' => 'Welche Instrumente darf ich handeln und welche Strategien sind erlaubt?',
+                        'answer_paragraphs' => [
+                            'Wolforix erlaubt diskretionaeres Trading, algorithmisches Trading und Expert Advisors (EAs), solange Strategien legitim sind, reale Marktbedingungen widerspiegeln, zu solidem Risikomanagement passen und keine verbotenen Praktiken enthalten.',
+                            'Strategien muessen unter realen Marktbedingungen replizierbar sein und konsistente Live-Ergebnisse liefern koennen.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Handelbare Instrumente (CFDs)',
+                                'bullets' => [
+                                    'Forex: EUR/USD',
+                                    'Forex: USD/JPY',
+                                    'Commodities: Gold (XAU/USD) - Primaermarkt',
+                                ],
+                            ],
+                            [
+                                'title' => 'Handelsbedingungen',
+                                'bullets' => [
+                                    'Ein Stop Loss ist nicht verpflichtend, aber Risikokontrolle wird dringend empfohlen.',
+                                    'Der Handel muss realistisches Ausfuehrungsverhalten und reale Marktbedingungen widerspiegeln.',
+                                    'Strategien muessen skalierbar und fuer Live-Kapital geeignet sein.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Expert Advisors (EAs) & Algorithmisches Trading',
+                                'bullets' => [
+                                    'EAs sind erlaubt.',
+                                    'Die Duplizierung von Drittanbieter-EAs kann mit dem internen Risikomanagement kollidieren.',
+                                    'Wolforix kann in solchen Faellen die Kontoallokation begrenzen oder verweigern.',
+                                    'Plattformaktivitaet muss innerhalb angemessener Grenzen bleiben.',
+                                    'Uebermaessige Orderplatzierung, Aenderungen oder Serverlast koennen Anpassungen der Strategie erfordern.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Server- & Ausfuehrungslimits',
+                                'bullets' => [
+                                    'Es koennen Limits fuer gleichzeitig offene Orders gelten.',
+                                    'Taegliche Ausfuehrungslimits koennen durchgesetzt werden.',
+                                    'Uebermaessige Trading-Frequenz kann eine Ueberpruefung ausloesen.',
+                                    'Wolforix kann Strategieanpassungen verlangen, wenn die Performance die Plattformstabilitaet beeintraechtigt.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Scalping- & Trade-Dauer-Regel',
+                                'bullets' => [
+                                    'Trades, die in weniger als 60 Sekunden mit Gewinn geschlossen werden, sind strikt verboten.',
+                                    'Solche Aktivitaet gilt als nicht replizierbar unter realen Marktbedingungen und kann auf Latenzausnutzung oder unrealistische Ausfuehrung hinweisen.',
+                                    'Normales Scalping ist erlaubt, solange die Haltedauer echte Marktexponierung widerspiegelt.',
+                                    'Wolforix kann solche Trades von der Gewinnberechnung ausschliessen oder bei Wiederholung weitere Massnahmen ergreifen.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Verbotene Trading-Praktiken',
+                                'paragraphs' => [
+                                    'Wenn verbotene Aktivitaet festgestellt wird, kann Wolforix Positionen entfernen oder anpassen, das Konto neu ausbalancieren, den Hebel reduzieren, das Konto sperren oder kuendigen oder die Zusammenarbeit mit dem Trader beenden.',
+                                    'Wenn du mit ehrlicher Absicht, klarer Edge und konsistent regelkonform handelst, ist Wolforix an deinem Erfolg ausgerichtet.',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -428,6 +550,13 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'Erlaubte Instrumente & Strategie-Standards',
+                        'paragraphs' => [
+                            'Wolforix erlaubt diskretionaeres Trading, algorithmisches Trading und Expert Advisors (EAs), solange die Strategie legitim ist, reale Marktbedingungen widerspiegelt, zu solidem Risikomanagement passt und fuer Live-Kapital geeignet bleibt.',
+                            'Als hervorgehobene CFDs in der Evaluationsumgebung gelten aktuell EUR/USD, USD/JPY und Gold (XAU/USD) als primaerer Rohstoffmarkt.',
+                        ],
+                    ],
+                    [
                         'title' => 'Konsistenzregel',
                         'paragraphs' => [
                             'Um für Auszahlungen berechtigt zu sein, dürfen nicht mehr als 40 % des Gesamtgewinns an einem einzigen Handelstag erzielt werden. Bei Überschreitung ist zusätzliche Handelsaktivität erforderlich.',
@@ -436,7 +565,14 @@ return [
                     [
                         'title' => 'Verbotene Praktiken',
                         'paragraphs' => [
-                            'Jede Form von Missbrauch, Arbitrage-Ausnutzung oder Manipulation der Handelsumgebung führt zur Kontokündigung.',
+                            'Jede Form von Missbrauch, Arbitrage-Ausnutzung, Latenzausnutzung oder Manipulation der Handelsumgebung fuehrt zu einer Konto-Pruefung und kann zur Einschraenkung oder Kuendigung fuehren.',
+                            'Trades, die in weniger als 60 Sekunden mit Gewinn geschlossen werden, sind strikt verboten. Wolforix kann solche Trades von Gewinnberechnungen ausschliessen oder bei Wiederholung weitere Schritte einleiten.',
+                        ],
+                        'bullets' => [
+                            'Die Duplizierung von Drittanbieter-EAs kann mit dem internen Risikomanagement kollidieren und eine restriktive Allokation ausloesen.',
+                            'Es koennen Limits fuer gleichzeitig offene Orders und taegliche Ausfuehrungen gelten.',
+                            'Uebermaessige Orderplatzierung, Aenderungen oder Serverlast koennen eine Strategiepruefung ausloesen.',
+                            'Wolforix kann Positionen entfernen oder anpassen, das Konto neu ausbalancieren, den Hebel reduzieren, das Konto sperren oder kuendigen oder die Zusammenarbeit mit dem Trader beenden.',
                         ],
                     ],
                     [

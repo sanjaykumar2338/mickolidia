@@ -1,6 +1,33 @@
 @extends('layouts.public')
 
-@php use Illuminate\Support\Str; @endphp
+@php
+    use Illuminate\Support\Str;
+
+    $faqSearchText = static function (array $item): string {
+        $segments = [
+            $item['question'] ?? '',
+            $item['answer'] ?? '',
+        ];
+
+        foreach ($item['answer_paragraphs'] ?? [] as $paragraph) {
+            $segments[] = $paragraph;
+        }
+
+        foreach ($item['answer_sections'] ?? [] as $section) {
+            $segments[] = $section['title'] ?? '';
+
+            foreach ($section['paragraphs'] ?? [] as $paragraph) {
+                $segments[] = $paragraph;
+            }
+
+            foreach ($section['bullets'] ?? [] as $bullet) {
+                $segments[] = $bullet;
+            }
+        }
+
+        return Str::lower(implode(' ', array_filter($segments)));
+    };
+@endphp
 
 @section('title', __('site.faq.title').' | '.__('site.meta.brand'))
 
@@ -40,13 +67,50 @@
                             @foreach ($section['items'] as $item)
                                 <details
                                     data-faq-item
-                                    data-faq-text="{{ Str::lower($item['question'].' '.$item['answer']) }}"
+                                    data-faq-text="{{ $faqSearchText($item) }}"
                                     class="surface-card rounded-[1.8rem] p-5"
                                 >
                                     <summary class="cursor-pointer list-none text-lg font-medium text-white">
                                         {{ $item['question'] }}
                                     </summary>
-                                    <p class="mt-4 text-sm leading-7 text-slate-300">{{ $item['answer'] }}</p>
+
+                                    @if (! empty($item['answer']))
+                                        <p class="mt-4 text-sm leading-7 text-slate-300">{{ $item['answer'] }}</p>
+                                    @endif
+
+                                    @if (! empty($item['answer_paragraphs']))
+                                        <div class="mt-4 space-y-4 text-sm leading-7 text-slate-300">
+                                            @foreach ($item['answer_paragraphs'] as $paragraph)
+                                                <p>{{ $paragraph }}</p>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    @if (! empty($item['answer_sections']))
+                                        <div class="mt-5 space-y-5">
+                                            @foreach ($item['answer_sections'] as $sectionContent)
+                                                <section class="rounded-2xl border border-white/6 bg-black/15 p-4">
+                                                    <h3 class="text-sm font-semibold uppercase tracking-[0.18em] text-amber-200">{{ $sectionContent['title'] }}</h3>
+
+                                                    @if (! empty($sectionContent['paragraphs']))
+                                                        <div class="mt-3 space-y-3 text-sm leading-7 text-slate-300">
+                                                            @foreach ($sectionContent['paragraphs'] as $paragraph)
+                                                                <p>{{ $paragraph }}</p>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+
+                                                    @if (! empty($sectionContent['bullets']))
+                                                        <ul class="mt-3 space-y-2 text-sm leading-7 text-slate-300">
+                                                            @foreach ($sectionContent['bullets'] as $bullet)
+                                                                <li class="rounded-xl border border-white/6 bg-white/3 px-3 py-2">{{ $bullet }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
+                                                </section>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </details>
                             @endforeach
                         </div>

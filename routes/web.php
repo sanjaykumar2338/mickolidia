@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\TrialController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
@@ -12,6 +13,8 @@ Route::post('/challenge-checkout', [PublicPageController::class, 'storeChallenge
 Route::view('/login', 'public.login')->name('login');
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 Route::get('/faq', [PublicPageController::class, 'faq'])->name('faq');
+Route::get('/trial/register', [TrialController::class, 'create'])->name('trial.register');
+Route::post('/trial/register', [TrialController::class, 'store'])->name('trial.store');
 Route::get('/terms', [PublicPageController::class, 'legal'])->defaults('slug', 'terms')->name('terms');
 Route::get('/risk-disclosure', [PublicPageController::class, 'legal'])->defaults('slug', 'risk-disclosure')->name('risk-disclosure');
 Route::get('/payout-policy', [PublicPageController::class, 'legal'])->defaults('slug', 'payout-policy')->name('payout-policy');
@@ -25,6 +28,11 @@ Route::prefix('dashboard')->group(function (): void {
     Route::get('/accounts', [DashboardController::class, 'accounts'])->name('dashboard.accounts');
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
+});
+
+Route::middleware('trial.session')->prefix('trial')->group(function (): void {
+    Route::get('/dashboard', [TrialController::class, 'dashboard'])->name('trial.dashboard');
+    Route::post('/retry', [TrialController::class, 'retry'])->name('trial.retry');
 });
 
 Route::middleware('admin.basic')->prefix('admin')->group(function (): void {

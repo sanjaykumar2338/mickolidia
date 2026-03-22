@@ -11,6 +11,7 @@ return [
         'en' => 'Inglés',
         'de' => 'Alemán',
         'es' => 'Español',
+        'fr' => 'Francés',
     ],
 
     'locale' => [
@@ -38,6 +39,8 @@ return [
         'title' => 'Demuéstralo. Consigue financiación. Escala rápido.',
         'description' => 'Demuestra tu estrategia. Consigue financiación. Escala tu rendimiento.',
         'primary_cta' => 'Iniciar Challenge',
+        'free_trial_cta' => 'Prueba Gratis',
+        'free_trial_caption' => 'Practica sin riesgo bajo condiciones reales de mercado.',
         'secondary_cta' => 'Abrir vista previa del dashboard',
         'days' => 'días',
         'badges' => [
@@ -243,6 +246,65 @@ return [
         ],
     ],
 
+    'trial' => [
+        'eyebrow' => 'Prueba Gratis',
+        'register' => [
+            'title' => 'Empieza tu Prueba Gratis',
+            'description' => 'Regístrate con tu email y contraseña para acceder a una cuenta demo de prueba separada de los challenges de pago.',
+            'what_you_get_title' => 'Incluido al instante',
+            'balance_line' => 'Balance demo: :amount',
+            'markets_line' => 'Mercados disponibles: :markets',
+            'restrictions_line' => 'Solo demo. Sin retiros. No cuenta como challenge.',
+            'email' => 'Email',
+            'password' => 'Contraseña',
+            'password_placeholder' => 'Mínimo 8 caracteres',
+            'submit' => 'Crear cuenta de prueba',
+            'success' => 'Tu cuenta de prueba gratuita está lista.',
+        ],
+        'dashboard' => [
+            'title' => 'Dashboard de Prueba',
+            'description' => 'Sigue el estado actual de tu cuenta demo gratuita antes de pasar a una evaluación de pago.',
+            'banner_title' => 'Esta es una Cuenta de Prueba.',
+            'banner_copy' => 'La cuenta es solo demo y está separada de challenges de pago, payouts y elegibilidad funded.',
+            'ended_title' => 'Tu prueba ha terminado.',
+            'ended_copy' => 'Esta cuenta demo ya no está activa. Inicia una nueva prueba para seguir practicando con la misma lógica de reglas mostrada.',
+            'retry_button' => 'Reintentar Prueba',
+            'restrictions_title' => 'Restricciones de la Prueba',
+            'restrictions' => [
+                'Sin retiros',
+                'No cuenta como un Challenge',
+                'Solo entorno demo',
+            ],
+            'markets_title' => 'Mercados Disponibles',
+            'rules_title' => 'Lógica de Reglas Mostrada',
+            'rule_labels' => [
+                'starting_balance' => 'Balance Inicial',
+                'daily_limit' => 'Límite de drawdown diario',
+                'max_limit' => 'Límite de drawdown máximo',
+                'status' => 'Estado actual',
+            ],
+            'metrics' => [
+                'balance' => 'Balance',
+                'equity' => 'Equity',
+                'daily_drawdown' => 'Drawdown Diario',
+                'max_drawdown' => 'Drawdown Máximo',
+                'profit_loss' => 'Profit / Loss',
+            ],
+        ],
+        'milestones' => [
+            'three' => 'Lo estás haciendo bien.',
+            'five' => 'Lo estás haciendo bien.',
+        ],
+        'encouragement_subject' => 'Sigue adelante y mejora tu rendimiento.',
+        'retry' => [
+            'success' => 'Se ha creado una nueva cuenta de prueba.',
+        ],
+        'statuses' => [
+            'active' => 'Activo',
+            'ended' => 'Finalizado',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Base del checkout',
         'title' => 'Stub de compra con confirmación legal obligatoria.',
@@ -318,6 +380,66 @@ return [
                     [
                         'question' => '¿Qué son los drawdowns máximos?',
                         'answer' => 'Cada cuenta tiene límites de drawdown definidos. Superar estos límites puede resultar en la descalificación de la evaluación.',
+                    ],
+                    [
+                        'question' => '¿Qué instrumentos puedo operar y qué estrategias están permitidas?',
+                        'answer_paragraphs' => [
+                            'Wolforix permite trading discrecional, trading algorítmico y Expert Advisors (EAs), siempre que las estrategias sean legítimas, reflejen condiciones reales de mercado, estén alineadas con una gestión de riesgo sólida y no incluyan prácticas prohibidas.',
+                            'Las estrategias deben poder replicarse en condiciones reales de mercado y ser capaces de producir resultados consistentes en vivo.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Instrumentos operables (CFDs)',
+                                'bullets' => [
+                                    'Forex: EUR/USD',
+                                    'Forex: USD/JPY',
+                                    'Commodities: Gold (XAU/USD) - mercado principal',
+                                ],
+                            ],
+                            [
+                                'title' => 'Condiciones de trading',
+                                'bullets' => [
+                                    'El Stop Loss no es obligatorio, pero se recomienda firmemente el control del riesgo.',
+                                    'El trading debe reflejar un comportamiento de ejecución realista y condiciones reales de mercado.',
+                                    'Las estrategias deben ser escalables y aptas para capital en vivo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Expert Advisors (EAs) y trading algorítmico',
+                                'bullets' => [
+                                    'Los EAs están permitidos.',
+                                    'La duplicación de EAs de terceros puede entrar en conflicto con la gestión interna de riesgo.',
+                                    'Wolforix puede limitar o negar la asignación de cuenta en esos casos.',
+                                    'La actividad en plataforma debe mantenerse dentro de límites razonables.',
+                                    'El exceso de órdenes, modificaciones o sobrecarga del servidor puede requerir ajustes de estrategia.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Límites de servidor y ejecución',
+                                'bullets' => [
+                                    'Pueden aplicarse límites al número máximo de órdenes abiertas simultáneamente.',
+                                    'Pueden aplicarse límites diarios de ejecución.',
+                                    'Una frecuencia de trading excesiva puede activar revisión.',
+                                    'Wolforix puede solicitar ajustes si el rendimiento perjudica la estabilidad de la plataforma.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Política de scalping y duración de operaciones',
+                                'bullets' => [
+                                    'Las operaciones cerradas en menos de 60 segundos están estrictamente prohibidas si generan beneficio.',
+                                    'Esa actividad se considera no replicable en condiciones reales de mercado y puede indicar explotación de latencia o ejecución irreal.',
+                                    'El scalping estándar está permitido si la duración refleja exposición real al mercado.',
+                                    'Wolforix puede excluir esas operaciones de los cálculos de beneficio o tomar medidas adicionales si se repiten.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Prácticas de trading prohibidas',
+                                'paragraphs' => [
+                                    'Si se detecta actividad prohibida, Wolforix puede eliminar o ajustar posiciones, rebalancear la cuenta, reducir el apalancamiento, suspender o terminar la cuenta o finalizar la cooperación con el trader.',
+                                    'Si operas con intención genuina, una ventaja clara y constancia cumpliendo las reglas, Wolforix está alineado con tu éxito.',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -428,6 +550,13 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'Instrumentos permitidos y estándares de estrategia',
+                        'paragraphs' => [
+                            'Wolforix permite trading discrecional, trading algorítmico y Expert Advisors (EAs) siempre que la estrategia sea legítima, refleje condiciones reales de mercado, siga una gestión de riesgo sólida y siga siendo apta para capital en vivo.',
+                            'Los CFDs destacados en el entorno de evaluación incluyen actualmente EUR/USD, USD/JPY y Gold (XAU/USD) como mercado principal de commodities.',
+                        ],
+                    ],
+                    [
                         'title' => 'Regla de consistencia',
                         'paragraphs' => [
                             'Para calificar a payouts, no más del 40 % del beneficio total puede generarse en un solo día de trading. Si se supera, se requiere actividad adicional.',
@@ -436,7 +565,14 @@ return [
                     [
                         'title' => 'Prácticas prohibidas',
                         'paragraphs' => [
-                            'Cualquier forma de abuso, explotación de arbitraje o manipulación del entorno de trading provocará la terminación de la cuenta.',
+                            'Cualquier forma de abuso, explotación de arbitraje, explotación de latencia o manipulación del entorno de trading provocará una revisión de la cuenta y puede llevar a su restricción o terminación.',
+                            'Las operaciones cerradas en menos de 60 segundos con beneficio están estrictamente prohibidas. Wolforix puede excluir esas operaciones del cálculo de beneficios o tomar medidas adicionales si se repiten.',
+                        ],
+                        'bullets' => [
+                            'La duplicación de EAs de terceros puede entrar en conflicto con la gestión interna de riesgo y provocar una asignación restringida.',
+                            'Pueden aplicarse límites al número de órdenes simultáneas y a la ejecución diaria.',
+                            'El exceso de órdenes, modificaciones o sobrecarga del servidor puede activar una revisión de la estrategia.',
+                            'Wolforix puede eliminar o ajustar posiciones, rebalancear la cuenta, reducir el apalancamiento, suspender o terminar la cuenta o finalizar la cooperación con el trader.',
                         ],
                     ],
                     [

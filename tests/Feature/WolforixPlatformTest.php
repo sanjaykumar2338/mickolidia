@@ -19,6 +19,7 @@ class WolforixPlatformTest extends TestCase
             route('login'),
             route('home'),
             route('faq'),
+            route('trial.register'),
             route('terms'),
             route('risk-disclosure'),
             route('payout-policy'),
@@ -44,6 +45,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('GBP')
             ->assertSee('80% Profit Split')
             ->assertSee('$100K Simulated Capital')
+            ->assertSee('Free Trial')
             ->assertSee('Single Phase')
             ->assertSee('Funded Account')
             ->assertSee('20% OFF - Limited Launch Offer')
@@ -72,12 +74,23 @@ class WolforixPlatformTest extends TestCase
 
     public function test_locale_switch_updates_session_and_redirects_back(): void
     {
-        $response = $this->from(route('home'))->post(route('locale.update', 'de'), [
+        $response = $this->from(route('home'))->post(route('locale.update', 'fr'), [
             'redirect' => route('home'),
         ]);
 
         $response->assertRedirect(route('home'));
-        $response->assertSessionHas('locale', 'de');
+        $response->assertSessionHas('locale', 'fr');
+        $response->assertCookie('wolforix_locale', 'fr');
+    }
+
+    public function test_french_locale_renders_core_homepage_copy(): void
+    {
+        $this->withSession(['locale' => 'fr'])
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('Essai Gratuit')
+            ->assertSee('Devise')
+            ->assertSee('Challenge 1-Step');
     }
 
     public function test_checkout_requires_the_mandatory_agreement(): void
@@ -129,6 +142,14 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('company-info'))
             ->assertOk()
             ->assertSee('Suite RA01, 195-197 Wood Street, London, E17 3NU');
+    }
+
+    public function test_faq_contains_the_new_strategy_and_scalping_content(): void
+    {
+        $this->get(route('faq'))
+            ->assertOk()
+            ->assertSee('Which instruments can I trade and what strategies are allowed?')
+            ->assertSee('Trades closed in less than 60 seconds are strictly prohibited if they result in profit.');
     }
 
     public function test_admin_clients_requires_basic_auth(): void
@@ -212,5 +233,84 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('$3,350.00')
             ->assertSee('Current Status')
             ->assertSee('Completed');
+    }
+
+    public function test_trial_registration_creates_a_trial_account_and_dashboard(): void
+    {
+        $response = $this->post(route('trial.store'), [
+            'email' => 'trial@example.com',
+            'password' => 'password123',
+        ]);
+
+        $user = User::query()->where('email', 'trial@example.com')->firstOrFail();
+        $trialAccount = TradingAccount::query()
+            ->where('user_id', $user->id)
+            ->where('is_trial', true)
+            ->first();
+
+        $response->assertRedirect(route('trial.dashboard'));
+        $this->assertNotNull($trialAccount);
+        $this->assertSame('trial', $trialAccount->account_type);
+        $this->assertEquals(10000.0, (float) $trialAccount->balance);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.dashboard'))
+            ->assertOk()
+            ->assertSee('This is a Trial Account.')
+            ->assertSee('No withdrawals')
+            ->assertSee('XAU/USD');
+    }
+
+    public function test_trial_retry_archives_previous_trial_and_creates_a_new_one(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'retry-trial@example.com',
+            'status' => 'active',
+        ]);
+
+        $trialAccount = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-TRIAL-TEST01',
+            'platform' => 'cTrader Demo',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Ended',
+            'account_type' => 'trial',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 0,
+            'equity' => 0,
+            'daily_drawdown' => 500,
+            'max_drawdown' => 1000,
+            'profit_loss' => -1000,
+            'total_profit' => -1000,
+            'today_profit' => -250,
+            'drawdown_percent' => 10,
+            'consistency_limit_percent' => 40,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 1,
+            'allowed_symbols' => ['XAU/USD', 'EUR/USD', 'USD/JPY'],
+            'trial_status' => 'ended',
+            'trial_started_at' => now()->subDays(4),
+            'last_activity_at' => now()->subDay(),
+            'ended_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->post(route('trial.retry'))
+            ->assertRedirect(route('trial.dashboard'));
+
+        $this->assertCount(2, TradingAccount::query()->where('user_id', $user->id)->where('is_trial', true)->get());
+        $this->assertNotNull($trialAccount->fresh()->ended_at);
+        $this->assertSame('ended', $trialAccount->fresh()->trial_status);
+        $this->assertSame(
+            'active',
+            TradingAccount::query()
+                ->where('user_id', $user->id)
+                ->where('is_trial', true)
+                ->latest('id')
+                ->value('trial_status')
+        );
     }
 }
