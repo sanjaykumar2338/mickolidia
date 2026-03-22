@@ -28,7 +28,7 @@
     ];
 @endphp
 
-<header class="sticky top-0 z-40 border-b border-white/5 bg-slate-950/70 backdrop-blur-xl">
+<header class="z-30 border-b border-white/5 bg-slate-950/72 backdrop-blur-xl">
     <div class="mx-auto max-w-7xl px-6 py-4 lg:px-8">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
@@ -41,7 +41,12 @@
                 </div>
             </a>
 
-            <x-language-switcher compact class="shrink-0 lg:hidden" />
+            <div class="flex shrink-0 items-center gap-2 lg:hidden">
+                <a href="{{ route('login') }}" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
+                    {{ __('site.nav.login') }}
+                </a>
+                <x-language-switcher compact />
+            </div>
 
             <div class="hidden items-center gap-3 text-sm text-slate-300 lg:flex">
                 <nav class="flex flex-wrap items-center gap-2 lg:gap-3">
@@ -54,6 +59,9 @@
                         </a>
                     @endforeach
                 </nav>
+                <a href="{{ route('login') }}" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
+                    {{ __('site.nav.login') }}
+                </a>
                 <x-language-switcher compact />
             </div>
         </div>

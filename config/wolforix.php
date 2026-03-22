@@ -24,6 +24,18 @@ $launchDiscount = [
     'percent' => 20,
 ];
 
+$currencies = [
+    'USD' => [
+        'rate' => 1,
+    ],
+    'EUR' => [
+        'rate' => 0.92,
+    ],
+    'GBP' => [
+        'rate' => 0.78,
+    ],
+];
+
 $challengeModels = [
     'one_step' => [
         'steps' => 1,
@@ -247,6 +259,10 @@ return [
     ],
 
     'launch_discount' => $launchDiscount,
+
+    'default_currency' => 'USD',
+
+    'currencies' => $currencies,
 
     'challenge_models' => $challengeModels,
 

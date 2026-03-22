@@ -30,6 +30,7 @@ return [
         'faq' => 'FAQ',
         'legal' => 'Rechtliches',
         'dashboard_preview' => 'Dashboard-Vorschau',
+        'login' => 'Login',
     ],
 
     'home' => [
@@ -64,6 +65,7 @@ return [
             'Keine Zeitlimits - Evaluationsphase',
         ],
         'challenge_selector' => [
+            'currency_label' => 'Waehrung',
             'type_label' => 'Challenge-Typ',
             'size_label' => 'Kontogröße',
             'insight_title' => 'Modellueberblick',
@@ -80,6 +82,11 @@ return [
                 '20 % Launch-Rabatt aktiv',
                 '14-Tage-Auszahlungszyklus',
                 'Unbegrenzte Evaluationsdauer',
+            ],
+            'currencies' => [
+                'USD' => 'US-Dollar',
+                'EUR' => 'Euro',
+                'GBP' => 'Britisches Pfund',
             ],
             'phase_titles' => [
                 'single_phase' => 'Einzelphase',
@@ -172,6 +179,22 @@ return [
                 ],
             ],
         ],
+    ],
+
+    'launch_popup' => [
+        'title' => '20 % RABATT - Begrenztes Angebot auf alle Plaene',
+        'description' => 'Launch-Preise sind jetzt fuer jede Wolforix-Challenge aktiv. Pruefe das Modell, das zu deiner Strategie passt, und sichere dir das limitierte Angebot, solange es verfuegbar ist.',
+        'primary_action' => 'Launch-Plaene ansehen',
+        'secondary_action' => 'Spaeter',
+        'close' => 'Launch-Angebot schliessen',
+    ],
+
+    'auth' => [
+        'eyebrow' => 'Login-Platzhalter',
+        'title' => 'Login folgt in Kuerze',
+        'description' => 'Authentifizierung gehoert noch nicht zu dieser Verfeinerungsrunde, aber Route und Header-Button sind jetzt fuer den naechsten Umsetzungsschritt vorbereitet.',
+        'notice' => 'Nutze bis dahin die Dashboard-Vorschau fuer das UI-Review. Echte Konto-Authentifizierung, sichere Sitzungen und Passwort-Flows werden in einem spaeteren Meilenstein angebunden.',
+        'primary_action' => 'Zur Startseite',
     ],
 
     'checkout' => [

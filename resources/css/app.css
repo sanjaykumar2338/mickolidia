@@ -85,21 +85,75 @@ h6 {
     color: var(--gold-strong);
 }
 
+@keyframes ctaGlow {
+    0%,
+    100% {
+        box-shadow:
+            0 18px 46px rgba(244, 183, 74, 0.26),
+            0 0 0 1px rgba(255, 255, 255, 0.16) inset,
+            0 0 0 rgba(244, 183, 74, 0.2);
+    }
+
+    50% {
+        box-shadow:
+            0 24px 62px rgba(244, 183, 74, 0.36),
+            0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+            0 0 28px rgba(244, 183, 74, 0.28);
+    }
+}
+
+@keyframes ctaSweep {
+    0% {
+        transform: translateX(-160%) skewX(-24deg);
+    }
+
+    100% {
+        transform: translateX(260%) skewX(-24deg);
+    }
+}
+
+@keyframes popupRise {
+    0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.96);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .primary-cta {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
+    overflow: hidden;
+    isolation: isolate;
     background: linear-gradient(135deg, #f8da86 0%, #f4b74a 42%, #ffd36d 100%);
     color: #08111d;
     box-shadow:
         0 16px 40px rgba(244, 183, 74, 0.22),
         0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+    animation: ctaGlow 2.8s ease-in-out infinite;
     transition:
         transform 0.22s ease,
         box-shadow 0.22s ease,
         filter 0.22s ease;
+}
+
+.primary-cta::before {
+    content: '';
+    position: absolute;
+    inset: -35% auto -35% -18%;
+    width: 34%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    opacity: 0.35;
+    transform: translateX(-160%) skewX(-24deg);
+    animation: ctaSweep 3.8s linear infinite;
+    pointer-events: none;
 }
 
 .primary-cta::after {
@@ -113,12 +167,12 @@ h6 {
 }
 
 .primary-cta:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.01);
     box-shadow:
-        0 22px 52px rgba(244, 183, 74, 0.32),
-        0 0 22px rgba(244, 183, 74, 0.18),
+        0 26px 60px rgba(244, 183, 74, 0.38),
+        0 0 28px rgba(244, 183, 74, 0.24),
         0 0 0 1px rgba(255, 255, 255, 0.18) inset;
-    filter: saturate(1.03);
+    filter: saturate(1.06);
 }
 
 .primary-cta:focus-visible {
@@ -128,6 +182,10 @@ h6 {
 
 .primary-cta:active {
     transform: translateY(0);
+}
+
+.launch-popup-card {
+    animation: popupRise 0.35s ease-out both;
 }
 
 .grid-pattern {

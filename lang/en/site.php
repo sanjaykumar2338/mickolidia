@@ -30,6 +30,7 @@ return [
         'faq' => 'FAQ',
         'legal' => 'Legal',
         'dashboard_preview' => 'Dashboard Preview',
+        'login' => 'Login',
     ],
 
     'home' => [
@@ -64,6 +65,7 @@ return [
             'No Time Limits - Evaluation Phase',
         ],
         'challenge_selector' => [
+            'currency_label' => 'Currency',
             'type_label' => 'Challenge type',
             'size_label' => 'Account size',
             'insight_title' => 'Model overview',
@@ -80,6 +82,11 @@ return [
                 '20% launch pricing active',
                 '14-day payout cycle',
                 'Unlimited evaluation duration',
+            ],
+            'currencies' => [
+                'USD' => 'US Dollar',
+                'EUR' => 'Euro',
+                'GBP' => 'British Pound',
             ],
             'phase_titles' => [
                 'single_phase' => 'Single Phase',
@@ -172,6 +179,22 @@ return [
                 ],
             ],
         ],
+    ],
+
+    'launch_popup' => [
+        'title' => '20% OFF - Limited Offer on all plans',
+        'description' => 'Launch pricing is active across every Wolforix challenge. Review the model that fits your strategy and lock in the limited offer while it is still live.',
+        'primary_action' => 'View Launch Plans',
+        'secondary_action' => 'Maybe later',
+        'close' => 'Close launch offer',
+    ],
+
+    'auth' => [
+        'eyebrow' => 'Login placeholder',
+        'title' => 'Login Coming Soon',
+        'description' => 'Authentication is not part of this refinement pass yet, but the login route and button are now in place for the next implementation step.',
+        'notice' => 'Use the dashboard preview for UI review in the meantime. Real account authentication, secure sessions, and password flows will connect in a later milestone.',
+        'primary_action' => 'Return Home',
     ],
 
     'checkout' => [

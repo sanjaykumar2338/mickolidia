@@ -10,11 +10,41 @@
         return match ($currency) {
             'USD' => '$'.number_format($amount, 0),
             'EUR' => '€'.number_format($amount, 0),
+            'GBP' => '£'.number_format($amount, 0),
             default => $currency.' '.number_format($amount, 0),
         };
     };
-    $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $initialPlan['currency']) : '';
-    $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $initialPlan['currency']) : '';
+    $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $defaultCurrency) : '';
+    $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $defaultCurrency) : '';
+    $featureIcons = [
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 15.75 9 10.5l3.75 3.75 7.5-8.25" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 20.25h16.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6.75h3.75V10.5" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.5h19.5v9a2.25 2.25 0 0 1-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 16.5v-9Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 9.75h19.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 14.25h3" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 6h11.25A2.25 2.25 0 0 1 21 8.25v7.5A2.25 2.25 0 0 1 18.75 18H7.5A2.25 2.25 0 0 1 5.25 15.75V8.25A2.25 2.25 0 0 1 7.5 6Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 9H3.75A1.5 1.5 0 0 0 2.25 10.5v3A1.5 1.5 0 0 0 3.75 15h1.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 12h.008v.008h-.008V12Zm-3 0h.008v.008h-.008V12Z" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4.5 2.25" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-9-9" />
+        </svg>
+        SVG,
+    ];
     $challengeUi = [
         'unlimited' => __('site.home.challenge_selector.unlimited'),
         'discount_badge' => __('site.home.challenge_selector.discount_badge'),
@@ -45,7 +75,7 @@
                 </div>
 
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <a href="#plans" class="primary-cta rounded-full px-6 py-3 text-sm font-semibold">
+                    <a href="#plans" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                         {{ __('site.home.primary_cta') }}
                     </a>
                     <a href="{{ route('dashboard') }}" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
@@ -89,8 +119,8 @@
         <div class="mx-auto mt-14 grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
             @foreach (trans('site.home.feature_cards') as $card)
                 <article class="surface-panel rounded-[2rem] p-6">
-                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-sm font-semibold text-amber-200">
-                        {{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}
+                    <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-[0_18px_40px_rgba(244,183,74,0.12)]">
+                        {!! $featureIcons[$loop->index] ?? $featureIcons[0] !!}
                     </span>
                     <p class="mt-5 max-w-xs text-xl font-semibold leading-8 text-white">{{ $card }}</p>
                 </article>
@@ -114,6 +144,7 @@
             @if ($initialPlan !== null)
                 <div
                     data-challenge-selector
+                    data-default-currency="{{ $defaultCurrency }}"
                     data-default-type="{{ $defaultChallengeType }}"
                     data-default-size="{{ $defaultChallengeSize }}"
                     data-unlimited-label="{{ __('site.home.challenge_selector.unlimited') }}"
@@ -121,26 +152,43 @@
                     class="mt-10"
                 >
                     <script type="application/json" data-challenge-catalog>@json($challengeCatalog)</script>
+                    <script type="application/json" data-challenge-currencies>@json($currencies)</script>
                     <script type="application/json" data-challenge-ui>@json($challengeUi)</script>
 
                     <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
                         <div class="surface-panel rounded-[2rem] p-6">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.type_label') }}</p>
-                            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                                @foreach ($challengeCatalog as $challengeTypeKey => $challengeType)
+                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.currency_label') }}</p>
+                            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                                @foreach ($currencies as $currencyCode => $currencyMeta)
                                     <button
                                         type="button"
-                                        data-challenge-type="{{ $challengeTypeKey }}"
-                                        data-label="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}"
-                                        data-description="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.description') }}"
-                                        data-note-title="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_title') }}"
-                                        data-note-body="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_body') }}"
-                                        class="challenge-type-button rounded-[1.8rem] border border-white/8 bg-white/3 p-5 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
+                                        data-challenge-currency="{{ $currencyCode }}"
+                                        class="challenge-currency-button rounded-[1.5rem] border border-white/8 bg-white/3 px-4 py-4 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
                                     >
-                                        <span class="block text-lg font-semibold text-white">{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}</span>
-                                        <span class="mt-2 block text-sm leading-7 text-slate-400">{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.description') }}</span>
+                                        <span class="block text-sm font-semibold tracking-[0.22em] text-white">{{ $currencyCode }}</span>
+                                        <span class="mt-2 block text-xs uppercase tracking-[0.22em] text-slate-400">{{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}</span>
                                     </button>
                                 @endforeach
+                            </div>
+
+                            <div class="mt-8">
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.type_label') }}</p>
+                                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                                    @foreach ($challengeCatalog as $challengeTypeKey => $challengeType)
+                                        <button
+                                            type="button"
+                                            data-challenge-type="{{ $challengeTypeKey }}"
+                                            data-label="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}"
+                                            data-description="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.description') }}"
+                                            data-note-title="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_title') }}"
+                                            data-note-body="{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.note_body') }}"
+                                            class="challenge-type-button rounded-[1.8rem] border border-white/8 bg-white/3 p-5 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
+                                        >
+                                            <span class="block text-lg font-semibold text-white">{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.label') }}</span>
+                                            <span class="mt-2 block text-sm leading-7 text-slate-400">{{ __('site.home.challenge_selector.types.'.$challengeTypeKey.'.description') }}</span>
+                                        </button>
+                                    @endforeach
+                                </div>
                             </div>
 
                             <div class="mt-8">
@@ -182,6 +230,9 @@
                                         <span data-plan-discount-badge class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">
                                             {{ __('site.home.challenge_selector.discount_badge') }}
                                         </span>
+                                        <span data-plan-currency-code class="rounded-full border border-white/8 bg-white/3 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
+                                            {{ $defaultCurrency }}
+                                        </span>
                                         <span class="text-xs font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.current_price') }}</span>
                                     </div>
                                     <p data-plan-price class="mt-4 text-4xl font-semibold text-white">{{ $initialPrice }}</p>
@@ -196,7 +247,7 @@
                                     </div>
                                 </div>
 
-                                <a href="#checkout" class="primary-cta rounded-full px-6 py-3 text-sm font-semibold">
+                                <a href="#checkout" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                                     {{ __('site.home.challenge_selector.start_button') }}
                                 </a>
                             </div>

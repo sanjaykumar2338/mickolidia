@@ -1,31 +1,73 @@
 import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const storage = {
+        get(key) {
+            try {
+                return window.localStorage.getItem(key);
+            } catch (error) {
+                return null;
+            }
+        },
+        set(key, value) {
+            try {
+                window.localStorage.setItem(key, value);
+            } catch (error) {
+                // Ignore storage access issues.
+            }
+        },
+    };
+
     const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
 
     if (fixedDisclaimer instanceof HTMLElement) {
         const closeButton = fixedDisclaimer.querySelector('[data-fixed-disclaimer-close]');
         const storageKey = 'wolforix-fixed-disclaimer-dismissed';
 
-        try {
-            if (window.localStorage.getItem(storageKey) === '1') {
-                fixedDisclaimer.classList.add('hidden');
-            }
-        } catch (error) {
-            // Ignore storage access issues and keep the disclaimer visible.
+        if (storage.get(storageKey) === '1') {
+            fixedDisclaimer.classList.add('hidden');
         }
 
         if (closeButton instanceof HTMLButtonElement) {
             closeButton.addEventListener('click', () => {
                 fixedDisclaimer.classList.add('hidden');
-
-                try {
-                    window.localStorage.setItem(storageKey, '1');
-                } catch (error) {
-                    // Ignore storage access issues; hiding for the current session is sufficient.
-                }
+                storage.set(storageKey, '1');
             });
         }
+    }
+
+    const launchPopup = document.querySelector('[data-launch-popup]');
+
+    if (launchPopup instanceof HTMLElement) {
+        const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
+        const storageKey = 'wolforix-launch-popup-dismissed';
+
+        const closePopup = () => {
+            launchPopup.classList.remove('flex');
+            launchPopup.classList.add('hidden');
+            document.documentElement.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden');
+            storage.set(storageKey, '1');
+        };
+
+        if (storage.get(storageKey) !== '1') {
+            launchPopup.classList.remove('hidden');
+            launchPopup.classList.add('flex');
+            document.documentElement.classList.add('overflow-hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        closeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                closePopup();
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && launchPopup.classList.contains('flex')) {
+                closePopup();
+            }
+        });
     }
 
     const localeSwitchers = document.querySelectorAll('[data-locale-switcher]');
@@ -79,17 +121,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (challengeSelector instanceof HTMLElement) {
         const catalogScript = challengeSelector.querySelector('[data-challenge-catalog]');
+        const currencyScript = challengeSelector.querySelector('[data-challenge-currencies]');
         const uiScript = challengeSelector.querySelector('[data-challenge-ui]');
+        const currencyButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-currency]'));
         const typeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-type]'));
         const sizeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-size]'));
         const checkoutSelect = document.querySelector('[data-checkout-plan-select]');
 
         if (catalogScript instanceof HTMLScriptElement) {
             const catalog = JSON.parse(catalogScript.textContent ?? '{}');
+            const currencies = currencyScript instanceof HTMLScriptElement ? JSON.parse(currencyScript.textContent ?? '{}') : {};
             const ui = uiScript instanceof HTMLScriptElement ? JSON.parse(uiScript.textContent ?? '{}') : {};
+            const availableCurrencies = Object.keys(currencies);
+            const currencyStorageKey = 'wolforix-selected-currency';
+            let activeCurrency = storage.get(currencyStorageKey) ?? challengeSelector.dataset.defaultCurrency ?? availableCurrencies[0] ?? 'USD';
             let activeType = challengeSelector.dataset.defaultType ?? Object.keys(catalog)[0];
             let activeSize = challengeSelector.dataset.defaultSize ?? Object.keys(catalog[activeType]?.plans ?? {})[0];
 
+            if (!availableCurrencies.includes(activeCurrency)) {
+                activeCurrency = challengeSelector.dataset.defaultCurrency ?? availableCurrencies[0] ?? 'USD';
+            }
+
+            const currencyActiveClasses = ['border-amber-300/30', 'bg-amber-400/12', 'text-white', 'shadow-lg', 'shadow-amber-950/15'];
+            const currencyInactiveClasses = ['border-white/8', 'bg-white/3', 'text-slate-300'];
             const typeActiveClasses = ['border-amber-300/30', 'bg-amber-400/12', 'text-white', 'shadow-lg', 'shadow-amber-950/15'];
             const typeInactiveClasses = ['border-white/8', 'bg-white/3', 'text-slate-300'];
             const sizeActiveClasses = ['border-amber-300/30', 'bg-amber-400', 'text-slate-950', 'shadow-lg', 'shadow-amber-950/20'];
@@ -98,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const planBadge = challengeSelector.querySelector('[data-challenge-badge]');
             const planTitle = challengeSelector.querySelector('[data-plan-title]');
             const planPrice = challengeSelector.querySelector('[data-plan-price]');
+            const planCurrencyCode = challengeSelector.querySelector('[data-plan-currency-code]');
             const planOriginalWrap = challengeSelector.querySelector('[data-plan-original-wrap]');
             const planOriginalPrice = challengeSelector.querySelector('[data-plan-original-price]');
             const planDiscountBadge = challengeSelector.querySelector('[data-plan-discount-badge]');
@@ -106,6 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const detailGroups = challengeSelector.querySelector('[data-plan-detail-groups]');
             const planNoteTitle = challengeSelector.querySelector('[data-plan-note-title]');
             const planNoteBody = challengeSelector.querySelector('[data-plan-note-body]');
+
+            const convertCurrency = (amount, currency) => {
+                const normalizedAmount = Number(amount);
+                const rate = Number(currencies[currency]?.rate ?? 1);
+
+                if (!Number.isFinite(normalizedAmount) || !Number.isFinite(rate)) {
+                    return 0;
+                }
+
+                return Math.round(normalizedAmount * rate);
+            };
 
             const formatCurrency = (amount, currency = 'USD') => {
                 const normalized = Number(amount);
@@ -131,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 template,
             );
             const formatDays = (days) => replaceTokens(ui.value_templates?.days ?? ':days days', { days });
-            const formatAfterDays = (days) => replaceTokens(ui.value_templates?.after_days ?? ':days days', { days });
+            const formatAfterDays = (days) => replaceTokens(ui.value_templates?.after_days ?? 'After :days days', { days });
             const formatScaling = (percent, months) => replaceTokens(
                 ui.value_templates?.scaling ?? '+:percent% capital every :months months if profitable',
                 { percent, months },
@@ -142,6 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <dd class="font-semibold text-white">${value}</dd>
                 </div>
             `).join('');
+
             const renderDetailGroups = (plan) => {
                 if (!(detailGroups instanceof HTMLElement)) {
                     return;
@@ -204,9 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             };
 
-            const updateTypeButtonState = (button, active) => {
-                button.classList.remove(...(active ? typeInactiveClasses : typeActiveClasses));
-                button.classList.add(...(active ? typeActiveClasses : typeInactiveClasses));
+            const updateToggleState = (button, active, activeClasses, inactiveClasses) => {
+                button.classList.remove(...(active ? inactiveClasses : activeClasses));
+                button.classList.add(...(active ? activeClasses : inactiveClasses));
             };
 
             const updateSizeButtonState = (button, active, available) => {
@@ -234,6 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const activeTypeButton = typeButtons.find((button) => button.dataset.challengeType === activeType);
                 const activeTypeLabel = activeTypeButton?.dataset.label ?? '';
                 const activeTypeDescription = activeTypeButton?.dataset.description ?? '';
+                const launchPrice = convertCurrency(plan?.discounted_price ?? plan?.entry_fee ?? 0, activeCurrency);
+                const regularPrice = convertCurrency(plan?.list_price ?? plan?.entry_fee ?? 0, activeCurrency);
 
                 if (!plan) {
                     return;
@@ -247,12 +316,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     planTitle.textContent = `${activeTypeLabel} / ${formatSize(plan.account_size)}`;
                 }
 
+                if (planCurrencyCode) {
+                    planCurrencyCode.textContent = activeCurrency;
+                }
+
                 if (planPrice) {
-                    planPrice.textContent = formatCurrency(plan.discounted_price ?? plan.entry_fee, plan.currency);
+                    planPrice.textContent = formatCurrency(launchPrice, activeCurrency);
                 }
 
                 if (planOriginalPrice) {
-                    planOriginalPrice.textContent = formatCurrency(plan.list_price ?? plan.entry_fee, plan.currency);
+                    planOriginalPrice.textContent = formatCurrency(regularPrice, activeCurrency);
                 }
 
                 if (planOriginalWrap instanceof HTMLElement) {
@@ -287,8 +360,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkoutSelect.value = plan.slug;
                 }
 
+                currencyButtons.forEach((button) => {
+                    updateToggleState(button, button.dataset.challengeCurrency === activeCurrency, currencyActiveClasses, currencyInactiveClasses);
+                });
+
                 typeButtons.forEach((button) => {
-                    updateTypeButtonState(button, button.dataset.challengeType === activeType);
+                    updateToggleState(button, button.dataset.challengeType === activeType, typeActiveClasses, typeInactiveClasses);
                 });
 
                 sizeButtons.forEach((button) => {
@@ -297,6 +374,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateSizeButtonState(button, available && buttonSize === String(activeSize), available);
                 });
             };
+
+            currencyButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const nextCurrency = button.dataset.challengeCurrency ?? activeCurrency;
+
+                    if (!availableCurrencies.includes(nextCurrency)) {
+                        return;
+                    }
+
+                    activeCurrency = nextCurrency;
+                    storage.set(currencyStorageKey, activeCurrency);
+                    renderPlan();
+                });
+            });
 
             typeButtons.forEach((button) => {
                 button.addEventListener('click', () => {

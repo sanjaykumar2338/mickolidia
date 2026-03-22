@@ -15,6 +15,7 @@
     </div>
 
     @include('partials.public-nav')
+    @include('partials.launch-popup')
 
     @if (session('checkout_success'))
         <div class="relative z-30 mx-auto mt-5 max-w-7xl px-6 lg:px-8">

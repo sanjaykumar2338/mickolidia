@@ -9,6 +9,7 @@ class WolforixPlatformTest extends TestCase
     public function test_public_pages_render_successfully(): void
     {
         foreach ([
+            route('login'),
             route('home'),
             route('faq'),
             route('terms'),
@@ -31,16 +32,21 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('2-Step Challenge')
             ->assertSee('5K')
             ->assertSee('100K')
+            ->assertSee('USD')
+            ->assertSee('EUR')
+            ->assertSee('GBP')
             ->assertSee('80% Profit Split')
             ->assertSee('$100K Simulated Capital')
             ->assertSee('Single Phase')
             ->assertSee('Funded Account')
             ->assertSee('20% OFF - Limited Launch Offer')
             ->assertSee('Launch Discount - Limited Time Only')
+            ->assertSee('20% OFF - Limited Offer on all plans')
             ->assertSee('$49')
             ->assertSee('$39')
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
+            ->assertSee('Login')
             ->assertSee('Street address')
             ->assertSee('Country');
     }

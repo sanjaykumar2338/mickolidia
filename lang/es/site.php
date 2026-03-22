@@ -30,6 +30,7 @@ return [
         'faq' => 'FAQ',
         'legal' => 'Legal',
         'dashboard_preview' => 'Vista previa del dashboard',
+        'login' => 'Login',
     ],
 
     'home' => [
@@ -64,6 +65,7 @@ return [
             'Sin límites de tiempo - Fase de evaluación',
         ],
         'challenge_selector' => [
+            'currency_label' => 'Moneda',
             'type_label' => 'Tipo de challenge',
             'size_label' => 'Tamaño de cuenta',
             'insight_title' => 'Resumen del modelo',
@@ -80,6 +82,11 @@ return [
                 '20 % de descuento de lanzamiento activo',
                 'Ciclo de payout de 14 dias',
                 'Duracion de evaluacion ilimitada',
+            ],
+            'currencies' => [
+                'USD' => 'Dolar estadounidense',
+                'EUR' => 'Euro',
+                'GBP' => 'Libra esterlina',
             ],
             'phase_titles' => [
                 'single_phase' => 'Fase unica',
@@ -172,6 +179,22 @@ return [
                 ],
             ],
         ],
+    ],
+
+    'launch_popup' => [
+        'title' => '20 % OFF - Oferta limitada en todos los planes',
+        'description' => 'Los precios de lanzamiento estan activos en todos los challenges de Wolforix. Revisa el modelo que mejor encaja con tu estrategia y aprovecha la oferta limitada mientras siga disponible.',
+        'primary_action' => 'Ver planes de lanzamiento',
+        'secondary_action' => 'Tal vez despues',
+        'close' => 'Cerrar oferta de lanzamiento',
+    ],
+
+    'auth' => [
+        'eyebrow' => 'Placeholder de login',
+        'title' => 'Login Proximamente',
+        'description' => 'La autenticacion todavia no forma parte de esta ronda de refinamiento, pero la ruta y el boton del header ya estan listos para el siguiente paso de implementacion.',
+        'notice' => 'Mientras tanto, usa la vista previa del dashboard para la revision visual. La autenticacion real de cuentas, las sesiones seguras y los flujos de contrasena se conectaran en un hito posterior.',
+        'primary_action' => 'Volver al inicio',
     ],
 
     'checkout' => [

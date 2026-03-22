@@ -1,5 +1,5 @@
 <aside class="border-b border-white/5 bg-slate-950/80 px-4 py-5 backdrop-blur-xl lg:border-b-0 lg:border-r lg:px-5">
-    <div class="flex items-center gap-3 rounded-3xl border border-white/6 bg-white/3 p-4">
+    <a href="{{ route('home') }}" class="flex items-center gap-3 rounded-3xl border border-white/6 bg-white/3 p-4 transition hover:border-amber-400/20 hover:bg-white/5">
         <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/20 bg-black/80">
             <img src="{{ asset('branding/IMG_8365.jpeg') }}" alt="Wolforix" class="h-full w-full object-cover">
         </div>
@@ -7,7 +7,7 @@
             <p class="text-sm font-semibold tracking-[0.28em] text-amber-300">WOLFORIX</p>
             <p class="mt-1 text-xs text-slate-400">{{ __('site.dashboard.sidebar_label') }}</p>
         </div>
-    </div>
+    </a>
 
     <div class="mt-6 rounded-3xl border border-amber-400/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
         {{ __('site.dashboard.simulated_badge') }}

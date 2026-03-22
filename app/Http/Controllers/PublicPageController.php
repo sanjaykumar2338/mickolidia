@@ -21,6 +21,8 @@ class PublicPageController extends Controller
             'plans' => config('wolforix.challenge_plans'),
             'challengeCatalog' => $challengeCatalog,
             'challengeSizes' => config('wolforix.challenge_sizes', []),
+            'currencies' => config('wolforix.currencies', []),
+            'defaultCurrency' => config('wolforix.default_currency', 'USD'),
             'defaultChallengeType' => $defaultChallengeType,
             'defaultChallengeSize' => $defaultChallengeSize,
             'checkoutCountries' => config('wolforix.checkout_countries', []),
