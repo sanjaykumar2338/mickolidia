@@ -197,6 +197,52 @@ return [
         'primary_action' => 'Volver al inicio',
     ],
 
+    'admin' => [
+        'meta_title' => 'Wolforix Admin',
+        'eyebrow' => 'Admin interno',
+        'header_label' => 'Area de gestion de clientes',
+        'back_to_site' => 'Volver al sitio',
+        'clients' => [
+            'title' => 'Clientes',
+            'description' => 'Haz seguimiento de usuarios registrados, planes elegidos, importes de pago y progreso actual del challenge desde una sola tabla interna.',
+            'status_hint' => ':count clientes cargados',
+            'empty' => 'Todavia no hay clientes registrados.',
+        ],
+        'table' => [
+            'full_name' => 'Nombre Completo',
+            'email' => 'Email',
+            'country' => 'Pais',
+            'plan_selected' => 'Plan Seleccionado',
+            'payment_amount' => 'Importe de Pago',
+            'status' => 'Estado',
+            'metrics' => 'Metricas',
+            'view_metrics' => 'Ver Metricas',
+        ],
+        'client_show' => [
+            'title' => 'Metricas del Cliente',
+            'eyebrow' => 'Detalle del cliente',
+            'description' => 'Las metricas actuales del challenge se muestran como una vista administrativa temporal hasta que se conecte la sincronizacion en vivo de cuentas.',
+            'back' => 'Volver a Clientes',
+            'client_summary' => 'Resumen del Cliente',
+            'metrics_overview' => 'Resumen de Metricas',
+            'placeholder_note' => 'Estas metricas son valores administrativos de ejemplo y usan la ultima cuenta de trading cuando existe. Los calculos en vivo y la sincronizacion real de cuentas siguen fuera del alcance de esta fase.',
+            'account_snapshot' => 'Ultimo Estado de Cuenta',
+        ],
+        'metrics' => [
+            'profit' => 'Beneficio',
+            'daily_loss' => 'Perdida Diaria',
+            'max_drawdown' => 'Drawdown Maximo',
+            'trading_days' => 'Dias de Trading',
+            'current_status' => 'Estado Actual',
+        ],
+        'account' => [
+            'reference' => 'Referencia de Cuenta',
+            'platform' => 'Plataforma',
+            'stage' => 'Etapa',
+            'balance' => 'Balance',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Base del checkout',
         'title' => 'Stub de compra con confirmación legal obligatoria.',

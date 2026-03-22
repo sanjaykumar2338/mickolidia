@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PublicPageController;
@@ -24,4 +25,9 @@ Route::prefix('dashboard')->group(function (): void {
     Route::get('/accounts', [DashboardController::class, 'accounts'])->name('dashboard.accounts');
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
+});
+
+Route::middleware('admin.basic')->prefix('admin')->group(function (): void {
+    Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
+    Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
 });

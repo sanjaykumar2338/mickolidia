@@ -24,6 +24,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'plan_type',
+        'account_size',
+        'payment_amount',
+        'status',
     ];
 
     /**
@@ -46,6 +50,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'account_size' => 'integer',
+            'payment_amount' => 'decimal:2',
         ];
     }
 
@@ -57,6 +63,11 @@ class User extends Authenticatable
     public function tradingAccounts(): HasMany
     {
         return $this->hasMany(TradingAccount::class);
+    }
+
+    public function latestTradingAccount(): HasOne
+    {
+        return $this->hasOne(TradingAccount::class)->latestOfMany();
     }
 
     public function payoutRequests(): HasMany

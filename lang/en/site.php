@@ -197,6 +197,52 @@ return [
         'primary_action' => 'Return Home',
     ],
 
+    'admin' => [
+        'meta_title' => 'Wolforix Admin',
+        'eyebrow' => 'Internal admin',
+        'header_label' => 'Client management area',
+        'back_to_site' => 'Back to site',
+        'clients' => [
+            'title' => 'Clients',
+            'description' => 'Track registered users, selected plans, payment values, and current challenge progress from one internal admin table.',
+            'status_hint' => ':count clients loaded',
+            'empty' => 'No registered clients found yet.',
+        ],
+        'table' => [
+            'full_name' => 'Full Name',
+            'email' => 'Email',
+            'country' => 'Country',
+            'plan_selected' => 'Plan Selected',
+            'payment_amount' => 'Payment Amount',
+            'status' => 'Status',
+            'metrics' => 'Metrics',
+            'view_metrics' => 'View Metrics',
+        ],
+        'client_show' => [
+            'title' => 'Client Metrics',
+            'eyebrow' => 'Client detail',
+            'description' => 'Current challenge metrics are shown as a placeholder admin snapshot until live account syncing is connected.',
+            'back' => 'Back to Clients',
+            'client_summary' => 'Client Summary',
+            'metrics_overview' => 'Metrics Overview',
+            'placeholder_note' => 'These metrics are placeholder administrative values sourced from the latest trading account when available. Live platform calculations and real account sync remain out of scope for this phase.',
+            'account_snapshot' => 'Latest Account Snapshot',
+        ],
+        'metrics' => [
+            'profit' => 'Profit',
+            'daily_loss' => 'Daily Loss',
+            'max_drawdown' => 'Max Drawdown',
+            'trading_days' => 'Trading Days',
+            'current_status' => 'Current Status',
+        ],
+        'account' => [
+            'reference' => 'Account Reference',
+            'platform' => 'Platform',
+            'stage' => 'Stage',
+            'balance' => 'Balance',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Checkout foundation',
         'title' => 'Purchase UI stub with required legal confirmation.',

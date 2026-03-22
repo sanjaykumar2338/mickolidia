@@ -2,10 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\ChallengePlan;
+use App\Models\TradingAccount;
+use App\Models\User;
+use App\Models\UserProfile;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class WolforixPlatformTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_public_pages_render_successfully(): void
     {
         foreach ([
@@ -122,5 +129,88 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('company-info'))
             ->assertOk()
             ->assertSee('Suite RA01, 195-197 Wood Street, London, E17 3NU');
+    }
+
+    public function test_admin_clients_requires_basic_auth(): void
+    {
+        $this->get(route('admin.clients.index'))
+            ->assertUnauthorized();
+    }
+
+    public function test_admin_can_view_client_list_and_metrics(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        $user = User::factory()->create([
+            'name' => 'Admin Review Trader',
+            'email' => 'admin-review@example.com',
+            'plan_type' => '1-Step Challenge',
+            'account_size' => 25000,
+            'payment_amount' => 159,
+            'status' => 'completed',
+        ]);
+
+        UserProfile::query()->create([
+            'user_id' => $user->id,
+            'preferred_language' => 'en',
+            'country' => 'Spain',
+            'city' => 'Madrid',
+            'timezone' => 'Europe/Madrid',
+            'kyc_status' => 'approved',
+            'marketing_opt_in' => false,
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'one-step-25000',
+            'name' => '1-Step 25K',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'entry_fee' => 159,
+            'profit_target' => 10,
+            'daily_loss_limit' => 4,
+            'max_loss_limit' => 8,
+            'steps' => 1,
+            'profit_share' => 80,
+            'first_payout_days' => 14,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'account_reference' => 'WFX-ADMIN-25001',
+            'platform' => 'cTrader',
+            'stage' => 'Challenge Step 1',
+            'status' => 'Completed',
+            'starting_balance' => 25000,
+            'balance' => 28350,
+            'total_profit' => 3350,
+            'today_profit' => 250,
+            'drawdown_percent' => 1.7,
+            'consistency_limit_percent' => 40,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 4,
+        ]);
+
+        $this->withBasicAuth('admin', 'secret')
+            ->get(route('admin.clients.index'))
+            ->assertOk()
+            ->assertSee('Admin Review Trader')
+            ->assertSee('Spain')
+            ->assertSee('1-Step Challenge / 25K')
+            ->assertSee('$159.00')
+            ->assertSee('View Metrics');
+
+        $this->withBasicAuth('admin', 'secret')
+            ->get(route('admin.clients.show', $user))
+            ->assertOk()
+            ->assertSee('Admin Review Trader')
+            ->assertSee('Profit')
+            ->assertSee('$3,350.00')
+            ->assertSee('Current Status')
+            ->assertSee('Completed');
     }
 }

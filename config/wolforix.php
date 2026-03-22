@@ -167,6 +167,18 @@ ksort($challengeSizes);
 return [
     'default_locale' => 'en',
 
+    'admin_auth' => [
+        'username' => env('ADMIN_USERNAME', 'admin'),
+        'password' => env('ADMIN_PASSWORD', 'wolforix-admin'),
+        'realm' => env('ADMIN_REALM', 'Wolforix Admin'),
+    ],
+
+    'client_statuses' => [
+        'active',
+        'cancelled',
+        'completed',
+    ],
+
     'supported_locales' => $supportedLocales,
 
     'future_locales' => [

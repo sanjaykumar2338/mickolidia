@@ -197,6 +197,52 @@ return [
         'primary_action' => 'Zur Startseite',
     ],
 
+    'admin' => [
+        'meta_title' => 'Wolforix Admin',
+        'eyebrow' => 'Interner Adminbereich',
+        'header_label' => 'Bereich fuer Kundenverwaltung',
+        'back_to_site' => 'Zur Website',
+        'clients' => [
+            'title' => 'Kunden',
+            'description' => 'Verfolge registrierte Nutzer, ausgewaehlte Plaene, Zahlungswerte und den aktuellen Challenge-Fortschritt in einer internen Admin-Tabelle.',
+            'status_hint' => ':count Kunden geladen',
+            'empty' => 'Noch keine registrierten Kunden gefunden.',
+        ],
+        'table' => [
+            'full_name' => 'Vollstaendiger Name',
+            'email' => 'E-Mail',
+            'country' => 'Land',
+            'plan_selected' => 'Ausgewaehlter Plan',
+            'payment_amount' => 'Zahlungsbetrag',
+            'status' => 'Status',
+            'metrics' => 'Metriken',
+            'view_metrics' => 'Metriken ansehen',
+        ],
+        'client_show' => [
+            'title' => 'Kundenmetriken',
+            'eyebrow' => 'Kundendetail',
+            'description' => 'Aktuelle Challenge-Metriken werden als Platzhalter-Admin-Snapshot angezeigt, bis die Live-Kontosynchronisierung verbunden ist.',
+            'back' => 'Zurueck zu Kunden',
+            'client_summary' => 'Kundenuebersicht',
+            'metrics_overview' => 'Metriken-Uebersicht',
+            'placeholder_note' => 'Diese Metriken sind administrative Platzhalterwerte und stammen nach Moeglichkeit aus dem neuesten Trading-Konto. Live-Plattformberechnungen und echte Kontosynchronisierung bleiben in dieser Phase ausserhalb des Umfangs.',
+            'account_snapshot' => 'Neuester Konto-Snapshot',
+        ],
+        'metrics' => [
+            'profit' => 'Gewinn',
+            'daily_loss' => 'Tagesverlust',
+            'max_drawdown' => 'Max. Drawdown',
+            'trading_days' => 'Handelstage',
+            'current_status' => 'Aktueller Status',
+        ],
+        'account' => [
+            'reference' => 'Kontoreferenz',
+            'platform' => 'Plattform',
+            'stage' => 'Stufe',
+            'balance' => 'Kontostand',
+        ],
+    ],
+
     'checkout' => [
         'eyebrow' => 'Checkout-Grundlage',
         'title' => 'Kauf-UI-Platzhalter mit verpflichtender rechtlicher Bestätigung.',
