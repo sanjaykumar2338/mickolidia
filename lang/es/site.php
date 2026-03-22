@@ -21,7 +21,7 @@ return [
 
     'public_layout' => [
         'preview_badge' => 'Base del hito 1',
-        'simulated_notice' => 'Solo evaluación de trading simulado',
+        'simulated_notice' => 'Trade Fearlessly. Win Real.',
     ],
 
     'nav' => [
@@ -34,7 +34,7 @@ return [
 
     'home' => [
         'eyebrow' => 'Evaluación Prop de Wolforix',
-        'title' => 'Conviértete en un trader financiado',
+        'title' => 'Demuéstralo. Consigue financiación. Escala rápido.',
         'description' => 'Demuestra tu estrategia. Consigue financiación. Escala tu rendimiento.',
         'primary_cta' => 'Iniciar Challenge',
         'secondary_cta' => 'Abrir vista previa del dashboard',

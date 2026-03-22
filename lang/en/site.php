@@ -21,7 +21,7 @@ return [
 
     'public_layout' => [
         'preview_badge' => 'Milestone 1 foundation',
-        'simulated_notice' => 'Simulated trading evaluation only',
+        'simulated_notice' => 'Trade Fearlessly. Win Real.',
     ],
 
     'nav' => [
@@ -34,7 +34,7 @@ return [
 
     'home' => [
         'eyebrow' => 'Wolforix Prop Evaluation',
-        'title' => 'Become a Funded Trader',
+        'title' => 'Prove It. Get Funded. Scale Fast.',
         'description' => 'Prove your strategy. Get funded. Scale your performance.',
         'primary_cta' => 'Start Challenge',
         'secondary_cta' => 'Open Dashboard Preview',

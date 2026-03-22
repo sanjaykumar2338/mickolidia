@@ -21,7 +21,7 @@ return [
 
     'public_layout' => [
         'preview_badge' => 'Meilenstein-1-Grundlage',
-        'simulated_notice' => 'Nur simulierte Trading-Evaluation',
+        'simulated_notice' => 'Trade Fearlessly. Win Real.',
     ],
 
     'nav' => [
@@ -34,7 +34,7 @@ return [
 
     'home' => [
         'eyebrow' => 'Wolforix Prop-Evaluation',
-        'title' => 'Werde ein finanzierter Trader',
+        'title' => 'Beweise es. Werde finanziert. Skaliere schnell.',
         'description' => 'Beweise deine Strategie. Lass dich finanzieren. Skaliere deine Performance.',
         'primary_cta' => 'Challenge starten',
         'secondary_cta' => 'Dashboard-Vorschau öffnen',
