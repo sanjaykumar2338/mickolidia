@@ -434,6 +434,10 @@ return [
                         'answer' => 'Cada cuenta tiene límites de drawdown definidos. Superar estos límites puede resultar en la descalificación de la evaluación.',
                     ],
                     [
+                        'question' => '¿Puedo operar durante eventos de noticias de alto impacto?',
+                        'answer' => 'Esta prohibido abrir o cerrar operaciones 5 minutos antes y 5 minutos despues de un evento de noticias de alto impacto. Esta restriccion se aplica tanto a ordenes de mercado como a ordenes pendientes, incluidas las activaciones de stop-loss o take-profit. Puedes mantener posiciones existentes durante el evento, pero no puedes iniciar ni cerrar operaciones dentro de esta ventana de tiempo.',
+                    ],
+                    [
                         'question' => '¿Qué instrumentos puedo operar y qué estrategias están permitidas?',
                         'answer_paragraphs' => [
                             'Wolforix permite trading discrecional, trading algorítmico y Expert Advisors (EAs), siempre que las estrategias sean legítimas, reflejen condiciones reales de mercado, estén alineadas con una gestión de riesgo sólida y no incluyan prácticas prohibidas.',
@@ -615,10 +619,24 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'Regla de trading durante noticias',
+                        'paragraphs' => [
+                            'Esta prohibido abrir o cerrar operaciones 5 minutos antes y 5 minutos despues de un evento de noticias de alto impacto. Esta restriccion se aplica tanto a ordenes de mercado como a ordenes pendientes, incluidas las activaciones de stop-loss o take-profit. Puedes mantener posiciones existentes durante el evento, pero no puedes iniciar ni cerrar operaciones dentro de esta ventana de tiempo.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Regla de scalping',
+                        'bullets' => [
+                            'Las operaciones cerradas en menos de 60 segundos estan estrictamente prohibidas si generan beneficio.',
+                            'Esa actividad se considera no replicable en condiciones reales de mercado y puede indicar explotacion de latencia o ejecucion irreal.',
+                            'El scalping estandar esta permitido si la duracion refleja exposicion real al mercado.',
+                            'Wolforix puede excluir esas operaciones de los calculos de beneficio o tomar medidas adicionales si se repiten.',
+                        ],
+                    ],
+                    [
                         'title' => 'Prácticas prohibidas',
                         'paragraphs' => [
                             'Cualquier forma de abuso, explotación de arbitraje, explotación de latencia o manipulación del entorno de trading provocará una revisión de la cuenta y puede llevar a su restricción o terminación.',
-                            'Las operaciones cerradas en menos de 60 segundos con beneficio están estrictamente prohibidas. Wolforix puede excluir esas operaciones del cálculo de beneficios o tomar medidas adicionales si se repiten.',
                         ],
                         'bullets' => [
                             'La duplicación de EAs de terceros puede entrar en conflicto con la gestión interna de riesgo y provocar una asignación restringida.',

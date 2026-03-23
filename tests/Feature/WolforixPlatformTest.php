@@ -324,6 +324,24 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Trades closed in less than 60 seconds are strictly prohibited if they result in profit.');
     }
 
+    public function test_terms_page_contains_news_and_scalping_rules(): void
+    {
+        $this->get(route('terms'))
+            ->assertOk()
+            ->assertSee('News Trading Rule')
+            ->assertSee('It is prohibited to open or close trades 5 minutes before and 5 minutes after a high-impact news event.')
+            ->assertSee('Scalping Rule')
+            ->assertSee('Trades closed in less than 60 seconds are strictly prohibited if they result in profit.');
+    }
+
+    public function test_faq_contains_the_high_impact_news_rule(): void
+    {
+        $this->get(route('faq'))
+            ->assertOk()
+            ->assertSee('Can I trade during high-impact news events?')
+            ->assertSee('It is prohibited to open or close trades 5 minutes before and 5 minutes after a high-impact news event.');
+    }
+
     public function test_admin_clients_requires_basic_auth(): void
     {
         $this->get(route('admin.clients.index'))

@@ -434,6 +434,10 @@ return [
                         'answer' => 'Each account has defined drawdown limits. Exceeding these limits may result in account disqualification from the evaluation program.',
                     ],
                     [
+                        'question' => 'Can I trade during high-impact news events?',
+                        'answer' => 'It is prohibited to open or close trades 5 minutes before and 5 minutes after a high-impact news event. This restriction applies to both market orders and pending orders (including stop-loss or take-profit activations). You may hold existing positions during the event, but you may not initiate or close trades within this time window.',
+                    ],
+                    [
                         'question' => 'Which instruments can I trade and what strategies are allowed?',
                         'answer_paragraphs' => [
                             'Wolforix allows discretionary trading, algorithmic trading, and Expert Advisors (EAs), as long as strategies are legitimate, reflect real market conditions, align with sound risk management, and do not involve prohibited practices.',
@@ -615,10 +619,24 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'News Trading Rule',
+                        'paragraphs' => [
+                            'It is prohibited to open or close trades 5 minutes before and 5 minutes after a high-impact news event. This restriction applies to both market orders and pending orders (including stop-loss or take-profit activations). You may hold existing positions during the event, but you may not initiate or close trades within this time window.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Scalping Rule',
+                        'bullets' => [
+                            'Trades closed in less than 60 seconds are strictly prohibited if they result in profit.',
+                            'Such activity is considered non-replicable under real market conditions and may indicate latency exploitation or unrealistic execution.',
+                            'Standard scalping is allowed if trade duration reflects genuine market exposure.',
+                            'Wolforix may exclude such trades from profit calculations or take further action if repeated.',
+                        ],
+                    ],
+                    [
                         'title' => 'Prohibited Practices',
                         'paragraphs' => [
                             'Any form of abuse, arbitrage exploitation, latency exploitation, or manipulation of the trading environment will result in account review and may lead to account restriction or termination.',
-                            'Trades closed in less than 60 seconds are strictly prohibited if they result in profit. Wolforix may exclude such trades from profit calculations or take further action if repeated.',
                         ],
                         'bullets' => [
                             'Third-party EA duplication may conflict with internal risk management and can result in restricted allocation.',

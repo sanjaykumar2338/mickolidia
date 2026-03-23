@@ -434,6 +434,10 @@ return [
                         'answer' => 'Jedes Konto hat definierte Drawdown-Grenzen. Das Überschreiten dieser Grenzen kann zur Disqualifikation aus dem Evaluationsprogramm führen.',
                     ],
                     [
+                        'question' => 'Darf ich waehrend wichtiger Nachrichtenereignisse handeln?',
+                        'answer' => 'Es ist verboten, 5 Minuten vor und 5 Minuten nach einem Nachrichtenereignis mit hoher Auswirkung Trades zu eroeffnen oder zu schliessen. Diese Einschraenkung gilt sowohl fuer Market Orders als auch fuer Pending Orders, einschliesslich Stop-Loss- oder Take-Profit-Ausloesungen. Bereits bestehende Positionen duerfen waehrend des Ereignisses gehalten werden, aber innerhalb dieses Zeitfensters duerfen keine Trades eroeffnet oder geschlossen werden.',
+                    ],
+                    [
                         'question' => 'Welche Instrumente darf ich handeln und welche Strategien sind erlaubt?',
                         'answer_paragraphs' => [
                             'Wolforix erlaubt diskretionaeres Trading, algorithmisches Trading und Expert Advisors (EAs), solange Strategien legitim sind, reale Marktbedingungen widerspiegeln, zu solidem Risikomanagement passen und keine verbotenen Praktiken enthalten.',
@@ -615,10 +619,24 @@ return [
                         ],
                     ],
                     [
+                        'title' => 'News-Trading-Regel',
+                        'paragraphs' => [
+                            'Es ist verboten, 5 Minuten vor und 5 Minuten nach einem Nachrichtenereignis mit hoher Auswirkung Trades zu eroeffnen oder zu schliessen. Diese Einschraenkung gilt sowohl fuer Market Orders als auch fuer Pending Orders, einschliesslich Stop-Loss- oder Take-Profit-Ausloesungen. Bereits bestehende Positionen duerfen waehrend des Ereignisses gehalten werden, aber innerhalb dieses Zeitfensters duerfen keine Trades eroeffnet oder geschlossen werden.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Scalping-Regel',
+                        'bullets' => [
+                            'Trades, die in weniger als 60 Sekunden mit Gewinn geschlossen werden, sind strikt verboten.',
+                            'Solche Aktivitaet gilt als nicht replizierbar unter realen Marktbedingungen und kann auf Latenzausnutzung oder unrealistische Ausfuehrung hinweisen.',
+                            'Normales Scalping ist erlaubt, solange die Haltedauer echte Marktexponierung widerspiegelt.',
+                            'Wolforix kann solche Trades von der Gewinnberechnung ausschliessen oder bei Wiederholung weitere Massnahmen ergreifen.',
+                        ],
+                    ],
+                    [
                         'title' => 'Verbotene Praktiken',
                         'paragraphs' => [
                             'Jede Form von Missbrauch, Arbitrage-Ausnutzung, Latenzausnutzung oder Manipulation der Handelsumgebung fuehrt zu einer Konto-Pruefung und kann zur Einschraenkung oder Kuendigung fuehren.',
-                            'Trades, die in weniger als 60 Sekunden mit Gewinn geschlossen werden, sind strikt verboten. Wolforix kann solche Trades von Gewinnberechnungen ausschliessen oder bei Wiederholung weitere Schritte einleiten.',
                         ],
                         'bullets' => [
                             'Die Duplizierung von Drittanbieter-EAs kann mit dem internen Risikomanagement kollidieren und eine restriktive Allokation ausloesen.',
