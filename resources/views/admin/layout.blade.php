@@ -23,7 +23,10 @@
                     <img src="{{ asset('branding/IMG_8365.jpeg') }}" alt="Wolforix" class="h-full w-full object-cover">
                 </a>
                 <div>
-                    <p class="text-sm font-semibold tracking-[0.28em] text-amber-300">WOLFORIX</p>
+                    <p class="inline-flex items-start text-sm font-semibold tracking-[0.28em] text-amber-300">
+                        <span>WOLFORIX</span>
+                        <span class="ml-1 text-[0.58em] leading-none tracking-normal text-amber-200">®</span>
+                    </p>
                     <p class="mt-1 text-xs text-slate-400">{{ __('site.admin.header_label') }}</p>
                 </div>
             </div>
