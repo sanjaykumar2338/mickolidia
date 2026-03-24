@@ -66,9 +66,9 @@ h6 {
     overflow: hidden;
     border: 1px solid rgba(148, 163, 184, 0.12);
     background:
-        radial-gradient(circle at top right, rgba(244, 183, 74, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(244, 183, 74, 0.08), transparent 24%),
         radial-gradient(circle at bottom left, rgba(43, 92, 166, 0.18), transparent 30%),
-        linear-gradient(180deg, rgba(9, 15, 27, 0.97) 0%, rgba(5, 10, 18, 0.94) 100%);
+        linear-gradient(180deg, rgba(8, 13, 24, 0.985) 0%, rgba(4, 8, 15, 0.965) 100%);
     box-shadow: 0 36px 90px rgba(2, 6, 23, 0.48);
 }
 
@@ -77,8 +77,8 @@ h6 {
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(120deg, rgba(255, 255, 255, 0.03), transparent 32%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 18%);
+        linear-gradient(120deg, rgba(255, 255, 255, 0.018), transparent 30%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 16%);
     pointer-events: none;
 }
 
@@ -99,6 +99,16 @@ h6 {
     min-height: 24rem;
     background: linear-gradient(180deg, rgba(8, 13, 23, 0.88) 0%, rgba(5, 9, 18, 0.96) 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.hero-visual > img {
+    filter: brightness(1.12) contrast(1.14) saturate(1.03);
+}
+
+.hero-shell h1 {
+    text-shadow:
+        0 0 14px rgba(244, 183, 74, 0.12),
+        0 0 34px rgba(244, 183, 74, 0.06);
 }
 
 .hero-metric-card {
