@@ -46,7 +46,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR bereit',
             'Launch-Preise aktiv',
-            '14-Tage-Auszahlungsmodelle bereit',
+            'Erste Auszahlung nach 21 Tagen',
         ],
         'hero_panel' => [
             'title' => 'Zentrale Regelstruktur',
@@ -64,8 +64,15 @@ return [
         'feature_cards' => [
             '80 % Gewinnbeteiligung',
             'Bis zu $100K simuliertes Kapital',
+            'Erste Auszahlung nach 21 Tagen',
             '14-Tage-Auszahlungszyklus',
-            'Keine Zeitlimits - Evaluationsphase',
+        ],
+        'hero_visual' => [
+            'label' => 'Trading-Desk-Vorschau',
+            'platform' => 'Dunkler Execution-Workspace',
+            'card_title' => 'Chart-fokussiert. Regelklar. Gebaut wie funded.',
+            'card_copy' => 'Die Homepage fuehrt jetzt mit einer professionellen Trading-Screen-Visualisierung, damit die Marke eher wie ein serioeser Prop-Firm-Workspace als wie eine dekorative Promo-Karte wirkt.',
+            'image_alt' => 'Trading-Dashboard und chartfokussierter Workspace',
         ],
         'challenge_selector' => [
             'currency_label' => 'Waehrung',
@@ -83,7 +90,7 @@ return [
             'unlimited' => 'Unbegrenzt',
             'highlights' => [
                 '20 % Launch-Rabatt aktiv',
-                '14-Tage-Auszahlungszyklus',
+                'Erste Auszahlung nach 21 Tagen',
                 'Unbegrenzte Evaluationsdauer',
             ],
             'currencies' => [
@@ -121,13 +128,13 @@ return [
                     'label' => '1-Step Challenge',
                     'description' => 'Einphasige Evaluation mit engeren Verlustgrenzen und einer obligatorischen Konsistenzregel auf dem Funded-Konto.',
                     'note_title' => '1-Step Funded-Modell',
-                    'note_body' => '1-Step Funded-Konten zahlen alle 14 Tage mit 80 % Gewinnbeteiligung aus. Die Konsistenzregel bleibt vor jeder Auszahlung obligatorisch.',
+                    'note_body' => '1-Step Funded-Konten zahlen alle 14 Tage aus, erlauben die erste Auszahlung nach 21 Tagen und verlangen vor jeder Auszahlung weiterhin die obligatorische Einhaltung der Konsistenzregel.',
                 ],
                 'two_step' => [
                     'label' => '2-Step Challenge',
                     'description' => 'Zwei Evaluationsphasen mit 1:100 Hebel in Phase 1, 14-Tage-Auszahlungen und Skalierung fuer profitable Funded-Konten.',
                     'note_title' => '2-Step Funded-Modell',
-                    'note_body' => '2-Step Funded-Konten zahlen alle 14 Tage aus, erlauben die erste Auszahlung nach 14 Tagen und skalieren bei Profitabilitaet alle 3 Monate um +25 % Kapital.',
+                    'note_body' => '2-Step Funded-Konten zahlen alle 14 Tage aus, erlauben die erste Auszahlung nach 21 Tagen und skalieren bei Profitabilitaet alle 3 Monate um +25 % Kapital.',
                 ],
             ],
         ],
@@ -156,13 +163,41 @@ return [
                 ],
                 [
                     'title' => 'Auszahlungs-Schutzmechanismen früh sichtbar',
-                    'description' => 'Der 14-Tage-Auszahlungszyklus, die 1-Step-Konsistenzpflicht, die erste 2-Step-Auszahlung nach 14 Tagen und die +25-%-Skalierung alle 3 Monate sind bereits auf Website und im Dashboard sichtbar.',
+                    'description' => 'Der 14-Tage-Auszahlungszyklus, die erste Auszahlung nach 21 Tagen fuer alle funded Konten, die 1-Step-Konsistenzpflicht und die 2-Step-Skalierung alle 3 Monate sind bereits auf Website und im Dashboard sichtbar.',
                 ],
                 [
                     'title' => 'Von Anfang an mehrsprachig',
                     'description' => 'Englisch ist Standard, während Deutsch und Spanisch von Beginn an strukturiert sind, damit später weitere Sprachen wie Hindi, Italienisch und Portugiesisch sauber ergänzt werden können.',
                 ],
             ],
+        ],
+        'about' => [
+            'eyebrow' => 'Über Wolforix',
+            'title' => 'Eine neue Generation von Prop Firms, aufgebaut auf Zugang, Disziplin und Performance.',
+            'intro' => 'Wolforix ist eine Prop-Trading-Firma, die eine neue Generation von Prop Firms repraesentiert und das Potenzial engagierter Trader in einem fairen, zugaenglichen und performance-orientierten Umfeld freisetzen soll.',
+            'mission_label' => 'Unsere Mission',
+            'mission' => 'Trader identifizieren, ausbilden und finanzieren, die bereit sind zu performen.',
+            'pillars' => [
+                'Strukturierte Evaluation',
+                'Kostenloser Trial-Zugang',
+                'Performance-basierte Finanzierung',
+            ],
+            'blocks' => [
+                [
+                    'title' => 'Warum wir existieren',
+                    'description' => 'Wir glauben, dass Talent allein nicht ausreicht. Fuer viele disziplinierte Trader, die bereits ueber Konstanz und das richtige Mindset verfuegen, bleibt der Zugang zu Kapital die eigentliche Huerde.',
+                ],
+                [
+                    'title' => 'Wie Trader vorankommen',
+                    'description' => 'Mit einem strukturierten Evaluationssystem und kostenlosen Trial-Moeglichkeiten koennen Trader ihren Prozess entwickeln, Erfahrung sammeln und Konstanz in einer kontrollierten Umgebung nachweisen, bevor sie funded Kapital verwalten.',
+                ],
+                [
+                    'title' => 'Wer hinter Wolforix steht',
+                    'description' => 'Wolforix wird von Wirtschaftsabsolventen mit mehrjaehriger Erfahrung in Finanzmaerkten, Trading und Investments getragen. Das Unternehmen wird als transparentes, faires und performance-orientiertes Oekosystem aufgebaut.',
+                ],
+            ],
+            'closing_label' => 'Was wir aufbauen',
+            'closing' => 'Wir finanzieren nicht nur Trader. Wir formen disziplinierte, konstante Profis, die langfristigen finanziellen Erfolg erreichen koennen.',
         ],
         'workflow' => [
             'eyebrow' => 'Umfang von Meilenstein 1',
@@ -504,7 +539,7 @@ return [
                 'items' => [
                     [
                         'question' => 'Wie oft werden Auszahlungen verarbeitet?',
-                        'answer' => 'Funded-Konten werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus geprueft. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet. 2-Step Funded-Konten koennen die erste Auszahlung nach 14 Tagen anfordern.',
+                        'answer' => 'Funded-Konten werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus geprueft. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet. Die erste Auszahlung wird nach 21 Tagen verfuegbar.',
                     ],
                     [
                         'question' => 'Wie wird meine Auszahlung berechnet?',
@@ -695,7 +730,7 @@ return [
                         'title' => 'Auszahlungsberechtigung',
                         'paragraphs' => [
                             'Auszahlungen werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet.',
-                            '2-Step Funded-Konten koennen die erste Auszahlung nach 14 Tagen anfordern und bei Profitabilitaet alle 3 Monate um +25 % Kapital skaliert werden.',
+                            'Funded-Konten koennen die erste Auszahlung nach 21 Tagen anfordern. 2-Step Funded-Konten koennen bei Profitabilitaet zudem alle 3 Monate um +25 % Kapital skaliert werden.',
                             '1-Step Funded-Konten arbeiten im selben 14-Tage-Rhythmus, verlangen jedoch vor jeder Auszahlung die obligatorische Einhaltung der Konsistenzregel.',
                         ],
                     ],
@@ -884,7 +919,7 @@ return [
             'rules_title' => 'Regelstruktur',
             'rules_copy' => 'Die Vorschau unten ist am finalen 2-Step-Launch-Modell ausgerichtet, damit Ziele, Risikogrenzen, Hebel und Auszahlungszeitpunkt nahe an den Kontokennzahlen sichtbar bleiben.',
             'payout_title' => 'Auszahlungsbereich',
-            'payout_copy' => 'Die Auszahlungsvorschau spiegelt jetzt 14-Tage-Zyklen, die erste 2-Step-Auszahlung nach 14 Tagen, 1-Step-Konsistenzanforderungen und die +25-%-Skalierung alle 3 Monate bei Profitabilitaet wider.',
+            'payout_copy' => 'Die Auszahlungsvorschau spiegelt jetzt 14-Tage-Zyklen, die erste Auszahlung nach 21 Tagen fuer alle funded Konten, 1-Step-Konsistenzanforderungen und die +25-%-Skalierung alle 3 Monate fuer profitable 2-Step-Konten wider.',
             'settings_title' => 'Profil & Einstellungen',
             'settings_copy' => 'Ein Profil-Platzhalter hält das Dashboard bereit für Spracheinstellungen, KYC und Kontosicherheitsfunktionen.',
         ],
@@ -914,13 +949,13 @@ return [
             'cycle_note' => 'Auszahlungen werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet.',
             'placeholder_status' => 'Platzhalter für manuelle Prüfung',
             'queue_title' => 'Vorschau der Auszahlungswarteschlange',
-            'queue_copy' => '14-Tage-Auszahlungszyklen, der Zeitpunkt der ersten 2-Step-Auszahlung, 1-Step-Konsistenzanforderungen und interne Pruefungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
+            'queue_copy' => '14-Tage-Auszahlungszyklen, die erste Auszahlung nach 21 Tagen fuer alle funded Konten, 1-Step-Konsistenzanforderungen und interne Pruefungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
             'progressive_note' => '2-Step Funded-Konten koennen bei Profitabilitaet alle 3 Monate um +25 % Kapital skaliert werden. 1-Step Funded-Konten behalten die obligatorische Konsistenzregel vor der Auszahlungsfreigabe.',
             'requirements_title' => 'Berechtigungs-Checkliste',
             'requirements' => [
                 'Die Mindesthandelstage der aktiven Phase muessen erfuellt sein.',
                 '1-Step Funded-Konten muessen die obligatorische Konsistenzregel erfuellen, bevor Gewinn auszahlungsberechtigt wird.',
-                '2-Step Funded-Konten koennen die erste Auszahlung nach 14 Tagen anfordern.',
+                'Funded-Konten koennen die erste Auszahlung nach 21 Tagen anfordern.',
                 'Es duerfen keine Regelverstoesse auf dem Konto vorliegen und alle Auszahlungsanfragen bleiben einer internen Handelspruefung unterworfen.',
             ],
             'cta' => 'Platzhalter für Auszahlungsanfrage',

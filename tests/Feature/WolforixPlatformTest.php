@@ -383,7 +383,7 @@ class WolforixPlatformTest extends TestCase
             'max_loss_limit' => 8,
             'steps' => 1,
             'profit_share' => 80,
-            'first_payout_days' => 14,
+            'first_payout_days' => 21,
             'minimum_trading_days' => 3,
             'payout_cycle_days' => 14,
             'is_active' => true,

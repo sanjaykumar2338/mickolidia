@@ -83,7 +83,7 @@
                         @if ($primaryPlan['funded']['first_withdrawal_days'])
                             <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                 <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
-                                <dd class="font-semibold text-white">{{ $primaryPlan['funded']['first_withdrawal_days'] }} {{ __('site.home.days') }}</dd>
+                                <dd class="font-semibold text-white">{{ str_replace(':days', (string) $primaryPlan['funded']['first_withdrawal_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
                             </div>
                         @endif
                     </dl>

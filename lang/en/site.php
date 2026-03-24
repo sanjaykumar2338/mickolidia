@@ -46,7 +46,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR ready',
             'Launch pricing active',
-            '14-day payout models ready',
+            'First withdrawal after 21 days',
         ],
         'hero_panel' => [
             'title' => 'Core rule stack',
@@ -64,8 +64,15 @@ return [
         'feature_cards' => [
             '80% Profit Split',
             'Up to $100K Simulated Capital',
+            'First Withdrawal After 21 Days',
             '14-Day Payout Cycle',
-            'No Time Limits - Evaluation Phase',
+        ],
+        'hero_visual' => [
+            'label' => 'Trading desk preview',
+            'platform' => 'Dark execution workspace',
+            'card_title' => 'Chart-focused. Rule-visible. Built to feel funded.',
+            'card_copy' => 'The homepage now leads with a professional trading-screen visual so the brand feels closer to a serious prop-firm workspace than a decorative promo card.',
+            'image_alt' => 'Trading dashboard and chart-focused workspace',
         ],
         'challenge_selector' => [
             'currency_label' => 'Currency',
@@ -83,7 +90,7 @@ return [
             'unlimited' => 'Unlimited',
             'highlights' => [
                 '20% launch pricing active',
-                '14-day payout cycle',
+                'First withdrawal after 21 days',
                 'Unlimited evaluation duration',
             ],
             'currencies' => [
@@ -121,13 +128,13 @@ return [
                     'label' => '1-Step Challenge',
                     'description' => 'Single-phase evaluation with tighter loss limits and an obligatory consistency rule on the funded account.',
                     'note_title' => '1-Step funded model',
-                    'note_body' => '1-Step funded accounts pay every 14 days with an 80% profit split. The consistency rule remains obligatory before payout approval.',
+                    'note_body' => '1-Step funded accounts pay every 14 days, allow the first withdrawal after 21 days, and keep the obligatory consistency rule before payout approval.',
                 ],
                 'two_step' => [
                     'label' => '2-Step Challenge',
                     'description' => 'Two evaluation phases with 1:100 leverage in Phase 1, 14-day payouts, and scaling for profitable funded accounts.',
                     'note_title' => '2-Step funded model',
-                    'note_body' => '2-Step funded accounts pay every 14 days, allow the first withdrawal after 14 days, and scale by +25% capital every 3 months if profitable.',
+                    'note_body' => '2-Step funded accounts pay every 14 days, allow the first withdrawal after 21 days, and scale by +25% capital every 3 months if profitable.',
                 ],
             ],
         ],
@@ -156,13 +163,41 @@ return [
                 ],
                 [
                     'title' => 'Payout safeguards visible early',
-                    'description' => 'The 14-day payout cycle, 1-Step consistency obligation, 2-Step first withdrawal after 14 days, and +25% scaling every 3 months if profitable are already surfaced in the website and dashboard UI.',
+                    'description' => 'The 14-day payout cycle, first withdrawal after 21 days across funded accounts, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
                 ],
                 [
                     'title' => 'Multilingual from the start',
                     'description' => 'English is the default, while German and Spanish are structured from day one so future languages like Hindi, Italian, and Portuguese can be added cleanly.',
                 ],
             ],
+        ],
+        'about' => [
+            'eyebrow' => 'About Wolforix',
+            'title' => 'A new generation prop firm built around access, discipline, and performance.',
+            'intro' => 'Wolforix is a proprietary trading firm representing a new generation of prop firms built to unlock the potential of committed traders in a fair, accessible, and performance-driven environment.',
+            'mission_label' => 'Our mission',
+            'mission' => 'Identify, train, and fund traders who are ready to perform.',
+            'pillars' => [
+                'Structured evaluation',
+                'Free trial access',
+                'Performance-driven funding',
+            ],
+            'blocks' => [
+                [
+                    'title' => 'Why we exist',
+                    'description' => 'We believe talent alone is not enough. Access to capital remains the real barrier for many disciplined traders who already have the consistency and mindset required to succeed.',
+                ],
+                [
+                    'title' => 'How traders progress',
+                    'description' => 'Through a structured evaluation system and free trial opportunities, traders can sharpen their process, gain experience, and prove consistency in a controlled environment before managing funded capital.',
+                ],
+                [
+                    'title' => 'What backs Wolforix',
+                    'description' => 'Wolforix is backed by economics graduates with years of experience across financial markets, trading, and investments. The firm is being built as a transparent, fair, and performance-driven ecosystem.',
+                ],
+            ],
+            'closing_label' => 'What we build',
+            'closing' => 'We don’t just fund traders. We build disciplined, consistent professionals capable of achieving long-term financial success.',
         ],
         'workflow' => [
             'eyebrow' => 'Milestone 1 scope',
@@ -504,7 +539,7 @@ return [
                 'items' => [
                     [
                         'question' => 'How often are payouts processed?',
-                        'answer' => 'Funded accounts are reviewed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles. 2-Step funded accounts can request the first withdrawal after 14 days.',
+                        'answer' => 'Funded accounts are reviewed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles. The first withdrawal becomes available after 21 days.',
                     ],
                     [
                         'question' => 'How is my payout calculated?',
@@ -695,7 +730,7 @@ return [
                         'title' => 'Payout Eligibility',
                         'paragraphs' => [
                             'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
-                            '2-Step funded accounts can request the first withdrawal after 14 days and may scale by +25% capital every 3 months if profitable.',
+                            'Funded accounts can request the first withdrawal after 21 days. 2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
                             '1-Step funded accounts operate on the same 14-day payout rhythm but require obligatory consistency-rule compliance before payout approval.',
                         ],
                     ],
@@ -884,7 +919,7 @@ return [
             'rules_title' => 'Rule stack',
             'rules_copy' => 'The preview below is aligned to the final 2-Step launch model so targets, risk limits, leverage, and payout timing remain obvious near account metrics.',
             'payout_title' => 'Payout section',
-            'payout_copy' => 'Payout previews now reflect 14-day cycles, 2-Step first withdrawal after 14 days, 1-Step consistency requirements, and +25% scaling every 3 months if profitable.',
+            'payout_copy' => 'Payout previews now reflect 14-day cycles, first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and +25% scaling every 3 months for profitable 2-Step accounts.',
             'settings_title' => 'Profile & settings',
             'settings_copy' => 'A placeholder profile area keeps the dashboard ready for language preferences, KYC, and account security controls.',
         ],
@@ -914,13 +949,13 @@ return [
             'cycle_note' => 'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
             'placeholder_status' => 'Manual review placeholder',
             'queue_title' => 'Payout queue preview',
-            'queue_copy' => '14-day payout cycles, 2-Step first withdrawal timing, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
+            'queue_copy' => '14-day payout cycles, first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
             'progressive_note' => '2-Step funded accounts can scale by +25% capital every 3 months if profitable. 1-Step funded accounts keep the obligatory consistency rule before payout approval.',
             'requirements_title' => 'Eligibility checklist',
             'requirements' => [
                 'Minimum trading days for the active phase must be met.',
                 '1-Step funded accounts must satisfy the obligatory consistency rule before profit becomes payout-eligible.',
-                '2-Step funded accounts can request the first withdrawal after 14 days.',
+                'Funded accounts can request the first withdrawal after 21 days.',
                 'No rule violations may be present on the account and all payout requests remain subject to internal trade review.',
             ],
             'cta' => 'Payout request placeholder',

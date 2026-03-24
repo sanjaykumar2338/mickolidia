@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', __('site.meta.default_title'))</title>
     <meta name="description" content="@yield('description', __('site.meta.description'))">
-    <link rel="icon" type="image/png" href="{{ asset('branding/8CEF4630-CD6F-4268-A22C-84ADF210A0CA.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('branding/8CEF4630-CD6F-4268-A22C-84ADF210A0CA.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="selection:bg-amber-400/30 selection:text-white">

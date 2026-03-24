@@ -46,7 +46,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR listo',
             'Precios de lanzamiento activos',
-            'Modelos de payout a 14 dias listos',
+            'Primer retiro después de 21 días',
         ],
         'hero_panel' => [
             'title' => 'Conjunto principal de reglas',
@@ -64,8 +64,15 @@ return [
         'feature_cards' => [
             '80 % de profit split',
             'Hasta $100K de capital simulado',
+            'Primer retiro después de 21 días',
             'Ciclo de payout de 14 dias',
-            'Sin límites de tiempo - Fase de evaluación',
+        ],
+        'hero_visual' => [
+            'label' => 'Vista previa del trading desk',
+            'platform' => 'Workspace oscuro de ejecución',
+            'card_title' => 'Enfocado en gráficos. Reglas visibles. Diseñado como funded.',
+            'card_copy' => 'La homepage ahora abre con una visual profesional de trading para que la marca se sienta más como un workspace serio de prop firm que como una tarjeta promocional decorativa.',
+            'image_alt' => 'Dashboard de trading y workspace enfocado en gráficos',
         ],
         'challenge_selector' => [
             'currency_label' => 'Moneda',
@@ -83,7 +90,7 @@ return [
             'unlimited' => 'Ilimitado',
             'highlights' => [
                 '20 % de descuento de lanzamiento activo',
-                'Ciclo de payout de 14 dias',
+                'Primer retiro después de 21 días',
                 'Duracion de evaluacion ilimitada',
             ],
             'currencies' => [
@@ -121,13 +128,13 @@ return [
                     'label' => '1-Step Challenge',
                     'description' => 'Evaluación de una sola fase con límites de pérdida más estrictos y una regla de consistencia obligatoria en la cuenta funded.',
                     'note_title' => 'Modelo funded 1-Step',
-                    'note_body' => 'Las cuentas funded 1-Step pagan cada 14 días con un 80 % de profit split. La regla de consistencia sigue siendo obligatoria antes de aprobar payouts.',
+                    'note_body' => 'Las cuentas funded 1-Step pagan cada 14 días, permiten el primer retiro después de 21 días y mantienen la regla de consistencia obligatoria antes de aprobar payouts.',
                 ],
                 'two_step' => [
                     'label' => '2-Step Challenge',
                     'description' => 'Dos fases de evaluación con apalancamiento 1:100 en la Fase 1, payouts cada 14 días y escalado para cuentas funded rentables.',
                     'note_title' => 'Modelo funded 2-Step',
-                    'note_body' => 'Las cuentas funded 2-Step pagan cada 14 días, permiten el primer retiro después de 14 días y escalan +25 % de capital cada 3 meses si son rentables.',
+                    'note_body' => 'Las cuentas funded 2-Step pagan cada 14 días, permiten el primer retiro después de 21 días y escalan +25 % de capital cada 3 meses si son rentables.',
                 ],
             ],
         ],
@@ -156,13 +163,41 @@ return [
                 ],
                 [
                     'title' => 'Protecciones de payout visibles desde el inicio',
-                    'description' => 'El ciclo de payout de 14 días, la obligación de consistencia en 1-Step, el primer retiro 2-Step después de 14 días y el escalado de +25 % cada 3 meses ya aparecen tanto en la web como en el dashboard.',
+                    'description' => 'El ciclo de payout de 14 días, el primer retiro después de 21 días para todas las cuentas funded, la obligación de consistencia en 1-Step y el escalado 2-Step cada 3 meses ya aparecen tanto en la web como en el dashboard.',
                 ],
                 [
                     'title' => 'Multilingüe desde el principio',
                     'description' => 'El inglés es el idioma predeterminado, mientras que alemán y español se estructuran desde el primer día para añadir más adelante hindi, italiano y portugués sin fricción.',
                 ],
             ],
+        ],
+        'about' => [
+            'eyebrow' => 'Sobre Wolforix',
+            'title' => 'Una nueva generación de prop firms construida sobre acceso, disciplina y rendimiento.',
+            'intro' => 'Wolforix es una firma de trading propietario que representa una nueva generación de prop firms, creada para desbloquear el potencial de traders comprometidos dentro de un entorno justo, accesible y orientado al rendimiento.',
+            'mission_label' => 'Nuestra misión',
+            'mission' => 'Identificar, formar y financiar a traders que están preparados para rendir.',
+            'pillars' => [
+                'Evaluación estructurada',
+                'Acceso a prueba gratuita',
+                'Financiación guiada por rendimiento',
+            ],
+            'blocks' => [
+                [
+                    'title' => 'Por qué existimos',
+                    'description' => 'Creemos que el talento por sí solo no basta. Para muchos traders disciplinados que ya tienen consistencia y la mentalidad adecuada, el verdadero obstáculo sigue siendo el acceso al capital.',
+                ],
+                [
+                    'title' => 'Cómo progresan los traders',
+                    'description' => 'A través de un sistema de evaluación estructurado y oportunidades de free trial, los traders pueden desarrollar su proceso, ganar experiencia y demostrar consistencia en un entorno controlado antes de gestionar capital funded.',
+                ],
+                [
+                    'title' => 'Qué respalda a Wolforix',
+                    'description' => 'Wolforix está respaldada por graduados en economía con años de experiencia en mercados financieros, trading e inversiones. La firma se está construyendo como un ecosistema transparente, justo y orientado al rendimiento.',
+                ],
+            ],
+            'closing_label' => 'Lo que construimos',
+            'closing' => 'No solo financiamos traders. Construimos profesionales disciplinados y consistentes capaces de alcanzar el éxito financiero a largo plazo.',
         ],
         'workflow' => [
             'eyebrow' => 'Alcance del hito 1',
@@ -504,7 +539,7 @@ return [
                 'items' => [
                     [
                         'question' => '¿Con qué frecuencia se procesan los payouts?',
-                        'answer' => 'Las cuentas funded se revisan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores. Las cuentas funded 2-Step pueden solicitar el primer retiro después de 14 días.',
+                        'answer' => 'Las cuentas funded se revisan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores. El primer retiro queda disponible después de 21 días.',
                     ],
                     [
                         'question' => '¿Cómo se calcula mi payout?',
@@ -695,7 +730,7 @@ return [
                         'title' => 'Elegibilidad para payout',
                         'paragraphs' => [
                             'Los payouts se procesan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
-                            'Las cuentas funded 2-Step pueden solicitar el primer retiro después de 14 días y escalar +25 % de capital cada 3 meses si son rentables.',
+                            'Las cuentas funded pueden solicitar el primer retiro después de 21 días. Las cuentas funded 2-Step además pueden escalar +25 % de capital cada 3 meses si son rentables.',
                             'Las cuentas funded 1-Step operan con el mismo ritmo de 14 días, pero requieren el cumplimiento obligatorio de la regla de consistencia antes de aprobar payouts.',
                         ],
                     ],
@@ -884,7 +919,7 @@ return [
             'rules_title' => 'Conjunto de reglas',
             'rules_copy' => 'La vista previa de abajo está alineada con el modelo final 2-Step para que objetivos, límites de riesgo, apalancamiento y tiempos de payout sigan visibles junto a las métricas de la cuenta.',
             'payout_title' => 'Sección de payout',
-            'payout_copy' => 'La vista previa de payout ahora refleja ciclos de 14 días, el primer retiro 2-Step después de 14 días, los requisitos de consistencia de 1-Step y el escalado de +25 % cada 3 meses si es rentable.',
+            'payout_copy' => 'La vista previa de payout ahora refleja ciclos de 14 días, el primer retiro después de 21 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y el escalado de +25 % cada 3 meses para cuentas 2-Step rentables.',
             'settings_title' => 'Perfil y ajustes',
             'settings_copy' => 'Un área de perfil placeholder deja el dashboard listo para preferencias de idioma, KYC y controles de seguridad de cuenta.',
         ],
@@ -914,13 +949,13 @@ return [
             'cycle_note' => 'Los payouts se procesan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
             'placeholder_status' => 'Placeholder de revisión manual',
             'queue_title' => 'Vista previa de la cola de payouts',
-            'queue_copy' => 'Los ciclos de payout de 14 días, el momento del primer retiro 2-Step, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
+            'queue_copy' => 'Los ciclos de payout de 14 días, el primer retiro después de 21 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
             'progressive_note' => 'Las cuentas funded 2-Step pueden escalar +25 % de capital cada 3 meses si son rentables. Las cuentas funded 1-Step mantienen la regla de consistencia obligatoria antes de aprobar payouts.',
             'requirements_title' => 'Lista de elegibilidad',
             'requirements' => [
                 'Deben cumplirse los días mínimos de la fase activa.',
                 'Las cuentas funded 1-Step deben cumplir la regla de consistencia obligatoria antes de que el beneficio sea elegible para payout.',
-                'Las cuentas funded 2-Step pueden solicitar el primer retiro después de 14 días.',
+                'Las cuentas funded pueden solicitar el primer retiro después de 21 días.',
                 'No puede haber violaciones de reglas en la cuenta y todas las solicitudes de payout quedan sujetas a revisión interna del trading.',
             ],
             'cta' => 'Placeholder de solicitud de payout',

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', __('site.admin.meta_title'))</title>
     <meta name="description" content="{{ __('site.meta.description') }}">
-    <link rel="icon" type="image/png" href="{{ asset('branding/8CEF4630-CD6F-4268-A22C-84ADF210A0CA.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('branding/8CEF4630-CD6F-4268-A22C-84ADF210A0CA.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="selection:bg-amber-400/30 selection:text-white">
@@ -19,8 +19,8 @@
     <header class="border-b border-white/5 bg-slate-950/78 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-8">
             <div class="flex items-center gap-3">
-                <a href="{{ route('home') }}" class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/20 bg-black/70 shadow-lg shadow-amber-950/20">
-                    <img src="{{ asset('branding/IMG_8365.jpeg') }}" alt="Wolforix" class="h-full w-full object-cover">
+                <a href="{{ route('home') }}" class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/18 bg-black/70">
+                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
                 </a>
                 <div>
                     <p class="inline-flex items-start text-sm font-semibold tracking-[0.28em] text-amber-300">

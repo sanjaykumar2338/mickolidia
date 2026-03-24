@@ -39,6 +39,24 @@ return array_replace_recursive($en, [
         'free_trial_caption' => 'Entraînez-vous sans risque dans des conditions de marché réelles.',
         'secondary_cta' => 'Ouvrir l’aperçu du dashboard',
         'days' => 'jours',
+        'badges' => [
+            'EN / DE / ES / FR prêt',
+            'Tarifs de lancement actifs',
+            'Premier retrait après 21 jours',
+        ],
+        'feature_cards' => [
+            '80 % de partage des profits',
+            'Jusqu’à 100K$ de capital simulé',
+            'Premier retrait après 21 jours',
+            'Cycle de payout de 14 jours',
+        ],
+        'hero_visual' => [
+            'label' => 'Aperçu du trading desk',
+            'platform' => 'Workspace d’exécution sombre',
+            'card_title' => 'Axé graphiques. Règles visibles. Pensé comme un funded.',
+            'card_copy' => 'La homepage s’ouvre désormais avec un visuel de trading plus professionnel afin que la marque ressemble davantage à un vrai workspace de prop firm qu’à une carte promotionnelle décorative.',
+            'image_alt' => 'Dashboard de trading et workspace orienté graphiques',
+        ],
         'plans' => [
             'eyebrow' => 'Plans Challenge',
             'title' => 'Modèles finaux, prix de lancement et règles des comptes funded.',
@@ -59,6 +77,11 @@ return array_replace_recursive($en, [
             'review_policy' => 'Voir la politique de payout',
             'faq_link' => 'Lire la FAQ',
             'unlimited' => 'Illimité',
+            'highlights' => [
+                'Tarif de lancement -20 % actif',
+                'Premier retrait après 21 jours',
+                'Durée d’évaluation illimitée',
+            ],
             'currencies' => [
                 'USD' => 'Dollar américain',
                 'EUR' => 'Euro',
@@ -89,15 +112,62 @@ return array_replace_recursive($en, [
                     'label' => 'Challenge 1-Step',
                     'description' => 'Évaluation en une seule phase avec des limites de perte plus strictes et une règle de cohérence obligatoire sur le compte funded.',
                     'note_title' => 'Modèle funded 1-Step',
-                    'note_body' => 'Les comptes funded 1-Step paient tous les 14 jours avec 80 % de partage des profits. La règle de cohérence reste obligatoire avant validation du payout.',
+                    'note_body' => 'Les comptes funded 1-Step paient tous les 14 jours, autorisent le premier retrait après 21 jours et conservent la règle de cohérence obligatoire avant validation du payout.',
                 ],
                 'two_step' => [
                     'label' => 'Challenge 2-Step',
                     'description' => 'Deux phases d’évaluation avec levier 1:100 en phase 1, payouts tous les 14 jours et scaling pour les comptes funded rentables.',
                     'note_title' => 'Modèle funded 2-Step',
-                    'note_body' => 'Les comptes funded 2-Step paient tous les 14 jours, autorisent le premier retrait après 14 jours et augmentent le capital de +25 % tous les 3 mois si le compte reste rentable.',
+                    'note_body' => 'Les comptes funded 2-Step paient tous les 14 jours, autorisent le premier retrait après 21 jours et augmentent le capital de +25 % tous les 3 mois si le compte reste rentable.',
                 ],
             ],
+        ],
+        'foundation' => [
+            'eyebrow' => 'Direction de la plateforme',
+            'title' => 'Pensée pour la confiance, la visibilité des règles et l’automatisation future.',
+            'description' => 'Ce premier jalon se concentre sur la structure nécessaire avant les intégrations live : navigation claire, contenu multilingue, visibilité des politiques et dashboard au rendu réellement opérationnel.',
+            'cards' => [
+                [
+                    'title' => 'Évaluation simulée en priorité',
+                    'description' => 'Le wording public suit le disclaimer client : Wolforix fonctionne comme une société d’évaluation et d’éducation au trading propriétaire, et non comme un broker ou une société d’investissement.',
+                ],
+                [
+                    'title' => 'Protections payout visibles très tôt',
+                    'description' => 'Le cycle de payout de 14 jours, le premier retrait après 21 jours sur tous les comptes funded, la cohérence obligatoire en 1-Step et le scaling 2-Step tous les 3 mois sont déjà visibles sur le site et le dashboard.',
+                ],
+                [
+                    'title' => 'Multilingue dès le départ',
+                    'description' => 'L’anglais reste la langue par défaut, tandis que l’allemand, l’espagnol et le français sont prêts pour que d’autres langues puissent être ajoutées proprement ensuite.',
+                ],
+            ],
+        ],
+        'about' => [
+            'eyebrow' => 'À propos de Wolforix',
+            'title' => 'Une nouvelle génération de prop firms construite autour de l’accès, de la discipline et de la performance.',
+            'intro' => 'Wolforix est une société de trading propriétaire représentant une nouvelle génération de prop firms, pensée pour libérer le potentiel des traders engagés dans un environnement juste, accessible et orienté performance.',
+            'mission_label' => 'Notre mission',
+            'mission' => 'Identifier, former et financer les traders prêts à performer.',
+            'pillars' => [
+                'Évaluation structurée',
+                'Accès à l’essai gratuit',
+                'Financement guidé par la performance',
+            ],
+            'blocks' => [
+                [
+                    'title' => 'Pourquoi nous existons',
+                    'description' => 'Nous pensons que le talent seul ne suffit pas. Pour de nombreux traders disciplinés qui possèdent déjà la constance et l’état d’esprit adéquat, le véritable obstacle reste l’accès au capital.',
+                ],
+                [
+                    'title' => 'Comment les traders progressent',
+                    'description' => 'Grâce à un système d’évaluation structuré et à des opportunités d’essai gratuit, les traders peuvent développer leur processus, gagner en expérience et démontrer leur constance dans un environnement contrôlé avant de gérer un capital funded.',
+                ],
+                [
+                    'title' => 'Ce qui soutient Wolforix',
+                    'description' => 'Wolforix s’appuie sur une équipe de diplômés en économie disposant de plusieurs années d’expérience dans les marchés financiers, le trading et l’investissement. La société est construite comme un écosystème transparent, juste et orienté performance.',
+                ],
+            ],
+            'closing_label' => 'Ce que nous construisons',
+            'closing' => 'Nous ne faisons pas que financer des traders. Nous formons des professionnels disciplinés et constants capables d’atteindre un succès financier durable.',
         ],
     ],
     'faq' => [

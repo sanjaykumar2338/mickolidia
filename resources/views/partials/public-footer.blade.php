@@ -1,7 +1,19 @@
 <footer class="border-t border-white/5 bg-slate-950/80">
     <div class="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
         <div class="surface-panel rounded-3xl p-6">
-            <span class="section-label">{{ __('site.footer.disclaimer_title') }}</span>
+            <div class="flex items-center gap-4">
+                <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-3xl border border-amber-400/18 bg-black/75">
+                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
+                </div>
+                <div>
+                    <p class="inline-flex items-start text-base font-semibold tracking-[0.24em] text-amber-300">
+                        <span>WOLFORIX</span>
+                        <span class="ml-1 text-[0.58em] leading-none tracking-normal text-amber-200">®</span>
+                    </p>
+                    <p class="mt-2 text-sm text-slate-400">{{ __('site.public_layout.simulated_notice') }}</p>
+                </div>
+            </div>
+            <span class="section-label mt-6">{{ __('site.footer.disclaimer_title') }}</span>
             <h2 class="mt-5 text-2xl font-semibold text-white">{{ __('site.footer.company_title') }}</h2>
             <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300">{{ __('site.footer.summary') }}</p>
             <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.service_copy') }}</p>

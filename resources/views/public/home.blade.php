@@ -23,6 +23,9 @@
     };
     $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $defaultCurrency) : '';
     $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $defaultCurrency) : '';
+    $heroProfitSplit = $initialPlan['funded']['profit_split'] ?? config('wolforix.challenge_catalog.two_step.funded.profit_split', 80);
+    $heroFirstWithdrawalDays = $initialPlan['funded']['first_withdrawal_days'] ?? config('wolforix.challenge_catalog.two_step.funded.first_withdrawal_days', 21);
+    $heroPayoutCycleDays = $initialPlan['funded']['payout_cycle_days'] ?? config('wolforix.challenge_catalog.two_step.funded.payout_cycle_days', 14);
     $featureIcons = [
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -64,80 +67,107 @@
 @endphp
 
 @section('content')
-    <section class="px-6 pt-10 lg:px-8 lg:pt-14">
-        <div class="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_minmax(0,0.95fr)]">
-            <div>
-                <span class="section-label">{{ __('site.home.eyebrow') }}</span>
-                <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-                    {{ __('site.home.title') }}
-                </h1>
-                <p class="mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-                    {{ __('site.home.description') }}
-                </p>
+    <section class="px-6 pt-8 lg:px-8 lg:pt-12">
+        <div class="mx-auto max-w-7xl">
+            <div class="hero-shell rounded-[2.5rem] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
+                <div class="grid items-center gap-10 lg:grid-cols-[0.92fr_minmax(0,1.08fr)] lg:gap-14">
+                    <div class="relative z-10">
+                        <span class="section-label">{{ __('site.home.eyebrow') }}</span>
+                        <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-[1.02] text-white sm:text-5xl lg:text-[4.5rem]">
+                            {{ __('site.home.title') }}
+                        </h1>
+                        <p class="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+                            {{ __('site.home.description') }}
+                        </p>
 
-                <div class="mt-6 flex flex-wrap gap-3">
-                    @foreach (trans('site.home.badges') as $badge)
-                        <span class="gold-pill rounded-full px-4 py-2 text-sm font-medium">{{ $badge }}</span>
-                    @endforeach
-                </div>
-
-                <div class="mt-8 flex flex-wrap items-start gap-4">
-                    <a
-                        href="{{ $defaultCheckoutUrl }}"
-                        data-checkout-cta
-                        data-checkout-base="{{ route('checkout.show') }}"
-                        class="primary-cta rounded-full px-8 py-4 text-base font-semibold"
-                    >
-                        {{ __('site.home.primary_cta') }}
-                    </a>
-                    <div class="flex flex-col items-start">
-                        <a href="{{ route('trial.register') }}" class="ghost-cta rounded-full px-8 py-4 text-base font-semibold">
-                            {{ __('site.home.free_trial_cta') }}
-                        </a>
-                        <p class="mt-3 max-w-xs text-sm leading-6 text-slate-400">{{ __('site.home.free_trial_caption') }}</p>
-                    </div>
-                </div>
-
-                <div class="mt-4">
-                    <a href="{{ route('dashboard') }}" class="inline-flex rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
-                        {{ __('site.home.secondary_cta') }}
-                    </a>
-                </div>
-
-                <div class="mt-10 surface-panel rounded-[2rem] p-6">
-                    <div class="flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <p class="text-sm font-semibold uppercase tracking-[0.28em] text-amber-300">{{ __('site.home.hero_panel.title') }}</p>
-                            <p class="mt-2 text-sm leading-7 text-slate-400">{{ __('site.home.hero_panel.caption') }}</p>
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            @foreach (trans('site.home.badges') as $badge)
+                                <span class="gold-pill rounded-full px-4 py-2 text-sm font-medium">{{ $badge }}</span>
+                            @endforeach
                         </div>
-                        <div class="rounded-full border border-sky-400/20 bg-sky-500/10 px-4 py-2 text-sm text-sky-100">
-                            {{ __('site.home.hero_panel.status') }}
+
+                        <div class="mt-8 flex flex-wrap items-start gap-4">
+                            <a
+                                href="{{ $defaultCheckoutUrl }}"
+                                data-checkout-cta
+                                data-checkout-base="{{ route('checkout.show') }}"
+                                class="primary-cta rounded-full px-8 py-4 text-base font-semibold"
+                            >
+                                {{ __('site.home.primary_cta') }}
+                            </a>
+                            <div class="flex flex-col items-start">
+                                <a href="{{ route('trial.register') }}" class="ghost-cta rounded-full px-8 py-4 text-base font-semibold">
+                                    {{ __('site.home.free_trial_cta') }}
+                                </a>
+                                <p class="mt-3 max-w-xs text-sm leading-6 text-slate-400">{{ __('site.home.free_trial_caption') }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="{{ route('dashboard') }}" class="inline-flex rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
+                                {{ __('site.home.secondary_cta') }}
+                            </a>
+                        </div>
+
+                        <div class="mt-10 grid gap-3 sm:grid-cols-3">
+                            <div class="hero-metric-card rounded-[1.6rem] px-4 py-4">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</p>
+                                <p class="mt-3 text-lg font-semibold text-white">{{ $heroProfitSplit }}%</p>
+                            </div>
+                            <div class="hero-metric-card rounded-[1.6rem] px-4 py-4">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</p>
+                                <p class="mt-3 text-lg font-semibold text-white">{{ str_replace(':days', (string) $heroFirstWithdrawalDays, __('site.home.challenge_selector.value_templates.after_days')) }}</p>
+                            </div>
+                            <div class="hero-metric-card rounded-[1.6rem] px-4 py-4">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</p>
+                                <p class="mt-3 text-lg font-semibold text-white">{{ str_replace(':days', (string) $heroPayoutCycleDays, __('site.home.challenge_selector.value_templates.days')) }}</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                        @foreach (trans('site.home.hero_panel.items') as $item)
-                            <div class="surface-card rounded-2xl px-4 py-4 text-sm text-slate-200">{{ $item }}</div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+                    <div class="relative z-10">
+                        <div class="hero-visual overflow-hidden rounded-[2.15rem] border border-white/10">
+                            <img
+                                src="{{ asset('newfolder/AD68348C-2EC4-4D2D-9D00-1D0B4DCFEDFE.jpeg') }}"
+                                alt="{{ __('site.home.hero_visual.image_alt') }}"
+                                class="absolute inset-0 h-full w-full object-cover object-[82%_center] opacity-90"
+                            >
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-950/18 via-slate-950/48 to-slate-950/88"></div>
+                            <div class="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-slate-950 via-slate-950/55 to-transparent"></div>
 
-            <div class="relative">
-                <div class="surface-panel overflow-hidden rounded-[2rem] border border-white/8 p-4">
-                    <div class="overflow-hidden rounded-[1.6rem] border border-white/6 bg-black/40">
-                        <img src="{{ asset('branding/659E27F6-E56C-4991-8383-F0E0B8FA9FBB.png') }}" alt="Wolforix branding reference" class="h-full w-full object-cover">
-                    </div>
-                </div>
+                            <div class="relative flex min-h-[24rem] flex-col justify-between p-5 sm:min-h-[28rem] sm:p-7">
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="rounded-full border border-amber-400/18 bg-black/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-200 backdrop-blur-xl">
+                                        {{ __('site.home.hero_visual.label') }}
+                                    </div>
+                                    <div class="hidden rounded-full border border-white/10 bg-black/36 px-4 py-2 text-xs font-medium text-slate-200 backdrop-blur-xl sm:block">
+                                        {{ __('site.home.hero_visual.platform') }}
+                                    </div>
+                                </div>
 
-                <div class="absolute -bottom-5 left-5 right-5 surface-card rounded-[1.8rem] p-5">
-                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.home.image_caption') }}</p>
-                    <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.home.image_copy') }}</p>
+                                <div class="max-w-md rounded-[1.8rem] border border-white/10 bg-slate-950/72 p-5 backdrop-blur-xl">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.home.hero_visual.card_title') }}</p>
+                                    <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.home.hero_visual.card_copy') }}</p>
+
+                                    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                                        <div class="rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3">
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</p>
+                                            <p class="mt-2 text-sm font-semibold text-white">{{ str_replace(':days', (string) $heroFirstWithdrawalDays, __('site.home.challenge_selector.value_templates.after_days')) }}</p>
+                                        </div>
+                                        <div class="rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3">
+                                            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</p>
+                                            <p class="mt-2 text-sm font-semibold text-white">{{ str_replace(':days', (string) $heroPayoutCycleDays, __('site.home.challenge_selector.value_templates.days')) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="mx-auto mt-14 grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="mx-auto mt-10 grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
             @foreach (trans('site.home.feature_cards') as $card)
                 <article class="surface-panel rounded-[2rem] p-6">
                     <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-[0_18px_40px_rgba(244,183,74,0.12)]">
@@ -146,6 +176,45 @@
                     <p class="mt-5 max-w-xs text-xl font-semibold leading-8 text-white">{{ $card }}</p>
                 </article>
             @endforeach
+        </div>
+    </section>
+
+    <section class="px-6 pt-20 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="grid gap-8 xl:grid-cols-[0.86fr_1.14fr]">
+                <div class="surface-panel relative overflow-hidden rounded-[2.4rem] p-6 sm:p-8">
+                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="" aria-hidden="true" class="pointer-events-none absolute -right-16 -top-10 h-56 w-56 opacity-[0.05]">
+
+                    <span class="section-label">{{ __('site.home.about.eyebrow') }}</span>
+                    <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.about.title') }}</h2>
+                    <p class="mt-5 text-base leading-8 text-slate-300">{{ __('site.home.about.intro') }}</p>
+
+                    <div class="mt-8 rounded-[1.9rem] border border-amber-400/20 bg-amber-400/10 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('site.home.about.mission_label') }}</p>
+                        <p class="mt-3 text-xl font-semibold leading-8 text-white">{{ __('site.home.about.mission') }}</p>
+                    </div>
+
+                    <div class="mt-8 flex flex-wrap gap-3">
+                        @foreach (trans('site.home.about.pillars') as $pillar)
+                            <span class="gold-pill rounded-full px-4 py-2 text-sm font-medium">{{ $pillar }}</span>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="grid gap-5 md:grid-cols-2">
+                    @foreach (trans('site.home.about.blocks') as $block)
+                        <article class="{{ $loop->last ? 'md:col-span-2' : '' }} surface-card rounded-[2rem] p-6">
+                            <p class="text-lg font-semibold text-white">{{ $block['title'] }}</p>
+                            <p class="mt-4 text-sm leading-7 text-slate-300">{{ $block['description'] }}</p>
+                        </article>
+                    @endforeach
+
+                    <div class="about-emphasis rounded-[2rem] p-6 sm:p-7 md:col-span-2">
+                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('site.home.about.closing_label') }}</p>
+                        <p class="mt-4 text-2xl font-semibold leading-tight text-white sm:text-3xl">{{ __('site.home.about.closing') }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 

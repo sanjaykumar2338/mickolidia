@@ -32,8 +32,8 @@
     <div class="mx-auto max-w-7xl px-6 py-4 lg:px-8">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/20 bg-black/70 shadow-lg shadow-amber-950/20">
-                    <img src="{{ asset('branding/IMG_8365.jpeg') }}" alt="Wolforix" class="h-full w-full object-cover">
+                <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/18 bg-black/70">
+                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
                 </div>
                 <div class="min-w-0">
                     <p class="inline-flex items-start text-sm font-semibold tracking-[0.28em] text-amber-300">
