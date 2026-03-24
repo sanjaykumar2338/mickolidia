@@ -154,9 +154,11 @@ class OrderFulfillmentService
 
     private function resolveOrderUser(Order $order): User
     {
-        if ($order->user instanceof User) {
-            $user = $order->user;
-        } else {
+        $user = $order->user_id !== null
+            ? $order->user()->first()
+            : null;
+
+        if (! $user instanceof User) {
             $user = User::query()->where('email', $order->email)->first();
 
             if (! $user instanceof User) {

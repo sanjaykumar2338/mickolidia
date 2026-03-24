@@ -228,11 +228,30 @@ return [
     ],
 
     'auth' => [
-        'eyebrow' => 'Placeholder de login',
-        'title' => 'Login Proximamente',
-        'description' => 'La autenticacion todavia no forma parte de esta ronda de refinamiento, pero la ruta y el boton del header ya estan listos para el siguiente paso de implementacion.',
-        'notice' => 'Mientras tanto, usa la vista previa del dashboard para la revision visual. La autenticacion real de cuentas, las sesiones seguras y los flujos de contrasena se conectaran en un hito posterior.',
-        'primary_action' => 'Volver al inicio',
+        'eyebrow' => 'Acceso seguro',
+        'title' => 'Inicia sesión o crea tu cuenta para continuar.',
+        'description' => 'El checkout de challenges pagados ahora requiere autenticación para que los pedidos, los resultados de pago de Stripe y los challenges comprados queden vinculados al usuario correcto.',
+        'notice' => 'El challenge y la divisa seleccionados se conservarán después del login o del registro y volverás directamente al checkout.',
+        'home_action' => 'Volver al inicio',
+        'dashboard_action' => 'Vista previa del dashboard',
+        'login' => [
+            'title' => 'Iniciar sesión',
+            'copy' => 'Usa tus credenciales actuales de Wolforix para continuar al checkout seguro.',
+            'email' => 'Email',
+            'password' => 'Contraseña',
+            'remember' => 'Mantener sesión iniciada en este dispositivo',
+            'submit' => 'Entrar',
+            'invalid' => 'Estas credenciales no coinciden con nuestros registros.',
+        ],
+        'register' => [
+            'title' => 'Crear cuenta',
+            'copy' => '¿Nuevo en Wolforix? Crea primero tu cuenta y luego completa los datos de facturación y el checkout con Stripe.',
+            'name' => 'Nombre completo',
+            'email' => 'Email',
+            'password' => 'Contraseña',
+            'password_confirmation' => 'Confirmar contraseña',
+            'submit' => 'Crear Cuenta',
+        ],
     ],
 
     'admin' => [

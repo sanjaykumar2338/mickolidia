@@ -23,7 +23,6 @@ class WolforixPlatformTest extends TestCase
         foreach ([
             route('login'),
             route('home'),
-            route('checkout.show'),
             route('faq'),
             route('trial.register'),
             route('terms'),
@@ -36,6 +35,75 @@ class WolforixPlatformTest extends TestCase
         ] as $url) {
             $this->get($url)->assertOk();
         }
+    }
+
+    public function test_checkout_requires_authentication_and_redirects_to_login_with_intended_destination(): void
+    {
+        $selection = [
+            'challenge_type' => 'two_step',
+            'account_size' => 50000,
+            'currency' => 'EUR',
+        ];
+        $checkoutUrl = route('checkout.show', $selection);
+
+        $this->get($checkoutUrl)
+            ->assertRedirect(route('login'));
+
+        $this->assertCheckoutSelectionMatchesUrl($selection, (string) session('url.intended'));
+    }
+
+    public function test_registration_returns_user_to_the_intended_checkout_flow(): void
+    {
+        $selection = [
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+        ];
+        $checkoutUrl = route('checkout.show', $selection);
+
+        $this->get($checkoutUrl)->assertRedirect(route('login'));
+
+        $response = $this->post(route('register.store'), [
+            'register_name' => 'Checkout Trader',
+            'register_email' => 'checkout-auth@example.com',
+            'register_password' => 'password123',
+            'register_password_confirmation' => 'password123',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertCheckoutSelectionMatchesUrl($selection, $response->headers->get('Location'));
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'email' => 'checkout-auth@example.com',
+        ]);
+    }
+
+    public function test_login_returns_existing_user_to_the_intended_checkout_flow(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'existing-checkout@example.com',
+            'password' => 'password123',
+        ]);
+
+        $selection = [
+            'challenge_type' => 'two_step',
+            'account_size' => 100000,
+            'currency' => 'GBP',
+        ];
+        $checkoutUrl = route('checkout.show', $selection);
+
+        $this->get($checkoutUrl)->assertRedirect(route('login'));
+
+        $response = $this->post(route('login.store'), [
+            'login_email' => $user->email,
+            'login_password' => 'password123',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertCheckoutSelectionMatchesUrl($selection, $response->headers->get('Location'));
+
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void
@@ -103,7 +171,8 @@ class WolforixPlatformTest extends TestCase
 
     public function test_checkout_page_renders_selected_plan_and_provider_options(): void
     {
-        $this->get(route('checkout.show', [
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
             'challenge_type' => 'two_step',
             'account_size' => 50000,
             'currency' => 'EUR',
@@ -118,8 +187,15 @@ class WolforixPlatformTest extends TestCase
     public function test_checkout_requires_the_mandatory_agreement(): void
     {
         $this->useFakeStripeGateway();
+        $user = User::factory()->create();
 
-        $response = $this->from(route('checkout.show'))->post(route('checkout.store'), [
+        $response = $this->actingAs($user)
+            ->from(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+            ]))
+            ->post(route('checkout.store'), [
             'full_name' => 'Test Trader',
             'email' => 'trader@example.com',
             'street_address' => '1 Market Street',
@@ -133,19 +209,26 @@ class WolforixPlatformTest extends TestCase
         ]);
 
         $response
-            ->assertRedirect(route('checkout.show'))
+            ->assertRedirect(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+            ]))
             ->assertSessionHasErrors('accept_terms');
     }
 
-    public function test_checkout_creates_an_order_and_redirects_to_provider(): void
+    public function test_checkout_creates_an_order_for_the_authenticated_user_and_redirects_to_provider(): void
     {
         $this->useFakeStripeGateway();
+        $user = User::factory()->create([
+            'email' => 'account-owner@example.com',
+        ]);
 
         $plan = app(ChallengePricingService::class)->resolvePlan('two_step', 50000, 'EUR');
 
-        $response = $this->post(route('checkout.store'), [
+        $response = $this->actingAs($user)->post(route('checkout.store'), [
             'full_name' => 'Test Trader',
-            'email' => 'trader@example.com',
+            'email' => 'billing-contact@example.com',
             'street_address' => '1 Market Street',
             'city' => 'Berlin',
             'postal_code' => '10115',
@@ -164,18 +247,23 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('EUR', $order->currency);
         $this->assertSame('stripe', $order->payment_provider);
         $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+        $this->assertSame($user->id, $order->user_id);
+        $this->assertSame('billing-contact@example.com', $order->email);
         $this->assertSame(number_format((float) $plan['discounted_price'], 2, '.', ''), (string) $order->final_price);
         $this->assertSame('fake-session-'.$order->id, $order->external_checkout_id);
         $this->assertCount(1, $order->paymentAttempts);
     }
 
-    public function test_checkout_success_marks_order_paid_and_creates_purchase(): void
+    public function test_checkout_success_marks_order_paid_and_creates_purchase_for_the_authenticated_user(): void
     {
         $this->useFakeStripeGateway();
+        $user = User::factory()->create([
+            'email' => 'account-owner@example.com',
+        ]);
 
-        $this->post(route('checkout.store'), [
+        $this->actingAs($user)->post(route('checkout.store'), [
             'full_name' => 'Paid Trader',
-            'email' => 'paid@example.com',
+            'email' => 'billing-paid@example.com',
             'street_address' => '2 Trade Street',
             'city' => 'London',
             'postal_code' => 'E17 3NU',
@@ -189,7 +277,8 @@ class WolforixPlatformTest extends TestCase
 
         $order = Order::query()->firstOrFail();
 
-        $this->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+        $this->actingAs($user)
+            ->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
             ->assertOk()
             ->assertSee('Challenge order confirmed')
             ->assertSee($order->order_number);
@@ -200,16 +289,18 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(Order::STATUS_COMPLETED, $order->order_status);
         $this->assertDatabaseHas('challenge_purchases', [
             'order_id' => $order->id,
+            'user_id' => $user->id,
             'challenge_type' => 'one_step',
             'account_status' => 'pending_activation',
         ]);
     }
 
-    public function test_checkout_cancel_marks_order_canceled_and_preserves_retry(): void
+    public function test_checkout_cancel_marks_order_canceled_and_preserves_retry_after_auth(): void
     {
         $this->useFakeStripeGateway();
+        $user = User::factory()->create();
 
-        $this->post(route('checkout.store'), [
+        $this->actingAs($user)->post(route('checkout.store'), [
             'full_name' => 'Retry Trader',
             'email' => 'retry-order@example.com',
             'street_address' => '3 Retry Lane',
@@ -225,7 +316,8 @@ class WolforixPlatformTest extends TestCase
 
         $order = Order::query()->firstOrFail();
 
-        $this->get(route('checkout.cancel', ['order' => $order->order_number]))
+        $this->actingAs($user)
+            ->get(route('checkout.cancel', ['order' => $order->order_number]))
             ->assertOk()
             ->assertSee('Retry Payment');
 
@@ -543,5 +635,20 @@ class WolforixPlatformTest extends TestCase
     private function useFakeStripeGateway(): void
     {
         config()->set('wolforix.payments.providers.stripe.class', FakeStripePaymentGateway::class);
+    }
+
+    /**
+     * @param  array<string, int|string>  $selection
+     */
+    private function assertCheckoutSelectionMatchesUrl(array $selection, ?string $url): void
+    {
+        $this->assertNotNull($url);
+        $this->assertSame(route('checkout.show', [], false), parse_url($url, PHP_URL_PATH));
+
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        $this->assertSame((string) $selection['challenge_type'], $query['challenge_type'] ?? null);
+        $this->assertSame((string) $selection['account_size'], (string) ($query['account_size'] ?? ''));
+        $this->assertSame((string) $selection['currency'], $query['currency'] ?? null);
     }
 }

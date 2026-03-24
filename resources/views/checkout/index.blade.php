@@ -3,7 +3,15 @@
 @section('title', __('site.checkout.meta_title').' | '.__('site.meta.brand'))
 
 @php
-    $countryValue = old('country', $order?->country);
+    $authUser = request()->user();
+    $profile = $authUser?->profile;
+    $profileCountryCode = $profile?->country ? array_search($profile->country, config('wolforix.checkout_countries', []), true) : null;
+    $countryValue = old('country', $order?->country ?? $profileCountryCode);
+    $fullNameValue = old('full_name', $order?->full_name ?? $authUser?->name);
+    $emailValue = old('email', $order?->email ?? $authUser?->email);
+    $streetAddressValue = old('street_address', $order?->street_address ?? $profile?->street_address);
+    $cityValue = old('city', $order?->city ?? $profile?->city);
+    $postalCodeValue = old('postal_code', $order?->postal_code ?? $profile?->postal_code);
 @endphp
 
 @section('content')
@@ -120,7 +128,7 @@
                             <input
                                 type="text"
                                 name="full_name"
-                                value="{{ old('full_name', $order?->full_name) }}"
+                                value="{{ $fullNameValue }}"
                                 class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                 placeholder="{{ __('site.checkout.full_name') }}"
                             >
@@ -131,7 +139,7 @@
                             <input
                                 type="email"
                                 name="email"
-                                value="{{ old('email', $order?->email) }}"
+                                value="{{ $emailValue }}"
                                 class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                 placeholder="trader@example.com"
                             >
@@ -146,7 +154,7 @@
                                 <input
                                     type="text"
                                     name="street_address"
-                                    value="{{ old('street_address', $order?->street_address) }}"
+                                    value="{{ $streetAddressValue }}"
                                     class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                     placeholder="{{ __('site.checkout.street_address') }}"
                                 >
@@ -157,7 +165,7 @@
                                 <input
                                     type="text"
                                     name="city"
-                                    value="{{ old('city', $order?->city) }}"
+                                    value="{{ $cityValue }}"
                                     class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                     placeholder="{{ __('site.checkout.city') }}"
                                 >
@@ -168,7 +176,7 @@
                                 <input
                                     type="text"
                                     name="postal_code"
-                                    value="{{ old('postal_code', $order?->postal_code) }}"
+                                    value="{{ $postalCodeValue }}"
                                     class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                     placeholder="{{ __('site.checkout.postal_code') }}"
                                 >

@@ -21,10 +21,13 @@ class CheckoutController extends Controller
     public function show(Request $request, ChallengePricingService $pricingService, PaymentManager $paymentManager): View
     {
         $retryOrder = null;
+        /** @var User $user */
+        $user = $request->user();
 
         if ($request->filled('order')) {
             $retryOrder = Order::query()
                 ->where('order_number', (string) $request->string('order'))
+                ->where('user_id', $user->id)
                 ->firstOrFail();
         }
 
@@ -104,18 +107,15 @@ class CheckoutController extends Controller
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
         $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan): Order {
             $existingOrder = null;
+            /** @var User $user */
+            $user = $request->user();
 
             if (! empty($validated['order'])) {
                 $existingOrder = Order::query()
                     ->where('order_number', $validated['order'])
+                    ->where('user_id', $user->id)
                     ->where('payment_status', '!=', Order::PAYMENT_PAID)
                     ->first();
-            }
-
-            $user = $request->user();
-
-            if (! $user instanceof User) {
-                $user = User::query()->where('email', $validated['email'])->first();
             }
 
             $order = $existingOrder instanceof Order
@@ -123,7 +123,7 @@ class CheckoutController extends Controller
                 : new Order();
 
             $order->fill([
-                'user_id' => $user?->id,
+                'user_id' => $user->id,
                 'challenge_plan_id' => $challengePlan?->id,
                 'email' => $validated['email'],
                 'full_name' => $validated['full_name'],

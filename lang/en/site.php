@@ -228,11 +228,30 @@ return [
     ],
 
     'auth' => [
-        'eyebrow' => 'Login placeholder',
-        'title' => 'Login Coming Soon',
-        'description' => 'Authentication is not part of this refinement pass yet, but the login route and button are now in place for the next implementation step.',
-        'notice' => 'Use the dashboard preview for UI review in the meantime. Real account authentication, secure sessions, and password flows will connect in a later milestone.',
-        'primary_action' => 'Return Home',
+        'eyebrow' => 'Secure access',
+        'title' => 'Login or create your account to continue.',
+        'description' => 'Paid challenge checkout now requires authentication so orders, Stripe payment results, and purchased challenges stay attached to the correct user account.',
+        'notice' => 'Your selected challenge and currency will be preserved after login or registration and you will return directly to checkout.',
+        'home_action' => 'Return Home',
+        'dashboard_action' => 'Dashboard Preview',
+        'login' => [
+            'title' => 'Sign in',
+            'copy' => 'Use your existing Wolforix account credentials to continue to secure checkout.',
+            'email' => 'Email',
+            'password' => 'Password',
+            'remember' => 'Keep me signed in on this device',
+            'submit' => 'Sign In',
+            'invalid' => 'These credentials do not match our records.',
+        ],
+        'register' => [
+            'title' => 'Create account',
+            'copy' => 'New to Wolforix? Create your account first, then complete your billing details and proceed to Stripe.',
+            'name' => 'Full name',
+            'email' => 'Email',
+            'password' => 'Password',
+            'password_confirmation' => 'Confirm password',
+            'submit' => 'Create Account',
+        ],
     ],
 
     'admin' => [
