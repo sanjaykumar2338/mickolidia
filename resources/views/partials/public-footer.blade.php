@@ -46,7 +46,7 @@
 
     <div class="border-t border-white/5">
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-sm text-slate-500 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}. {{ __('site.footer.copyright') }}</p>
+            <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
             <p>{{ __('site.footer.company_location') }}</p>
         </div>
     </div>

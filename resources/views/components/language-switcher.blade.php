@@ -10,9 +10,16 @@
         type="button"
         data-locale-toggle
         aria-expanded="false"
+        aria-label="{{ __('site.locale.current_label') }}: {{ $current['native'] ?? strtoupper($currentLocale) }}"
         class="flex items-center gap-3 rounded-full border border-white/8 bg-white/4 px-3 py-2 text-left text-sm text-white transition hover:border-amber-300/30 hover:bg-white/7"
     >
-        <span class="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/16 bg-slate-950/80 text-base">{{ $current['flag'] }}</span>
+        <span class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-amber-400/16 bg-slate-950/80">
+            @if (! empty($current['flag_asset']))
+                <img src="{{ asset($current['flag_asset']) }}" alt="" aria-hidden="true" class="h-full w-full object-cover">
+            @else
+                <span class="text-base leading-none">{{ $current['flag'] ?? ($current['short'] ?? strtoupper($currentLocale)) }}</span>
+            @endif
+        </span>
         <span class="min-w-0 {{ $compact ? 'hidden sm:block' : 'block' }}">
             <span class="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.locale.current_label') }}</span>
             <span class="mt-0.5 block text-sm font-medium text-white">{{ $current['native'] }}</span>
@@ -32,7 +39,13 @@
                     data-locale-link
                     class="{{ $currentLocale === $code ? 'border-amber-300/25 bg-amber-400/12 text-white' : 'border-transparent text-slate-300 hover:border-white/8 hover:bg-white/5 hover:text-white' }} flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition"
                 >
-                    <span class="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-slate-900/80 text-base">{{ $locale['flag'] }}</span>
+                    <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/8 bg-slate-900/80">
+                        @if (! empty($locale['flag_asset']))
+                            <img src="{{ asset($locale['flag_asset']) }}" alt="" aria-hidden="true" class="h-full w-full object-cover">
+                        @else
+                            <span class="text-base leading-none">{{ $locale['flag'] ?? ($locale['short'] ?? strtoupper($code)) }}</span>
+                        @endif
+                    </span>
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-medium">{{ $locale['native'] }}</span>
                         <span class="mt-0.5 block text-xs uppercase tracking-[0.22em] text-slate-400">{{ $locale['short'] }}</span>

@@ -1,8 +1,8 @@
 @php
     $navLinks = [
         [
-            'href' => route('home'),
-            'label' => __('site.nav.home'),
+            'href' => route('about'),
+            'label' => __('site.nav.about'),
             'cta' => false,
         ],
         [
@@ -32,15 +32,13 @@
     <div class="mx-auto max-w-7xl px-6 py-4 lg:px-8">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/18 bg-black/70">
-                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
-                </div>
+                <img src="{{ asset('IMG_8543.png') }}" alt="Wolforix" class="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14">
                 <div class="min-w-0">
                     <p class="inline-flex items-start text-sm font-semibold tracking-[0.28em] text-amber-300">
                         <span>WOLFORIX</span>
                         <span class="ml-1 text-[0.58em] leading-none tracking-normal text-amber-200">®</span>
                     </p>
-                    <p class="max-w-[12rem] text-[11px] leading-4 text-slate-400 sm:max-w-none sm:text-xs">{{ __('site.public_layout.simulated_notice') }}</p>
+                    <p class="max-w-[14rem] text-[11px] leading-4 text-slate-400 sm:max-w-none sm:text-xs">{{ __('site.public_layout.simulated_notice') }}</p>
                 </div>
             </a>
 

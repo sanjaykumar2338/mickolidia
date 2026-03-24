@@ -23,6 +23,7 @@ class WolforixPlatformTest extends TestCase
         foreach ([
             route('login'),
             route('home'),
+            route('about'),
             route('faq'),
             route('trial.register'),
             route('terms'),
@@ -35,6 +36,17 @@ class WolforixPlatformTest extends TestCase
         ] as $url) {
             $this->get($url)->assertOk();
         }
+    }
+
+    public function test_about_page_contains_the_about_story_and_header_link(): void
+    {
+        $this->get(route('about'))
+            ->assertOk()
+            ->assertSee('About')
+            ->assertSee('Wolforix')
+            ->assertSee('Our mission')
+            ->assertSee('Identify, train, and fund traders who are ready to perform.')
+            ->assertSee(route('about'), false);
     }
 
     public function test_checkout_requires_authentication_and_redirects_to_login_with_intended_destination(): void
@@ -131,8 +143,11 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
             ->assertSee('Login')
+            ->assertSee('About')
             ->assertSee('Continue to Secure Checkout')
-            ->assertSee('Stripe card checkout is live in this milestone.');
+            ->assertSee('Stripe card checkout is live in this milestone.')
+            ->assertDontSee('Our mission')
+            ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
     }
 
     public function test_dashboard_foundation_pages_render_successfully(): void

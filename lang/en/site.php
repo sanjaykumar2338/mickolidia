@@ -27,6 +27,7 @@ return [
 
     'nav' => [
         'home' => 'Home',
+        'about' => 'About',
         'plans' => 'Plans',
         'faq' => 'FAQ',
         'legal' => 'Legal',

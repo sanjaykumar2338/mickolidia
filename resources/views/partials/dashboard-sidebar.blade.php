@@ -12,6 +12,10 @@
         </div>
     </a>
 
+    <div class="mt-4 lg:hidden">
+        <x-language-switcher compact />
+    </div>
+
     <div class="mt-6 rounded-3xl border border-amber-400/15 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
         {{ __('site.dashboard.simulated_badge') }}
     </div>

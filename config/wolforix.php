@@ -7,21 +7,25 @@ $supportedLocales = [
         'native' => 'English',
         'short' => 'EN',
         'flag' => '🇬🇧',
+        'flag_asset' => 'flags/gb.svg',
     ],
     'de' => [
         'native' => 'Deutsch',
         'short' => 'DE',
         'flag' => '🇩🇪',
+        'flag_asset' => 'flags/de.svg',
     ],
     'es' => [
         'native' => 'Español',
         'short' => 'ES',
         'flag' => '🇪🇸',
+        'flag_asset' => 'flags/es.svg',
     ],
     'fr' => [
         'native' => 'Français',
         'short' => 'FR',
         'flag' => '🇫🇷',
+        'flag_asset' => 'flags/fr.svg',
     ],
 ];
 

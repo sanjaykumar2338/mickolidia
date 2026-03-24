@@ -27,6 +27,7 @@ return [
 
     'nav' => [
         'home' => 'Inicio',
+        'about' => 'Sobre Nosotros',
         'plans' => 'Planes',
         'faq' => 'FAQ',
         'legal' => 'Legal',

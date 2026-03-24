@@ -10,7 +10,7 @@
             <div class="rounded-full border border-sky-400/20 bg-sky-500/10 px-4 py-2 text-sm text-sky-100">
                 {{ __('site.dashboard.status_badge') }}
             </div>
-            <x-language-switcher />
+            <x-language-switcher class="hidden lg:block" />
         </div>
     </div>
 </header>

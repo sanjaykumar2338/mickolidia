@@ -24,6 +24,7 @@ return array_replace_recursive($en, [
     ],
     'nav' => [
         'home' => 'Accueil',
+        'about' => 'À Propos',
         'plans' => 'Plans',
         'faq' => 'FAQ',
         'legal' => 'Légal',
