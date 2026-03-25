@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         ], [
             'name' => 'Wolforix Demo Trader',
             'password' => Hash::make('password'),
-            'plan_type' => '2-Step Challenge',
+            'plan_type' => '2-Step Pro',
             'account_size' => 50000,
             'payment_amount' => 31.00,
             'status' => 'active',

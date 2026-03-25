@@ -18,6 +18,21 @@ document.addEventListener('DOMContentLoaded', () => {
         },
     };
 
+    const normalizeText = (value) => (value ?? '')
+        .toString()
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+
+    const escapeHtml = (value) => (value ?? '')
+        .toString()
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+
     const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
 
     if (fixedDisclaimer instanceof HTMLElement) {
@@ -128,6 +143,158 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', closeMenu);
     });
 
+    const siteSearch = document.querySelector('[data-site-search]');
+
+    if (siteSearch instanceof HTMLElement) {
+        const openButtons = document.querySelectorAll('[data-site-search-open]');
+        const closeButtons = siteSearch.querySelectorAll('[data-site-search-close]');
+        const searchForm = siteSearch.querySelector('[data-site-search-form]');
+        const searchInput = siteSearch.querySelector('[data-site-search-input]');
+        const results = siteSearch.querySelector('[data-site-search-results]');
+        const emptyState = siteSearch.querySelector('[data-site-search-empty]');
+        const stateLabel = siteSearch.querySelector('[data-site-search-state]');
+        const indexScript = siteSearch.querySelector('[data-site-search-index]');
+        const searchIndex = indexScript instanceof HTMLScriptElement
+            ? JSON.parse(indexScript.textContent ?? '[]')
+            : [];
+
+        const renderResults = () => {
+            if (!(results instanceof HTMLElement) || !(searchInput instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const query = normalizeText(searchInput.value);
+            const rankedItems = searchIndex
+                .map((item) => {
+                    const title = item.title ?? '';
+                    const description = item.description ?? '';
+                    const keywords = item.keywords ?? '';
+                    const haystack = normalizeText(`${title} ${description} ${keywords}`);
+                    let score = 0;
+
+                    if (query === '') {
+                        score = 1;
+                    } else if (haystack.includes(query)) {
+                        score += 100;
+                    }
+
+                    query.split(/\s+/).filter(Boolean).forEach((token) => {
+                        if (haystack.includes(token)) {
+                            score += 12;
+                        }
+
+                        if (normalizeText(title).includes(token)) {
+                            score += 8;
+                        }
+                    });
+
+                    return {
+                        ...item,
+                        score,
+                    };
+                })
+                .filter((item) => (query === '' ? true : item.score > 0))
+                .sort((left, right) => right.score - left.score)
+                .slice(0, query === '' ? 6 : 8);
+
+            if (stateLabel instanceof HTMLElement) {
+                stateLabel.textContent = query === ''
+                    ? stateLabel.dataset.featuredTitle ?? stateLabel.textContent
+                    : `${rankedItems.length} ${rankedItems.length === 1 ? stateLabel.dataset.resultsOne ?? 'result' : stateLabel.dataset.resultsMany ?? 'results'}`;
+            }
+
+            if (emptyState instanceof HTMLElement) {
+                emptyState.classList.toggle('hidden', rankedItems.length !== 0);
+            }
+
+            results.innerHTML = rankedItems.map((item) => `
+                <a
+                    href="${escapeHtml(item.url ?? '#')}"
+                    class="block rounded-[1.5rem] border border-white/8 bg-white/4 px-5 py-4 transition hover:border-amber-400/20 hover:bg-white/6"
+                >
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300">${escapeHtml(item.section ?? '')}</p>
+                    <p class="mt-2 text-lg font-semibold text-white">${escapeHtml(item.title ?? '')}</p>
+                    <p class="mt-2 text-sm leading-7 text-slate-400">${escapeHtml(item.description ?? '')}</p>
+                </a>
+            `).join('');
+        };
+
+        const openSearch = () => {
+            siteSearch.classList.remove('hidden');
+            siteSearch.classList.add('flex');
+            document.documentElement.classList.add('overflow-hidden');
+            document.body.classList.add('overflow-hidden');
+            renderResults();
+            window.requestAnimationFrame(() => {
+                searchInput?.focus();
+            });
+        };
+
+        const closeSearch = () => {
+            siteSearch.classList.remove('flex');
+            siteSearch.classList.add('hidden');
+            document.documentElement.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden');
+        };
+
+        if (stateLabel instanceof HTMLElement) {
+            stateLabel.dataset.featuredTitle = stateLabel.textContent ?? '';
+        }
+
+        openButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                openSearch();
+            });
+        });
+
+        closeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                closeSearch();
+            });
+        });
+
+        if (searchInput instanceof HTMLInputElement) {
+            searchInput.addEventListener('input', renderResults);
+        }
+
+        if (searchForm instanceof HTMLFormElement) {
+            searchForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const firstResult = results?.querySelector('a');
+
+                if (firstResult instanceof HTMLAnchorElement) {
+                    window.location.href = firstResult.href;
+                }
+            });
+        }
+
+        results?.addEventListener('click', (event) => {
+            if (event.target instanceof HTMLElement && event.target.closest('a')) {
+                closeSearch();
+            }
+        });
+
+        siteSearch.addEventListener('click', (event) => {
+            if (event.target === siteSearch) {
+                closeSearch();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const commandPalette = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+            const slashOpen = event.key === '/' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement);
+
+            if (commandPalette || slashOpen) {
+                event.preventDefault();
+                openSearch();
+            }
+
+            if (event.key === 'Escape' && siteSearch.classList.contains('flex')) {
+                closeSearch();
+            }
+        });
+    }
+
     const challengeSelector = document.querySelector('[data-challenge-selector]');
 
     if (challengeSelector instanceof HTMLElement) {
@@ -167,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const planTitle = challengeSelector.querySelector('[data-plan-title]');
             const planPrice = challengeSelector.querySelector('[data-plan-price]');
             const planCurrencyCode = challengeSelector.querySelector('[data-plan-currency-code]');
+            const planCurrencyFlag = challengeSelector.querySelector('[data-plan-currency-flag]');
             const planOriginalWrap = challengeSelector.querySelector('[data-plan-original-wrap]');
             const planOriginalPrice = challengeSelector.querySelector('[data-plan-original-price]');
             const planDiscountBadge = challengeSelector.querySelector('[data-plan-discount-badge]');
@@ -334,6 +502,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     planCurrencyCode.textContent = activeCurrency;
                 }
 
+                if (planCurrencyFlag) {
+                    planCurrencyFlag.textContent = currencies[activeCurrency]?.flag ?? '';
+                }
+
                 if (planPrice) {
                     planPrice.textContent = formatCurrency(launchPrice, activeCurrency);
                 }
@@ -370,6 +542,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (checkoutPlanCurrency) {
                     checkoutPlanCurrency.textContent = activeCurrency;
+                }
+
+                const checkoutPlanCurrencyFlag = document.querySelector('[data-checkout-plan-currency-flag]');
+
+                if (checkoutPlanCurrencyFlag instanceof HTMLElement) {
+                    checkoutPlanCurrencyFlag.textContent = currencies[activeCurrency]?.flag ?? '';
                 }
 
                 if (planNoteTitle) {
@@ -483,6 +661,167 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchInput.addEventListener('input', filterFaq);
         filterFaq();
+    }
+
+    const contactChatButton = document.querySelector('[data-contact-chat-launch]');
+
+    if (contactChatButton instanceof HTMLButtonElement) {
+        const messageField = document.querySelector('[data-contact-chat-message]');
+        const status = document.querySelector('[data-contact-chat-status]');
+        const supportEmail = contactChatButton.dataset.contactChatEmail ?? '';
+        const subject = contactChatButton.dataset.contactChatSubject ?? 'Support request';
+
+        contactChatButton.addEventListener('click', () => {
+            const message = messageField instanceof HTMLTextAreaElement
+                ? messageField.value.trim()
+                : '';
+
+            if (message === '') {
+                if (status instanceof HTMLElement) {
+                    status.textContent = status.dataset.emptyMessage ?? status.textContent ?? '';
+                }
+
+                messageField?.focus();
+                return;
+            }
+
+            const params = new URLSearchParams({
+                subject,
+                body: message,
+            });
+
+            window.location.href = `mailto:${supportEmail}?${params.toString()}`;
+        });
+    }
+
+    const voiceAssistant = document.querySelector('[data-voice-assistant]');
+
+    if (voiceAssistant instanceof HTMLElement) {
+        const indexScript = voiceAssistant.querySelector('[data-voice-assistant-index]');
+        const input = voiceAssistant.querySelector('[data-voice-question]');
+        const submitButton = voiceAssistant.querySelector('[data-voice-submit]');
+        const micButton = voiceAssistant.querySelector('[data-voice-mic]');
+        const status = voiceAssistant.querySelector('[data-voice-status]');
+        const answerQuestion = voiceAssistant.querySelector('[data-voice-answer-question]');
+        const answerText = voiceAssistant.querySelector('[data-voice-answer-text]');
+        const voiceIndex = indexScript instanceof HTMLScriptElement
+            ? JSON.parse(indexScript.textContent ?? '[]')
+            : [];
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        const findBestAnswer = (query) => {
+            const normalizedQuery = normalizeText(query);
+            const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+            if (normalizedQuery === '') {
+                return null;
+            }
+
+            return voiceIndex
+                .map((item) => {
+                    const haystack = normalizeText(`${item.question ?? ''} ${item.answer ?? ''} ${item.search_text ?? ''} ${item.section ?? ''}`);
+                    let score = haystack.includes(normalizedQuery) ? 120 : 0;
+
+                    tokens.forEach((token) => {
+                        if (haystack.includes(token)) {
+                            score += 14;
+                        }
+
+                        if (normalizeText(item.question ?? '').includes(token)) {
+                            score += 10;
+                        }
+                    });
+
+                    return {
+                        ...item,
+                        score,
+                    };
+                })
+                .sort((left, right) => right.score - left.score)
+                .find((item) => item.score > 0) ?? null;
+        };
+
+        const renderAnswer = (query) => {
+            const match = findBestAnswer(query);
+
+            if (!(answerQuestion instanceof HTMLElement) || !(answerText instanceof HTMLElement)) {
+                return;
+            }
+
+            if (!match) {
+                answerQuestion.textContent = query;
+                answerText.textContent = '';
+
+                if (status instanceof HTMLElement) {
+                    status.textContent = status.dataset.noMatchMessage ?? status.textContent ?? '';
+                }
+
+                return;
+            }
+
+            answerQuestion.textContent = match.question ?? '';
+            answerText.textContent = match.answer ?? '';
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance(match.answer ?? ''));
+            }
+        };
+
+        if (status instanceof HTMLElement) {
+            status.dataset.emptyState = status.dataset.readyMessage ?? status.textContent ?? '';
+        }
+
+        if (submitButton instanceof HTMLButtonElement && input instanceof HTMLInputElement) {
+            submitButton.addEventListener('click', () => {
+                renderAnswer(input.value);
+            });
+
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    renderAnswer(input.value);
+                }
+            });
+        }
+
+        if (!(SpeechRecognition instanceof Function)) {
+            if (micButton instanceof HTMLButtonElement) {
+                micButton.disabled = true;
+                micButton.classList.add('opacity-60', 'cursor-not-allowed');
+            }
+
+            if (status instanceof HTMLElement) {
+                status.textContent = micButton?.dataset.unsupported ?? status.textContent ?? '';
+            }
+        } else if (micButton instanceof HTMLButtonElement && input instanceof HTMLInputElement) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = document.documentElement.lang || 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            micButton.addEventListener('click', () => {
+                recognition.start();
+            });
+
+            recognition.addEventListener('start', () => {
+                if (status instanceof HTMLElement) {
+                    status.textContent = micButton.dataset.listening ?? status.textContent ?? '';
+                }
+            });
+
+            recognition.addEventListener('result', (event) => {
+                const transcript = event.results?.[0]?.[0]?.transcript ?? '';
+                input.value = transcript;
+                renderAnswer(transcript);
+            });
+
+            recognition.addEventListener('end', () => {
+                if (status instanceof HTMLElement) {
+                    status.textContent = status.dataset.emptyState ?? status.textContent ?? '';
+                }
+            });
+        }
     }
 
     document.querySelectorAll('[data-flash]').forEach((flash) => {

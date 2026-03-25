@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -71,6 +73,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        rescue(fn () => Mail::to($user->email)->send(new WelcomeMail($user)));
 
         return redirect()->intended(route('home'));
     }

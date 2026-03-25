@@ -22,9 +22,7 @@ class StripePaymentGateway implements PaymentGatewayInterface
 
     public function createCheckoutSession(Order $order, array $context = []): array
     {
-        $challengeLabel = $order->challenge_type === 'one_step'
-            ? '1-Step Challenge'
-            : '2-Step Challenge';
+        $challengeLabel = $this->challengeTypeLabel($order->challenge_type);
 
         $session = $this->client()->checkout->sessions->create([
             'mode' => 'payment',
@@ -179,5 +177,13 @@ class StripePaymentGateway implements PaymentGatewayInterface
         $this->client = new StripeClient($secret);
 
         return $this->client;
+    }
+
+    private function challengeTypeLabel(string $challengeType): string
+    {
+        return (string) config(
+            'wolforix.challenge_catalog.'.$challengeType.'.label',
+            $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
+        );
     }
 }

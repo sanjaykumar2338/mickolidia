@@ -29,6 +29,14 @@ class PublicPageController extends Controller
         return view('public.about');
     }
 
+    public function contact(): View
+    {
+        return view('public.contact', [
+            'faqSections' => trans('site.faq.sections'),
+            'supportEmail' => config('wolforix.support.email'),
+        ]);
+    }
+
     public function faq(): View
     {
         return view('public.faq', [

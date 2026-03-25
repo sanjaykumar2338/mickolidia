@@ -17,6 +17,7 @@
     </div>
 
     @include('partials.public-nav')
+    @include('partials.site-search')
     @include('partials.launch-popup')
 
     @if (session('checkout_success') || session('trial_success'))

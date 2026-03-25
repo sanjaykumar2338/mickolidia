@@ -29,6 +29,7 @@ Route::middleware('guest')->group(function (): void {
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 Route::get('/about', [PublicPageController::class, 'about'])->name('about');
+Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact');
 Route::get('/faq', [PublicPageController::class, 'faq'])->name('faq');
 Route::get('/trial/register', [TrialController::class, 'create'])->name('trial.register');
 Route::post('/trial/register', [TrialController::class, 'store'])->name('trial.store');

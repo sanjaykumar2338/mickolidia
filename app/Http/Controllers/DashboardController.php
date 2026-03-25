@@ -38,7 +38,7 @@ class DashboardController extends Controller
 
         $primaryAccount = [
             'reference' => 'WFX-CT-50021',
-            'plan' => $primaryPlan['name'] ?? '2-Step 50K',
+            'plan' => $primaryPlan['name'] ?? '2-Step Pro 50K',
             'platform' => 'cTrader',
             'stage' => __('site.dashboard.account.stage'),
             'status' => __('site.dashboard.account.status'),
@@ -105,7 +105,7 @@ class DashboardController extends Controller
                 ],
                 [
                     'reference' => 'WFX-CT-25014',
-                    'plan' => $secondaryPlan['name'] ?? '1-Step 25K',
+                    'plan' => $secondaryPlan['name'] ?? '1-Step Instant 25K',
                     'status' => __('site.dashboard.account.review_status'),
                     'stage' => __('site.dashboard.account.review_stage'),
                     'balance' => $this->formatMoney(26880.00),
@@ -150,7 +150,7 @@ class DashboardController extends Controller
 
                 return [
                     'reference' => $order?->order_number ?? 'N/A',
-                    'plan' => ($purchase->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge').' / '.((int) ($purchase->account_size / 1000)).'K',
+                    'plan' => $this->challengeTypeLabel($purchase->challenge_type).' / '.((int) ($purchase->account_size / 1000)).'K',
                     'amount' => $this->formatMoney((float) ($order?->final_price ?? 0), $purchase->currency),
                     'payment_provider' => $order?->payment_provider ? ucfirst($order->payment_provider) : 'N/A',
                     'payment_status' => $order?->payment_status ? ucfirst($order->payment_status) : 'N/A',
@@ -167,5 +167,13 @@ class DashboardController extends Controller
             'GBP' => '£'.number_format($amount, 2),
             default => '$'.number_format($amount, 2),
         };
+    }
+
+    private function challengeTypeLabel(string $challengeType): string
+    {
+        return (string) config(
+            'wolforix.challenge_catalog.'.$challengeType.'.label',
+            $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
+        );
     }
 }

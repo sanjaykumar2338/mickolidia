@@ -12,6 +12,12 @@
     $streetAddressValue = old('street_address', $order?->street_address ?? $profile?->street_address);
     $cityValue = old('city', $order?->city ?? $profile?->city);
     $postalCodeValue = old('postal_code', $order?->postal_code ?? $profile?->postal_code);
+    $termsAgreement = trans('site.checkout.confirmations.terms_and_residency_html', [
+        'terms_url' => route('terms'),
+    ]);
+    $refundAgreement = trans('site.checkout.confirmations.refund_policy_html', [
+        'refund_url' => route('refund-policy'),
+    ]);
 @endphp
 
 @section('content')
@@ -224,16 +230,34 @@
                         </div>
                     </div>
 
-                    <label class="flex items-start gap-3 rounded-2xl border border-amber-400/18 bg-amber-400/10 px-4 py-4">
-                        <input
-                            type="checkbox"
-                            name="accept_terms"
-                            value="1"
-                            @checked(old('accept_terms'))
-                            class="mt-1 h-4 w-4 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300"
-                        >
-                        <span class="text-sm leading-7 text-amber-50">{{ __('site.checkout.agreement') }}</span>
-                    </label>
+                    <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.confirmation_title') }}</p>
+                        <div class="mt-5 space-y-4">
+                            <label class="flex items-start gap-4 rounded-[1.5rem] border px-4 py-4 {{ $errors->has('accept_terms_and_residency') ? 'border-rose-400/30 bg-rose-500/10' : 'border-white/8 bg-black/15' }}">
+                                <input
+                                    type="checkbox"
+                                    name="accept_terms_and_residency"
+                                    value="1"
+                                    required
+                                    @checked(old('accept_terms_and_residency'))
+                                    class="mt-1 h-5 w-5 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300"
+                                >
+                                <span class="text-sm leading-7 text-slate-200">{!! $termsAgreement !!}</span>
+                            </label>
+
+                            <label class="flex items-start gap-4 rounded-[1.5rem] border px-4 py-4 {{ $errors->has('accept_refund_policy') ? 'border-rose-400/30 bg-rose-500/10' : 'border-white/8 bg-black/15' }}">
+                                <input
+                                    type="checkbox"
+                                    name="accept_refund_policy"
+                                    value="1"
+                                    required
+                                    @checked(old('accept_refund_policy'))
+                                    class="mt-1 h-5 w-5 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300"
+                                >
+                                <span class="text-sm leading-7 text-slate-200">{!! $refundAgreement !!}</span>
+                            </label>
+                        </div>
+                    </div>
 
                     <div class="flex flex-col gap-4 sm:flex-row">
                         <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">

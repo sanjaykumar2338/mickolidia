@@ -23,6 +23,9 @@
                         <a href="{{ route('faq') }}" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                             {{ __('site.nav.faq') }}
                         </a>
+                        <a href="{{ route('contact') }}" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.nav.contact') }}
+                        </a>
                     </div>
                 </div>
             </div>

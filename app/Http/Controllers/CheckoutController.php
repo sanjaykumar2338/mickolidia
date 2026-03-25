@@ -84,9 +84,11 @@ class CheckoutController extends Controller
             ],
             'currency' => ['required', Rule::in($pricingService->supportedProviderCurrencies())],
             'payment_provider' => ['required', Rule::in($paymentManager->enabledProviderKeys())],
-            'accept_terms' => ['accepted'],
+            'accept_terms_and_residency' => ['accepted'],
+            'accept_refund_policy' => ['accepted'],
         ], [
-            'accept_terms.accepted' => __('site.checkout.validation.accept_terms'),
+            'accept_terms_and_residency.accepted' => __('site.checkout.validation.accept_terms_and_residency'),
+            'accept_refund_policy.accepted' => __('site.checkout.validation.accept_refund_policy'),
         ]);
 
         try {
@@ -107,6 +109,7 @@ class CheckoutController extends Controller
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
         $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan): Order {
             $existingOrder = null;
+            $acceptedAt = now()->toIso8601String();
             /** @var User $user */
             $user = $request->user();
 
@@ -145,6 +148,17 @@ class CheckoutController extends Controller
                     'locale' => app()->getLocale(),
                     'plan_slug' => $selectedPlan['slug'],
                     'launch_discount_enabled' => $selectedPlan['discount']['enabled'],
+                    'checkout_confirmations' => [
+                        'terms_and_residency' => [
+                            'accepted' => true,
+                            'accepted_at' => $acceptedAt,
+                            'country' => $validated['country'],
+                        ],
+                        'refund_policy' => [
+                            'accepted' => true,
+                            'accepted_at' => $acceptedAt,
+                        ],
+                    ],
                 ]),
             ]);
             $order->save();

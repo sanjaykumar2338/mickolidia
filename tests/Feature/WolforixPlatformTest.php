@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\WelcomeMail;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Order;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 use Tests\Fixtures\FakeStripePaymentGateway;
 
@@ -24,6 +26,7 @@ class WolforixPlatformTest extends TestCase
             route('login'),
             route('home'),
             route('about'),
+            route('contact'),
             route('faq'),
             route('trial.register'),
             route('terms'),
@@ -43,10 +46,23 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('about'))
             ->assertOk()
             ->assertSee('About')
+            ->assertSee('Contact Us')
             ->assertSee('Wolforix')
             ->assertSee('Our mission')
             ->assertSee('Identify, train, and fund traders who are ready to perform.')
-            ->assertSee(route('about'), false);
+            ->assertSee(route('about'), false)
+            ->assertSee(route('contact'), false);
+    }
+
+    public function test_contact_page_contains_support_channels_and_voice_assistant(): void
+    {
+        $this->get(route('contact'))
+            ->assertOk()
+            ->assertSee('Contact Us')
+            ->assertSee(config('wolforix.support.email'))
+            ->assertSee('Live chat')
+            ->assertSee('AI voice assistant')
+            ->assertSee(route('faq'), false);
     }
 
     public function test_checkout_requires_authentication_and_redirects_to_login_with_intended_destination(): void
@@ -66,6 +82,8 @@ class WolforixPlatformTest extends TestCase
 
     public function test_registration_returns_user_to_the_intended_checkout_flow(): void
     {
+        Mail::fake();
+
         $selection = [
             'challenge_type' => 'one_step',
             'account_size' => 25000,
@@ -89,6 +107,10 @@ class WolforixPlatformTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'checkout-auth@example.com',
         ]);
+        Mail::assertSent(WelcomeMail::class, function (WelcomeMail $mail): bool {
+            return $mail->hasTo('checkout-auth@example.com')
+                && $mail->user->email === 'checkout-auth@example.com';
+        });
     }
 
     public function test_login_returns_existing_user_to_the_intended_checkout_flow(): void
@@ -122,16 +144,21 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('1-Step Challenge')
-            ->assertSee('2-Step Challenge')
+            ->assertSee('1-Step Instant')
+            ->assertSee('2-Step Pro')
             ->assertSee('5K')
             ->assertSee('100K')
             ->assertSee('USD')
             ->assertSee('EUR')
             ->assertSee('GBP')
-            ->assertSee('80% Profit Split')
-            ->assertSee('$100K Simulated Capital')
+            ->assertSee('🇺🇸')
+            ->assertSee('🇪🇺')
+            ->assertSee('🇬🇧')
+            ->assertSee('No Time Limits')
+            ->assertSee('Fast Payouts')
+            ->assertSee('Scaling +25% Capital')
             ->assertSee('Free Trial')
+            ->assertSee('No risk. No credit card.')
             ->assertSee('Single Phase')
             ->assertSee('Funded Account')
             ->assertSee('20% OFF - Limited Launch Offer')
@@ -144,8 +171,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Dismiss notice')
             ->assertSee('Login')
             ->assertSee('About')
+            ->assertSee('Contact Us')
+            ->assertSee('Search the site')
             ->assertSee('Continue to Secure Checkout')
             ->assertSee('Stripe card checkout is live in this milestone.')
+            ->assertSee(asset('newfolder/desktop.webp'), false)
+            ->assertSee(asset('newfolder/mobile1.webp'), false)
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
     }
@@ -181,7 +212,7 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Essai Gratuit')
             ->assertSee('Devise')
-            ->assertSee('Challenge 1-Step');
+            ->assertSee('1-Step Instant');
     }
 
     public function test_checkout_page_renders_selected_plan_and_provider_options(): void
@@ -196,10 +227,26 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Complete your challenge order')
             ->assertSee('Stripe')
             ->assertSee('PayPal')
-            ->assertSee('EUR');
+            ->assertSee('EUR')
+            ->assertSee('Terms & Conditions')
+            ->assertSee('country of residence')
+            ->assertSee('Cancellation and Refund Policy');
     }
 
-    public function test_checkout_requires_the_mandatory_agreement(): void
+    public function test_authenticated_checkout_page_shows_logout_in_header_instead_of_login(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
+                'challenge_type' => 'one_step',
+                'account_size' => 5000,
+                'currency' => 'USD',
+            ]))
+            ->assertOk()
+            ->assertSee('Logout')
+            ->assertDontSee('Login');
+    }
+
+    public function test_checkout_requires_the_mandatory_confirmations(): void
     {
         $this->useFakeStripeGateway();
         $user = User::factory()->create();
@@ -229,7 +276,10 @@ class WolforixPlatformTest extends TestCase
                 'account_size' => 50000,
                 'currency' => 'USD',
             ]))
-            ->assertSessionHasErrors('accept_terms');
+            ->assertSessionHasErrors([
+                'accept_terms_and_residency',
+                'accept_refund_policy',
+            ]);
     }
 
     public function test_checkout_creates_an_order_for_the_authenticated_user_and_redirects_to_provider(): void
@@ -252,7 +302,8 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 50000,
             'currency' => 'EUR',
             'payment_provider' => 'stripe',
-            'accept_terms' => '1',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
         ]);
 
         $order = Order::query()->firstOrFail();
@@ -267,6 +318,9 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(number_format((float) $plan['discounted_price'], 2, '.', ''), (string) $order->final_price);
         $this->assertSame('fake-session-'.$order->id, $order->external_checkout_id);
         $this->assertCount(1, $order->paymentAttempts);
+        $this->assertTrue($order->metadata['checkout_confirmations']['terms_and_residency']['accepted']);
+        $this->assertSame('DE', $order->metadata['checkout_confirmations']['terms_and_residency']['country']);
+        $this->assertTrue($order->metadata['checkout_confirmations']['refund_policy']['accepted']);
     }
 
     public function test_checkout_success_marks_order_paid_and_creates_purchase_for_the_authenticated_user(): void
@@ -287,7 +341,8 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 25000,
             'currency' => 'USD',
             'payment_provider' => 'stripe',
-            'accept_terms' => '1',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
         ]);
 
         $order = Order::query()->firstOrFail();
@@ -326,7 +381,8 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 10000,
             'currency' => 'GBP',
             'payment_provider' => 'stripe',
-            'accept_terms' => '1',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
         ]);
 
         $order = Order::query()->firstOrFail();
@@ -463,7 +519,7 @@ class WolforixPlatformTest extends TestCase
         $user = User::factory()->create([
             'name' => 'Admin Review Trader',
             'email' => 'admin-review@example.com',
-            'plan_type' => '1-Step Challenge',
+            'plan_type' => '1-Step Instant',
             'account_size' => 25000,
             'payment_amount' => 159,
             'status' => 'completed',
@@ -551,7 +607,7 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Admin Review Trader')
             ->assertSee('Spain')
-            ->assertSee('1-Step Challenge / 25K')
+            ->assertSee('1-Step Instant / 25K')
             ->assertSee('$159.00')
             ->assertSee('Stripe')
             ->assertSee('Paid')

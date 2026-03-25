@@ -123,7 +123,7 @@ class AdminClientController extends Controller
         if ($purchase !== null) {
             return sprintf(
                 '%s / %dK',
-                $purchase->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge',
+                $this->challengeTypeLabel($purchase->challenge_type),
                 (int) ($purchase->account_size / 1000),
             );
         }
@@ -133,7 +133,7 @@ class AdminClientController extends Controller
         if ($order !== null) {
             return sprintf(
                 '%s / %dK',
-                $order->challenge_type === 'one_step' ? '1-Step Challenge' : '2-Step Challenge',
+                $this->challengeTypeLabel($order->challenge_type),
                 (int) ($order->account_size / 1000),
             );
         }
@@ -218,6 +218,14 @@ class AdminClientController extends Controller
         }
 
         return 'N/A';
+    }
+
+    private function challengeTypeLabel(string $challengeType): string
+    {
+        return (string) config(
+            'wolforix.challenge_catalog.'.$challengeType.'.label',
+            $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
+        );
     }
 
     private function countryName(string $countryCode): string

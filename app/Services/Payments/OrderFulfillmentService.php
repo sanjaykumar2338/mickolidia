@@ -194,9 +194,7 @@ class OrderFulfillmentService
 
     private function syncUserSnapshot(User $user, Order $order): void
     {
-        $label = $order->challenge_type === 'one_step'
-            ? '1-Step Challenge'
-            : '2-Step Challenge';
+        $label = $this->challengeTypeLabel($order->challenge_type);
 
         $user->forceFill([
             'plan_type' => $label,
@@ -209,5 +207,13 @@ class OrderFulfillmentService
     private function countryName(string $countryCode): string
     {
         return config("wolforix.checkout_countries.{$countryCode}", $countryCode);
+    }
+
+    private function challengeTypeLabel(string $challengeType): string
+    {
+        return (string) config(
+            'wolforix.challenge_catalog.'.$challengeType.'.label',
+            $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
+        );
     }
 }

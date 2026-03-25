@@ -23,6 +23,7 @@
     };
     $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $defaultCurrency) : '';
     $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $defaultCurrency) : '';
+    $defaultCurrencyMeta = $currencies[$defaultCurrency] ?? [];
     $featureIcons = [
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -64,16 +65,64 @@
 @endphp
 
 @section('content')
-    <section class="px-6 pt-8 lg:px-8 lg:pt-12">
+    <section class="px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-12">
         <div class="mx-auto max-w-7xl">
-            <div class="hero-shell rounded-[2.5rem] px-6 py-8 sm:px-8 lg:px-10 lg:py-12">
-                <div class="hero-grid relative z-10 grid items-center gap-10 lg:grid-cols-[0.92fr_minmax(0,1.08fr)] lg:gap-14">
+            <div class="hero-shell rounded-[2.5rem]">
+                <div class="relative isolate overflow-hidden rounded-[2.5rem] lg:hidden">
+                    <img
+                        src="{{ asset('newfolder/mobile1.webp') }}"
+                        alt="{{ __('site.home.hero_visual.image_alt') }}"
+                        class="absolute inset-0 h-full w-full object-cover object-center"
+                        loading="eager"
+                        decoding="async"
+                    >
+                    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,15,0.30)_0%,rgba(4,8,15,0.58)_18%,rgba(4,8,15,0.28)_38%,rgba(4,8,15,0.72)_64%,rgba(4,8,15,0.92)_100%)]"></div>
+                    <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050b13]/90 via-[#050b13]/40 to-transparent"></div>
+                    <div class="relative z-10 flex min-h-[44rem] flex-col justify-end px-6 pb-8 pt-20 text-center sm:px-8">
+                        <h1 class="mx-auto max-w-sm text-5xl font-semibold leading-[0.98] text-white [text-shadow:0_12px_40px_rgba(0,0,0,0.42)]">
+                            {{ __('site.home.title') }}
+                        </h1>
+                        <p class="mx-auto mt-5 max-w-sm whitespace-pre-line text-base leading-7 text-slate-100/92 [text-shadow:0_8px_24px_rgba(0,0,0,0.35)]">
+                            {{ __('site.home.description') }}
+                        </p>
+
+                        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                            <a
+                                href="{{ $defaultCheckoutUrl }}"
+                                data-checkout-cta
+                                data-checkout-base="{{ route('checkout.show') }}"
+                                class="primary-cta min-w-[12rem] rounded-full px-8 py-4 text-base font-semibold"
+                            >
+                                {{ __('site.home.primary_cta') }}
+                            </a>
+                            <div class="flex flex-col items-center">
+                                <a href="{{ route('trial.register') }}" class="ghost-cta min-w-[12rem] rounded-full border-white/20 bg-black/24 px-8 py-4 text-base font-semibold backdrop-blur-md">
+                                    {{ __('site.home.free_trial_cta') }}
+                                </a>
+                                <p class="mt-2 text-sm font-medium text-slate-200/88">{{ __('site.home.free_trial_caption') }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+                            @foreach (trans('site.home.feature_cards') as $card)
+                                <span class="inline-flex items-center gap-2 rounded-full border border-amber-300/22 bg-black/28 px-4 py-2.5 text-sm font-medium text-amber-50 backdrop-blur-md">
+                                    <span class="flex h-5 w-5 items-center justify-center text-amber-200 [&_svg]:h-5 [&_svg]:w-5">
+                                        {!! $featureIcons[$loop->index] ?? $featureIcons[0] !!}
+                                    </span>
+                                    <span>{{ $card }}</span>
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-grid relative z-10 hidden items-center gap-10 px-6 py-8 sm:px-8 lg:grid lg:grid-cols-[0.92fr_minmax(0,1.08fr)] lg:gap-14 lg:px-10 lg:py-12">
                     <div class="max-w-3xl">
                         <span class="section-label">{{ __('site.home.eyebrow') }}</span>
                         <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-[1.02] text-white sm:text-5xl lg:text-[4.5rem]">
                             {{ __('site.home.title') }}
                         </h1>
-                        <p class="mt-6 max-w-2xl text-base leading-8 text-slate-200 sm:text-lg">
+                        <p class="mt-6 max-w-2xl whitespace-pre-line text-base leading-8 text-slate-200 sm:text-lg">
                             {{ __('site.home.description') }}
                         </p>
 
@@ -83,7 +132,7 @@
                             @endforeach
                         </div>
 
-                        <div class="mt-8 flex flex-wrap items-center gap-4">
+                        <div class="mt-8 flex flex-wrap items-start gap-4">
                             <a
                                 href="{{ $defaultCheckoutUrl }}"
                                 data-checkout-cta
@@ -92,28 +141,37 @@
                             >
                                 {{ __('site.home.primary_cta') }}
                             </a>
-                            <a href="{{ route('trial.register') }}" class="ghost-cta rounded-full px-8 py-4 text-base font-semibold">
-                                {{ __('site.home.free_trial_cta') }}
-                            </a>
+                            <div class="flex flex-col items-start">
+                                <a href="{{ route('trial.register') }}" class="ghost-cta rounded-full px-8 py-4 text-base font-semibold">
+                                    {{ __('site.home.free_trial_cta') }}
+                                </a>
+                                <p class="mt-3 text-sm font-medium text-slate-400">{{ __('site.home.free_trial_caption') }}</p>
+                            </div>
                         </div>
                     </div>
 
                     <div class="hero-visual-stage relative">
                         <div class="hero-visual-frame relative mx-auto w-full max-w-[42rem] overflow-hidden rounded-[2.2rem] border border-white/10 bg-slate-950/90 p-2 shadow-[0_34px_90px_rgba(2,6,23,0.52)]">
                             <div class="hero-visual-glow pointer-events-none absolute inset-x-[12%] bottom-[6%] h-20 rounded-full bg-amber-400/14 blur-3xl"></div>
-                            <img
-                                src="{{ asset('newfolder/AD68348C-2EC4-4D2D-9D00-1D0B4DCFEDFE.jpeg') }}"
-                                alt="{{ __('site.home.hero_visual.image_alt') }}"
-                                width="1023"
-                                height="770"
-                                class="hero-visual-image relative z-10 block h-auto w-full rounded-[1.75rem] object-contain"
-                            >
+                            <div class="hero-visual-image relative z-10 overflow-hidden rounded-[1.75rem] border border-white/8 bg-slate-950/95">
+                                <picture>
+                                    <source media="(min-width: 1024px)" srcset="{{ asset('newfolder/desktop.webp') }}">
+                                    <img
+                                        src="{{ asset('newfolder/mobile1.webp') }}"
+                                        alt="{{ __('site.home.hero_visual.image_alt') }}"
+                                        class="block aspect-[4/5] w-full object-cover object-center sm:aspect-[4/3] lg:aspect-[11/10]"
+                                        loading="eager"
+                                        decoding="async"
+                                    >
+                                </picture>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
 
-        <div class="mx-auto mt-10 grid max-w-7xl gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="mx-auto mt-10 hidden max-w-7xl gap-4 lg:grid lg:grid-cols-3">
             @foreach (trans('site.home.feature_cards') as $card)
                 <article class="surface-panel rounded-[2rem] p-6">
                     <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-[0_18px_40px_rgba(244,183,74,0.12)]">
@@ -162,8 +220,13 @@
                                         data-challenge-currency="{{ $currencyCode }}"
                                         class="challenge-currency-button rounded-[1.5rem] border border-white/8 bg-white/3 px-4 py-4 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
                                     >
-                                        <span class="block text-sm font-semibold tracking-[0.22em] text-white">{{ $currencyCode }}</span>
-                                        <span class="mt-2 block text-xs uppercase tracking-[0.22em] text-slate-400">{{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}</span>
+                                        <span class="flex items-center gap-2 text-sm font-semibold tracking-[0.22em] text-white">
+                                            <span class="text-lg">{{ $currencyMeta['flag'] ?? '' }}</span>
+                                            <span>{{ $currencyCode }}</span>
+                                        </span>
+                                        <span class="mt-2 block text-xs uppercase tracking-[0.22em] text-slate-400">
+                                            {{ $currencyMeta['symbol'] ?? '' }} · {{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}
+                                        </span>
                                     </button>
                                 @endforeach
                             </div>
@@ -227,8 +290,9 @@
                                         <span data-plan-discount-badge class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">
                                             {{ __('site.home.challenge_selector.discount_badge') }}
                                         </span>
-                                        <span data-plan-currency-code class="rounded-full border border-white/8 bg-white/3 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
-                                            {{ $defaultCurrency }}
+                                        <span class="rounded-full border border-white/8 bg-white/3 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
+                                            <span data-plan-currency-flag class="mr-2 text-sm">{{ $defaultCurrencyMeta['flag'] ?? '' }}</span>
+                                            <span data-plan-currency-code>{{ $defaultCurrency }}</span>
                                         </span>
                                         <span class="text-xs font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.current_price') }}</span>
                                     </div>
@@ -409,7 +473,10 @@
                     </h3>
                     <div class="mt-4 flex flex-wrap items-center gap-3">
                         <span data-checkout-plan-price class="text-3xl font-semibold text-white">{{ $initialPrice }}</span>
-                        <span data-checkout-plan-currency class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">{{ $defaultCurrency }}</span>
+                        <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
+                            <span data-checkout-plan-currency-flag class="mr-2 text-sm">{{ $defaultCurrencyMeta['flag'] ?? '' }}</span>
+                            <span data-checkout-plan-currency>{{ $defaultCurrency }}</span>
+                        </span>
                     </div>
                     <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.checkout.redirect_note') }}</p>
                 </div>

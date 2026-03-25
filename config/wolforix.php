@@ -40,17 +40,24 @@ $launchDiscount = [
 $currencies = [
     'USD' => [
         'rate' => 1,
+        'symbol' => '$',
+        'flag' => '🇺🇸',
     ],
     'EUR' => [
         'rate' => 0.92,
+        'symbol' => '€',
+        'flag' => '🇪🇺',
     ],
     'GBP' => [
         'rate' => 0.78,
+        'symbol' => '£',
+        'flag' => '🇬🇧',
     ],
 ];
 
 $challengeModels = [
     'one_step' => [
+        'label' => '1-Step Instant',
         'steps' => 1,
         'pricing' => [
             5000 => 49,
@@ -80,6 +87,7 @@ $challengeModels = [
         ],
     ],
     'two_step' => [
+        'label' => '2-Step Pro',
         'steps' => 2,
         'pricing' => [
             5000 => 39,
@@ -126,6 +134,7 @@ $challengePlans = [];
 
 foreach ($challengeModels as $challengeType => $challengeTypeData) {
     $challengeCatalog[$challengeType] = [
+        'label' => $challengeTypeData['label'],
         'steps' => $challengeTypeData['steps'],
         'phases' => array_values($challengeTypeData['phases']),
         'funded' => $challengeTypeData['funded'],
@@ -140,7 +149,7 @@ foreach ($challengeModels as $challengeType => $challengeTypeData) {
         $firstPhase = $challengeTypeData['phases'][0];
         $plan = [
             'slug' => str_replace('_', '-', $challengeType).'-'.$size,
-            'name' => $challengeTypeData['steps'].'-Step '.((int) ($size / 1000)).'K',
+            'name' => $challengeTypeData['label'].' '.((int) ($size / 1000)).'K',
             'account_size' => $size,
             'currency' => 'USD',
             'list_price' => $listPrice,
@@ -179,6 +188,12 @@ ksort($challengeSizes);
 
 return [
     'default_locale' => 'en',
+    'default_currency' => 'USD',
+
+    'support' => [
+        'email' => env('SUPPORT_EMAIL', 'support@wolforix.com'),
+        'business_hours' => env('SUPPORT_BUSINESS_HOURS', 'Mon-Fri, 09:00-18:00 UTC'),
+    ],
 
     'admin_auth' => [
         'username' => env('ADMIN_USERNAME', 'admin'),
