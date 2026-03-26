@@ -28,6 +28,7 @@ class WolforixPlatformTest extends TestCase
             route('about'),
             route('contact'),
             route('faq'),
+            route('news'),
             route('trial.register'),
             route('terms'),
             route('risk-disclosure'),
@@ -63,6 +64,38 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Live chat')
             ->assertSee('AI voice assistant')
             ->assertSee(route('faq'), false);
+    }
+
+    public function test_news_page_renders_demo_calendar_filters_and_events(): void
+    {
+        $this->get(route('news'))
+            ->assertOk()
+            ->assertSee('Economic News Calendar')
+            ->assertSee('Europe/Berlin')
+            ->assertSee('Time')
+            ->assertSee('Currency')
+            ->assertSee('Impact')
+            ->assertSee('Event name')
+            ->assertSee('Forecast')
+            ->assertSee('Previous')
+            ->assertSee('Demo calendar feed')
+            ->assertSee('Demo calendar mode')
+            ->assertSee('High impact only')
+            ->assertSee('Non-Farm Payrolls');
+    }
+
+    public function test_news_page_can_filter_demo_events_by_impact_and_currency(): void
+    {
+        $this->get(route('news', [
+            'impact' => 'high',
+            'currency' => 'USD',
+            'range' => 'this_week',
+        ]))
+            ->assertOk()
+            ->assertSee('ISM Services PMI')
+            ->assertSee('Non-Farm Payrolls')
+            ->assertDontSee('Germany Factory Orders MoM')
+            ->assertDontSee('BoE MPC Member Speech');
     }
 
     public function test_checkout_requires_authentication_and_redirects_to_login_with_intended_destination(): void
@@ -170,12 +203,13 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
             ->assertSee('Login')
+            ->assertSee('NEWS')
             ->assertSee('About')
             ->assertSee('Contact Us')
             ->assertSee('Search the site')
             ->assertSee('Continue to Secure Checkout')
             ->assertSee('Stripe card checkout is live in this milestone.')
-            ->assertSee(asset('newfolder/desktop.webp'), false)
+            ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');

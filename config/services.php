@@ -28,6 +28,19 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'trading_economics' => [
+        'base_url' => env('TRADING_ECONOMICS_BASE_URL', 'https://api.tradingeconomics.com'),
+        'api_key' => env('TRADING_ECONOMICS_API_KEY'),
+    ],
+
+    'financial_modeling_prep' => [
+        'api_key' => env('FMP_API_KEY'),
+    ],
+
+    'econoday' => [
+        'api_key' => env('ECONODAY_API_KEY'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

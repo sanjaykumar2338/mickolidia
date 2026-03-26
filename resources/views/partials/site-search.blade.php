@@ -49,6 +49,12 @@
             'url' => route('faq'),
         ],
         [
+            'section' => __('site.search.section_labels.page'),
+            'title' => __('site.nav.news'),
+            'description' => __('site.news.description'),
+            'url' => route('news'),
+        ],
+        [
             'section' => __('site.search.section_labels.policy'),
             'title' => __('site.legal.link_labels.terms'),
             'description' => __('site.legal.pages.terms.intro'),

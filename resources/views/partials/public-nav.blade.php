@@ -23,6 +23,11 @@
             'cta' => false,
         ],
         [
+            'href' => route('news'),
+            'label' => __('site.nav.news'),
+            'cta' => false,
+        ],
+        [
             'label' => __('site.nav.about'),
             'cta' => false,
             'children' => $aboutMenu,
@@ -41,16 +46,16 @@
 
     $mobileNavLinks = [
         [
-            'href' => route('home'),
-            'label' => __('site.nav.home'),
-        ],
-        [
             'href' => route('home').'#plans',
             'label' => __('site.nav.plans'),
         ],
         [
             'href' => route('faq'),
             'label' => __('site.nav.faq'),
+        ],
+        [
+            'href' => route('news'),
+            'label' => __('site.nav.news'),
         ],
         [
             'href' => route('about'),

@@ -338,6 +338,12 @@ return [
         ],
     ],
 
+    'economic_calendar' => [
+        'provider' => env('ECONOMIC_CALENDAR_PROVIDER', 'tradingeconomics'),
+        'display_timezone' => env('ECONOMIC_CALENDAR_TIMEZONE', 'Europe/Berlin'),
+        'default_range' => env('ECONOMIC_CALENDAR_DEFAULT_RANGE', 'this_week'),
+    ],
+
     'launch_discount' => $launchDiscount,
 
     'default_currency' => 'USD',

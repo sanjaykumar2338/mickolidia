@@ -160,7 +160,7 @@
                             <div class="hero-visual-glow pointer-events-none absolute inset-x-[12%] bottom-[6%] h-20 rounded-full bg-amber-400/14 blur-3xl"></div>
                             <div class="hero-visual-image relative z-10 overflow-hidden rounded-[1.75rem] border border-white/8 bg-slate-950/95">
                                 <picture>
-                                    <source media="(min-width: 1024px)" srcset="{{ asset('newfolder/desktop.webp') }}">
+                                    <source media="(min-width: 1024px)" srcset="{{ asset('trading123.png') }}">
                                     <img
                                         src="{{ asset('newfolder/mobile1.webp') }}"
                                         alt="{{ __('site.home.hero_visual.image_alt') }}"
