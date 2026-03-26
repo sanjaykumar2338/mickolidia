@@ -43,6 +43,14 @@ return [
         'eyebrow' => 'Wolforix Prop-Evaluation',
         'title' => 'Beweise es. Werde finanziert. Skaliere schnell.',
         'description' => "Die meisten Trader scheitern an Prop-Firm-Challenges.\nWir geben dir die Struktur, um zu bestehen und zu skalieren.",
+        'mobile_title' => [
+            'line_1' => 'Beweise es.',
+            'line_2' => 'Werde finanziert.',
+        ],
+        'mobile_description' => [
+            'line_1' => 'Beweise deine Strategie. Werde finanziert.',
+            'line_2' => 'Skaliere deine Performance.',
+        ],
         'primary_cta' => 'Challenge starten',
         'free_trial_cta' => 'Kostenlos testen',
         'free_trial_caption' => 'Kein Risiko. Keine Kreditkarte.',

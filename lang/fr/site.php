@@ -39,6 +39,14 @@ return array_replace_recursive($en, [
         'eyebrow' => 'Évaluation Prop Wolforix',
         'title' => 'Prouvez-le. Soyez financé. Accélérez votre croissance.',
         'description' => "La plupart des traders échouent aux challenges de prop firm.\nNous vous donnons la structure pour réussir puis scaler.",
+        'mobile_title' => [
+            'line_1' => 'Prouvez-le.',
+            'line_2' => 'Soyez financé.',
+        ],
+        'mobile_description' => [
+            'line_1' => 'Prouvez votre stratégie. Soyez financé.',
+            'line_2' => 'Faites évoluer votre performance.',
+        ],
         'primary_cta' => 'Commencer le Challenge',
         'free_trial_cta' => 'Essai Gratuit',
         'free_trial_caption' => 'Aucun risque. Aucune carte bancaire.',

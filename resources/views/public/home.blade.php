@@ -27,32 +27,30 @@
     $featureIcons = [
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 15.75 9 10.5l3.75 3.75 7.5-8.25" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 20.25h16.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6.75h3.75V10.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
         </svg>
         SVG,
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 7.5h19.5v9a2.25 2.25 0 0 1-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 16.5v-9Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 9.75h19.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 14.25h3" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 15.75h3.52c.48 0 .95.12 1.37.35l1.84 1.01c.42.23.9.35 1.37.35h2.02a1.88 1.88 0 0 0 0-3.75H10.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5h2.13c.8 0 1.56-.31 2.13-.88l1.17-1.17a2.25 2.25 0 0 1 1.59-.66H12a2.25 2.25 0 0 1 2.07 1.37l.68 1.61" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 10.5v6a.75.75 0 0 0 .75.75H4.5a.75.75 0 0 0 .75-.75v-6a.75.75 0 0 0-.75-.75H3a.75.75 0 0 0-.75.75Z" />
         </svg>
         SVG,
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 6h11.25A2.25 2.25 0 0 1 21 8.25v7.5A2.25 2.25 0 0 1 18.75 18H7.5A2.25 2.25 0 0 1 5.25 15.75V8.25A2.25 2.25 0 0 1 7.5 6Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 9H3.75A1.5 1.5 0 0 0 2.25 10.5v3A1.5 1.5 0 0 0 3.75 15h1.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 12h.008v.008h-.008V12Zm-3 0h.008v.008h-.008V12Z" />
-        </svg>
-        SVG,
-        <<<'SVG'
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4.5 2.25" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-9-9" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5V4.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h15" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 16.5v-3.75" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 16.5v-5.25" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 11.25 3-3 2.25 2.25 4.5-4.5" />
         </svg>
         SVG,
     ];
+    $mobileFeatureIcons = $featureIcons;
     $challengeUi = [
         'unlimited' => __('site.home.challenge_selector.unlimited'),
         'discount_badge' => __('site.home.challenge_selector.discount_badge'),
@@ -65,53 +63,60 @@
 @endphp
 
 @section('content')
-    <section class="px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pt-12">
+    <section class="px-0 pt-0 sm:px-6 sm:pt-6 lg:px-8 lg:pt-12">
         <div class="mx-auto max-w-7xl">
-            <div class="hero-shell rounded-[2.5rem]">
-                <div class="relative isolate overflow-hidden rounded-[2.5rem] lg:hidden">
+            <div class="hero-shell rounded-none sm:rounded-[2.5rem]">
+                <div class="mobile-hero relative isolate overflow-hidden sm:rounded-[2.5rem] lg:hidden">
                     <img
                         src="{{ asset('newfolder/mobile1.webp') }}"
                         alt="{{ __('site.home.hero_visual.image_alt') }}"
-                        class="absolute inset-0 h-full w-full object-cover object-center"
+                        class="mobile-hero-media absolute inset-0 h-full w-full object-cover"
                         loading="eager"
                         decoding="async"
                     >
-                    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,15,0.30)_0%,rgba(4,8,15,0.58)_18%,rgba(4,8,15,0.28)_38%,rgba(4,8,15,0.72)_64%,rgba(4,8,15,0.92)_100%)]"></div>
-                    <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#050b13]/90 via-[#050b13]/40 to-transparent"></div>
-                    <div class="relative z-10 flex min-h-[44rem] flex-col justify-end px-6 pb-8 pt-20 text-center sm:px-8">
-                        <h1 class="mx-auto max-w-sm text-5xl font-semibold leading-[0.98] text-white [text-shadow:0_12px_40px_rgba(0,0,0,0.42)]">
-                            {{ __('site.home.title') }}
-                        </h1>
-                        <p class="mx-auto mt-5 max-w-sm whitespace-pre-line text-base leading-7 text-slate-100/92 [text-shadow:0_8px_24px_rgba(0,0,0,0.35)]">
-                            {{ __('site.home.description') }}
-                        </p>
-
-                        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                            <a
-                                href="{{ $defaultCheckoutUrl }}"
-                                data-checkout-cta
-                                data-checkout-base="{{ route('checkout.show') }}"
-                                class="primary-cta min-w-[12rem] rounded-full px-8 py-4 text-base font-semibold"
-                            >
-                                {{ __('site.home.primary_cta') }}
-                            </a>
-                            <div class="flex flex-col items-center">
-                                <a href="{{ route('trial.register') }}" class="ghost-cta min-w-[12rem] rounded-full border-white/20 bg-black/24 px-8 py-4 text-base font-semibold backdrop-blur-md">
-                                    {{ __('site.home.free_trial_cta') }}
-                                </a>
-                                <p class="mt-2 text-sm font-medium text-slate-200/88">{{ __('site.home.free_trial_caption') }}</p>
-                            </div>
+                    <div class="mobile-hero-shade absolute inset-0"></div>
+                    <div class="mobile-hero-beam mobile-hero-beam-top" aria-hidden="true"></div>
+                    <div class="mobile-hero-beam mobile-hero-beam-middle" aria-hidden="true"></div>
+                    <div class="relative z-10 flex min-h-[44rem] flex-col justify-between px-5 pb-8 pt-10 text-center sm:px-8 sm:pb-10 sm:pt-12">
+                        <div class="flex flex-1 flex-col items-center justify-center">
+                            <h1 class="mobile-hero-title">
+                                <span>{{ __('site.home.mobile_title.line_1') }}</span>
+                                <span>{{ __('site.home.mobile_title.line_2') }}</span>
+                            </h1>
+                            <p class="mobile-hero-copy">
+                                <span>{{ __('site.home.mobile_description.line_1') }}</span>
+                                <span>{{ __('site.home.mobile_description.line_2') }}</span>
+                            </p>
                         </div>
 
-                        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-                            @foreach (trans('site.home.feature_cards') as $card)
-                                <span class="inline-flex items-center gap-2 rounded-full border border-amber-300/22 bg-black/28 px-4 py-2.5 text-sm font-medium text-amber-50 backdrop-blur-md">
-                                    <span class="flex h-5 w-5 items-center justify-center text-amber-200 [&_svg]:h-5 [&_svg]:w-5">
-                                        {!! $featureIcons[$loop->index] ?? $featureIcons[0] !!}
+                        <div class="mobile-hero-footer">
+                            <div class="mobile-hero-actions">
+                                <a
+                                    href="{{ $defaultCheckoutUrl }}"
+                                    data-checkout-cta
+                                    data-checkout-base="{{ route('checkout.show') }}"
+                                    class="primary-cta mobile-hero-primary rounded-full px-4 py-4 text-base font-semibold"
+                                >
+                                    {{ __('site.home.primary_cta') }}
+                                </a>
+                                <div class="mobile-hero-trial-wrap">
+                                    <a href="{{ route('trial.register') }}" class="ghost-cta mobile-hero-secondary rounded-full px-4 py-4 text-base font-semibold">
+                                        <span class="mobile-hero-secondary-title">{{ __('site.home.free_trial_cta') }}</span>
+                                        <span class="mobile-hero-trial-caption">{{ __('site.home.free_trial_caption') }}</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="mobile-hero-features">
+                                @foreach (trans('site.home.feature_cards') as $card)
+                                    <span class="mobile-hero-feature">
+                                        <span class="mobile-hero-feature-icon">
+                                            {!! $mobileFeatureIcons[$loop->index] ?? $featureIcons[$loop->index] ?? $featureIcons[0] !!}
+                                        </span>
+                                        <span>{{ $card }}</span>
                                     </span>
-                                    <span>{{ $card }}</span>
-                                </span>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -119,7 +124,7 @@
                 <div class="hero-grid relative z-10 hidden items-center gap-10 px-6 py-8 sm:px-8 lg:grid lg:grid-cols-[0.92fr_minmax(0,1.08fr)] lg:gap-14 lg:px-10 lg:py-12">
                     <div class="max-w-3xl">
                         <span class="section-label">{{ __('site.home.eyebrow') }}</span>
-                        <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-[1.02] text-white sm:text-5xl lg:text-[4.5rem]">
+                        <h1 class="hero-display-title mt-6 max-w-4xl text-4xl font-semibold leading-[1.02] sm:text-5xl lg:text-[4.5rem]">
                             {{ __('site.home.title') }}
                         </h1>
                         <p class="mt-6 max-w-2xl whitespace-pre-line text-base leading-8 text-slate-200 sm:text-lg">

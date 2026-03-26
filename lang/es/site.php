@@ -43,6 +43,14 @@ return [
         'eyebrow' => 'Evaluación Prop de Wolforix',
         'title' => 'Demuéstralo. Consigue financiación. Escala rápido.',
         'description' => "La mayoria de los traders falla los challenges de prop firm.\nNosotros te damos la estructura para aprobar y escalar.",
+        'mobile_title' => [
+            'line_1' => 'Demuéstralo.',
+            'line_2' => 'Consigue financiación.',
+        ],
+        'mobile_description' => [
+            'line_1' => 'Demuestra tu estrategia. Consigue financiación.',
+            'line_2' => 'Escala tu rendimiento.',
+        ],
         'primary_cta' => 'Iniciar Challenge',
         'free_trial_cta' => 'Prueba Gratis',
         'free_trial_caption' => 'Sin riesgo. Sin tarjeta de credito.',

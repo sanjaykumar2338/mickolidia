@@ -43,6 +43,14 @@ return [
         'eyebrow' => 'Wolforix Prop Evaluation',
         'title' => 'Prove It. Get Funded. Scale Fast.',
         'description' => "Most traders fail prop firm challenges.\nWe give you the structure to pass and scale.",
+        'mobile_title' => [
+            'line_1' => 'Prove It.',
+            'line_2' => 'Get Funded.',
+        ],
+        'mobile_description' => [
+            'line_1' => 'Prove your strategy. Get funded.',
+            'line_2' => 'Scale your performance.',
+        ],
         'primary_cta' => 'Start Challenge',
         'free_trial_cta' => 'Free Trial',
         'free_trial_caption' => 'No risk. No credit card.',
