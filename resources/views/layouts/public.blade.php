@@ -32,7 +32,12 @@
         @yield('content')
     </main>
 
+    @unless (request()->routeIs('contact'))
+        @include('partials.ai-assistant-promo')
+    @endunless
+
     @include('partials.public-footer')
+    @include('partials.floating-ai-assistant')
     @include('partials.fixed-disclaimer')
 </body>
 </html>

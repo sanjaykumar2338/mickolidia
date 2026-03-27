@@ -33,6 +33,51 @@ document.addEventListener('DOMContentLoaded', () => {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
 
+    const launchPromoStorageKey = 'wolforix-launch-promo-code';
+    const normalizePromoCode = (value) => (value ?? '').toString().trim();
+    const getLaunchPromoCode = () => normalizePromoCode(storage.get(launchPromoStorageKey));
+    const setLaunchPromoCode = (value) => {
+        const normalized = normalizePromoCode(value);
+
+        if (normalized !== '') {
+            storage.set(launchPromoStorageKey, normalized);
+        }
+
+        return normalized;
+    };
+    const withLaunchPromoCode = (value, promoCode = getLaunchPromoCode()) => {
+        const normalizedPromoCode = normalizePromoCode(promoCode);
+
+        if (typeof value !== 'string' || value.trim() === '') {
+            return value;
+        }
+
+        try {
+            const url = new URL(value, window.location.origin);
+
+            if (normalizedPromoCode !== '') {
+                url.searchParams.set('promo_code', normalizedPromoCode);
+            } else {
+                url.searchParams.delete('promo_code');
+            }
+
+            return url.toString();
+        } catch (error) {
+            return value;
+        }
+    };
+    const syncLaunchPromoCodeToCheckoutLinks = (promoCode = getLaunchPromoCode()) => {
+        document.querySelectorAll('[data-checkout-cta]').forEach((link) => {
+            if (!(link instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            link.href = withLaunchPromoCode(link.href, promoCode);
+        });
+    };
+
+    syncLaunchPromoCodeToCheckoutLinks();
+
     const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
 
     if (fixedDisclaimer instanceof HTMLElement) {
@@ -55,7 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (launchPopup instanceof HTMLElement) {
         const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
+        const copyButton = launchPopup.querySelector('[data-launch-popup-copy]');
+        const applyButton = launchPopup.querySelector('[data-launch-popup-apply]');
+        const codeDisplay = launchPopup.querySelector('[data-launch-popup-code]');
         const storageKey = 'wolforix-launch-popup-dismissed';
+        const launchPromoCode = normalizePromoCode(
+            codeDisplay?.getAttribute('data-launch-popup-code-value')
+            ?? applyButton?.getAttribute('data-launch-popup-code')
+            ?? '',
+        );
 
         const closePopup = () => {
             launchPopup.classList.remove('flex');
@@ -63,6 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.documentElement.classList.remove('overflow-hidden');
             document.body.classList.remove('overflow-hidden');
             storage.set(storageKey, '1');
+        };
+        const activateLaunchPromoCode = () => {
+            if (launchPromoCode === '') {
+                return;
+            }
+
+            setLaunchPromoCode(launchPromoCode);
+            syncLaunchPromoCodeToCheckoutLinks(launchPromoCode);
         };
 
         if (storage.get(storageKey) !== '1') {
@@ -77,6 +138,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 closePopup();
             });
         });
+
+        if (applyButton instanceof HTMLAnchorElement) {
+            applyButton.addEventListener('click', () => {
+                activateLaunchPromoCode();
+            });
+        }
+
+        if (copyButton instanceof HTMLButtonElement) {
+            copyButton.addEventListener('click', async () => {
+                activateLaunchPromoCode();
+
+                const defaultLabel = copyButton.dataset.copyDefault ?? copyButton.textContent ?? '';
+                const successLabel = copyButton.dataset.copySuccess ?? defaultLabel;
+
+                try {
+                    if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(launchPromoCode);
+                    }
+
+                    copyButton.textContent = successLabel;
+                } catch (error) {
+                    copyButton.textContent = successLabel;
+                }
+
+                window.setTimeout(() => {
+                    copyButton.textContent = defaultLabel;
+                }, 1800);
+            });
+        }
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && launchPopup.classList.contains('flex')) {
@@ -295,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const challengeSelector = document.querySelector('[data-challenge-selector]');
+        const challengeSelector = document.querySelector('[data-challenge-selector]');
 
     if (challengeSelector instanceof HTMLElement) {
         const catalogScript = challengeSelector.querySelector('[data-challenge-catalog]');
@@ -586,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkoutUrl.searchParams.set('account_size', String(plan.account_size));
                     checkoutUrl.searchParams.set('currency', activeCurrency);
 
-                    link.href = checkoutUrl.toString();
+                    link.href = withLaunchPromoCode(checkoutUrl.toString());
                 });
 
                 currencyButtons.forEach((button) => {
@@ -638,6 +728,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderPlan();
         }
+    }
+
+    const launchPromoInput = document.querySelector('[data-launch-promo-input]');
+
+    if (launchPromoInput instanceof HTMLInputElement) {
+        const expectedPromoCode = normalizePromoCode(launchPromoInput.dataset.launchPromoExpected);
+        const syncPromoInput = () => {
+            if (expectedPromoCode !== '' && normalizePromoCode(launchPromoInput.value).toLowerCase() === expectedPromoCode.toLowerCase()) {
+                setLaunchPromoCode(expectedPromoCode);
+                syncLaunchPromoCodeToCheckoutLinks(expectedPromoCode);
+            }
+        };
+
+        syncPromoInput();
+        launchPromoInput.addEventListener('change', syncPromoInput);
+        launchPromoInput.addEventListener('blur', syncPromoInput);
     }
 
     const searchInput = document.querySelector('[data-faq-search]');
@@ -715,6 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = voiceAssistant.querySelector('[data-voice-question]');
         const submitButton = voiceAssistant.querySelector('[data-voice-submit]');
         const micButton = voiceAssistant.querySelector('[data-voice-mic]');
+        const playButton = voiceAssistant.querySelector('[data-voice-play]');
         const status = voiceAssistant.querySelector('[data-voice-status]');
         const answerQuestion = voiceAssistant.querySelector('[data-voice-answer-question]');
         const answerText = voiceAssistant.querySelector('[data-voice-answer-text]');
@@ -722,6 +829,350 @@ document.addEventListener('DOMContentLoaded', () => {
             ? JSON.parse(indexScript.textContent ?? '[]')
             : [];
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const speechLocaleMap = {
+            en: 'en-US',
+            de: 'de-DE',
+            es: 'es-ES',
+            fr: 'fr-FR',
+        };
+        const pageLocale = voiceAssistant.dataset.pageLocale ?? document.documentElement.lang ?? 'en';
+        const preferredLanguages = [
+            pageLocale,
+            ...(Array.isArray(window.navigator.languages) ? window.navigator.languages : []),
+            window.navigator.language,
+        ].filter(Boolean);
+
+        const resolveSpeechLocale = () => {
+            for (const candidate of preferredLanguages) {
+                const normalized = String(candidate).toLowerCase();
+                const baseLocale = normalized.split(/[-_]/)[0];
+
+                if (speechLocaleMap[normalized]) {
+                    return speechLocaleMap[normalized];
+                }
+
+                if (speechLocaleMap[baseLocale]) {
+                    return speechLocaleMap[baseLocale];
+                }
+            }
+
+            const fallbackLocale = String(pageLocale).toLowerCase().split(/[-_]/)[0];
+
+            return speechLocaleMap[fallbackLocale] ?? 'en-US';
+        };
+
+        let recognition = null;
+        let activeSpeechLocale = resolveSpeechLocale();
+        let availableSpeechVoices = [];
+        let currentAnswerText = '';
+        let currentAnswerSpeechLocale = activeSpeechLocale;
+        let isSpeakingReply = false;
+        let isListening = false;
+        let replyPlaybackTimeoutId = null;
+        let activeReplyUtterance = null;
+        let queuedReplyPlayback = null;
+        const voiceDebug = (...args) => {
+            console.log('[Wolforix Voice]', ...args);
+        };
+
+        const setPlayButtonState = (speaking, enabled = currentAnswerText.trim() !== '') => {
+            if (!(playButton instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            isSpeakingReply = speaking;
+            playButton.textContent = speaking
+                ? (playButton.dataset.stopLabel ?? playButton.textContent ?? '')
+                : (playButton.dataset.playLabel ?? playButton.textContent ?? '');
+            playButton.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+            playButton.classList.toggle('text-slate-400', !enabled);
+            playButton.classList.toggle('border-white/8', !enabled);
+            playButton.classList.toggle('border-amber-400/35', speaking);
+            playButton.classList.toggle('bg-amber-400/10', speaking);
+            playButton.classList.toggle('text-amber-50', speaking);
+        };
+
+        const setActiveSpeechLocale = (nextLocale) => {
+            if (typeof nextLocale !== 'string' || nextLocale.trim() === '') {
+                return activeSpeechLocale;
+            }
+
+            activeSpeechLocale = nextLocale;
+
+            if (recognition) {
+                recognition.lang = activeSpeechLocale;
+            }
+
+            return activeSpeechLocale;
+        };
+
+        const refreshSpeechVoices = () => {
+            if (!('speechSynthesis' in window)) {
+                return;
+            }
+
+            availableSpeechVoices = window.speechSynthesis.getVoices() ?? [];
+            voiceDebug('voices refreshed', {
+                count: availableSpeechVoices.length,
+                locales: availableSpeechVoices.map((voice) => voice.lang).filter(Boolean).slice(0, 10),
+            });
+        };
+
+        const findSpeechVoice = (locale) => {
+            const normalizedLocale = String(locale ?? '').toLowerCase();
+            const baseLocale = normalizedLocale.split(/[-_]/)[0];
+
+            return availableSpeechVoices.find((voice) => voice.lang?.toLowerCase() === normalizedLocale)
+                ?? availableSpeechVoices.find((voice) => voice.lang?.toLowerCase().startsWith(`${baseLocale}-`))
+                ?? availableSpeechVoices.find((voice) => voice.lang?.toLowerCase() === baseLocale)
+                ?? null;
+        };
+
+        const resolveItemSpeechLocale = (item) => {
+            const itemLocale = String(item?.locale ?? '').toLowerCase().split(/[-_]/)[0];
+
+            return item?.speech_locale
+                ?? speechLocaleMap[itemLocale]
+                ?? activeSpeechLocale;
+        };
+
+        if ('speechSynthesis' in window) {
+            refreshSpeechVoices();
+
+            if (typeof window.speechSynthesis.addEventListener === 'function') {
+                window.speechSynthesis.addEventListener('voiceschanged', refreshSpeechVoices);
+            }
+        }
+
+        const clearPendingReplyPlayback = () => {
+            if (replyPlaybackTimeoutId !== null) {
+                window.clearTimeout(replyPlaybackTimeoutId);
+                replyPlaybackTimeoutId = null;
+                voiceDebug('cleared pending playback timeout');
+            }
+        };
+
+        const cancelSpokenReply = (enabled = currentAnswerText.trim() !== '') => {
+            voiceDebug('cancel spoken reply', {
+                enabled,
+                hasAnswer: currentAnswerText.trim() !== '',
+                speaking: 'speechSynthesis' in window ? window.speechSynthesis.speaking : false,
+                pending: 'speechSynthesis' in window ? window.speechSynthesis.pending : false,
+                paused: 'speechSynthesis' in window ? window.speechSynthesis.paused : false,
+            });
+            clearPendingReplyPlayback();
+            activeReplyUtterance = null;
+
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.resume();
+                } catch (error) {
+                    // Ignore browser-level speech cleanup failures.
+                }
+            }
+
+            setPlayButtonState(false, enabled);
+        };
+
+        const speakAnswer = (
+            text = currentAnswerText,
+            locale = currentAnswerSpeechLocale,
+            {
+                userInitiated = false,
+            } = {},
+        ) => {
+            const normalizedText = String(text ?? '').trim();
+            voiceDebug('speak answer requested', {
+                locale,
+                textLength: normalizedText.length,
+                hasText: normalizedText !== '',
+                speaking: 'speechSynthesis' in window ? window.speechSynthesis.speaking : false,
+                pending: 'speechSynthesis' in window ? window.speechSynthesis.pending : false,
+                paused: 'speechSynthesis' in window ? window.speechSynthesis.paused : false,
+                userInitiated,
+            });
+
+            if (!('speechSynthesis' in window) || normalizedText === '') {
+                cancelSpokenReply(false);
+                return;
+            }
+
+            refreshSpeechVoices();
+
+            const synthesis = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(normalizedText);
+            const selectedVoice = findSpeechVoice(locale)
+                ?? availableSpeechVoices.find((voice) => voice.default)
+                ?? availableSpeechVoices[0]
+                ?? null;
+            voiceDebug('selected speech voice', {
+                requestedLocale: locale,
+                selectedVoice: selectedVoice?.name ?? null,
+                selectedVoiceLocale: selectedVoice?.lang ?? null,
+                availableVoiceCount: availableSpeechVoices.length,
+            });
+
+            const needsSpeechReset = synthesis.speaking
+                || synthesis.pending
+                || synthesis.paused
+                || replyPlaybackTimeoutId !== null
+                || activeReplyUtterance !== null;
+
+            voiceDebug('speech reset check', {
+                needsSpeechReset,
+                speaking: synthesis.speaking,
+                pending: synthesis.pending,
+                paused: synthesis.paused,
+                hasPendingTimeout: replyPlaybackTimeoutId !== null,
+                hasActiveUtterance: activeReplyUtterance !== null,
+            });
+
+            if (needsSpeechReset) {
+                cancelSpokenReply(true);
+            } else {
+                clearPendingReplyPlayback();
+                setPlayButtonState(false, true);
+            }
+
+            utterance.lang = selectedVoice?.lang ?? locale;
+            utterance.volume = 1;
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            utterance.addEventListener('start', () => {
+                if (activeReplyUtterance !== utterance) {
+                    return;
+                }
+
+                voiceDebug('utterance started', {
+                    locale: utterance.lang,
+                    textLength: normalizedText.length,
+                });
+                setPlayButtonState(true);
+            });
+
+            utterance.addEventListener('end', () => {
+                if (activeReplyUtterance !== utterance) {
+                    return;
+                }
+
+                voiceDebug('utterance ended');
+                clearPendingReplyPlayback();
+                activeReplyUtterance = null;
+                setPlayButtonState(false, true);
+            });
+
+            utterance.addEventListener('error', (event) => {
+                if (activeReplyUtterance !== utterance) {
+                    return;
+                }
+
+                voiceDebug('utterance error', {
+                    error: event.error ?? 'unknown',
+                    charIndex: event.charIndex ?? null,
+                });
+                clearPendingReplyPlayback();
+                activeReplyUtterance = null;
+                setPlayButtonState(false, true);
+            });
+
+            const startPlayback = () => {
+                activeReplyUtterance = utterance;
+                voiceDebug('starting playback', {
+                    locale: utterance.lang,
+                    textPreview: normalizedText.slice(0, 80),
+                    userInitiated,
+                    deferred: needsSpeechReset && !userInitiated,
+                });
+
+                try {
+                    synthesis.resume();
+                    synthesis.speak(utterance);
+                    voiceDebug('speechSynthesis.speak invoked', {
+                        speaking: synthesis.speaking,
+                        pending: synthesis.pending,
+                        paused: synthesis.paused,
+                    });
+
+                    window.setTimeout(() => {
+                        if (activeReplyUtterance === utterance) {
+                            voiceDebug('post-speak state check', {
+                                speaking: synthesis.speaking,
+                                pending: synthesis.pending,
+                                paused: synthesis.paused,
+                            });
+                        }
+                    }, 120);
+                } catch (error) {
+                    voiceDebug('speech synthesis threw during speak()', {
+                        message: error instanceof Error ? error.message : String(error),
+                    });
+                    if (activeReplyUtterance === utterance) {
+                        clearPendingReplyPlayback();
+                        activeReplyUtterance = null;
+                        setPlayButtonState(false, true);
+                    }
+                }
+            };
+
+            const waitForSpeechIdleAndStart = (attempt = 0) => {
+                const stillBusy = synthesis.speaking || synthesis.pending || synthesis.paused;
+
+                voiceDebug('speech idle check', {
+                    attempt,
+                    stillBusy,
+                    speaking: synthesis.speaking,
+                    pending: synthesis.pending,
+                    paused: synthesis.paused,
+                });
+
+                if (!stillBusy || attempt >= 10) {
+                    startPlayback();
+                    return;
+                }
+
+                try {
+                    synthesis.cancel();
+                    synthesis.resume();
+                } catch (error) {
+                    // Ignore browser-level speech reset failures.
+                }
+
+                replyPlaybackTimeoutId = window.setTimeout(() => {
+                    replyPlaybackTimeoutId = null;
+                    waitForSpeechIdleAndStart(attempt + 1);
+                }, 140);
+            };
+
+            if (needsSpeechReset) {
+                waitForSpeechIdleAndStart();
+                return;
+            }
+
+            startPlayback();
+        };
+
+        const scoreVoiceItem = (item, normalizedQuery, tokens) => {
+            const haystack = normalizeText(`${item.question ?? ''} ${item.answer ?? ''} ${item.search_text ?? ''} ${item.section ?? ''}`);
+            let score = haystack.includes(normalizedQuery) ? 120 : 0;
+
+            tokens.forEach((token) => {
+                if (haystack.includes(token)) {
+                    score += 14;
+                }
+
+                if (normalizeText(item.question ?? '').includes(token)) {
+                    score += 10;
+                }
+            });
+
+            return score;
+        };
 
         const findBestAnswer = (query) => {
             const normalizedQuery = normalizeText(query);
@@ -733,29 +1184,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return voiceIndex
                 .map((item) => {
-                    const haystack = normalizeText(`${item.question ?? ''} ${item.answer ?? ''} ${item.search_text ?? ''} ${item.section ?? ''}`);
-                    let score = haystack.includes(normalizedQuery) ? 120 : 0;
-
-                    tokens.forEach((token) => {
-                        if (haystack.includes(token)) {
-                            score += 14;
-                        }
-
-                        if (normalizeText(item.question ?? '').includes(token)) {
-                            score += 10;
-                        }
-                    });
-
                     return {
                         ...item,
-                        score,
+                        score: scoreVoiceItem(item, normalizedQuery, tokens),
                     };
                 })
                 .sort((left, right) => right.score - left.score)
                 .find((item) => item.score > 0) ?? null;
         };
 
-        const renderAnswer = (query) => {
+        const renderAnswer = (query, { autoSpeak = true } = {}) => {
             const match = findBestAnswer(query);
 
             if (!(answerQuestion instanceof HTMLElement) || !(answerText instanceof HTMLElement)) {
@@ -763,8 +1201,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!match) {
+                currentAnswerText = '';
+                queuedReplyPlayback = null;
                 answerQuestion.textContent = query;
                 answerText.textContent = '';
+                setPlayButtonState(false, false);
 
                 if (status instanceof HTMLElement) {
                     status.textContent = status.dataset.noMatchMessage ?? status.textContent ?? '';
@@ -775,16 +1216,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
             answerQuestion.textContent = match.question ?? '';
             answerText.textContent = match.answer ?? '';
+            currentAnswerText = match.answer ?? '';
+
+            const responseSpeechLocale = setActiveSpeechLocale(resolveItemSpeechLocale(match));
+            currentAnswerSpeechLocale = responseSpeechLocale;
+            voiceDebug('rendered answer', {
+                query,
+                matchedQuestion: match.question ?? '',
+                responseSpeechLocale,
+                answerLength: currentAnswerText.length,
+                autoSpeak,
+                isListening,
+            });
+            setPlayButtonState(false, currentAnswerText.trim() !== '');
+
+            if (!autoSpeak || !('speechSynthesis' in window)) {
+                queuedReplyPlayback = null;
+                return;
+            }
+
+            if (isListening) {
+                queuedReplyPlayback = {
+                    text: currentAnswerText,
+                    locale: responseSpeechLocale,
+                };
+                voiceDebug('queued answer playback until recognition ends', {
+                    locale: responseSpeechLocale,
+                    answerLength: currentAnswerText.length,
+                });
+                return;
+            }
+
+            queuedReplyPlayback = null;
 
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.speak(new SpeechSynthesisUtterance(match.answer ?? ''));
+                speakAnswer(currentAnswerText, responseSpeechLocale);
             }
         };
 
         if (status instanceof HTMLElement) {
             status.dataset.emptyState = status.dataset.readyMessage ?? status.textContent ?? '';
         }
+
+        setPlayButtonState(false, false);
 
         if (submitButton instanceof HTMLButtonElement && input instanceof HTMLInputElement) {
             submitButton.addEventListener('click', () => {
@@ -799,6 +1273,43 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        if (playButton instanceof HTMLButtonElement) {
+            if (!('speechSynthesis' in window)) {
+                playButton.disabled = true;
+                playButton.classList.add('opacity-60', 'cursor-not-allowed');
+            } else {
+                playButton.addEventListener('click', () => {
+                    voiceDebug('play button clicked', {
+                        isSpeakingReply,
+                        hasAnswer: currentAnswerText.trim() !== '',
+                        answerLength: currentAnswerText.trim().length,
+                        locale: currentAnswerSpeechLocale,
+                        speaking: window.speechSynthesis.speaking,
+                        pending: window.speechSynthesis.pending,
+                        paused: window.speechSynthesis.paused,
+                    });
+
+                    if (isSpeakingReply) {
+                        cancelSpokenReply();
+                        return;
+                    }
+
+                    if (currentAnswerText.trim() === '') {
+                        if (status instanceof HTMLElement) {
+                            status.textContent = playButton.dataset.emptyMessage ?? status.textContent ?? '';
+                        }
+
+                        input?.focus();
+                        return;
+                    }
+
+                    speakAnswer(currentAnswerText, currentAnswerSpeechLocale, {
+                        userInitiated: true,
+                    });
+                });
+            }
+        }
+
         if (!(SpeechRecognition instanceof Function)) {
             if (micButton instanceof HTMLButtonElement) {
                 micButton.disabled = true;
@@ -809,32 +1320,139 @@ document.addEventListener('DOMContentLoaded', () => {
                 status.textContent = micButton?.dataset.unsupported ?? status.textContent ?? '';
             }
         } else if (micButton instanceof HTMLButtonElement && input instanceof HTMLInputElement) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = document.documentElement.lang || 'en-US';
+            recognition = new SpeechRecognition();
+            recognition.lang = activeSpeechLocale;
+            recognition.continuous = false;
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
+            let pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
+
+            const setMicState = (listening) => {
+                isListening = listening;
+                micButton.textContent = listening
+                    ? (micButton.dataset.stopLabel ?? micButton.textContent ?? '')
+                    : (micButton.dataset.startLabel ?? micButton.textContent ?? '');
+                micButton.classList.toggle('border-amber-400/35', listening);
+                micButton.classList.toggle('bg-amber-400/10', listening);
+                micButton.classList.toggle('text-amber-50', listening);
+            };
+
+            const setStatusMessage = (message) => {
+                if (status instanceof HTMLElement) {
+                    status.textContent = message;
+                }
+            };
+
+            const stopVoiceSession = (message = micButton.dataset.stopped ?? status?.dataset.emptyState ?? '') => {
+                pendingStatusMessage = message;
+                cancelSpokenReply();
+
+                if (!isListening) {
+                    setMicState(false);
+                    setStatusMessage(message);
+                    return;
+                }
+
+                try {
+                    recognition.abort();
+                } catch (error) {
+                    setMicState(false);
+                    setStatusMessage(message);
+                }
+            };
+
+            const cleanupVoiceSession = () => {
+                stopVoiceSession(status?.dataset.emptyState ?? micButton.dataset.stopped ?? '');
+            };
+
+            const resolveErrorMessage = (errorType) => {
+                switch (errorType) {
+                    case 'not-allowed':
+                    case 'service-not-allowed':
+                        return micButton.dataset.micBlocked ?? status?.dataset.emptyState ?? '';
+                    case 'audio-capture':
+                        return micButton.dataset.audioCapture ?? status?.dataset.emptyState ?? '';
+                    case 'no-speech':
+                        return micButton.dataset.noSpeech ?? status?.dataset.emptyState ?? '';
+                    case 'aborted':
+                        return micButton.dataset.stopped ?? status?.dataset.emptyState ?? '';
+                    default:
+                        return status?.dataset.emptyState ?? status?.textContent ?? '';
+                }
+            };
 
             micButton.addEventListener('click', () => {
-                recognition.start();
+                if (isListening) {
+                    stopVoiceSession();
+                    return;
+                }
+
+                pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
+
+                try {
+                    recognition.lang = activeSpeechLocale;
+                    recognition.start();
+                } catch (error) {
+                    setMicState(false);
+                    setStatusMessage(micButton.dataset.micBlocked ?? status?.dataset.emptyState ?? '');
+                }
             });
 
             recognition.addEventListener('start', () => {
-                if (status instanceof HTMLElement) {
-                    status.textContent = micButton.dataset.listening ?? status.textContent ?? '';
-                }
+                setMicState(true);
+                setStatusMessage(micButton.dataset.listening ?? status?.textContent ?? '');
             });
 
             recognition.addEventListener('result', (event) => {
                 const transcript = event.results?.[0]?.[0]?.transcript ?? '';
                 input.value = transcript;
+                pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
                 renderAnswer(transcript);
             });
 
+            recognition.addEventListener('error', (event) => {
+                pendingStatusMessage = resolveErrorMessage(event.error);
+            });
+
             recognition.addEventListener('end', () => {
-                if (status instanceof HTMLElement) {
-                    status.textContent = status.dataset.emptyState ?? status.textContent ?? '';
+                setMicState(false);
+                setStatusMessage(pendingStatusMessage);
+
+                if (queuedReplyPlayback && 'speechSynthesis' in window) {
+                    const queuedPlayback = queuedReplyPlayback;
+                    queuedReplyPlayback = null;
+                    voiceDebug('playing queued answer after recognition end', {
+                        locale: queuedPlayback.locale,
+                        answerLength: queuedPlayback.text.length,
+                    });
+                    replyPlaybackTimeoutId = window.setTimeout(() => {
+                        replyPlaybackTimeoutId = null;
+                        speakAnswer(queuedPlayback.text, queuedPlayback.locale);
+                    }, 180);
                 }
             });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    cleanupVoiceSession();
+                }
+            });
+
+            window.addEventListener('pagehide', cleanupVoiceSession);
+            window.addEventListener('beforeunload', cleanupVoiceSession);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && isListening) {
+                    stopVoiceSession();
+                }
+            });
+
+            const initialQuestion = voiceAssistant.dataset.initialQuestion?.trim() || input.value.trim();
+
+            if (initialQuestion !== '') {
+                input.value = initialQuestion;
+                renderAnswer(initialQuestion);
+            }
         }
     }
 

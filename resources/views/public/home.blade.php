@@ -277,18 +277,6 @@
                                     @endforeach
                                 </div>
                             </div>
-
-                            <div class="mt-8 rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">{{ __('site.home.challenge_selector.insight_title') }}</p>
-                                <p data-challenge-description-text class="mt-3 text-sm leading-7 text-slate-300">
-                                    {{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.description') }}
-                                </p>
-                                <div class="mt-4 flex flex-wrap gap-2">
-                                    @foreach (trans('site.home.challenge_selector.highlights') as $highlight)
-                                        <span class="gold-pill rounded-full px-4 py-2 text-xs font-semibold">{{ $highlight }}</span>
-                                    @endforeach
-                                </div>
-                            </div>
                         </div>
 
                         <div class="surface-panel rounded-[2rem] p-6">

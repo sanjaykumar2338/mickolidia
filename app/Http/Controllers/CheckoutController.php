@@ -44,6 +44,11 @@ class CheckoutController extends Controller
             $selectedType,
             $pricingService,
         );
+        $launchPromoCodeInput = $request->string('promo_code')->toString();
+
+        if ($launchPromoCodeInput === '') {
+            $launchPromoCodeInput = (string) data_get($retryOrder?->metadata, 'launch_promo.code', '');
+        }
 
         return view('checkout.index', [
             'order' => $retryOrder,
@@ -51,6 +56,8 @@ class CheckoutController extends Controller
             'selectedChallengeType' => $selectedType,
             'selectedAccountSize' => $selectedSize,
             'selectedCurrency' => $selectedCurrency,
+            'launchPromoCode' => $this->normalizeLaunchPromoCode($launchPromoCodeInput),
+            'launchPromoCodeInput' => $launchPromoCodeInput,
             'checkoutCountries' => config('wolforix.checkout_countries', []),
             'paymentProviders' => $paymentManager->providers(),
         ]);
@@ -83,6 +90,7 @@ class CheckoutController extends Controller
                 },
             ],
             'currency' => ['required', Rule::in($pricingService->supportedProviderCurrencies())],
+            'promo_code' => ['nullable', 'string', 'max:60'],
             'payment_provider' => ['required', Rule::in($paymentManager->enabledProviderKeys())],
             'accept_terms_and_residency' => ['accepted'],
             'accept_refund_policy' => ['accepted'],
@@ -105,9 +113,19 @@ class CheckoutController extends Controller
                 ]);
         }
 
+        $launchPromoCode = $this->normalizeLaunchPromoCode($validated['promo_code'] ?? null);
+
+        if (($validated['promo_code'] ?? null) !== null && trim((string) $validated['promo_code']) !== '' && $launchPromoCode === null) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'promo_code' => __('site.checkout.validation.promo_code'),
+                ]);
+        }
+
         $provider = $paymentManager->provider($validated['payment_provider']);
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
-        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan): Order {
+        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode): Order {
             $existingOrder = null;
             $acceptedAt = now()->toIso8601String();
             /** @var User $user */
@@ -158,6 +176,11 @@ class CheckoutController extends Controller
                             'accepted' => true,
                             'accepted_at' => $acceptedAt,
                         ],
+                    ],
+                    'launch_promo' => [
+                        'code' => $launchPromoCode,
+                        'campaign' => $launchPromoCode !== null ? 'launch_20' : null,
+                        'applied' => $launchPromoCode !== null,
                     ],
                 ]),
             ]);
@@ -320,5 +343,19 @@ class CheckoutController extends Controller
                 'is_active' => true,
             ],
         );
+    }
+
+    private function normalizeLaunchPromoCode(?string $promoCode): ?string
+    {
+        $promoCode = trim((string) $promoCode);
+        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
+
+        if ($promoCode === '' || $expectedCode === '') {
+            return null;
+        }
+
+        return strcasecmp($promoCode, $expectedCode) === 0
+            ? $expectedCode
+            : null;
     }
 }

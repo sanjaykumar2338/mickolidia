@@ -38,6 +38,18 @@
                 <h3 class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">{{ __('site.footer.operations_title') }}</h3>
                 <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.operations_copy') }}</p>
             </div>
+            <div class="surface-card rounded-3xl p-6">
+                <h3 class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">{{ __('site.footer.contact_title') }}</h3>
+                <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.contact_copy') }}</p>
+                <div class="mt-5 flex flex-wrap items-center gap-3">
+                    <a href="{{ route('contact') }}" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
+                        {{ __('site.nav.contact') }}
+                    </a>
+                    <a href="mailto:{{ config('wolforix.support.email') }}" class="text-sm font-medium text-amber-200 transition hover:text-amber-100">
+                        {{ config('wolforix.support.email') }}
+                    </a>
+                </div>
+            </div>
             <div class="rounded-3xl border border-amber-400/20 bg-amber-400/10 p-6 text-sm leading-7 text-amber-50">
                 {{ __('site.footer.simulated_notice') }}
             </div>

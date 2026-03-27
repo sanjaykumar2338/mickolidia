@@ -1,6 +1,13 @@
+@php
+    $launchPromoCode = (string) config('wolforix.launch_discount.code', '');
+    $launchPlansHref = request()->routeIs('home')
+        ? '#plans'
+        : route('home').'#plans';
+@endphp
+
 <div data-launch-popup class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6">
     <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
-    <div class="launch-popup-card relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-amber-300/35 bg-slate-950 px-6 py-7 shadow-[0_30px_100px_rgba(2,6,23,0.72)] sm:px-8">
+    <div class="launch-popup-card relative w-full max-w-xl overflow-hidden rounded-[2.2rem] border border-white/12 bg-[radial-gradient(circle_at_top,rgba(56,88,168,0.28),transparent_34%),linear-gradient(180deg,rgba(7,14,29,0.98),rgba(5,10,18,0.98))] px-6 py-7 shadow-[0_34px_110px_rgba(2,6,23,0.78)] sm:px-8">
         <button
             type="button"
             data-launch-popup-close
@@ -12,26 +19,60 @@
             </svg>
         </button>
 
-        <div class="absolute inset-x-8 top-0 h-32 rounded-full bg-amber-300/20 blur-3xl"></div>
+        <div class="absolute inset-x-12 top-0 h-36 rounded-full bg-amber-300/25 blur-3xl"></div>
+        <div class="absolute -bottom-10 left-8 h-24 w-40 rounded-full bg-sky-400/15 blur-3xl"></div>
 
         <div class="relative">
-            <span class="gold-pill inline-flex rounded-full px-4 py-2 text-xs font-semibold">
-                {{ __('site.home.challenge_selector.discount_badge') }}
-            </span>
-            <h2 id="launch-popup-title" class="mt-6 max-w-md text-3xl font-semibold leading-tight text-white sm:text-4xl">
+            <h2 id="launch-popup-title" class="max-w-lg text-3xl font-semibold leading-tight text-white sm:text-[2.8rem]">
                 {{ __('site.launch_popup.title') }}
             </h2>
             <p class="mt-4 max-w-xl text-base leading-8 text-slate-300">
                 {{ __('site.launch_popup.description') }}
             </p>
+            <p class="mt-3 max-w-xl text-sm leading-7 text-slate-400">
+                {{ __('site.launch_popup.secondary_copy') }}
+            </p>
 
-            <div class="mt-8 flex flex-wrap gap-4">
-                <a href="#plans" data-launch-popup-close class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
+            <div class="mt-6 rounded-[1.8rem] border border-sky-300/20 bg-slate-950/45 px-5 py-4 shadow-[0_0_32px_rgba(96,165,250,0.12)] backdrop-blur-sm">
+                <p class="text-center text-sm font-medium text-slate-300">{{ __('site.launch_popup.promo_label') }}</p>
+                <div class="mt-3 flex justify-center">
+                    <div
+                        data-launch-popup-code
+                        data-launch-popup-code-value="{{ $launchPromoCode }}"
+                        class="rounded-[1.3rem] border border-white/10 bg-white/5 px-5 py-3 text-center text-2xl font-semibold tracking-[0.02em] text-white"
+                    >
+                        {{ $launchPromoCode }}
+                    </div>
+                </div>
+                <p class="mt-3 text-center text-sm leading-6 text-slate-400">{{ __('site.launch_popup.auto_apply_notice') }}</p>
+            </div>
+
+            <div class="mt-7 flex flex-col items-center gap-4">
+                <a
+                    href="{{ $launchPlansHref }}"
+                    data-launch-popup-apply
+                    data-launch-popup-close
+                    data-launch-popup-code="{{ $launchPromoCode }}"
+                    class="primary-cta w-full justify-center rounded-full px-8 py-4 text-base font-semibold sm:max-w-md"
+                >
                     {{ __('site.launch_popup.primary_action') }}
                 </a>
-                <button type="button" data-launch-popup-close class="rounded-full border border-white/10 px-5 py-4 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                <button type="button" data-launch-popup-close class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                     {{ __('site.launch_popup.secondary_action') }}
                 </button>
+            </div>
+
+            <div class="mt-7 space-y-2.5">
+                @foreach (trans('site.launch_popup.benefits') as $benefit)
+                    <div class="flex items-center gap-3 text-sm text-slate-200">
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-emerald-400/24 bg-emerald-500/10 text-emerald-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" />
+                            </svg>
+                        </span>
+                        <span>{{ $benefit }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>

@@ -18,13 +18,13 @@
             'cta' => false,
         ],
         [
-            'href' => route('faq'),
-            'label' => __('site.nav.faq'),
+            'href' => route('news'),
+            'label' => __('site.nav.news'),
             'cta' => false,
         ],
         [
-            'href' => route('news'),
-            'label' => __('site.nav.news'),
+            'href' => route('faq'),
+            'label' => __('site.nav.faq'),
             'cta' => false,
         ],
         [
@@ -32,20 +32,7 @@
             'cta' => false,
             'children' => $aboutMenu,
         ],
-        [
-            'href' => route('terms'),
-            'label' => __('site.nav.legal'),
-            'cta' => false,
-        ],
     ];
-
-    if ($authUser) {
-        $navLinks[] = [
-            'href' => route('dashboard'),
-            'label' => __('site.nav.dashboard'),
-            'cta' => true,
-        ];
-    }
 
     $mobileNavLinks = [
         [
@@ -53,20 +40,16 @@
             'label' => __('site.nav.plans'),
         ],
         [
-            'href' => route('faq'),
-            'label' => __('site.nav.faq'),
-        ],
-        [
             'href' => route('news'),
             'label' => __('site.nav.news'),
         ],
         [
-            'href' => route('about'),
-            'label' => __('site.nav.about'),
+            'href' => route('faq'),
+            'label' => __('site.nav.faq'),
         ],
         [
-            'href' => route('terms'),
-            'label' => __('site.nav.legal'),
+            'href' => route('about'),
+            'label' => __('site.nav.about'),
         ],
     ];
 @endphp
@@ -89,6 +72,9 @@
 
             <div class="flex shrink-0 items-center gap-2 lg:hidden">
                 @if ($authUser)
+                    <a href="{{ route('dashboard') }}" class="rounded-full border border-amber-400/24 bg-amber-400/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15">
+                        {{ __('site.nav.dashboard') }}
+                    </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="rounded-full border border-amber-400/24 bg-black/24 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-amber-300/40 hover:bg-white/8">
@@ -141,6 +127,11 @@
                     @endforeach
                 </nav>
                 @if ($authUser)
+                    <a href="{{ route('dashboard') }}" class="rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15">
+                        {{ __('site.nav.dashboard') }}
+                    </a>
+                @endif
+                @if ($authUser)
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
@@ -168,7 +159,7 @@
         </div>
 
         <div class="mt-3 border-t border-white/8 pt-3 lg:hidden">
-            <nav class="grid grid-cols-5 items-center gap-1 text-[0.92rem] text-amber-50/90">
+            <nav class="grid grid-cols-4 items-center gap-1 text-[0.92rem] text-amber-50/90">
                 @foreach ($mobileNavLinks as $link)
                     <a
                         href="{{ $link['href'] }}"
@@ -179,23 +170,16 @@
                 @endforeach
             </nav>
             <div class="mt-3 flex items-center justify-center gap-3">
-                <a
-                    href="{{ route('contact') }}"
-                    class="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
-                >
-                    {{ __('site.nav.contact') }}
-                </a>
                 <button
                     type="button"
                     data-site-search-open
                     aria-label="{{ __('site.nav.search_aria') }}"
-                    class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
+                    class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/4 text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                         <circle cx="11" cy="11" r="6.5" />
                         <path stroke-linecap="round" d="m16 16 4.5 4.5" />
                     </svg>
-                    <span>{{ __('site.nav.search_aria') }}</span>
                 </button>
             </div>
             @if ($authUser)

@@ -1,46 +1,65 @@
 @extends('layouts.public')
 
 @php
+    use Illuminate\Support\Facades\Lang;
     use Illuminate\Support\Str;
 
+    $assistantQuestion = trim((string) request('assistant_question', ''));
+    $voiceLocales = array_keys(config('wolforix.supported_locales', []));
+    $voiceLocaleMap = [
+        'en' => 'en-US',
+        'de' => 'de-DE',
+        'es' => 'es-ES',
+        'fr' => 'fr-FR',
+    ];
     $faqVoiceIndex = [];
 
-    foreach ($faqSections as $section) {
-        foreach ($section['items'] ?? [] as $item) {
-            if (! isset($item['question'])) {
-                continue;
-            }
+    foreach ($voiceLocales as $voiceLocale) {
+        $localizedFaqSections = Lang::get('site.faq.sections', [], $voiceLocale);
 
-            $answerSegments = [
-                $item['answer'] ?? '',
-            ];
+        if (! is_array($localizedFaqSections)) {
+            continue;
+        }
 
-            foreach ($item['answer_paragraphs'] ?? [] as $paragraph) {
-                $answerSegments[] = $paragraph;
-            }
+        foreach ($localizedFaqSections as $section) {
+            foreach ($section['items'] ?? [] as $item) {
+                if (! isset($item['question'])) {
+                    continue;
+                }
 
-            foreach ($item['answer_sections'] ?? [] as $answerSection) {
-                $answerSegments[] = $answerSection['title'] ?? '';
+                $answerSegments = [
+                    $item['answer'] ?? '',
+                ];
 
-                foreach ($answerSection['paragraphs'] ?? [] as $paragraph) {
+                foreach ($item['answer_paragraphs'] ?? [] as $paragraph) {
                     $answerSegments[] = $paragraph;
                 }
 
-                foreach ($answerSection['bullets'] ?? [] as $bullet) {
-                    $answerSegments[] = $bullet;
-                }
-            }
+                foreach ($item['answer_sections'] ?? [] as $answerSection) {
+                    $answerSegments[] = $answerSection['title'] ?? '';
 
-            $faqVoiceIndex[] = [
-                'section' => $section['title'] ?? '',
-                'question' => $item['question'],
-                'answer' => Str::limit(trim(implode(' ', array_filter($answerSegments))), 420),
-                'url' => route('faq'),
-                'search_text' => trim(implode(' ', array_filter([
-                    $item['question'],
-                    ...$answerSegments,
-                ]))),
-            ];
+                    foreach ($answerSection['paragraphs'] ?? [] as $paragraph) {
+                        $answerSegments[] = $paragraph;
+                    }
+
+                    foreach ($answerSection['bullets'] ?? [] as $bullet) {
+                        $answerSegments[] = $bullet;
+                    }
+                }
+
+                $faqVoiceIndex[] = [
+                    'locale' => $voiceLocale,
+                    'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                    'section' => $section['title'] ?? '',
+                    'question' => $item['question'],
+                    'answer' => Str::limit(trim(implode(' ', array_filter($answerSegments))), 420),
+                    'url' => route('faq'),
+                    'search_text' => trim(implode(' ', array_filter([
+                        $item['question'],
+                        ...$answerSegments,
+                    ]))),
+                ];
+            }
         }
     }
 @endphp
@@ -140,7 +159,10 @@
                     </div>
 
                     <div
+                        id="voice-assistant"
                         data-voice-assistant
+                        data-initial-question="{{ $assistantQuestion }}"
+                        data-page-locale="{{ str_replace('_', '-', app()->getLocale()) }}"
                         class="rounded-[2rem] border border-white/8 bg-white/4 p-5"
                     >
                         <script type="application/json" data-voice-assistant-index>@json($faqVoiceIndex)</script>
@@ -150,6 +172,7 @@
                             <input
                                 data-voice-question
                                 type="search"
+                                value="{{ $assistantQuestion }}"
                                 class="w-full rounded-[1.4rem] border border-white/10 bg-slate-950/80 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                 placeholder="{{ __('site.contact.voice_input_placeholder') }}"
                             >
@@ -166,11 +189,27 @@
                             <button
                                 type="button"
                                 data-voice-mic
+                                data-start-label="{{ __('site.contact.voice_button') }}"
+                                data-stop-label="{{ __('site.contact.voice_stop_button') }}"
                                 data-listening="{{ __('site.contact.voice_listening') }}"
                                 data-unsupported="{{ __('site.contact.voice_unsupported') }}"
+                                data-stopped="{{ __('site.contact.voice_stopped') }}"
+                                data-no-speech="{{ __('site.contact.voice_no_speech') }}"
+                                data-mic-blocked="{{ __('site.contact.voice_mic_blocked') }}"
+                                data-audio-capture="{{ __('site.contact.voice_audio_capture') }}"
                                 class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6"
                             >
                                 {{ __('site.contact.voice_button') }}
+                            </button>
+                            <button
+                                type="button"
+                                data-voice-play
+                                data-play-label="{{ __('site.contact.voice_play_button') }}"
+                                data-stop-label="{{ __('site.contact.voice_stop_play_button') }}"
+                                data-empty-message="{{ __('site.contact.voice_play_requires_answer') }}"
+                                class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-45"
+                            >
+                                {{ __('site.contact.voice_play_button') }}
                             </button>
                         </div>
 

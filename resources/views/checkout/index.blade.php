@@ -12,6 +12,7 @@
     $streetAddressValue = old('street_address', $order?->street_address ?? $profile?->street_address);
     $cityValue = old('city', $order?->city ?? $profile?->city);
     $postalCodeValue = old('postal_code', $order?->postal_code ?? $profile?->postal_code);
+    $launchPromoCodeValue = old('promo_code', $launchPromoCodeInput ?? '');
     $termsAgreement = trans('site.checkout.confirmations.terms_and_residency_html', [
         'terms_url' => route('terms'),
     ]);
@@ -64,6 +65,25 @@
                             {{ __('site.home.challenge_selector.original_price') }}
                             <span class="ml-2 font-semibold line-through">{{ number_format((float) $selectedPlan['list_price'], 2) }} {{ $selectedCurrency }}</span>
                         </p>
+                    @endif
+
+                    @if ($launchPromoCode)
+                        <div class="mt-5 rounded-[1.6rem] border border-emerald-400/24 bg-emerald-500/10 px-4 py-4">
+                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                {{ __('site.checkout.promo_code_title') }}
+                            </p>
+                            <div class="mt-3 flex flex-wrap items-center gap-3">
+                                <span class="rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-white">
+                                    {{ $launchPromoCode }}
+                                </span>
+                                <span class="rounded-full border border-emerald-400/24 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100">
+                                    {{ __('site.checkout.promo_code_applied') }}
+                                </span>
+                            </div>
+                            <p class="mt-3 text-sm leading-6 text-emerald-50/85">
+                                {{ __('site.checkout.promo_code_applied_copy') }}
+                            </p>
+                        </div>
                     @endif
 
                     <dl class="mt-6 space-y-3 text-sm">
@@ -134,6 +154,14 @@
                     <input type="hidden" name="challenge_type" value="{{ $selectedChallengeType }}">
                     <input type="hidden" name="account_size" value="{{ $selectedAccountSize }}">
                     <input type="hidden" name="currency" value="{{ $selectedCurrency }}">
+
+                    <input
+                        type="hidden"
+                        name="promo_code"
+                        data-launch-promo-input
+                        data-launch-promo-expected="{{ config('wolforix.launch_discount.code') }}"
+                        value="{{ $launchPromoCodeValue }}"
+                    >
 
                     <div class="grid gap-5 md:grid-cols-2">
                         <label class="block">

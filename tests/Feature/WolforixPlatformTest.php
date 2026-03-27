@@ -67,6 +67,11 @@ class WolforixPlatformTest extends TestCase
             ->assertSee(config('wolforix.support.email'))
             ->assertSee('Live chat')
             ->assertSee('AI voice assistant')
+            ->assertSee('Play answer')
+            ->assertSee('"locale":"en"', false)
+            ->assertSee('"locale":"de"', false)
+            ->assertSee('"locale":"es"', false)
+            ->assertSee('"locale":"fr"', false)
             ->assertSee(route('faq'), false);
     }
 
@@ -242,6 +247,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Modern Prop Trading')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
+            ->assertSee('Pass in one step. Get funded faster. No delays. No second phase.')
+            ->assertSee('Lower risk. Higher scaling potential. Designed for consistency and long-term growth.')
             ->assertSee('5K')
             ->assertSee('100K')
             ->assertSee('USD')
@@ -254,13 +261,21 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Fast Payouts')
             ->assertSee('Scaling +25% Capital')
             ->assertSee('Up to 90% Profit Split')
+            ->assertSee('Talk to Your AI Assistant')
+            ->assertSee('Start Chat')
+            ->assertSee('Can I trade during news?')
+            ->assertSee('AI Assistant')
             ->assertSee('Free Trial')
             ->assertSee('No risk. No credit card.')
             ->assertSee('Single Phase')
             ->assertSee('Funded Account')
+            ->assertSee('Get funded and start earning profits from your very first payout.')
+            ->assertSee('Choose your model, pass the evaluation, and access real capital with clear rules and fast payouts.')
             ->assertSee('20% OFF - Limited Launch Offer')
             ->assertSee('Launch Discount - Limited Time Only')
-            ->assertSee('20% OFF - Limited Offer on all plans')
+            ->assertSee('20% OFF - Launch Access Ending Soon')
+            ->assertSee(config('wolforix.launch_discount.code'))
+            ->assertSee('Get Funded Now')
             ->assertSee('$49')
             ->assertSee('$39')
             ->assertSee('Secure checkout')
@@ -335,9 +350,13 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 50000,
             'currency' => 'EUR',
+            'promo_code' => config('wolforix.launch_discount.code'),
         ]))
             ->assertOk()
             ->assertSee('Complete your challenge order')
+            ->assertSee('Launch promo code')
+            ->assertSee(config('wolforix.launch_discount.code'))
+            ->assertSee('Code applied')
             ->assertSee('Stripe')
             ->assertSee('PayPal')
             ->assertSee('EUR')
@@ -426,6 +445,42 @@ class WolforixPlatformTest extends TestCase
             ]);
     }
 
+    public function test_checkout_rejects_an_invalid_launch_promo_code(): void
+    {
+        $this->useFakeStripeGateway();
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->from(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+            ]))
+            ->post(route('checkout.store'), [
+                'full_name' => 'Promo Test Trader',
+                'email' => 'promo-invalid@example.com',
+                'street_address' => '7 Promo Street',
+                'city' => 'Berlin',
+                'postal_code' => '10115',
+                'country' => 'DE',
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'promo_code' => 'INVALIDCODE',
+                'payment_provider' => 'stripe',
+                'accept_terms_and_residency' => '1',
+                'accept_refund_policy' => '1',
+            ]);
+
+        $response
+            ->assertRedirect(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+            ]))
+            ->assertSessionHasErrors(['promo_code']);
+    }
+
     public function test_checkout_creates_an_order_for_the_authenticated_user_and_redirects_to_provider(): void
     {
         $this->useFakeStripeGateway();
@@ -445,6 +500,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 50000,
             'currency' => 'EUR',
+            'promo_code' => config('wolforix.launch_discount.code'),
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -465,6 +521,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertTrue($order->metadata['checkout_confirmations']['terms_and_residency']['accepted']);
         $this->assertSame('DE', $order->metadata['checkout_confirmations']['terms_and_residency']['country']);
         $this->assertTrue($order->metadata['checkout_confirmations']['refund_policy']['accepted']);
+        $this->assertSame(config('wolforix.launch_discount.code'), $order->metadata['launch_promo']['code']);
+        $this->assertTrue($order->metadata['launch_promo']['applied']);
     }
 
     public function test_checkout_success_marks_order_paid_and_creates_purchase_for_the_authenticated_user(): void
