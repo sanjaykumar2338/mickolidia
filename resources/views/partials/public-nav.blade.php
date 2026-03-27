@@ -75,8 +75,8 @@
     <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
         <div class="flex items-center justify-between gap-4">
             <a href="{{ route('home') }}" class="flex min-w-0 items-center gap-3">
-                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-400/20 bg-black/30 shadow-[0_14px_34px_rgba(2,6,23,0.24)] sm:h-14 sm:w-14">
-                    <img src="{{ asset('IMG_8543.png') }}" alt="Wolforix" class="h-9 w-9 object-contain sm:h-11 sm:w-11">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center sm:h-14 sm:w-14">
+                    <img src="{{ asset('IMG_8543.png') }}" alt="Wolforix" class="h-full w-full object-contain">
                 </span>
                 <div class="min-w-0">
                     <p class="inline-flex items-start text-[0.78rem] font-semibold tracking-[0.26em] text-amber-300 sm:text-sm sm:tracking-[0.28em]">

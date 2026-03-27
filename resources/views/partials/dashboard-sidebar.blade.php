@@ -1,7 +1,7 @@
 <aside class="border-b border-white/5 bg-slate-950/80 px-4 py-5 backdrop-blur-xl lg:border-b-0 lg:border-r lg:px-5">
     <a href="{{ route('home') }}" class="flex items-center gap-3 rounded-3xl border border-white/6 bg-white/3 p-4 transition hover:border-amber-400/20 hover:bg-white/5">
-        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-amber-400/18 bg-black/80">
-            <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
+        <div class="flex h-12 w-12 items-center justify-center">
+            <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain">
         </div>
         <div>
             <p class="inline-flex items-start text-sm font-semibold tracking-[0.28em] text-amber-300">

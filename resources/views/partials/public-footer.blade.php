@@ -2,8 +2,8 @@
     <div class="mx-auto grid max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
         <div class="surface-panel rounded-3xl p-6">
             <div class="flex items-center gap-4">
-                <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-3xl border border-amber-400/18 bg-black/75">
-                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain scale-105">
+                <div class="flex h-14 w-14 items-center justify-center">
+                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain">
                 </div>
                 <div>
                     <p class="inline-flex items-start text-base font-semibold tracking-[0.24em] text-amber-300">
