@@ -4,7 +4,7 @@ return [
     'meta' => [
         'brand' => 'Wolforix',
         'default_title' => 'Wolforix Prop Firm Platform',
-        'description' => 'Milestone 1 foundation for the Wolforix prop firm platform with premium dark branding, multilingual public pages, legal structure, and a dashboard preview.',
+        'description' => 'Milestone 1 foundation for the Wolforix prop firm platform with premium dark branding, multilingual public pages, legal structure, and authenticated dashboard access.',
     ],
 
     'languages' => [
@@ -34,14 +34,15 @@ return [
         'faq' => 'FAQ',
         'news' => 'NEWS',
         'legal' => 'Legal',
-        'dashboard_preview' => 'Dashboard Preview',
+        'dashboard' => 'Dashboard',
+        'dashboard_preview' => 'Dashboard',
         'login' => 'Login',
         'logout' => 'Logout',
         'search_aria' => 'Search site',
     ],
 
     'home' => [
-        'eyebrow' => 'Wolforix Prop Evaluation',
+        'eyebrow' => 'Modern Prop Trading',
         'title' => 'Prove It. Get Funded. Scale Fast.',
         'description' => "Most traders fail prop firm challenges.\nWe give you the structure to pass and scale.",
         'mobile_title' => [
@@ -55,7 +56,7 @@ return [
         'primary_cta' => 'Start Challenge',
         'free_trial_cta' => 'Free Trial',
         'free_trial_caption' => 'No risk. No credit card.',
-        'secondary_cta' => 'Open Dashboard Preview',
+        'secondary_cta' => 'Open Dashboard',
         'days' => 'days',
         'badges' => [
             'EN / DE / ES / FR ready',
@@ -70,7 +71,7 @@ return [
                 '1-Step: 10% target, 4% max daily loss, and 8% max total loss.',
                 '2-Step Phase 1: 10% target, 5% max daily loss, 10% max total loss, and 1:100 leverage.',
                 '2-Step Phase 2: 5% target with unlimited trading days and the same 5% / 10% risk limits.',
-                'Funded rules now reflect 80% profit split, 14-day payouts, and 2-Step scaling for profitable accounts.',
+                'Funded rules now scale from 80% standard profit split to 85% on 100K accounts, with 90% available after the second consecutive payout.',
             ],
         ],
         'image_caption' => 'Branding integration',
@@ -79,6 +80,7 @@ return [
             'No Time Limits',
             'Fast Payouts',
             'Scaling +25% Capital',
+            'Up to 90% Profit Split',
         ],
         'hero_visual' => [
             'label' => 'Trading desk preview',
@@ -120,6 +122,7 @@ return [
             'metrics' => [
                 'profit_target' => 'Profit Target',
                 'profit_share' => 'Profit Split',
+                'profit_share_upgrade' => 'Split Upgrade',
                 'daily_loss' => 'Max Daily Loss',
                 'total_loss' => 'Max Total Loss',
                 'minimum_days' => 'Min Trading Days',
@@ -134,6 +137,7 @@ return [
                 'days' => ':days days',
                 'after_days' => 'After :days days',
                 'scaling' => '+:percent% capital every :months months if profitable',
+                'profit_split_upgrade' => ':percent% after :payouts consecutive payouts',
             ],
             'consistency_required' => 'Obligatory',
             'types' => [
@@ -274,6 +278,15 @@ return [
             'medium' => 'Medium',
             'low' => 'Low',
         ],
+        'sources' => [
+            'title' => 'Data sources',
+            'copy' => 'Current calendar mode, live-provider architecture, and market-reference sites are listed below for transparency.',
+            'current_demo' => 'Current demo source',
+            'current_live' => 'Current live source',
+            'provider' => 'Configured provider architecture',
+            'reference' => 'Reference only',
+            'legal_notice' => 'Reference sites are listed for trader awareness only. Wolforix does not scrape, mirror, or iframe third-party calendar websites.',
+        ],
     ],
 
     'launch_popup' => [
@@ -290,12 +303,13 @@ return [
         'description' => 'Paid challenge checkout now requires authentication so orders, Stripe payment results, and purchased challenges stay attached to the correct user account.',
         'notice' => 'Your selected challenge and currency will be preserved after login or registration and you will return directly to checkout.',
         'home_action' => 'Return Home',
-        'dashboard_action' => 'Dashboard Preview',
+        'dashboard_action' => 'Dashboard',
         'login' => [
             'title' => 'Sign in',
             'copy' => 'Use your existing Wolforix account credentials to continue to secure checkout.',
             'email' => 'Email',
             'password' => 'Password',
+            'forgot_password' => 'Forgot Password?',
             'remember' => 'Keep me signed in on this device',
             'submit' => 'Sign In',
             'invalid' => 'These credentials do not match our records.',
@@ -308,6 +322,29 @@ return [
             'password' => 'Password',
             'password_confirmation' => 'Confirm password',
             'submit' => 'Create Account',
+        ],
+        'passwords' => [
+            'request' => [
+                'title' => 'Reset your password',
+                'copy' => 'Enter the email tied to your Wolforix account and we will send you a secure reset link.',
+                'email' => 'Email',
+                'submit' => 'Send Reset Link',
+                'back_to_login' => 'Back to Login',
+            ],
+            'reset' => [
+                'title' => 'Create a new password',
+                'copy' => 'Choose a new password for your Wolforix account.',
+                'password' => 'New password',
+                'password_confirmation' => 'Confirm new password',
+                'submit' => 'Update Password',
+            ],
+            'status' => [
+                'sent' => 'We have emailed your password reset link.',
+                'user' => 'We could not find a user with that email address.',
+                'throttled' => 'Please wait before trying again.',
+                'token' => 'This password reset link is invalid or has expired.',
+                'reset' => 'Your password has been reset. You can now sign in.',
+            ],
         ],
     ],
 
@@ -488,7 +525,7 @@ return [
             'provider' => 'Payment provider',
             'order_number' => 'Order number',
             'next_steps' => 'Next step: your paid challenge is stored separately from the free trial flow and remains ready for activation and future dashboard linking.',
-            'open_dashboard' => 'Open Dashboard Preview',
+            'open_dashboard' => 'Open Dashboard',
             'back_home' => 'Return Home',
         ],
         'cancel' => [
@@ -625,7 +662,7 @@ return [
                     ],
                     [
                         'question' => 'How is my payout calculated?',
-                        'answer' => 'Payouts depend on the 80% profit split, model-specific payout timing, consistency-rule compliance where applicable, and internal payout limits. The amount eligible for withdrawal may be lower than total profits if daily limits are exceeded.',
+                        'answer' => 'Payouts depend on the profit split assigned to your model and account size, model-specific payout timing, consistency-rule compliance where applicable, and internal payout limits. The amount eligible for withdrawal may be lower than total profits if daily limits are exceeded.',
                     ],
                     [
                         'question' => 'Do funded accounts scale?',
@@ -1062,7 +1099,7 @@ return [
         ],
         'purchases' => [
             'title' => 'Paid Challenge Purchases',
-            'subtitle' => 'Real paid challenge records are shown here separately from the free trial and the dashboard preview mock cards.',
+            'subtitle' => 'Real paid challenge records are shown here separately from the free trial and the dashboard summary mock cards.',
             'amount' => 'Amount',
             'payment_provider' => 'Provider',
             'payment_status' => 'Payment status',

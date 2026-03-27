@@ -67,9 +67,16 @@
                     @endif
 
                     <dl class="mt-6 space-y-3 text-sm">
-                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                        <div class="flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
-                            <dd class="font-semibold text-white">{{ $selectedPlan['funded']['profit_split'] }}%</dd>
+                            <dd class="text-right font-semibold text-white">
+                                <span class="block">{{ $selectedPlan['funded']['profit_split'] }}%</span>
+                                @if (! empty($selectedPlan['funded']['profit_split_upgrade']))
+                                    <span class="mt-1 block text-xs font-medium text-amber-200">
+                                        {{ str_replace([':percent', ':payouts'], [(string) $selectedPlan['funded']['profit_split_upgrade']['profit_split'], (string) $selectedPlan['funded']['profit_split_upgrade']['after_consecutive_payouts']], __('site.home.challenge_selector.value_templates.profit_split_upgrade')) }}
+                                    </span>
+                                @endif
+                            </dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.daily_loss') }}</dt>

@@ -32,7 +32,7 @@
                                                         Welcome to Wolforix
                                                     </h1>
                                                     <p style="margin:18px 0 0 0; color:#d5deea; font-size:17px; line-height:1.8;">
-                                                        Hi <strong style="color:#ffffff;">{{ $user->name }}</strong>, your account is ready. You now have access to the same dark premium experience used across Wolforix plans, checkout, and dashboard preview.
+                                                        Hi <strong style="color:#ffffff;">{{ $user->name }}</strong>, your account is ready. You now have access to the same dark premium experience used across Wolforix plans, checkout, and your dashboard.
                                                     </p>
 
                                                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:28px; border-collapse:separate; border-spacing:0;">
@@ -83,7 +83,7 @@
                                                         <tr>
                                                             <td style="padding-right:8px;">
                                                                 <a href="{{ route('dashboard') }}" style="display:block; padding:16px 20px; border-radius:18px; background:linear-gradient(135deg, #f4b74a 0%, #f8d57c 100%); color:#06101c; font-size:14px; font-weight:700; text-align:center; text-decoration:none; box-shadow:0 18px 40px rgba(244,183,74,0.22);">
-                                                                    Open Dashboard Preview
+                                                                    Open Your Dashboard
                                                                 </a>
                                                             </td>
                                                             <td style="padding-left:8px;">

@@ -5,7 +5,7 @@ $en = require __DIR__.'/../en/site.php';
 return array_replace_recursive($en, [
     'meta' => [
         'default_title' => 'Plateforme Prop Firm Wolforix',
-        'description' => 'Base premium pour la plateforme prop firm Wolforix avec site public multilingue, structure juridique, espace d’essai gratuit et aperçu du tableau de bord.',
+        'description' => 'Base premium pour la plateforme prop firm Wolforix avec site public multilingue, structure juridique, espace d’essai gratuit et accès authentifié au dashboard.',
     ],
     'languages' => [
         'en' => 'Anglais',
@@ -31,13 +31,14 @@ return array_replace_recursive($en, [
         'faq' => 'FAQ',
         'news' => 'NEWS',
         'legal' => 'Légal',
-        'dashboard_preview' => 'Aperçu dashboard',
+        'dashboard' => 'Dashboard',
+        'dashboard_preview' => 'Dashboard',
         'login' => 'Connexion',
         'logout' => 'Déconnexion',
         'search_aria' => 'Rechercher sur le site',
     ],
     'home' => [
-        'eyebrow' => 'Évaluation Prop Wolforix',
+        'eyebrow' => 'Prop Trading Moderne',
         'title' => 'Prouvez-le. Soyez financé. Accélérez votre croissance.',
         'description' => "La plupart des traders échouent aux challenges de prop firm.\nNous vous donnons la structure pour réussir puis scaler.",
         'mobile_title' => [
@@ -51,7 +52,7 @@ return array_replace_recursive($en, [
         'primary_cta' => 'Commencer le Challenge',
         'free_trial_cta' => 'Essai Gratuit',
         'free_trial_caption' => 'Aucun risque. Aucune carte bancaire.',
-        'secondary_cta' => 'Ouvrir l’aperçu du dashboard',
+        'secondary_cta' => 'Ouvrir le dashboard',
         'days' => 'jours',
         'badges' => [
             'EN / DE / ES / FR prêt',
@@ -62,6 +63,7 @@ return array_replace_recursive($en, [
             'Aucune limite de temps',
             'Payouts rapides',
             'Scaling +25 % de capital',
+            'Jusqu’à 90 % de profit split',
         ],
         'hero_visual' => [
             'label' => 'Aperçu du trading desk',
@@ -109,6 +111,7 @@ return array_replace_recursive($en, [
             'metrics' => [
                 'profit_target' => 'Objectif de profit',
                 'profit_share' => 'Part de profit',
+                'profit_share_upgrade' => 'Upgrade du split',
                 'daily_loss' => 'Perte journalière max',
                 'total_loss' => 'Perte totale max',
                 'minimum_days' => 'Jours de trading min',
@@ -118,6 +121,9 @@ return array_replace_recursive($en, [
                 'payout_cycle' => 'Cycle de payout',
                 'scaling' => 'Scaling',
                 'consistency_rule' => 'Règle de cohérence',
+            ],
+            'value_templates' => [
+                'profit_split_upgrade' => ':percent % après :payouts payouts consécutifs',
             ],
             'consistency_required' => 'Obligatoire',
             'types' => [
@@ -223,6 +229,15 @@ return array_replace_recursive($en, [
                 'high' => 'Fort',
                 'medium' => 'Moyen',
                 'low' => 'Faible',
+            ],
+            'sources' => [
+                'title' => 'Sources de données',
+                'copy' => 'Le mode actuel du calendrier, l’architecture du fournisseur live et les sites de référence marché sont affichés ici par transparence.',
+                'current_demo' => 'Source démo actuelle',
+                'current_live' => 'Source live actuelle',
+                'provider' => 'Architecture fournisseur configurée',
+                'reference' => 'Référence uniquement',
+                'legal_notice' => 'Les sites de référence sont listés uniquement pour la veille marché. Wolforix ne scrape pas, ne reflète pas et n’iframe pas les calendriers tiers.',
             ],
         ],
     ],
@@ -374,12 +389,13 @@ return array_replace_recursive($en, [
         'description' => 'Le paiement d’un challenge payant nécessite désormais une authentification afin que la commande, le résultat Stripe et le challenge acheté restent liés au bon compte utilisateur.',
         'notice' => 'Le challenge, la taille de compte et la devise sélectionnés seront conservés après la connexion ou l’inscription, puis vous serez renvoyé directement vers le checkout.',
         'home_action' => 'Retour à l’accueil',
-        'dashboard_action' => 'Aperçu du dashboard',
+        'dashboard_action' => 'Dashboard',
         'login' => [
             'title' => 'Connexion',
             'copy' => 'Utilisez les identifiants de votre compte Wolforix existant pour continuer vers le checkout sécurisé.',
             'email' => 'Email',
             'password' => 'Mot de passe',
+            'forgot_password' => 'Mot de passe oublié ?',
             'remember' => 'Rester connecté sur cet appareil',
             'submit' => 'Se connecter',
             'invalid' => 'Ces identifiants ne correspondent pas à nos enregistrements.',
@@ -392,6 +408,29 @@ return array_replace_recursive($en, [
             'password' => 'Mot de passe',
             'password_confirmation' => 'Confirmer le mot de passe',
             'submit' => 'Créer le compte',
+        ],
+        'passwords' => [
+            'request' => [
+                'title' => 'Réinitialiser votre mot de passe',
+                'copy' => 'Saisissez l’email lié à votre compte Wolforix et nous vous enverrons un lien sécurisé de réinitialisation.',
+                'email' => 'Email',
+                'submit' => 'Envoyer le lien',
+                'back_to_login' => 'Retour à la connexion',
+            ],
+            'reset' => [
+                'title' => 'Créer un nouveau mot de passe',
+                'copy' => 'Choisissez un nouveau mot de passe pour votre compte Wolforix.',
+                'password' => 'Nouveau mot de passe',
+                'password_confirmation' => 'Confirmer le nouveau mot de passe',
+                'submit' => 'Mettre à jour le mot de passe',
+            ],
+            'status' => [
+                'sent' => 'Nous vous avons envoyé le lien de réinitialisation par email.',
+                'user' => 'Aucun utilisateur n’a été trouvé avec cette adresse email.',
+                'throttled' => 'Veuillez patienter avant de réessayer.',
+                'token' => 'Ce lien de réinitialisation est invalide ou expiré.',
+                'reset' => 'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.',
+            ],
         ],
     ],
 ]);

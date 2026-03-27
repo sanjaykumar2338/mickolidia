@@ -85,6 +85,15 @@ $challengeModels = [
             'scaling_interval_months' => null,
             'consistency_rule_required' => true,
         ],
+        'funded_overrides' => [
+            100000 => [
+                'profit_split' => 85,
+                'profit_split_upgrade' => [
+                    'after_consecutive_payouts' => 2,
+                    'profit_split' => 90,
+                ],
+            ],
+        ],
     ],
     'two_step' => [
         'label' => '2-Step Pro',
@@ -124,6 +133,15 @@ $challengeModels = [
             'scaling_interval_months' => 3,
             'consistency_rule_required' => false,
         ],
+        'funded_overrides' => [
+            100000 => [
+                'profit_split' => 85,
+                'profit_split_upgrade' => [
+                    'after_consecutive_payouts' => 2,
+                    'profit_split' => 90,
+                ],
+            ],
+        ],
     ],
 ];
 
@@ -142,6 +160,10 @@ foreach ($challengeModels as $challengeType => $challengeTypeData) {
     ];
 
     foreach ($challengeTypeData['pricing'] as $size => $listPrice) {
+        $fundedRules = array_merge(
+            $challengeTypeData['funded'],
+            $challengeTypeData['funded_overrides'][$size] ?? [],
+        );
         $discountedPrice = $launchDiscount['enabled']
             ? (int) round($listPrice * ((100 - $launchDiscount['percent']) / 100))
             : $listPrice;
@@ -163,14 +185,14 @@ foreach ($challengeModels as $challengeType => $challengeTypeData) {
             ],
             'steps' => $challengeTypeData['steps'],
             'phases' => array_values($challengeTypeData['phases']),
-            'funded' => $challengeTypeData['funded'],
+            'funded' => $fundedRules,
             'profit_target' => $firstPhase['profit_target'],
             'daily_loss_limit' => $firstPhase['daily_loss_limit'],
             'max_loss_limit' => $firstPhase['max_loss_limit'],
-            'profit_share' => $challengeTypeData['funded']['profit_split'],
-            'first_payout_days' => $challengeTypeData['funded']['first_withdrawal_days'] ?? $challengeTypeData['funded']['payout_cycle_days'],
+            'profit_share' => $fundedRules['profit_split'],
+            'first_payout_days' => $fundedRules['first_withdrawal_days'] ?? $fundedRules['payout_cycle_days'],
             'minimum_trading_days' => $firstPhase['minimum_trading_days'],
-            'payout_cycle_days' => $challengeTypeData['funded']['payout_cycle_days'],
+            'payout_cycle_days' => $fundedRules['payout_cycle_days'],
             'maximum_trading_days' => $firstPhase['maximum_trading_days'],
             'leverage' => $firstPhase['leverage'],
         ];

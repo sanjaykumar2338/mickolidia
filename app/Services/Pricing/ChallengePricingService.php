@@ -92,6 +92,7 @@ class ChallengePricingService
         $currency = $this->normalizeCurrency($currency);
         $priceSnapshot = $this->priceSnapshot((float) $usdBasePrice, $currency);
         $firstPhase = $definition['phases'][0];
+        $fundedRules = $this->fundedRules($definition, $accountSize);
 
         return [
             'slug' => $this->slug($challengeType, $accountSize),
@@ -114,14 +115,14 @@ class ChallengePricingService
             ],
             'steps' => $definition['steps'],
             'phases' => array_values($definition['phases']),
-            'funded' => $definition['funded'],
+            'funded' => $fundedRules,
             'profit_target' => $firstPhase['profit_target'],
             'daily_loss_limit' => $firstPhase['daily_loss_limit'],
             'max_loss_limit' => $firstPhase['max_loss_limit'],
-            'profit_share' => $definition['funded']['profit_split'],
-            'first_payout_days' => $definition['funded']['first_withdrawal_days'] ?? $definition['funded']['payout_cycle_days'],
+            'profit_share' => $fundedRules['profit_split'],
+            'first_payout_days' => $fundedRules['first_withdrawal_days'] ?? $fundedRules['payout_cycle_days'],
             'minimum_trading_days' => $firstPhase['minimum_trading_days'],
-            'payout_cycle_days' => $definition['funded']['payout_cycle_days'],
+            'payout_cycle_days' => $fundedRules['payout_cycle_days'],
             'maximum_trading_days' => $firstPhase['maximum_trading_days'],
             'leverage' => $firstPhase['leverage'],
         ];
@@ -189,5 +190,17 @@ class ChallengePricingService
         }
 
         return $currency;
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     * @return array<string, mixed>
+     */
+    private function fundedRules(array $definition, int $accountSize): array
+    {
+        return array_merge(
+            $definition['funded'] ?? [],
+            $definition['funded_overrides'][$accountSize] ?? [],
+        );
     }
 }

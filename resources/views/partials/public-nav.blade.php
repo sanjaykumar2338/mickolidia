@@ -37,12 +37,15 @@
             'label' => __('site.nav.legal'),
             'cta' => false,
         ],
-        [
-            'href' => route('dashboard'),
-            'label' => __('site.nav.dashboard_preview'),
-            'cta' => true,
-        ],
     ];
+
+    if ($authUser) {
+        $navLinks[] = [
+            'href' => route('dashboard'),
+            'label' => __('site.nav.dashboard'),
+            'cta' => true,
+        ];
+    }
 
     $mobileNavLinks = [
         [
@@ -195,12 +198,14 @@
                     <span>{{ __('site.nav.search_aria') }}</span>
                 </button>
             </div>
-            <a
-                href="{{ route('dashboard') }}"
-                class="mt-3 inline-flex w-full items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15"
-            >
-                {{ __('site.nav.dashboard_preview') }}
-            </a>
+            @if ($authUser)
+                <a
+                    href="{{ route('dashboard') }}"
+                    class="mt-3 inline-flex w-full items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15"
+                >
+                    {{ __('site.nav.dashboard') }}
+                </a>
+            @endif
         </div>
     </div>
 </header>

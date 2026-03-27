@@ -4,7 +4,7 @@ return [
     'meta' => [
         'brand' => 'Wolforix',
         'default_title' => 'Plataforma Prop Firm de Wolforix',
-        'description' => 'Base del hito 1 para la plataforma prop firm de Wolforix con identidad premium oscura, páginas públicas multilingües, estructura legal y vista previa del dashboard.',
+        'description' => 'Base del hito 1 para la plataforma prop firm de Wolforix con identidad premium oscura, páginas públicas multilingües, estructura legal y acceso autenticado al dashboard.',
     ],
 
     'languages' => [
@@ -34,14 +34,15 @@ return [
         'faq' => 'FAQ',
         'news' => 'NEWS',
         'legal' => 'Legal',
-        'dashboard_preview' => 'Vista previa del dashboard',
+        'dashboard' => 'Dashboard',
+        'dashboard_preview' => 'Dashboard',
         'login' => 'Login',
         'logout' => 'Cerrar sesion',
         'search_aria' => 'Buscar en el sitio',
     ],
 
     'home' => [
-        'eyebrow' => 'Evaluación Prop de Wolforix',
+        'eyebrow' => 'Prop Trading Moderno',
         'title' => 'Demuéstralo. Consigue financiación. Escala rápido.',
         'description' => "La mayoria de los traders falla los challenges de prop firm.\nNosotros te damos la estructura para aprobar y escalar.",
         'mobile_title' => [
@@ -55,7 +56,7 @@ return [
         'primary_cta' => 'Iniciar Challenge',
         'free_trial_cta' => 'Prueba Gratis',
         'free_trial_caption' => 'Sin riesgo. Sin tarjeta de credito.',
-        'secondary_cta' => 'Abrir vista previa del dashboard',
+        'secondary_cta' => 'Abrir dashboard',
         'days' => 'días',
         'badges' => [
             'EN / DE / ES / FR listo',
@@ -70,7 +71,7 @@ return [
                 '1-Step: objetivo del 10 %, pérdida diaria máxima del 4 % y pérdida total máxima del 8 %.',
                 '2-Step Fase 1: objetivo del 10 %, pérdida diaria del 5 %, pérdida total del 10 % y apalancamiento 1:100.',
                 '2-Step Fase 2: objetivo del 5 % con días de trading ilimitados y los mismos límites de riesgo 5 % / 10 %.',
-                'Las reglas funded ahora reflejan 80 % de profit split, payouts cada 14 días y escalado 2-Step para cuentas rentables.',
+                'Las reglas funded ahora escalan desde un profit split estándar del 80 % hasta 85 % en cuentas de 100K, con 90 % después del segundo payout consecutivo.',
             ],
         ],
         'image_caption' => 'Integración de branding',
@@ -79,6 +80,7 @@ return [
             'Sin limite de tiempo',
             'Payouts rapidos',
             'Escalado de capital +25 %',
+            'Hasta 90 % Profit Split',
         ],
         'hero_visual' => [
             'label' => 'Vista previa del trading desk',
@@ -120,6 +122,7 @@ return [
             'metrics' => [
                 'profit_target' => 'Objetivo de beneficio',
                 'profit_share' => 'Profit split',
+                'profit_share_upgrade' => 'Mejora del split',
                 'daily_loss' => 'Pérdida diaria máxima',
                 'total_loss' => 'Pérdida total máxima',
                 'minimum_days' => 'Días mínimos',
@@ -134,6 +137,7 @@ return [
                 'days' => ':days días',
                 'after_days' => 'Después de :days días',
                 'scaling' => '+:percent % de capital cada :months meses si es rentable',
+                'profit_split_upgrade' => ':percent % después de :payouts payouts consecutivos',
             ],
             'consistency_required' => 'Obligatoria',
             'types' => [
@@ -274,6 +278,15 @@ return [
             'medium' => 'Medio',
             'low' => 'Bajo',
         ],
+        'sources' => [
+            'title' => 'Fuentes de datos',
+            'copy' => 'El modo actual del calendario, la arquitectura del proveedor live y los sitios de referencia del mercado se muestran aquí por transparencia.',
+            'current_demo' => 'Fuente demo actual',
+            'current_live' => 'Fuente live actual',
+            'provider' => 'Arquitectura de proveedor configurada',
+            'reference' => 'Solo referencia',
+            'legal_notice' => 'Los sitios de referencia se muestran solo para seguimiento del mercado. Wolforix no hace scraping, espejo ni iframe de calendarios de terceros.',
+        ],
     ],
 
     'launch_popup' => [
@@ -290,12 +303,13 @@ return [
         'description' => 'El checkout de challenges pagados ahora requiere autenticación para que los pedidos, los resultados de pago de Stripe y los challenges comprados queden vinculados al usuario correcto.',
         'notice' => 'El challenge y la divisa seleccionados se conservarán después del login o del registro y volverás directamente al checkout.',
         'home_action' => 'Volver al inicio',
-        'dashboard_action' => 'Vista previa del dashboard',
+        'dashboard_action' => 'Dashboard',
         'login' => [
             'title' => 'Iniciar sesión',
             'copy' => 'Usa tus credenciales actuales de Wolforix para continuar al checkout seguro.',
             'email' => 'Email',
             'password' => 'Contraseña',
+            'forgot_password' => '¿Olvidaste tu contraseña?',
             'remember' => 'Mantener sesión iniciada en este dispositivo',
             'submit' => 'Entrar',
             'invalid' => 'Estas credenciales no coinciden con nuestros registros.',
@@ -308,6 +322,29 @@ return [
             'password' => 'Contraseña',
             'password_confirmation' => 'Confirmar contraseña',
             'submit' => 'Crear Cuenta',
+        ],
+        'passwords' => [
+            'request' => [
+                'title' => 'Restablecer tu contraseña',
+                'copy' => 'Introduce el email asociado a tu cuenta de Wolforix y te enviaremos un enlace seguro para restablecerla.',
+                'email' => 'Email',
+                'submit' => 'Enviar enlace de restablecimiento',
+                'back_to_login' => 'Volver al login',
+            ],
+            'reset' => [
+                'title' => 'Crear una nueva contraseña',
+                'copy' => 'Elige una nueva contraseña para tu cuenta de Wolforix.',
+                'password' => 'Nueva contraseña',
+                'password_confirmation' => 'Confirmar nueva contraseña',
+                'submit' => 'Actualizar contraseña',
+            ],
+            'status' => [
+                'sent' => 'Te hemos enviado por email el enlace para restablecer tu contraseña.',
+                'user' => 'No pudimos encontrar un usuario con ese email.',
+                'throttled' => 'Espera un momento antes de volver a intentarlo.',
+                'token' => 'Este enlace de restablecimiento no es válido o ha expirado.',
+                'reset' => 'Tu contraseña ha sido restablecida. Ya puedes iniciar sesión.',
+            ],
         ],
     ],
 
@@ -488,7 +525,7 @@ return [
             'provider' => 'Proveedor de pago',
             'order_number' => 'Numero de pedido',
             'next_steps' => 'Siguiente paso: tu challenge pagado se guarda por separado del flujo Free Trial y queda listo para activacion y futura vinculacion con el dashboard.',
-            'open_dashboard' => 'Abrir Vista Previa del Dashboard',
+            'open_dashboard' => 'Abrir Dashboard',
             'back_home' => 'Volver al Inicio',
         ],
         'cancel' => [
@@ -625,7 +662,7 @@ return [
                     ],
                     [
                         'question' => '¿Cómo se calcula mi payout?',
-                        'answer' => 'Los payouts dependen del 80 % de profit split, del calendario de payout según el modelo, del cumplimiento de la regla de consistencia cuando aplique y de los límites internos. La cantidad elegible para retirar puede ser menor que el beneficio total si se exceden los límites diarios.',
+                        'answer' => 'Los payouts dependen del profit split asignado a tu modelo y tamaño de cuenta, del calendario de payout según el modelo, del cumplimiento de la regla de consistencia cuando aplique y de los límites internos. La cantidad elegible para retirar puede ser menor que el beneficio total si se exceden los límites diarios.',
                     ],
                     [
                         'question' => '¿Las cuentas funded escalan?',
@@ -1062,7 +1099,7 @@ return [
         ],
         'purchases' => [
             'title' => 'Compras de Challenges Pagadas',
-            'subtitle' => 'Los registros reales de challenges pagados se muestran aqui por separado del Free Trial y de las tarjetas de vista previa del dashboard.',
+            'subtitle' => 'Los registros reales de challenges pagados se muestran aqui por separado del Free Trial y de las tarjetas de resumen del dashboard.',
             'amount' => 'Importe',
             'payment_provider' => 'Proveedor',
             'payment_status' => 'Estado del pago',

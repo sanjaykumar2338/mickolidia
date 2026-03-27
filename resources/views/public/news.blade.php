@@ -6,6 +6,20 @@
         'medium' => 'border border-amber-300/24 bg-amber-400/12 text-amber-100',
         'low' => 'border border-emerald-400/24 bg-emerald-500/12 text-emerald-200',
     ];
+    $newsSources = collect([
+        [
+            'label' => $calendarSourceLabel,
+            'meta' => $calendarIsDemoMode ? __('site.news.sources.current_demo') : __('site.news.sources.current_live'),
+        ],
+        [
+            'label' => 'Trading Economics API',
+            'meta' => __('site.news.sources.provider'),
+        ],
+        [
+            'label' => 'forexfactory.com',
+            'meta' => __('site.news.sources.reference'),
+        ],
+    ])->unique('label')->values();
 @endphp
 
 @section('title', __('site.news.title').' | '.__('site.meta.brand'))
@@ -162,6 +176,24 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="mt-8 surface-panel rounded-[2rem] p-6">
+                <div class="max-w-3xl">
+                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('site.news.sources.title') }}</p>
+                    <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.news.sources.copy') }}</p>
+                </div>
+
+                <div class="mt-6 grid gap-4 md:grid-cols-3">
+                    @foreach ($newsSources as $source)
+                        <article class="rounded-[1.6rem] border border-white/8 bg-white/3 px-5 py-4">
+                            <p class="text-sm font-semibold text-white">{{ $source['label'] }}</p>
+                            <p class="mt-2 text-xs uppercase tracking-[0.22em] text-slate-400">{{ $source['meta'] }}</p>
+                        </article>
+                    @endforeach
+                </div>
+
+                <p class="mt-5 text-sm leading-7 text-slate-400">{{ __('site.news.sources.legal_notice') }}</p>
             </div>
         </div>
     </section>

@@ -32,9 +32,6 @@
                         <a href="{{ route('home') }}" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.auth.home_action') }}
                         </a>
-                        <a href="{{ route('dashboard') }}" class="rounded-full border border-white/10 px-6 py-4 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                            {{ __('site.auth.dashboard_action') }}
-                        </a>
                     </div>
                 </div>
 
@@ -42,6 +39,12 @@
                     <section class="surface-panel rounded-[2rem] p-6 sm:p-7">
                         <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.auth.login.title') }}</p>
                         <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.auth.login.copy') }}</p>
+
+                        @if (session('status'))
+                            <div class="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-100">
+                                {{ session('status') }}
+                            </div>
+                        @endif
 
                         @if ($loginErrors->any())
                             <div class="mt-5 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-100">
@@ -75,6 +78,12 @@
                                     class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                 >
                             </label>
+
+                            <div class="flex justify-end">
+                                <a href="{{ route('password.request') }}" class="text-sm font-medium text-amber-200 transition hover:text-amber-100">
+                                    {{ __('site.auth.login.forgot_password') }}
+                                </a>
+                            </div>
 
                             <label class="flex items-center gap-3 text-sm text-slate-300">
                                 <input type="checkbox" name="remember" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300">

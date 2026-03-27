@@ -4,7 +4,7 @@ return [
     'meta' => [
         'brand' => 'Wolforix',
         'default_title' => 'Wolforix Prop-Firm-Plattform',
-        'description' => 'Meilenstein-1-Grundlage für die Wolforix Prop-Firm-Plattform mit dunklem Premium-Branding, mehrsprachigen öffentlichen Seiten, Rechtsstruktur und Dashboard-Vorschau.',
+        'description' => 'Meilenstein-1-Grundlage für die Wolforix Prop-Firm-Plattform mit dunklem Premium-Branding, mehrsprachigen öffentlichen Seiten, Rechtsstruktur und authentifiziertem Dashboard-Zugriff.',
     ],
 
     'languages' => [
@@ -34,14 +34,15 @@ return [
         'faq' => 'FAQ',
         'news' => 'NEWS',
         'legal' => 'Rechtliches',
-        'dashboard_preview' => 'Dashboard-Vorschau',
+        'dashboard' => 'Dashboard',
+        'dashboard_preview' => 'Dashboard',
         'login' => 'Login',
         'logout' => 'Abmelden',
         'search_aria' => 'Website durchsuchen',
     ],
 
     'home' => [
-        'eyebrow' => 'Wolforix Prop-Evaluation',
+        'eyebrow' => 'Modernes Prop Trading',
         'title' => 'Beweise es. Werde finanziert. Skaliere schnell.',
         'description' => "Die meisten Trader scheitern an Prop-Firm-Challenges.\nWir geben dir die Struktur, um zu bestehen und zu skalieren.",
         'mobile_title' => [
@@ -55,7 +56,7 @@ return [
         'primary_cta' => 'Challenge starten',
         'free_trial_cta' => 'Kostenlos testen',
         'free_trial_caption' => 'Kein Risiko. Keine Kreditkarte.',
-        'secondary_cta' => 'Dashboard-Vorschau öffnen',
+        'secondary_cta' => 'Dashboard öffnen',
         'days' => 'Tage',
         'badges' => [
             'EN / DE / ES / FR bereit',
@@ -70,7 +71,7 @@ return [
                 '1-Step: 10 % Ziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust.',
                 '2-Step Phase 1: 10 % Ziel, 5 % Tagesverlust, 10 % Gesamtverlust und 1:100 Hebel.',
                 '2-Step Phase 2: 5 % Ziel mit unbegrenzten Handelstagen und denselben 5 % / 10 % Risikogrenzen.',
-                'Funded-Regeln spiegeln jetzt 80 % Gewinnbeteiligung, 14-Tage-Auszahlungen und 2-Step-Skalierung fuer profitable Konten wider.',
+                'Funded-Regeln reichen jetzt von 80 % Standard-Gewinnbeteiligung bis zu 85 % auf 100K-Konten, mit 90 % nach der zweiten aufeinanderfolgenden Auszahlung.',
             ],
         ],
         'image_caption' => 'Branding-Integration',
@@ -79,6 +80,7 @@ return [
             'Keine Zeitlimits',
             'Schnelle Auszahlungen',
             '+25 % Kapital-Skalierung',
+            'Bis zu 90 % Gewinnbeteiligung',
         ],
         'hero_visual' => [
             'label' => 'Trading-Desk-Vorschau',
@@ -120,6 +122,7 @@ return [
             'metrics' => [
                 'profit_target' => 'Gewinnziel',
                 'profit_share' => 'Gewinnbeteiligung',
+                'profit_share_upgrade' => 'Split-Upgrade',
                 'daily_loss' => 'Max. Tagesverlust',
                 'total_loss' => 'Max. Gesamtverlust',
                 'minimum_days' => 'Min. Handelstage',
@@ -134,6 +137,7 @@ return [
                 'days' => ':days Tage',
                 'after_days' => 'Nach :days Tagen',
                 'scaling' => '+:percent % Kapital alle :months Monate bei Profitabilitaet',
+                'profit_split_upgrade' => ':percent % nach :payouts aufeinanderfolgenden Auszahlungen',
             ],
             'consistency_required' => 'Obligatorisch',
             'types' => [
@@ -274,6 +278,15 @@ return [
             'medium' => 'Mittel',
             'low' => 'Niedrig',
         ],
+        'sources' => [
+            'title' => 'Datenquellen',
+            'copy' => 'Aktueller Kalendermodus, Live-Provider-Architektur und Markt-Referenzseiten werden hier zur Transparenz aufgeführt.',
+            'current_demo' => 'Aktuelle Demo-Quelle',
+            'current_live' => 'Aktuelle Live-Quelle',
+            'provider' => 'Konfigurierte Provider-Architektur',
+            'reference' => 'Nur Referenz',
+            'legal_notice' => 'Referenzseiten werden nur zur Marktbeobachtung genannt. Wolforix scraped, spiegelt oder iframed keine Kalender-Websites Dritter.',
+        ],
     ],
 
     'launch_popup' => [
@@ -290,12 +303,13 @@ return [
         'description' => 'Der bezahlte Challenge-Checkout erfordert jetzt eine Authentifizierung, damit Bestellungen, Stripe-Zahlungsergebnisse und gekaufte Challenges dem richtigen Nutzerkonto zugeordnet bleiben.',
         'notice' => 'Die ausgewaehlte Challenge und Waehrung bleiben nach Login oder Registrierung erhalten und du kehrst direkt zum Checkout zurueck.',
         'home_action' => 'Zur Startseite',
-        'dashboard_action' => 'Dashboard-Vorschau',
+        'dashboard_action' => 'Dashboard',
         'login' => [
             'title' => 'Anmelden',
             'copy' => 'Nutze deine bestehenden Wolforix-Zugangsdaten, um mit dem sicheren Checkout fortzufahren.',
             'email' => 'E-Mail',
             'password' => 'Passwort',
+            'forgot_password' => 'Passwort vergessen?',
             'remember' => 'Auf diesem Geraet angemeldet bleiben',
             'submit' => 'Einloggen',
             'invalid' => 'Diese Zugangsdaten stimmen nicht mit unseren Datensaetzen ueberein.',
@@ -308,6 +322,29 @@ return [
             'password' => 'Passwort',
             'password_confirmation' => 'Passwort bestaetigen',
             'submit' => 'Konto erstellen',
+        ],
+        'passwords' => [
+            'request' => [
+                'title' => 'Passwort zurücksetzen',
+                'copy' => 'Gib die E-Mail-Adresse deines Wolforix-Kontos ein und wir senden dir einen sicheren Reset-Link.',
+                'email' => 'E-Mail',
+                'submit' => 'Reset-Link senden',
+                'back_to_login' => 'Zurück zum Login',
+            ],
+            'reset' => [
+                'title' => 'Neues Passwort erstellen',
+                'copy' => 'Wähle ein neues Passwort für dein Wolforix-Konto.',
+                'password' => 'Neues Passwort',
+                'password_confirmation' => 'Neues Passwort bestätigen',
+                'submit' => 'Passwort aktualisieren',
+            ],
+            'status' => [
+                'sent' => 'Wir haben dir den Link zum Zurücksetzen des Passworts per E-Mail gesendet.',
+                'user' => 'Zu dieser E-Mail-Adresse wurde kein Nutzer gefunden.',
+                'throttled' => 'Bitte warte einen Moment, bevor du es erneut versuchst.',
+                'token' => 'Dieser Passwort-Reset-Link ist ungültig oder abgelaufen.',
+                'reset' => 'Dein Passwort wurde zurückgesetzt. Du kannst dich jetzt einloggen.',
+            ],
         ],
     ],
 
@@ -488,7 +525,7 @@ return [
             'provider' => 'Zahlungsanbieter',
             'order_number' => 'Bestellnummer',
             'next_steps' => 'Naechster Schritt: Deine bezahlte Challenge wird getrennt vom Free-Trial-Fluss gespeichert und fuer Aktivierung und spaetere Dashboard-Verknuepfung vorbereitet.',
-            'open_dashboard' => 'Dashboard-Vorschau oeffnen',
+            'open_dashboard' => 'Dashboard öffnen',
             'back_home' => 'Zur Startseite',
         ],
         'cancel' => [
@@ -625,7 +662,7 @@ return [
                     ],
                     [
                         'question' => 'Wie wird meine Auszahlung berechnet?',
-                        'answer' => 'Auszahlungen haengen von der 80-%-Gewinnbeteiligung, modellspezifischen Auszahlungszeiten, der Einhaltung der Konsistenzregel, falls anwendbar, und internen Auszahlungslimits ab. Der auszahlungsfaehige Betrag kann niedriger sein als der Gesamtgewinn, wenn Tagesgrenzen ueberschritten wurden.',
+                        'answer' => 'Auszahlungen haengen von der für Modell und Kontogroesse geltenden Gewinnbeteiligung, modellspezifischen Auszahlungszeiten, der Einhaltung der Konsistenzregel, falls anwendbar, und internen Auszahlungslimits ab. Der auszahlungsfaehige Betrag kann niedriger sein als der Gesamtgewinn, wenn Tagesgrenzen ueberschritten wurden.',
                     ],
                     [
                         'question' => 'Skalieren Funded-Konten?',
@@ -1062,7 +1099,7 @@ return [
         ],
         'purchases' => [
             'title' => 'Bezahlte Challenge-Kaeufe',
-            'subtitle' => 'Echte bezahlte Challenge-Datensaetze werden hier getrennt vom Free Trial und den Dashboard-Vorschaukarten angezeigt.',
+            'subtitle' => 'Echte bezahlte Challenge-Datensaetze werden hier getrennt vom Free Trial und den Dashboard-Übersichtskarten angezeigt.',
             'amount' => 'Betrag',
             'payment_provider' => 'Anbieter',
             'payment_status' => 'Zahlungsstatus',

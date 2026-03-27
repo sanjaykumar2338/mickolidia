@@ -384,6 +384,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ui.value_templates?.scaling ?? '+:percent% capital every :months months if profitable',
                 { percent, months },
             );
+            const formatProfitSplitUpgrade = (upgrade) => replaceTokens(
+                ui.value_templates?.profit_split_upgrade ?? ':percent% after :payouts consecutive payouts',
+                {
+                    percent: upgrade?.profit_split ?? '',
+                    payouts: upgrade?.after_consecutive_payouts ?? '',
+                },
+            );
             const renderMetricRows = (rows) => rows.map(([label, value]) => `
                 <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                     <dt class="text-slate-400">${label}</dt>
@@ -432,6 +439,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     fundedRows.push([
                         ui.metrics?.scaling ?? 'Scaling',
                         formatScaling(plan.funded.scaling_capital_percent, plan.funded.scaling_interval_months),
+                    ]);
+                }
+
+                if (plan.funded.profit_split_upgrade) {
+                    fundedRows.push([
+                        ui.metrics?.profit_share_upgrade ?? 'Profit split upgrade',
+                        formatProfitSplitUpgrade(plan.funded.profit_split_upgrade),
                     ]);
                 }
 

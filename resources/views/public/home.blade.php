@@ -49,6 +49,13 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="m7.5 11.25 3-3 2.25 2.25 4.5-4.5" />
         </svg>
         SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m18.75 5.25-13.5 13.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 16.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
+        </svg>
+        SVG,
     ];
     $mobileFeatureIcons = $featureIcons;
     $challengeUi = [
@@ -176,7 +183,7 @@
             </div>
         </div>
 
-        <div class="mx-auto mt-10 hidden max-w-7xl gap-4 lg:grid lg:grid-cols-3">
+        <div class="mx-auto mt-10 hidden max-w-7xl gap-4 lg:grid lg:grid-cols-4">
             @foreach (trans('site.home.feature_cards') as $card)
                 <article class="surface-panel rounded-[2rem] p-6">
                     <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-[0_18px_40px_rgba(244,183,74,0.12)]">
@@ -365,6 +372,14 @@
                                             <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
                                             <dd class="font-semibold text-white">{{ $initialPlan['funded']['profit_split'] }}%</dd>
                                         </div>
+                                        @if (! empty($initialPlan['funded']['profit_split_upgrade']))
+                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share_upgrade') }}</dt>
+                                                <dd class="max-w-[11rem] text-right font-semibold text-white">
+                                                    {{ str_replace([':percent', ':payouts'], [(string) $initialPlan['funded']['profit_split_upgrade']['profit_split'], (string) $initialPlan['funded']['profit_split_upgrade']['after_consecutive_payouts']], __('site.home.challenge_selector.value_templates.profit_split_upgrade')) }}
+                                                </dd>
+                                            </div>
+                                        @endif
                                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                             <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</dt>
                                             <dd class="font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['payout_cycle_days'], __('site.home.challenge_selector.value_templates.days')) }}</dd>

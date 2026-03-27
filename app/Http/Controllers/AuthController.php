@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Models\UserProfile;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -21,6 +24,11 @@ class AuthController extends Controller
         }
 
         return view('public.login');
+    }
+
+    public function forgotPassword(): View
+    {
+        return view('public.forgot-password');
     }
 
     public function store(Request $request): RedirectResponse
@@ -44,6 +52,65 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('home'));
+    }
+
+    public function sendResetLink(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        $status = Password::sendResetLink([
+            'email' => $validated['email'],
+        ]);
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'email' => $this->passwordStatusMessage($status),
+                ]);
+        }
+
+        return back()->with('status', $this->passwordStatusMessage($status));
+    }
+
+    public function resetPasswordForm(Request $request, string $token): View
+    {
+        return view('public.reset-password', [
+            'token' => $token,
+            'email' => (string) $request->query('email', ''),
+        ]);
+    }
+
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::reset($validated, function (User $user, string $password): void {
+            $user->forceFill([
+                'password' => $password,
+                'remember_token' => Str::random(60),
+            ])->save();
+
+            event(new PasswordReset($user));
+        });
+
+        if ($status !== Password::PASSWORD_RESET) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors([
+                    'email' => $this->passwordStatusMessage($status),
+                ]);
+        }
+
+        return redirect()
+            ->route('login')
+            ->with('status', $this->passwordStatusMessage($status));
     }
 
     public function register(Request $request): RedirectResponse
@@ -86,5 +153,15 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home');
+    }
+
+    private function passwordStatusMessage(string $status): string
+    {
+        $translationKey = 'site.auth.passwords.status.'.Str::afterLast($status, '.');
+        $translated = __($translationKey);
+
+        return $translated === $translationKey
+            ? $status
+            : $translated;
     }
 }

@@ -25,6 +25,10 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
     Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+    Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'resetPasswordForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
@@ -43,7 +47,7 @@ Route::get('/privacy-policy', [PublicPageController::class, 'legal'])->defaults(
 Route::get('/aml-kyc', [PublicPageController::class, 'legal'])->defaults('slug', 'aml-kyc')->name('aml-kyc');
 Route::get('/company-info', [PublicPageController::class, 'legal'])->defaults('slug', 'company-info')->name('company-info');
 
-Route::prefix('dashboard')->group(function (): void {
+Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/accounts', [DashboardController::class, 'accounts'])->name('dashboard.accounts');
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');

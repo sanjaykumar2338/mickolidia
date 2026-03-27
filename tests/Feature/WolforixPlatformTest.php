@@ -11,8 +11,11 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
 use Tests\Fixtures\FakeStripePaymentGateway;
 
@@ -24,6 +27,7 @@ class WolforixPlatformTest extends TestCase
     {
         foreach ([
             route('login'),
+            route('password.request'),
             route('home'),
             route('about'),
             route('contact'),
@@ -81,7 +85,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Demo calendar feed')
             ->assertSee('Demo calendar mode')
             ->assertSee('High impact only')
-            ->assertSee('Non-Farm Payrolls');
+            ->assertSee('Non-Farm Payrolls')
+            ->assertSee('forexfactory.com');
     }
 
     public function test_news_page_can_filter_demo_events_by_impact_and_currency(): void
@@ -173,10 +178,68 @@ class WolforixPlatformTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_users_can_request_and_complete_a_password_reset(): void
+    {
+        Notification::fake();
+
+        $user = User::factory()->create([
+            'email' => 'reset-trader@example.com',
+            'password' => 'old-password123',
+        ]);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Forgot Password?')
+            ->assertSee(route('password.request'), false);
+
+        $this->post(route('password.email'), [
+            'email' => $user->email,
+        ])
+            ->assertRedirect()
+            ->assertSessionHas('status', __('site.auth.passwords.status.sent'));
+
+        $resetToken = null;
+
+        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use (&$resetToken): bool {
+            $resetToken = $notification->token;
+
+            return true;
+        });
+
+        $this->assertNotNull($resetToken);
+
+        $this->get(route('password.reset', [
+            'token' => $resetToken,
+            'email' => $user->email,
+        ]))
+            ->assertOk()
+            ->assertSee('Create a new password');
+
+        $brokerToken = Password::broker()->createToken($user);
+
+        $this->post(route('password.update'), [
+            'token' => $brokerToken,
+            'email' => $user->email,
+            'password' => 'new-password123',
+            'password_confirmation' => 'new-password123',
+        ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status', __('site.auth.passwords.status.reset'));
+
+        $loginResponse = $this->post(route('login.store'), [
+            'login_email' => $user->email,
+            'login_password' => 'new-password123',
+        ]);
+
+        $loginResponse->assertRedirect(route('home'));
+        $this->assertAuthenticatedAs($user->fresh());
+    }
+
     public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void
     {
         $this->get(route('home'))
             ->assertOk()
+            ->assertSee('Modern Prop Trading')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
             ->assertSee('5K')
@@ -190,6 +253,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('No Time Limits')
             ->assertSee('Fast Payouts')
             ->assertSee('Scaling +25% Capital')
+            ->assertSee('Up to 90% Profit Split')
             ->assertSee('Free Trial')
             ->assertSee('No risk. No credit card.')
             ->assertSee('Single Phase')
@@ -211,11 +275,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Stripe card checkout is live in this milestone.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
+            ->assertDontSee('Dashboard Preview')
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
     }
 
-    public function test_dashboard_foundation_pages_render_successfully(): void
+    public function test_dashboard_routes_require_authentication(): void
     {
         foreach ([
             route('dashboard'),
@@ -223,7 +288,21 @@ class WolforixPlatformTest extends TestCase
             route('dashboard.payouts'),
             route('dashboard.settings'),
         ] as $url) {
-            $this->get($url)->assertOk();
+            $this->get($url)->assertRedirect(route('login'));
+        }
+    }
+
+    public function test_authenticated_users_can_access_dashboard_foundation_pages(): void
+    {
+        $user = User::factory()->create();
+
+        foreach ([
+            route('dashboard'),
+            route('dashboard.accounts'),
+            route('dashboard.payouts'),
+            route('dashboard.settings'),
+        ] as $url) {
+            $this->actingAs($user)->get($url)->assertOk();
         }
     }
 
@@ -265,6 +344,37 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Terms & Conditions')
             ->assertSee('country of residence')
             ->assertSee('Cancellation and Refund Policy');
+    }
+
+    public function test_100k_plans_apply_the_profit_split_upgrade_rules(): void
+    {
+        $pricingService = app(ChallengePricingService::class);
+
+        foreach (['one_step', 'two_step'] as $challengeType) {
+            $plan = $pricingService->resolvePlan($challengeType, 100000, 'USD');
+
+            $this->assertSame(85, $plan['funded']['profit_split']);
+            $this->assertSame(90, $plan['funded']['profit_split_upgrade']['profit_split']);
+            $this->assertSame(2, $plan['funded']['profit_split_upgrade']['after_consecutive_payouts']);
+        }
+
+        $standardPlan = $pricingService->resolvePlan('two_step', 50000, 'USD');
+
+        $this->assertSame(80, $standardPlan['funded']['profit_split']);
+        $this->assertArrayNotHasKey('profit_split_upgrade', $standardPlan['funded']);
+    }
+
+    public function test_checkout_page_displays_100k_profit_split_upgrade_copy(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 100000,
+                'currency' => 'USD',
+            ]))
+            ->assertOk()
+            ->assertSee('85%')
+            ->assertSee('90% after 2 consecutive payouts');
     }
 
     public function test_authenticated_checkout_page_shows_logout_in_header_instead_of_login(): void
