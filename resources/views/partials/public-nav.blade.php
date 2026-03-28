@@ -56,7 +56,57 @@
 
 <header class="relative z-50 overflow-visible border-b border-white/5 bg-slate-950/72 backdrop-blur-xl">
     <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
-        <div class="flex items-center justify-between gap-4">
+        <div class="space-y-3 lg:hidden">
+            <div class="flex items-start justify-between gap-3">
+                <a href="{{ route('home') }}" class="flex min-w-0 flex-1 items-center gap-3 pr-2">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center">
+                        <img src="{{ asset('IMG_8543.png') }}" alt="Wolforix" class="h-full w-full object-contain">
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="inline-flex items-start text-[0.78rem] font-semibold tracking-[0.24em] text-amber-300">
+                            <span>WOLFORIX</span>
+                            <span class="ml-1 text-[0.58em] leading-none tracking-normal text-amber-200">®</span>
+                        </p>
+                        <p class="mt-1 max-w-[12rem] text-[11px] leading-4 text-slate-400">{{ __('site.public_layout.simulated_notice') }}</p>
+                    </div>
+                </a>
+
+                <div class="flex shrink-0 items-center gap-2">
+                    <button
+                        type="button"
+                        data-site-search-open
+                        aria-label="{{ __('site.nav.search_aria') }}"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/4 text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5" />
+                            <path stroke-linecap="round" d="m16 16 4.5 4.5" />
+                        </svg>
+                    </button>
+                    <x-language-switcher compact class="shrink-0" />
+                </div>
+            </div>
+
+            @if ($authUser)
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="{{ route('dashboard') }}" class="inline-flex min-h-11 items-center justify-center rounded-full border border-amber-400/24 bg-amber-400/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15">
+                        {{ __('site.nav.dashboard') }}
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" class="w-full">
+                        @csrf
+                        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-amber-400/24 bg-black/24 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-amber-300/40 hover:bg-white/8">
+                            {{ __('site.nav.logout') }}
+                        </button>
+                    </form>
+                </div>
+            @else
+                <a href="{{ route('login') }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-amber-400/24 bg-black/24 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-amber-300/40 hover:bg-white/8">
+                    {{ __('site.nav.login') }}
+                </a>
+            @endif
+        </div>
+
+        <div class="hidden items-center justify-between gap-4 lg:flex">
             <a href="{{ route('home') }}" class="flex min-w-0 items-center gap-3">
                 <span class="flex h-11 w-11 shrink-0 items-center justify-center sm:h-14 sm:w-14">
                     <img src="{{ asset('IMG_8543.png') }}" alt="Wolforix" class="h-full w-full object-contain">
@@ -70,37 +120,7 @@
                 </div>
             </a>
 
-            <div class="flex shrink-0 items-center gap-1.5 lg:hidden">
-                <button
-                    type="button"
-                    data-site-search-open
-                    aria-label="{{ __('site.nav.search_aria') }}"
-                    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/4 text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-                        <circle cx="11" cy="11" r="6.5" />
-                        <path stroke-linecap="round" d="m16 16 4.5 4.5" />
-                    </svg>
-                </button>
-                <x-language-switcher compact />
-                @if ($authUser)
-                    <a href="{{ route('dashboard') }}" class="rounded-full border border-amber-400/24 bg-amber-400/10 px-3.5 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15 sm:px-4 sm:py-2.5 sm:text-sm">
-                        {{ __('site.nav.dashboard') }}
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="rounded-full border border-amber-400/24 bg-black/24 px-3.5 py-2 text-xs font-semibold text-white transition hover:border-amber-300/40 hover:bg-white/8 sm:px-4 sm:py-2.5 sm:text-sm">
-                            {{ __('site.nav.logout') }}
-                        </button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}" class="rounded-full border border-amber-400/24 bg-black/24 px-3.5 py-2 text-xs font-semibold text-white transition hover:border-amber-300/40 hover:bg-white/8 sm:px-4 sm:py-2.5 sm:text-sm">
-                        {{ __('site.nav.login') }}
-                    </a>
-                @endif
-            </div>
-
-            <div class="hidden items-center gap-3 text-sm text-slate-300 lg:flex">
+            <div class="flex items-center gap-3 text-sm text-slate-300">
                 <nav class="flex flex-wrap items-center gap-2 lg:gap-3">
                     @foreach ($navLinks as $link)
                         @if (! empty($link['children']))
@@ -170,24 +190,16 @@
         </div>
 
         <div class="mt-3 border-t border-white/8 pt-3 lg:hidden">
-            <nav class="grid grid-cols-4 items-center gap-1 text-[0.92rem] text-amber-50/90">
+            <nav class="grid grid-cols-4 items-center gap-1 rounded-[1.25rem] border border-white/6 bg-white/[0.03] p-1 text-[0.84rem] font-medium text-amber-50/90">
                 @foreach ($mobileNavLinks as $link)
                     <a
                         href="{{ $link['href'] }}"
-                        class="rounded-full px-2 py-2 text-center transition hover:bg-white/6 hover:text-white"
+                        class="rounded-full px-2 py-2.5 text-center transition hover:bg-white/6 hover:text-white"
                     >
                         {{ $link['label'] }}
                     </a>
                 @endforeach
             </nav>
-            @if ($authUser)
-                <a
-                    href="{{ route('dashboard') }}"
-                    class="mt-3 inline-flex w-full items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2.5 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/15"
-                >
-                    {{ __('site.nav.dashboard') }}
-                </a>
-            @endif
         </div>
     </div>
 </header>
