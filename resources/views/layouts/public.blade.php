@@ -19,6 +19,7 @@
     @include('partials.public-nav')
     @include('partials.site-search')
     @include('partials.launch-popup')
+    @include('partials.cookie-consent-banner')
 
     @if (session('checkout_success') || session('trial_success'))
         <div class="relative z-30 mx-auto mt-5 max-w-7xl px-6 lg:px-8">

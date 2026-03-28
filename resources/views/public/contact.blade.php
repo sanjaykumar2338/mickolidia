@@ -197,6 +197,8 @@
                                 data-no-speech="{{ __('site.contact.voice_no_speech') }}"
                                 data-mic-blocked="{{ __('site.contact.voice_mic_blocked') }}"
                                 data-audio-capture="{{ __('site.contact.voice_audio_capture') }}"
+                                data-permission-checking="{{ __('site.contact.voice_permission_checking') }}"
+                                data-secure-context="{{ __('site.contact.voice_secure_context') }}"
                                 class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6"
                             >
                                 {{ __('site.contact.voice_button') }}

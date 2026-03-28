@@ -240,11 +240,30 @@ class WolforixPlatformTest extends TestCase
         $this->assertAuthenticatedAs($user->fresh());
     }
 
+    public function test_login_page_prioritizes_the_sign_in_form_before_checkout_explanation(): void
+    {
+        $this->withSession([
+            'url.intended' => route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+            ]),
+        ])->get(route('login'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                __('site.auth.login.title'),
+                __('site.auth.register.title'),
+                __('site.auth.notice'),
+            ]);
+    }
+
     public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void
     {
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Modern Prop Trading')
+            ->assertSee('Get Funded. Get Paid. No Time Limits.')
+            ->assertSee('Pass the challenge. Access funded accounts. Withdraw fast.')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
             ->assertSee('Pass in one step. Get funded faster. No delays. No second phase.')
@@ -265,6 +284,9 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Start Chat')
             ->assertSee('Can I trade during news?')
             ->assertSee('AI Assistant')
+            ->assertSee('We use cookies to improve your experience and support essential site functionality.')
+            ->assertSee('Learn More')
+            ->assertSee('Accept')
             ->assertSee('Free Trial')
             ->assertSee('No risk. No credit card.')
             ->assertSee('Single Phase')
@@ -288,6 +310,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Search the site')
             ->assertSee('Continue to Secure Checkout')
             ->assertSee('Stripe card checkout is live in this milestone.')
+            ->assertSee('Wolforix does not provide brokerage services, investment advice, or portfolio management.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
             ->assertDontSee('Dashboard Preview')

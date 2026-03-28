@@ -69,15 +69,16 @@ return [
 
     'home' => [
         'eyebrow' => 'Prop Trading Moderno',
-        'title' => 'Demuéstralo. Consigue financiación. Escala rápido.',
-        'description' => "La mayoria de los traders falla los challenges de prop firm.\nNosotros te damos la estructura para aprobar y escalar.",
+        'title' => 'Consigue funding. Cobra. Sin límites de tiempo.',
+        'description' => 'Supera el challenge. Accede a cuentas funded. Retira rápido.',
         'mobile_title' => [
-            'line_1' => 'Demuéstralo.',
-            'line_2' => 'Consigue financiación.',
+            'line_1' => 'Consigue funding.',
+            'line_2' => 'Cobra.',
+            'line_3' => 'Sin límites de tiempo.',
         ],
         'mobile_description' => [
-            'line_1' => 'Demuestra tu estrategia. Consigue financiación.',
-            'line_2' => 'Escala tu rendimiento.',
+            'line_1' => 'Supera el challenge. Accede a cuentas funded.',
+            'line_2' => 'Retira rápido.',
         ],
         'primary_cta' => 'Iniciar Challenge',
         'free_trial_cta' => 'Prueba Gratis',
@@ -813,6 +814,8 @@ return [
         'voice_no_speech' => 'No se detectó voz. Inténtalo de nuevo.',
         'voice_mic_blocked' => 'El acceso al micrófono fue bloqueado. Revisa los permisos del navegador e inténtalo de nuevo.',
         'voice_audio_capture' => 'No se encontró un micrófono funcional para la entrada de voz.',
+        'voice_permission_checking' => 'Comprobando acceso al micrófono...',
+        'voice_secure_context' => 'La entrada por voz requiere un contexto seguro del navegador, como HTTPS o localhost.',
         'voice_answer_title' => 'Respuesta basada en FAQ',
         'voice_empty' => 'Pregunta por payouts, reglas, escalado, soporte o elegibilidad de cuenta.',
         'voice_open_faq' => 'Abrir FAQ completa',
@@ -1062,9 +1065,12 @@ return [
 
     'footer' => [
         'disclaimer_title' => 'Entorno simulado',
-        'company_title' => 'Estructura de footer y legal',
-        'summary' => 'Wolforix Ltd. opera como empresa de evaluación y educación en trading propietario. Todas las actividades de trading tienen lugar en un entorno simulado con fondos virtuales y no representan servicios de broker ni de inversión.',
-        'service_copy' => 'Wolforix no acepta depósitos, no gestiona fondos de clientes y no ejecuta operaciones en nombre de los usuarios. Las comisiones son solo por acceso al software, servicios de evaluación y herramientas educativas.',
+        'legal_copy' => [
+            'Wolforix Ltd. opera como una empresa de evaluación y educación en trading propietario. Todas las actividades de trading se realizan en un entorno simulado con fondos virtuales y no representan participación real en el mercado.',
+            'Wolforix no ofrece servicios de broker, asesoramiento de inversión ni gestión de carteras. La empresa no acepta depósitos, no mantiene fondos de clientes y no ejecuta operaciones en nombre de los usuarios.',
+            'Todas las comisiones corresponden únicamente al acceso al software, programas de evaluación y contenido educativo.',
+            'Operar en los mercados financieros implica riesgo. El rendimiento pasado en entornos simulados no garantiza resultados futuros en condiciones reales de trading.',
+        ],
         'legal_title' => 'Legal y políticas',
         'operations_title' => 'Operaciones',
         'operations_copy' => 'El soporte se gestiona por correo y, más adelante, por tickets dentro del dashboard. Los retiros manuales siguen revisados por administración y la aprobación depende del cumplimiento de reglas.',
@@ -1073,6 +1079,13 @@ return [
         'simulated_notice' => 'Cualquier funded account mostrado en esta interfaz forma parte de un programa de evaluación simulado. No se opera capital real en mercados financieros en vivo.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Todos los derechos reservados.',
+    ],
+
+    'cookie' => [
+        'title' => 'Aviso de cookies',
+        'message' => 'Utilizamos cookies para mejorar tu experiencia y respaldar la funcionalidad esencial del sitio.',
+        'accept' => 'Aceptar',
+        'learn_more' => 'Más información',
     ],
 
     'fixed_disclaimer' => [

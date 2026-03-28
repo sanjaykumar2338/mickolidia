@@ -69,15 +69,16 @@ return [
 
     'home' => [
         'eyebrow' => 'Modernes Prop Trading',
-        'title' => 'Beweise es. Werde finanziert. Skaliere schnell.',
-        'description' => "Die meisten Trader scheitern an Prop-Firm-Challenges.\nWir geben dir die Struktur, um zu bestehen und zu skalieren.",
+        'title' => 'Werde funded. Werde ausgezahlt. Keine Zeitlimits.',
+        'description' => 'Bestehe die Challenge. Erhalte Zugriff auf funded Konten. Ziehe schnell Gewinne ab.',
         'mobile_title' => [
-            'line_1' => 'Beweise es.',
-            'line_2' => 'Werde finanziert.',
+            'line_1' => 'Werde funded.',
+            'line_2' => 'Werde ausgezahlt.',
+            'line_3' => 'Keine Zeitlimits.',
         ],
         'mobile_description' => [
-            'line_1' => 'Beweise deine Strategie. Werde finanziert.',
-            'line_2' => 'Skaliere deine Performance.',
+            'line_1' => 'Bestehe die Challenge. Erhalte funded Konten.',
+            'line_2' => 'Ziehe schnell Gewinne ab.',
         ],
         'primary_cta' => 'Challenge starten',
         'free_trial_cta' => 'Kostenlos testen',
@@ -813,6 +814,8 @@ return [
         'voice_no_speech' => 'Es wurde keine Sprache erkannt. Bitte versuche es erneut.',
         'voice_mic_blocked' => 'Der Mikrofonzugriff wurde blockiert. Prüfe die Browser-Berechtigungen und versuche es erneut.',
         'voice_audio_capture' => 'Kein funktionierendes Mikrofon für Spracheingabe gefunden.',
+        'voice_permission_checking' => 'Mikrofonzugriff wird geprüft...',
+        'voice_secure_context' => 'Die Spracheingabe benötigt einen sicheren Browser-Kontext wie HTTPS oder localhost.',
         'voice_answer_title' => 'FAQ-basierte Antwort',
         'voice_empty' => 'Frage nach Auszahlungen, Regeln, Skalierung, Support oder Konto-Voraussetzungen.',
         'voice_open_faq' => 'Komplette FAQ oeffnen',
@@ -1062,9 +1065,12 @@ return [
 
     'footer' => [
         'disclaimer_title' => 'Simulierte Umgebung',
-        'company_title' => 'Footer- und Rechtsstruktur',
-        'summary' => 'Wolforix Ltd. arbeitet als Unternehmen für proprietäre Trading-Evaluation und Ausbildung. Alle Handelsaktivitäten finden in einer simulierten Umgebung mit virtuellen Geldern statt und stellen keine Brokerage- oder Investmentdienstleistungen dar.',
-        'service_copy' => 'Wolforix nimmt keine Einlagen an, verwaltet keine Kundengelder und führt keine Trades im Namen von Nutzern aus. Gebühren beziehen sich ausschließlich auf Softwarezugang, Evaluationsservices und Ausbildungstools.',
+        'legal_copy' => [
+            'Wolforix Ltd. arbeitet als Unternehmen für proprietäre Trading-Evaluation und Ausbildung. Alle Handelsaktivitäten werden in einer simulierten Umgebung mit virtuellen Geldern durchgeführt und stellen keine echte Marktteilnahme dar.',
+            'Wolforix bietet keine Brokerage-Dienstleistungen, Anlageberatung oder Portfolioverwaltung an. Das Unternehmen nimmt keine Einlagen an, hält keine Kundengelder und führt keine Trades im Namen von Nutzern aus.',
+            'Alle Gebühren dienen ausschließlich dem Zugang zu Software, Evaluationsprogrammen und Bildungsinhalten.',
+            'Der Handel an Finanzmärkten ist mit Risiken verbunden. Vergangene Ergebnisse in simulierten Umgebungen garantieren keine zukünftigen Resultate unter Live-Marktbedingungen.',
+        ],
         'legal_title' => 'Rechtliches & Richtlinien',
         'operations_title' => 'Betrieb',
         'operations_copy' => 'Support wird per E-Mail und später über Dashboard-Tickets abgewickelt. Manuelle Auszahlungen bleiben administrativ geprüft, und die Genehmigung hängt von der Einhaltung der Regeln ab.',
@@ -1073,6 +1079,13 @@ return [
         'simulated_notice' => 'Jedes in dieser Oberfläche angezeigte Funded Account ist Teil eines simulierten Evaluationsprogramms. Es wird kein echtes Kapital an Live-Finanzmärkten gehandelt.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Alle Rechte vorbehalten.',
+    ],
+
+    'cookie' => [
+        'title' => 'Cookie-Hinweis',
+        'message' => 'Wir verwenden Cookies, um deine Erfahrung zu verbessern und wichtige Website-Funktionen zu unterstützen.',
+        'accept' => 'Akzeptieren',
+        'learn_more' => 'Mehr erfahren',
     ],
 
     'fixed_disclaimer' => [

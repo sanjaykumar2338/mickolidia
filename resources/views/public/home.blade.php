@@ -89,6 +89,9 @@
                             <h1 class="mobile-hero-title">
                                 <span>{{ __('site.home.mobile_title.line_1') }}</span>
                                 <span>{{ __('site.home.mobile_title.line_2') }}</span>
+                                @if (filled(__('site.home.mobile_title.line_3')))
+                                    <span>{{ __('site.home.mobile_title.line_3') }}</span>
+                                @endif
                             </h1>
                             <p class="mobile-hero-copy">
                                 <span>{{ __('site.home.mobile_description.line_1') }}</span>

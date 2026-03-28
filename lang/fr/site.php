@@ -64,15 +64,16 @@ return array_replace_recursive($en, [
     ],
     'home' => [
         'eyebrow' => 'Prop Trading Moderne',
-        'title' => 'Prouvez-le. Soyez financé. Accélérez votre croissance.',
-        'description' => "La plupart des traders échouent aux challenges de prop firm.\nNous vous donnons la structure pour réussir puis scaler.",
+        'title' => 'Obtenez un compte funded. Soyez payé. Sans limite de temps.',
+        'description' => 'Réussissez le challenge. Accédez à des comptes funded. Retirez rapidement.',
         'mobile_title' => [
-            'line_1' => 'Prouvez-le.',
-            'line_2' => 'Soyez financé.',
+            'line_1' => 'Obtenez un compte funded.',
+            'line_2' => 'Soyez payé.',
+            'line_3' => 'Sans limite de temps.',
         ],
         'mobile_description' => [
-            'line_1' => 'Prouvez votre stratégie. Soyez financé.',
-            'line_2' => 'Faites évoluer votre performance.',
+            'line_1' => 'Réussissez le challenge. Accédez à des comptes funded.',
+            'line_2' => 'Retirez rapidement.',
         ],
         'primary_cta' => 'Commencer le Challenge',
         'free_trial_cta' => 'Essai Gratuit',
@@ -364,6 +365,8 @@ return array_replace_recursive($en, [
         'voice_no_speech' => 'Aucune voix détectée. Veuillez réessayer.',
         'voice_mic_blocked' => 'L’accès au microphone a été bloqué. Vérifiez les permissions du navigateur puis réessayez.',
         'voice_audio_capture' => 'Aucun microphone fonctionnel n’a été détecté pour la saisie vocale.',
+        'voice_permission_checking' => 'Vérification de l’accès au microphone...',
+        'voice_secure_context' => 'La saisie vocale nécessite un contexte navigateur sécurisé comme HTTPS ou localhost.',
         'voice_answer_title' => 'Réponse basée sur la FAQ',
         'voice_empty' => 'Posez une question sur les payouts, les règles, le scaling, le support ou l’éligibilité du compte.',
         'voice_open_faq' => 'Ouvrir la FAQ complète',
@@ -380,8 +383,21 @@ return array_replace_recursive($en, [
         ],
     ],
     'footer' => [
+        'disclaimer_title' => 'Environnement simulé',
+        'legal_copy' => [
+            'Wolforix Ltd. exerce comme société d’évaluation et d’éducation au trading propriétaire. Toutes les activités de trading sont réalisées dans un environnement simulé utilisant des fonds virtuels et ne représentent pas une participation réelle au marché.',
+            'Wolforix ne fournit pas de services de brokerage, de conseil en investissement ou de gestion de portefeuille. La société n’accepte pas de dépôts, ne détient pas de fonds clients et n’exécute pas d’ordres pour le compte des utilisateurs.',
+            'Tous les frais correspondent uniquement à l’accès au logiciel, aux programmes d’évaluation et au contenu éducatif.',
+            'Le trading sur les marchés financiers comporte des risques. Les performances passées dans des environnements simulés ne garantissent pas des résultats futurs dans des conditions réelles de trading.',
+        ],
         'contact_title' => 'Contact & Support',
         'contact_copy' => 'Besoin d’aide directe avant d’acheter ? Contactez l’équipe support ou ouvrez l’Assistant IA pour obtenir rapidement des réponses sur les règles et la plateforme.',
+    ],
+    'cookie' => [
+        'title' => 'Avis cookies',
+        'message' => 'Nous utilisons des cookies pour améliorer votre expérience et assurer les fonctionnalités essentielles du site.',
+        'accept' => 'Accepter',
+        'learn_more' => 'En savoir plus',
     ],
     'legal' => [
         'eyebrow' => 'Juridique Wolforix',

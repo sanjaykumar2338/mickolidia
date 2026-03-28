@@ -11,9 +11,9 @@
         data-locale-toggle
         aria-expanded="false"
         aria-label="{{ __('site.locale.current_label') }}: {{ $current['native'] ?? strtoupper($currentLocale) }}"
-        class="flex items-center gap-3 rounded-full border border-white/8 bg-white/4 px-3 py-2 text-left text-sm text-white transition hover:border-amber-300/30 hover:bg-white/7"
+        class="{{ $compact ? 'gap-2 px-2.5 py-2' : 'gap-3 px-3 py-2' }} flex items-center rounded-full border border-white/8 bg-white/4 text-left text-sm text-white transition hover:border-amber-300/30 hover:bg-white/7"
     >
-        <span class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-amber-400/16 bg-slate-950/80">
+        <span class="{{ $compact ? 'h-8 w-8' : 'h-9 w-9' }} flex items-center justify-center overflow-hidden rounded-full border border-amber-400/16 bg-slate-950/80">
             @if (! empty($current['flag_asset']))
                 <img src="{{ asset($current['flag_asset']) }}" alt="" aria-hidden="true" class="h-full w-full object-cover">
             @else
@@ -24,7 +24,7 @@
             <span class="block text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.locale.current_label') }}</span>
             <span class="mt-0.5 block text-sm font-medium text-white">{{ $current['native'] }}</span>
         </span>
-        <svg class="h-4 w-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <svg class="{{ $compact ? 'h-3.5 w-3.5' : 'h-4 w-4' }} text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
         </svg>
     </button>

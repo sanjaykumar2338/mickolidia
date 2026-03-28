@@ -14,9 +14,11 @@
                 </div>
             </div>
             <span class="section-label mt-6">{{ __('site.footer.disclaimer_title') }}</span>
-            <h2 class="mt-5 text-2xl font-semibold text-white">{{ __('site.footer.company_title') }}</h2>
-            <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300">{{ __('site.footer.summary') }}</p>
-            <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.service_copy') }}</p>
+            <div class="mt-5 space-y-4 text-sm leading-7 text-slate-300">
+                @foreach (trans('site.footer.legal_copy') as $paragraph)
+                    <p>{{ $paragraph }}</p>
+                @endforeach
+            </div>
         </div>
 
         <div>

@@ -69,15 +69,16 @@ return [
 
     'home' => [
         'eyebrow' => 'Modern Prop Trading',
-        'title' => 'Prove It. Get Funded. Scale Fast.',
-        'description' => "Most traders fail prop firm challenges.\nWe give you the structure to pass and scale.",
+        'title' => 'Get Funded. Get Paid. No Time Limits.',
+        'description' => 'Pass the challenge. Access funded accounts. Withdraw fast.',
         'mobile_title' => [
-            'line_1' => 'Prove It.',
-            'line_2' => 'Get Funded.',
+            'line_1' => 'Get Funded.',
+            'line_2' => 'Get Paid.',
+            'line_3' => 'No Time Limits.',
         ],
         'mobile_description' => [
-            'line_1' => 'Prove your strategy. Get funded.',
-            'line_2' => 'Scale your performance.',
+            'line_1' => 'Pass the challenge. Access funded accounts.',
+            'line_2' => 'Withdraw fast.',
         ],
         'primary_cta' => 'Start Challenge',
         'free_trial_cta' => 'Free Trial',
@@ -813,6 +814,8 @@ return [
         'voice_no_speech' => 'No speech was detected. Please try again.',
         'voice_mic_blocked' => 'Microphone access was blocked. Check browser permissions and try again.',
         'voice_audio_capture' => 'No working microphone was found for voice input.',
+        'voice_permission_checking' => 'Checking microphone access...',
+        'voice_secure_context' => 'Voice input requires a secure browser context such as HTTPS or localhost.',
         'voice_answer_title' => 'FAQ-based answer',
         'voice_empty' => 'Ask about payouts, rules, scaling, support, or account eligibility.',
         'voice_open_faq' => 'Open full FAQ',
@@ -1062,9 +1065,12 @@ return [
 
     'footer' => [
         'disclaimer_title' => 'Simulated environment',
-        'company_title' => 'Footer & legal structure',
-        'summary' => 'Wolforix Ltd. operates as a proprietary trading evaluation and education company. All trading activities take place in a simulated environment using virtual funds and do not represent brokerage or investment services.',
-        'service_copy' => 'Wolforix does not accept deposits, manage client funds, or execute trades on behalf of users. Fees are for software access, evaluation services, and educational tools only.',
+        'legal_copy' => [
+            'Wolforix Ltd. operates as a proprietary trading evaluation and education company. All trading activities are conducted in a simulated environment using virtual funds and do not represent real market participation.',
+            'Wolforix does not provide brokerage services, investment advice, or portfolio management. The company does not accept deposits, hold client funds, or execute trades on behalf of users.',
+            'All fees are solely for access to software, evaluation programs, and educational content.',
+            'Trading in financial markets involves risk. Past performance in simulated environments does not guarantee future results in live trading conditions.',
+        ],
         'legal_title' => 'Legal & Policies',
         'operations_title' => 'Operations',
         'operations_copy' => 'Support is handled through email and later dashboard ticketing. Manual withdrawals remain admin-reviewed, and payout approval depends on rule compliance.',
@@ -1073,6 +1079,13 @@ return [
         'simulated_notice' => 'Any funded account shown in this interface is part of a simulated evaluation program. No real capital is traded in live financial markets.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'All rights reserved.',
+    ],
+
+    'cookie' => [
+        'title' => 'Cookie Notice',
+        'message' => 'We use cookies to improve your experience and support essential site functionality.',
+        'accept' => 'Accept',
+        'learn_more' => 'Learn More',
     ],
 
     'fixed_disclaimer' => [

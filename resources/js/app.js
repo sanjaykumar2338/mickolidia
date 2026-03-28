@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Ignore storage access issues.
             }
         },
+        remove(key) {
+            try {
+                window.localStorage.removeItem(key);
+            } catch (error) {
+                // Ignore storage access issues.
+            }
+        },
     };
 
     const normalizeText = (value) => (value ?? '')
@@ -78,6 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     syncLaunchPromoCodeToCheckoutLinks();
 
+    const setBodyState = (className, enabled) => {
+        document.body.classList.toggle(className, enabled);
+        document.documentElement.classList.toggle(className, enabled);
+    };
+
     const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
 
     if (fixedDisclaimer instanceof HTMLElement) {
@@ -92,6 +104,36 @@ document.addEventListener('DOMContentLoaded', () => {
             closeButton.addEventListener('click', () => {
                 fixedDisclaimer.classList.add('hidden');
                 storage.set(storageKey, '1');
+            });
+        }
+    }
+
+    const cookieBanner = document.querySelector('[data-cookie-banner]');
+
+    if (cookieBanner instanceof HTMLElement) {
+        const acceptButton = cookieBanner.querySelector('[data-cookie-banner-accept]');
+        const storageKey = 'wolforix-cookie-consent-accepted';
+
+        const hideCookieBanner = () => {
+            cookieBanner.classList.add('hidden');
+            setBodyState('cookie-banner-visible', false);
+        };
+
+        const showCookieBanner = () => {
+            cookieBanner.classList.remove('hidden');
+            setBodyState('cookie-banner-visible', true);
+        };
+
+        if (storage.get(storageKey) === '1') {
+            hideCookieBanner();
+        } else {
+            showCookieBanner();
+        }
+
+        if (acceptButton instanceof HTMLButtonElement) {
+            acceptButton.addEventListener('click', () => {
+                storage.set(storageKey, '1');
+                hideCookieBanner();
             });
         }
     }
@@ -871,9 +913,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let replyPlaybackTimeoutId = null;
         let activeReplyUtterance = null;
         let queuedReplyPlayback = null;
-        const voiceDebug = (...args) => {
-            console.log('[Wolforix Voice]', ...args);
-        };
+        let microphonePermissionState = 'prompt';
+        let permissionListenerBound = false;
+        const voiceDebug = () => {};
 
         const setPlayButtonState = (speaking, enabled = currentAnswerText.trim() !== '') => {
             if (!(playButton instanceof HTMLButtonElement)) {
@@ -934,6 +976,85 @@ document.addEventListener('DOMContentLoaded', () => {
             return item?.speech_locale
                 ?? speechLocaleMap[itemLocale]
                 ?? activeSpeechLocale;
+        };
+
+        const hasSecureVoiceContext = window.isSecureContext
+            || ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+
+        const checkMicrophonePermission = async () => {
+            if (!navigator.permissions?.query) {
+                return microphonePermissionState;
+            }
+
+            try {
+                const permissionStatus = await navigator.permissions.query({
+                    name: 'microphone',
+                });
+
+                microphonePermissionState = permissionStatus.state ?? microphonePermissionState;
+
+                if (!permissionListenerBound && typeof permissionStatus.addEventListener === 'function') {
+                    permissionStatus.addEventListener('change', () => {
+                        microphonePermissionState = permissionStatus.state ?? microphonePermissionState;
+                    });
+                    permissionListenerBound = true;
+                }
+            } catch (error) {
+                // Ignore permissions API failures and fall back to direct access requests.
+            }
+
+            return microphonePermissionState;
+        };
+
+        const requestMicrophoneAccess = async () => {
+            if (!navigator.mediaDevices?.getUserMedia) {
+                return {
+                    ok: true,
+                    message: '',
+                };
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                });
+
+                stream.getTracks().forEach((track) => {
+                    track.stop();
+                });
+
+                microphonePermissionState = 'granted';
+
+                return {
+                    ok: true,
+                    message: '',
+                };
+            } catch (error) {
+                const errorName = error instanceof DOMException
+                    ? error.name
+                    : String(error?.name ?? '');
+
+                if (['NotAllowedError', 'PermissionDeniedError'].includes(errorName)) {
+                    microphonePermissionState = 'denied';
+
+                    return {
+                        ok: false,
+                        message: micButton?.dataset.micBlocked ?? '',
+                    };
+                }
+
+                if (['NotFoundError', 'DevicesNotFoundError'].includes(errorName)) {
+                    return {
+                        ok: false,
+                        message: micButton?.dataset.audioCapture ?? '',
+                    };
+                }
+
+                return {
+                    ok: false,
+                    message: micButton?.dataset.micBlocked ?? '',
+                };
+            }
         };
 
         if ('speechSynthesis' in window) {
@@ -1310,14 +1431,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (!(SpeechRecognition instanceof Function)) {
+        if (!(SpeechRecognition instanceof Function) || !hasSecureVoiceContext) {
             if (micButton instanceof HTMLButtonElement) {
                 micButton.disabled = true;
                 micButton.classList.add('opacity-60', 'cursor-not-allowed');
             }
 
             if (status instanceof HTMLElement) {
-                status.textContent = micButton?.dataset.unsupported ?? status.textContent ?? '';
+                status.textContent = hasSecureVoiceContext
+                    ? (micButton?.dataset.unsupported ?? status.textContent ?? '')
+                    : (micButton?.dataset.secureContext ?? status.textContent ?? '');
             }
         } else if (micButton instanceof HTMLButtonElement && input instanceof HTMLInputElement) {
             recognition = new SpeechRecognition();
@@ -1381,9 +1504,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            micButton.addEventListener('click', () => {
+            micButton.addEventListener('click', async () => {
                 if (isListening) {
                     stopVoiceSession();
+                    return;
+                }
+
+                pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
+                setStatusMessage(micButton.dataset.permissionChecking ?? status?.textContent ?? '');
+
+                const permissionState = await checkMicrophonePermission();
+
+                if (permissionState === 'denied') {
+                    setMicState(false);
+                    setStatusMessage(micButton.dataset.micBlocked ?? status?.dataset.emptyState ?? '');
+                    return;
+                }
+
+                const access = await requestMicrophoneAccess();
+
+                if (!access.ok) {
+                    setMicState(false);
+                    setStatusMessage(access.message || status?.dataset.emptyState || '');
                     return;
                 }
 
