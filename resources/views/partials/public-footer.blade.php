@@ -6,15 +6,15 @@
                     <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain">
                 </div>
                 <div>
-                    <p class="inline-flex items-start text-base font-semibold tracking-[0.24em] text-amber-300">
+                    <p class="inline-flex items-start text-sm font-semibold tracking-[0.24em] text-slate-200">
                         <span>WOLFORIX</span>
-                        <span class="ml-1 text-[0.58em] leading-none tracking-normal text-amber-200">®</span>
+                        <span class="ml-1 text-[0.58em] leading-none tracking-normal text-slate-400">®</span>
                     </p>
-                    <p class="mt-2 text-sm text-slate-400">{{ __('site.public_layout.simulated_notice') }}</p>
+                    <p class="mt-2 text-[13px] leading-6 text-slate-500">{{ __('site.public_layout.simulated_notice') }}</p>
                 </div>
             </div>
-            <span class="section-label mt-6">{{ __('site.footer.disclaimer_title') }}</span>
-            <div class="mt-5 space-y-4 text-sm leading-7 text-slate-300">
+            <p class="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.disclaimer_title') }}</p>
+            <div class="mt-4 space-y-3 text-[13px] leading-6 text-slate-400">
                 @foreach (trans('site.footer.legal_copy') as $paragraph)
                     <p>{{ $paragraph }}</p>
                 @endforeach
@@ -22,12 +22,12 @@
         </div>
 
         <div>
-            <h3 class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">{{ __('site.footer.legal_title') }}</h3>
+            <h3 class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.legal_title') }}</h3>
             <div class="mt-5 space-y-3">
                 @foreach (config('wolforix.legal_pages') as $page)
                     <a
                         href="{{ route($page['route_name']) }}"
-                        class="block rounded-2xl border border-white/6 bg-white/3 px-4 py-3 text-sm text-slate-300 transition hover:border-amber-400/20 hover:bg-white/5 hover:text-white"
+                        class="block rounded-2xl border border-white/6 bg-white/3 px-4 py-3 text-sm text-slate-400 transition hover:border-white/12 hover:bg-white/5 hover:text-white"
                     >
                         {{ __('site.legal.link_labels.'.$page['content_key']) }}
                     </a>
@@ -35,31 +35,28 @@
             </div>
         </div>
 
-        <div class="space-y-6">
-            <div class="surface-card rounded-3xl p-6">
-                <h3 class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">{{ __('site.footer.operations_title') }}</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.operations_copy') }}</p>
+        <div class="surface-card rounded-3xl p-6">
+            <h3 class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.contact_title') }}</h3>
+            <p class="mt-4 text-[13px] leading-6 text-slate-400">{{ __('site.footer.contact_copy') }}</p>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <a href="{{ route('contact') }}" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
+                    {{ __('site.nav.contact') }}
+                </a>
+                <a href="mailto:{{ config('wolforix.support.email') }}" class="text-sm font-medium text-slate-300 transition hover:text-white">
+                    {{ config('wolforix.support.email') }}
+                </a>
+                <button type="button" data-wolfi-launch class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/6">
+                    {{ __('site.ai_assistant.name') }}
+                </button>
             </div>
-            <div class="surface-card rounded-3xl p-6">
-                <h3 class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-300">{{ __('site.footer.contact_title') }}</h3>
-                <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.footer.contact_copy') }}</p>
-                <div class="mt-5 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('contact') }}" class="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/8">
-                        {{ __('site.nav.contact') }}
-                    </a>
-                    <a href="mailto:{{ config('wolforix.support.email') }}" class="text-sm font-medium text-amber-200 transition hover:text-amber-100">
-                        {{ config('wolforix.support.email') }}
-                    </a>
-                </div>
-            </div>
-            <div class="rounded-3xl border border-amber-400/20 bg-amber-400/10 p-6 text-sm leading-7 text-amber-50">
+            <p class="mt-5 text-xs leading-6 text-slate-500">
                 {{ __('site.footer.simulated_notice') }}
-            </div>
+            </p>
         </div>
     </div>
 
     <div class="border-t border-white/5">
-        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-sm text-slate-500 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-xs text-slate-500 lg:flex-row lg:items-center lg:justify-between lg:px-8">
             <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
             <p>{{ __('site.footer.company_location') }}</p>
         </div>

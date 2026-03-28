@@ -66,7 +66,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Contact Us')
             ->assertSee(config('wolforix.support.email'))
             ->assertSee('Live chat')
-            ->assertSee('AI voice assistant')
+            ->assertSee('Wolfi AI assistant')
             ->assertSee('Play answer')
             ->assertSee('"locale":"en"', false)
             ->assertSee('"locale":"de"', false)
@@ -254,7 +254,11 @@ class WolforixPlatformTest extends TestCase
                 __('site.auth.login.title'),
                 __('site.auth.register.title'),
                 __('site.auth.notice'),
-            ]);
+            ])
+            ->assertSee('Continue with Google')
+            ->assertSee('Continue with Facebook')
+            ->assertSee('Continue with Apple')
+            ->assertSee('or continue with');
     }
 
     public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void

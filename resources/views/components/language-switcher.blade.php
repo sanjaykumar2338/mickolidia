@@ -1,4 +1,4 @@
-@props(['compact' => false])
+@props(['compact' => false, 'fullWidth' => false])
 
 @php($currentLocale = app()->getLocale())
 @php($supportedLocales = config('wolforix.supported_locales', []))
@@ -11,7 +11,7 @@
         data-locale-toggle
         aria-expanded="false"
         aria-label="{{ __('site.locale.current_label') }}: {{ $current['native'] ?? strtoupper($currentLocale) }}"
-        class="{{ $compact ? 'gap-2 px-2.5 py-2' : 'gap-3 px-3 py-2' }} flex items-center rounded-full border border-white/8 bg-white/4 text-left text-sm text-white transition hover:border-amber-300/30 hover:bg-white/7"
+        class="{{ $compact ? 'gap-2 px-2.5 py-2' : 'gap-3 px-3 py-2' }} {{ $fullWidth ? 'w-full justify-between' : '' }} flex items-center rounded-full border border-white/8 bg-white/4 text-left text-sm text-white transition hover:border-amber-300/30 hover:bg-white/7"
     >
         <span class="{{ $compact ? 'h-8 w-8' : 'h-9 w-9' }} flex items-center justify-center overflow-hidden rounded-full border border-amber-400/16 bg-slate-950/80">
             @if (! empty($current['flag_asset']))
@@ -29,7 +29,7 @@
         </svg>
     </button>
 
-    <div data-locale-menu class="pointer-events-auto absolute right-0 top-full z-[140] mt-3 hidden w-[18rem] rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+    <div data-locale-menu class="pointer-events-auto absolute top-full z-[140] mt-3 hidden {{ $fullWidth ? 'left-0 right-0 w-auto min-w-full' : 'right-0 w-[18rem]' }} rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <p class="px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.locale.menu_title') }}</p>
 
         <div class="mt-1 space-y-1">

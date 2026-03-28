@@ -7,6 +7,32 @@
     $returningToCheckout = str_contains($intendedUrl, route('checkout.show', [], false));
     $loginErrors = $errors->getBag('login');
     $registerErrors = $errors->getBag('register');
+    $socialProviders = [
+        [
+            'key' => 'google',
+            'label' => __('site.auth.login.social_google'),
+            'route_names' => ['social.google.redirect', 'auth.google.redirect', 'login.google.redirect', 'oauth.google.redirect'],
+        ],
+        [
+            'key' => 'facebook',
+            'label' => __('site.auth.login.social_facebook'),
+            'route_names' => ['social.facebook.redirect', 'auth.facebook.redirect', 'login.facebook.redirect', 'oauth.facebook.redirect'],
+        ],
+        [
+            'key' => 'apple',
+            'label' => __('site.auth.login.social_apple'),
+            'route_names' => ['social.apple.redirect', 'auth.apple.redirect', 'login.apple.redirect', 'oauth.apple.redirect'],
+        ],
+    ];
+
+    $socialProviders = array_map(static function (array $provider): array {
+        $routeName = collect($provider['route_names'])->first(static fn (string $candidate): bool => Route::has($candidate));
+        $provider['href'] = $routeName ? route($routeName) : null;
+
+        return $provider;
+    }, $socialProviders);
+
+    $hasAvailableSocialProvider = collect($socialProviders)->contains(static fn (array $provider): bool => filled($provider['href']));
 @endphp
 
 @section('content')
@@ -80,6 +106,80 @@
                             {{ __('site.auth.login.submit') }}
                         </button>
                     </form>
+
+                    <div class="mt-7">
+                        <div class="flex items-center gap-3">
+                            <span class="h-px flex-1 bg-white/10"></span>
+                            <span class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.auth.login.social_divider') }}</span>
+                            <span class="h-px flex-1 bg-white/10"></span>
+                        </div>
+
+                        <div class="mt-4 space-y-3">
+                            @foreach ($socialProviders as $provider)
+                                @php($providerUnavailable = blank($provider['href']))
+
+                                @if ($providerUnavailable)
+                                    <button
+                                        type="button"
+                                        disabled
+                                        aria-disabled="true"
+                                        class="social-auth-button social-auth-button-disabled"
+                                    >
+                                        <span class="social-auth-button-icon">
+                                            @if ($provider['key'] === 'google')
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                                                    <path fill="#EA4335" d="M12 10.2v3.92h5.45c-.24 1.26-.95 2.33-2.01 3.05l3.24 2.51c1.89-1.74 2.98-4.29 2.98-7.32 0-.72-.06-1.42-.18-2.09H12Z"/>
+                                                    <path fill="#34A853" d="M12 22c2.7 0 4.96-.89 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A9.99 9.99 0 0 0 12 22Z"/>
+                                                    <path fill="#4A90E2" d="M6.41 13.92A5.98 5.98 0 0 1 6.1 12c0-.67.12-1.31.31-1.92V7.49H3.06A9.99 9.99 0 0 0 2 12c0 1.61.39 3.13 1.06 4.51l3.35-2.59Z"/>
+                                                    <path fill="#FBBC05" d="M12 5.96c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.95 2.96 14.69 2 12 2 8.09 2 4.72 4.24 3.06 7.49l3.35 2.59c.79-2.36 2.99-4.12 5.59-4.12Z"/>
+                                                </svg>
+                                            @elseif ($provider['key'] === 'facebook')
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                                                    <path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.03 4.39 11.03 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.54-4.7 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.5 0-1.97.94-1.97 1.89v2.27h3.35l-.54 3.49h-2.81V24C19.61 23.1 24 18.1 24 12.07Z"/>
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                                                    <path d="M16.37 12.33c.02 2.61 2.29 3.48 2.31 3.49-.02.06-.36 1.25-1.2 2.48-.72 1.06-1.47 2.11-2.65 2.13-1.16.02-1.53-.69-2.86-.69-1.33 0-1.74.67-2.83.71-1.13.04-1.99-1.14-2.72-2.19-1.5-2.17-2.64-6.14-1.11-8.82.76-1.33 2.12-2.17 3.59-2.19 1.12-.02 2.17.75 2.85.75.68 0 1.95-.93 3.29-.79.56.02 2.13.23 3.14 1.71-.08.05-1.87 1.09-1.85 3.41ZM14.78 5.52c.6-.73 1-1.74.89-2.75-.87.04-1.93.58-2.56 1.3-.56.64-1.05 1.67-.92 2.66.97.08 1.98-.49 2.59-1.21Z"/>
+                                                </svg>
+                                            @endif
+                                        </span>
+                                        <span class="flex-1 text-left">{{ $provider['label'] }}</span>
+                                        <span class="rounded-full border border-white/8 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                            {{ __('site.auth.login.social_unavailable_badge') }}
+                                        </span>
+                                    </button>
+                                @else
+                                    <a href="{{ $provider['href'] }}" class="social-auth-button">
+                                        <span class="social-auth-button-icon">
+                                            @if ($provider['key'] === 'google')
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                                                    <path fill="#EA4335" d="M12 10.2v3.92h5.45c-.24 1.26-.95 2.33-2.01 3.05l3.24 2.51c1.89-1.74 2.98-4.29 2.98-7.32 0-.72-.06-1.42-.18-2.09H12Z"/>
+                                                    <path fill="#34A853" d="M12 22c2.7 0 4.96-.89 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A9.99 9.99 0 0 0 12 22Z"/>
+                                                    <path fill="#4A90E2" d="M6.41 13.92A5.98 5.98 0 0 1 6.1 12c0-.67.12-1.31.31-1.92V7.49H3.06A9.99 9.99 0 0 0 2 12c0 1.61.39 3.13 1.06 4.51l3.35-2.59Z"/>
+                                                    <path fill="#FBBC05" d="M12 5.96c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.95 2.96 14.69 2 12 2 8.09 2 4.72 4.24 3.06 7.49l3.35 2.59c.79-2.36 2.99-4.12 5.59-4.12Z"/>
+                                                </svg>
+                                            @elseif ($provider['key'] === 'facebook')
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                                                    <path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.03 4.39 11.03 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.54-4.7 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.5 0-1.97.94-1.97 1.89v2.27h3.35l-.54 3.49h-2.81V24C19.61 23.1 24 18.1 24 12.07Z"/>
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor" aria-hidden="true">
+                                                    <path d="M16.37 12.33c.02 2.61 2.29 3.48 2.31 3.49-.02.06-.36 1.25-1.2 2.48-.72 1.06-1.47 2.11-2.65 2.13-1.16.02-1.53-.69-2.86-.69-1.33 0-1.74.67-2.83.71-1.13.04-1.99-1.14-2.72-2.19-1.5-2.17-2.64-6.14-1.11-8.82.76-1.33 2.12-2.17 3.59-2.19 1.12-.02 2.17.75 2.85.75.68 0 1.95-.93 3.29-.79.56.02 2.13.23 3.14 1.71-.08.05-1.87 1.09-1.85 3.41ZM14.78 5.52c.6-.73 1-1.74.89-2.75-.87.04-1.93.58-2.56 1.3-.56.64-1.05 1.67-.92 2.66.97.08 1.98-.49 2.59-1.21Z"/>
+                                                </svg>
+                                            @endif
+                                        </span>
+                                        <span class="flex-1 text-left">{{ $provider['label'] }}</span>
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+
+                        @unless ($hasAvailableSocialProvider)
+                            <p class="mt-4 text-xs leading-6 text-slate-500">
+                                {{ __('site.auth.login.social_setup_notice') }}
+                            </p>
+                        @endunless
+                    </div>
                 </section>
 
                 <section class="surface-card rounded-[2rem] p-6 sm:p-7">
