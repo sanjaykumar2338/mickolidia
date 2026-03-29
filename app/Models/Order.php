@@ -90,6 +90,11 @@ class Order extends Model
         return $this->hasOne(ChallengePurchase::class);
     }
 
+    public function tradingAccounts(): HasMany
+    {
+        return $this->hasMany(TradingAccount::class);
+    }
+
     public function isPaid(): bool
     {
         return $this->payment_status === self::PAYMENT_PAID;

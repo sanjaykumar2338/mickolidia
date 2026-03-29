@@ -9,11 +9,17 @@ use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\TradingAccounts\TradingAccountProvisioner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrderFulfillmentService
 {
+    public function __construct(
+        private readonly TradingAccountProvisioner $tradingAccountProvisioner,
+    ) {
+    }
+
     /**
      * @param  array<string, mixed>  $paymentData
      */
@@ -67,6 +73,7 @@ class OrderFulfillmentService
             ])->save();
 
             $this->syncUserSnapshot($user, $lockedOrder);
+            $this->tradingAccountProvisioner->provision($lockedOrder, $purchase, $plan);
 
             if ($purchase->wasRecentlyCreated) {
                 SendChallengePurchaseConfirmation::dispatch($lockedOrder->id);

@@ -423,11 +423,11 @@ return [
         'client_show' => [
             'title' => 'Kundenmetriken',
             'eyebrow' => 'Kundendetail',
-            'description' => 'Aktuelle Challenge-Metriken werden als Platzhalter-Admin-Snapshot angezeigt, bis die Live-Kontosynchronisierung verbunden ist.',
+            'description' => 'Prüfe kommerzielle Kundendaten, den verknüpften Handelskonto-Status und die neuesten Sync-Details in einer internen Ansicht.',
             'back' => 'Zurueck zu Kunden',
             'client_summary' => 'Kundenuebersicht',
             'metrics_overview' => 'Metriken-Uebersicht',
-            'placeholder_note' => 'Diese Metriken sind administrative Platzhalterwerte und stammen nach Moeglichkeit aus dem neuesten Trading-Konto. Live-Plattformberechnungen und echte Kontosynchronisierung bleiben in dieser Phase ausserhalb des Umfangs.',
+            'placeholder_note' => 'Die Metriken stammen jetzt aus dem neuesten verknüpften Handelskonto und der lokalen Sync-Schicht.',
             'account_snapshot' => 'Neuester Konto-Snapshot',
             'billing_summary' => 'Rechnungsdaten',
             'provider_references' => 'Provider-Referenzen',
@@ -1110,8 +1110,8 @@ return [
     ],
 
     'dashboard' => [
-        'preview_title' => 'Dashboard-Grundlage',
-        'preview_subtitle' => 'Nur Mock-Daten. Das Layout ist für Live-Challenge-Sync, Auszahlungslogik und spätere Plattform-Integrationen vorbereitet.',
+        'preview_title' => 'Trading-Dashboard',
+        'preview_subtitle' => 'Verfolge verknüpfte Challenge-Konten, synchronisierte Performance-Metriken, Auszahlungsfenster und Fortschrittsstatus an einem Ort.',
         'sidebar_label' => 'Trader-Arbeitsbereich',
         'simulated_badge' => 'Ansicht eines simulierten Evaluationskontos',
         'status_badge' => 'Intervall-Sync-Vorschau',
@@ -1174,7 +1174,7 @@ return [
         ],
         'accounts_page' => [
             'title' => 'Trading-Konten',
-            'subtitle' => 'Mock-Kontokarten für zukünftigen Live-Sync und Verwaltung des Evaluationsstatus.',
+            'subtitle' => 'Prüfe verknüpfte Challenge-Konten, Sync-Status und aktuellen Regel-Fortschritt.',
         ],
         'purchases' => [
             'title' => 'Bezahlte Challenge-Kaeufe',
@@ -1186,7 +1186,7 @@ return [
         ],
         'payouts_page' => [
             'title' => 'Auszahlungen',
-            'subtitle' => 'Berechtigungs-Kommunikation im Einklang mit der Auszahlungsrichtlinie und dem Konsistenzregel-Briefing des Kunden.',
+            'subtitle' => 'Überwache Funded-Auszahlungsfenster und Berechtigungen anhand der gespeicherten Konto-Lifecycle-Daten.',
         ],
         'settings_page' => [
             'title' => 'Einstellungen',

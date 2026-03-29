@@ -15,75 +15,97 @@
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <section class="surface-panel rounded-[2rem] p-6">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.overview.snapshot_title') }}</p>
-                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ $primaryAccount['plan'] }}</h2>
+            @if ($primaryAccount)
+                <section class="surface-panel rounded-[2rem] p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.overview.snapshot_title') }}</p>
+                            <h2 class="mt-3 text-2xl font-semibold text-white">{{ $primaryAccount['plan'] }}</h2>
+                        </div>
+                        <span class="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100">
+                            {{ $primaryAccount['status'] }}
+                        </span>
                     </div>
-                    <span class="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100">
-                        {{ $primaryAccount['status'] }}
-                    </span>
-                </div>
 
-                <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">{{ __('site.dashboard.overview.snapshot_copy') }}</p>
+                    <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">Live dashboard data now reads from the latest linked trading-account record and cTrader sync state.</p>
 
-                <dl class="mt-8 grid gap-4 md:grid-cols-2">
-                    <div class="surface-card rounded-3xl p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.reference') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['reference'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-3xl p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.platform') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['platform'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-3xl p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.stage') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['stage'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-3xl p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.next_sync') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['next_sync'] }}</dd>
-                    </div>
-                </dl>
-            </section>
+                    <dl class="mt-8 grid gap-4 md:grid-cols-2">
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.reference') }}</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['reference'] }}</dd>
+                        </div>
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.platform') }}</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['platform'] }}</dd>
+                        </div>
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.stage') }}</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['stage'] }}</dd>
+                        </div>
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Last synced</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['last_synced_at'] }}</dd>
+                        </div>
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform account ID</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['platform_account_id'] }}</dd>
+                        </div>
+                        <div class="surface-card rounded-3xl p-5">
+                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Sync status</dt>
+                            <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_status'] }}</dd>
+                        </div>
+                    </dl>
+
+                    @if ($primaryAccount['sync_error'])
+                        <div class="mt-6 rounded-[1.8rem] border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm leading-7 text-rose-100">
+                            {{ $primaryAccount['sync_error'] }}
+                        </div>
+                    @endif
+                </section>
+            @else
+                <section class="surface-panel rounded-[2rem] p-6">
+                    <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.overview.snapshot_title') }}</p>
+                    <h2 class="mt-3 text-2xl font-semibold text-white">{{ $emptyState['title'] }}</h2>
+                    <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">{{ $emptyState['message'] }}</p>
+                </section>
+            @endif
 
             <section class="space-y-6">
                 <div class="surface-card rounded-[2rem] p-6">
                     <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.overview.rules_title') }}</p>
-                    <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.dashboard.overview.rules_copy') }}</p>
+                    <p class="mt-3 text-sm leading-7 text-slate-400">Rule limits, payout windows, and progression state are stored alongside the linked trading account.</p>
 
                     <dl class="mt-6 space-y-3 text-sm">
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.target') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['profit_target'] }}%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryAccount['profit_target_percent'] ?? '0.0%' }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.daily_loss') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['daily_loss_limit'] }}%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryAccount['daily_drawdown_limit_percent'] ?? '0.0%' }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.max_loss') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['max_loss_limit'] }}%</dd>
+                            <dd class="font-semibold text-white">{{ $primaryAccount['max_drawdown_limit_percent'] ?? '0.0%' }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.min_days') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['minimum_trading_days'] }}</dd>
+                            <dd class="font-semibold text-white">{{ $primaryAccount['minimum_trading_days'] ?? 0 }}</dd>
                         </div>
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.dashboard.labels.cycle') }}</dt>
-                            <dd class="font-semibold text-white">{{ $primaryPlan['funded']['payout_cycle_days'] }} {{ __('site.home.days') }}</dd>
+                            <dd class="font-semibold text-white">{{ $primaryAccount['payout_cycle_days'] ?? 14 }} {{ __('site.home.days') }}</dd>
                         </div>
-                        @if ($primaryPlan['phases'][0]['leverage'])
+                        @if (($primaryAccount['leverage'] ?? null))
                             <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                 <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.leverage') }}</dt>
-                                <dd class="font-semibold text-white">{{ $primaryPlan['phases'][0]['leverage'] }}</dd>
+                                <dd class="font-semibold text-white">{{ $primaryAccount['leverage'] }}</dd>
                             </div>
                         @endif
-                        @if ($primaryPlan['funded']['first_withdrawal_days'])
+                        @if (($primaryAccount['first_payout_days'] ?? null))
                             <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                 <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
-                                <dd class="font-semibold text-white">{{ str_replace(':days', (string) $primaryPlan['funded']['first_withdrawal_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
+                                <dd class="font-semibold text-white">{{ str_replace(':days', (string) $primaryAccount['first_payout_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
                             </div>
                         @endif
                     </dl>
@@ -91,7 +113,7 @@
 
                 <div class="surface-card rounded-[2rem] p-6">
                     <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.overview.payout_title') }}</p>
-                    <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.dashboard.overview.payout_copy') }}</p>
+                    <p class="mt-3 text-sm leading-7 text-slate-400">Funded payout readiness is calculated from the account lifecycle, stored rule state, and payout timing fields.</p>
 
                     <div class="mt-6 space-y-3">
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3 text-sm text-slate-300">
@@ -104,6 +126,10 @@
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3 text-sm text-slate-300">
                             {{ $payoutSummary['cycle_note'] }}
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3 text-sm text-slate-300">
+                            <strong class="font-semibold text-white">Status:</strong>
+                            {{ $payoutSummary['status'] }}
                         </div>
                     </div>
                 </div>

@@ -592,6 +592,15 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'one_step',
             'account_status' => 'pending_activation',
         ]);
+        $this->assertDatabaseHas('trading_accounts', [
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_purchase_id' => ChallengePurchase::query()->where('order_id', $order->id)->value('id'),
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'platform_slug' => 'ctrader',
+            'account_status' => 'pending_activation',
+        ]);
     }
 
     public function test_checkout_cancel_marks_order_canceled_and_preserves_retry_after_auth(): void
@@ -691,7 +700,173 @@ class WolforixPlatformTest extends TestCase
         $this->postJson(route('payments.stripe.webhook'), $payload)->assertOk();
 
         $this->assertSame(1, ChallengePurchase::query()->where('order_id', $order->id)->count());
+        $this->assertSame(1, TradingAccount::query()->where('order_id', $order->id)->count());
         $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
+    }
+
+    public function test_dashboard_uses_real_trading_account_metrics_when_available(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Metrics Trader',
+            'email' => 'metrics@example.com',
+        ]);
+
+        UserProfile::query()->create([
+            'user_id' => $user->id,
+            'preferred_language' => 'en',
+            'timezone' => 'Europe/Berlin',
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'two-step-50000',
+            'name' => '2-Step Pro 50K',
+            'account_size' => 50000,
+            'currency' => 'USD',
+            'entry_fee' => 289,
+            'profit_target' => 10,
+            'daily_loss_limit' => 5,
+            'max_loss_limit' => 10,
+            'steps' => 2,
+            'profit_share' => 80,
+            'first_payout_days' => 21,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'two_step',
+            'account_size' => 50000,
+            'account_reference' => 'WFX-CT-50099',
+            'platform' => 'cTrader',
+            'platform_slug' => 'ctrader',
+            'platform_account_id' => 'ct-live-50099',
+            'platform_login' => '50099',
+            'platform_environment' => 'demo',
+            'platform_status' => 'connected',
+            'stage' => 'Challenge Step 1',
+            'status' => 'Active',
+            'account_type' => 'challenge',
+            'account_phase' => 'challenge',
+            'phase_index' => 1,
+            'account_status' => 'active',
+            'starting_balance' => 50000,
+            'balance' => 52340,
+            'equity' => 52010,
+            'profit_loss' => 2340,
+            'total_profit' => 2340,
+            'today_profit' => 440,
+            'daily_drawdown' => 210,
+            'max_drawdown' => 580,
+            'drawdown_percent' => 1.16,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 5000,
+            'profit_target_progress_percent' => 46.8,
+            'daily_drawdown_limit_percent' => 5,
+            'daily_drawdown_limit_amount' => 2500,
+            'max_drawdown_limit_percent' => 10,
+            'max_drawdown_limit_amount' => 5000,
+            'profit_split' => 80,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 2,
+            'sync_status' => 'success',
+            'last_synced_at' => now(),
+            'synced_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('WFX-CT-50099')
+            ->assertSee('ct-live-50099')
+            ->assertSee('$52,340.00');
+
+        $this->actingAs($user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('WFX-CT-50099')
+            ->assertSee('47%');
+    }
+
+    public function test_trading_sync_command_marks_account_skipped_when_ctrader_credentials_are_missing(): void
+    {
+        config()->set('trading.sync.enabled', true);
+        config()->set('trading.platforms.ctrader.enabled', true);
+        config()->set('trading.platforms.ctrader.use_mock_data', false);
+        config()->set('services.ctrader.base_url', null);
+        config()->set('services.ctrader.access_token', null);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => User::factory()->create()->id,
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'account_reference' => 'WFX-CT-SKIP01',
+            'platform' => 'cTrader',
+            'platform_slug' => 'ctrader',
+            'stage' => 'Challenge Step 1',
+            'status' => 'Pending Activation',
+            'account_type' => 'challenge',
+            'account_phase' => 'challenge',
+            'phase_index' => 1,
+            'account_status' => 'pending_activation',
+            'starting_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+        ]);
+
+        $this->artisan('trading:sync-accounts', [
+            '--account' => $account->id,
+        ])->assertExitCode(0);
+
+        $this->assertSame('skipped', $account->fresh()->sync_status);
+        $this->assertStringContainsString('credentials', (string) $account->fresh()->sync_error);
+    }
+
+    public function test_mock_ctrader_sync_updates_metrics_and_creates_snapshot(): void
+    {
+        config()->set('trading.sync.enabled', true);
+        config()->set('trading.platforms.ctrader.enabled', true);
+        config()->set('trading.platforms.ctrader.use_mock_data', true);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => User::factory()->create()->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'account_reference' => 'WFX-CT-MOCK01',
+            'platform' => 'cTrader',
+            'platform_slug' => 'ctrader',
+            'stage' => 'Challenge Step 1',
+            'status' => 'Pending Activation',
+            'account_type' => 'challenge',
+            'account_phase' => 'challenge',
+            'phase_index' => 1,
+            'account_status' => 'pending_activation',
+            'starting_balance' => 25000,
+            'balance' => 25000,
+            'equity' => 25000,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 2500,
+            'daily_drawdown_limit_percent' => 5,
+            'daily_drawdown_limit_amount' => 1250,
+            'max_drawdown_limit_percent' => 10,
+            'max_drawdown_limit_amount' => 2500,
+            'minimum_trading_days' => 3,
+        ]);
+
+        $this->artisan('trading:sync-accounts', [
+            '--account' => $account->id,
+        ])->assertExitCode(0);
+
+        $account->refresh();
+
+        $this->assertSame('success', $account->sync_status);
+        $this->assertNotNull($account->last_synced_at);
+        $this->assertNotNull($account->activated_at);
+        $this->assertDatabaseHas('trading_account_balance_snapshots', [
+            'trading_account_id' => $account->id,
+        ]);
     }
 
     public function test_payout_policy_contains_the_updated_cycle_wording(): void

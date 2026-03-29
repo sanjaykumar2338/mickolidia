@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ChallengePurchase extends Model
 {
@@ -45,5 +46,10 @@ class ChallengePurchase extends Model
     public function challengePlan(): BelongsTo
     {
         return $this->belongsTo(ChallengePlan::class);
+    }
+
+    public function tradingAccounts(): HasMany
+    {
+        return $this->hasMany(TradingAccount::class);
     }
 }

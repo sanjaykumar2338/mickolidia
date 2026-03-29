@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -13,6 +14,7 @@ class AdminClientController extends Controller
         $clients = User::query()
             ->with([
                 'profile',
+                'latestChallengeTradingAccount.challengePlan',
                 'latestTradingAccount.challengePlan',
                 'latestOrder.paymentAttempts',
                 'latestChallengePurchase.order',
@@ -30,12 +32,13 @@ class AdminClientController extends Controller
     {
         $user->loadMissing([
             'profile',
+            'latestChallengeTradingAccount.challengePlan',
             'latestTradingAccount.challengePlan',
             'latestOrder.paymentAttempts',
             'latestChallengePurchase.order',
         ]);
 
-        $latestAccount = $user->latestTradingAccount;
+        $latestAccount = $this->currentTradingAccount($user);
         $latestOrder = $user->latestOrder;
 
         return view('admin.clients.show', [
@@ -57,10 +60,12 @@ class AdminClientController extends Controller
                     'value' => $this->formatMoney((float) ($latestAccount?->total_profit ?? 0)),
                 ],
                 [
-                    'label' => __('site.admin.metrics.daily_loss'),
-                    'value' => $latestAccount?->challengePlan?->daily_loss_limit !== null
-                        ? number_format((float) $latestAccount->challengePlan->daily_loss_limit, 0).'%'
-                        : '0%',
+                    'label' => 'Balance',
+                    'value' => $this->formatMoney((float) ($latestAccount?->balance ?? 0)),
+                ],
+                [
+                    'label' => 'Equity',
+                    'value' => $this->formatMoney((float) ($latestAccount?->equity ?? 0)),
                 ],
                 [
                     'label' => __('site.admin.metrics.max_drawdown'),
@@ -80,6 +85,12 @@ class AdminClientController extends Controller
                     'label' => __('site.admin.metrics.current_status'),
                     'value' => $this->resolveAccountStatus($user),
                 ],
+                [
+                    'label' => 'Sync Status',
+                    'value' => $latestAccount?->sync_status
+                        ? $this->humanizeStatus((string) $latestAccount->sync_status)
+                        : 'Not synced',
+                ],
             ],
             'latestAccount' => $latestAccount,
             'billing' => [
@@ -96,6 +107,11 @@ class AdminClientController extends Controller
                 'checkout_id' => $latestOrder?->external_checkout_id ?? 'N/A',
                 'payment_id' => $latestOrder?->external_payment_id ?? 'N/A',
                 'customer_id' => $latestOrder?->external_customer_id ?? 'N/A',
+                'platform_account_id' => $latestAccount?->platform_account_id ?? 'Link pending',
+                'platform_login' => $latestAccount?->platform_login ?? 'Link pending',
+                'platform_environment' => $latestAccount?->platform_environment ?? 'N/A',
+                'last_synced_at' => $this->formatDateTime($latestAccount?->last_synced_at),
+                'sync_error' => $latestAccount?->sync_error ?? 'None',
             ],
         ]);
     }
@@ -142,13 +158,9 @@ class AdminClientController extends Controller
             return sprintf('%s / %dK', $user->plan_type, (int) ($user->account_size / 1000));
         }
 
-        $plan = $user->latestTradingAccount?->challengePlan;
+        $plan = $this->currentTradingAccount($user)?->challengePlan;
 
-        if ($plan !== null) {
-            return $plan->name;
-        }
-
-        return 'Not assigned';
+        return $plan?->name ?? 'Not assigned';
     }
 
     private function resolvePaymentAmount(User $user): string
@@ -160,7 +172,7 @@ class AdminClientController extends Controller
         $amount = $user->payment_amount;
 
         if ($amount === null) {
-            $amount = $user->latestTradingAccount?->challengePlan?->entry_fee;
+            $amount = $this->currentTradingAccount($user)?->challengePlan?->entry_fee;
         }
 
         return $amount !== null
@@ -189,17 +201,21 @@ class AdminClientController extends Controller
 
     private function resolveAccountStatus(User $user): string
     {
-        if ($user->latestChallengePurchase?->account_status !== null) {
-            return str($user->latestChallengePurchase->account_status)
-                ->replace('_', ' ')
-                ->title()
-                ->toString();
+        $account = $this->currentTradingAccount($user);
+        $purchaseStatus = $user->latestChallengePurchase?->account_status;
+
+        if ($account?->account_status !== null && ($account->account_status !== 'pending_activation' || $purchaseStatus === null)) {
+            return $this->humanizeStatus((string) $account->account_status);
+        }
+
+        if ($purchaseStatus !== null) {
+            return $this->humanizeStatus((string) $purchaseStatus);
         }
 
         $status = $user->status;
 
-        if (($status === null || strtolower((string) $status) === 'active') && $user->latestTradingAccount?->status !== null) {
-            $status = $user->latestTradingAccount->status;
+        if (($status === null || strtolower((string) $status) === 'active') && $account?->status !== null) {
+            $status = $account->status;
         }
 
         $status ??= 'active';
@@ -218,6 +234,11 @@ class AdminClientController extends Controller
         }
 
         return 'N/A';
+    }
+
+    private function currentTradingAccount(User $user): ?TradingAccount
+    {
+        return $user->latestChallengeTradingAccount ?? $user->latestTradingAccount;
     }
 
     private function challengeTypeLabel(string $challengeType): string
@@ -240,5 +261,19 @@ class AdminClientController extends Controller
             'GBP' => '£'.number_format($amount, 2),
             default => '$'.number_format($amount, 2),
         };
+    }
+
+    private function formatDateTime(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i');
+        }
+
+        return 'Not synced yet';
+    }
+
+    private function humanizeStatus(string $status): string
+    {
+        return str($status)->replace('_', ' ')->title()->toString();
     }
 }

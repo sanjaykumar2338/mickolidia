@@ -28,6 +28,16 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'ctrader' => [
+        'base_url' => env('CTRADER_BASE_URL'),
+        'access_token' => env('CTRADER_ACCESS_TOKEN'),
+        'client_id' => env('CTRADER_CLIENT_ID'),
+        'client_secret' => env('CTRADER_CLIENT_SECRET'),
+        'account_endpoint' => env('CTRADER_ACCOUNT_ENDPOINT', '/accounts/{account}'),
+        'timeout' => env('CTRADER_TIMEOUT', 10),
+        'environment' => env('CTRADER_ENVIRONMENT', 'demo'),
+    ],
+
     'trading_economics' => [
         'base_url' => env('TRADING_ECONOMICS_BASE_URL', 'https://api.tradingeconomics.com'),
         'api_key' => env('TRADING_ECONOMICS_API_KEY'),

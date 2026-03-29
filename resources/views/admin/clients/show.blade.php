@@ -77,7 +77,7 @@
             </div>
 
             <div class="mt-6 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 p-5 text-sm leading-7 text-amber-50">
-                {{ __('site.admin.client_show.placeholder_note') }}
+                Live account state now comes from the latest linked trading account, local rule evaluation, and sync history. Missing platform credentials or account linkage will appear below as sync gaps instead of fake metrics.
             </div>
 
             @if ($latestAccount !== null)
@@ -100,7 +100,33 @@
                             <dt class="text-slate-400">{{ __('site.admin.account.balance') }}</dt>
                             <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->balance, 2) }}</dd>
                         </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Equity</dt>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->equity, 2) }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Platform Account ID</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_account_id ?? 'Link pending' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Platform Login</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_login ?? 'Link pending' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Environment</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_environment ?? 'N/A' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Last Synced</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $providerReferences['last_synced_at'] }}</dd>
+                        </div>
                     </dl>
+
+                    @if ($providerReferences['sync_error'] !== 'None')
+                        <div class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
+                            {{ $providerReferences['sync_error'] }}
+                        </div>
+                    @endif
                 </div>
             @endif
         </section>
@@ -151,6 +177,22 @@
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                     <dt class="text-slate-400">Customer ID</dt>
                     <dd class="font-semibold text-white">{{ $providerReferences['customer_id'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Platform Account ID</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['platform_account_id'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Platform Login</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['platform_login'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Environment</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['platform_environment'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Last Synced</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['last_synced_at'] }}</dd>
                 </div>
             </dl>
         </section>

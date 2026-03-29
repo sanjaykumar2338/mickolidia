@@ -423,11 +423,11 @@ return [
         'client_show' => [
             'title' => 'Metricas del Cliente',
             'eyebrow' => 'Detalle del cliente',
-            'description' => 'Las metricas actuales del challenge se muestran como una vista administrativa temporal hasta que se conecte la sincronizacion en vivo de cuentas.',
+            'description' => 'Revisa los datos comerciales del cliente, el estado de la cuenta vinculada y los ultimos detalles de sincronizacion desde una sola vista interna.',
             'back' => 'Volver a Clientes',
             'client_summary' => 'Resumen del Cliente',
             'metrics_overview' => 'Resumen de Metricas',
-            'placeholder_note' => 'Estas metricas son valores administrativos de ejemplo y usan la ultima cuenta de trading cuando existe. Los calculos en vivo y la sincronizacion real de cuentas siguen fuera del alcance de esta fase.',
+            'placeholder_note' => 'Las metricas ahora se obtienen de la ultima cuenta de trading vinculada y de la capa local de sincronizacion.',
             'account_snapshot' => 'Ultimo Estado de Cuenta',
             'billing_summary' => 'Resumen de Facturacion',
             'provider_references' => 'Referencias del Proveedor',
@@ -1110,8 +1110,8 @@ return [
     ],
 
     'dashboard' => [
-        'preview_title' => 'Base del Dashboard',
-        'preview_subtitle' => 'Solo datos simulados. El diseño está preparado para sincronización real del challenge, lógica de payout e integraciones futuras.',
+        'preview_title' => 'Dashboard de Trading',
+        'preview_subtitle' => 'Sigue cuentas de challenge vinculadas, metricas sincronizadas, ventanas de payout y estado de progresion desde un solo espacio.',
         'sidebar_label' => 'Espacio del trader',
         'simulated_badge' => 'Vista de cuenta de evaluación simulada',
         'status_badge' => 'Vista previa de sincronización por intervalos',
@@ -1174,7 +1174,7 @@ return [
         ],
         'accounts_page' => [
             'title' => 'Cuentas de Trading',
-            'subtitle' => 'Tarjetas de cuenta simuladas estructuradas para futura sincronización en vivo y gestión del estado de evaluación.',
+            'subtitle' => 'Revisa cuentas vinculadas, estado de sincronizacion y progreso actual de reglas.',
         ],
         'purchases' => [
             'title' => 'Compras de Challenges Pagadas',
@@ -1186,7 +1186,7 @@ return [
         ],
         'payouts_page' => [
             'title' => 'Payouts',
-            'subtitle' => 'Mensajería de elegibilidad alineada con la política de payout y el briefing del cliente sobre la regla de consistencia.',
+            'subtitle' => 'Supervisa las ventanas de payout funded y la elegibilidad usando los datos guardados del ciclo de vida de la cuenta.',
         ],
         'settings_page' => [
             'title' => 'Ajustes',

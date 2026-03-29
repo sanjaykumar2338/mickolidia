@@ -423,11 +423,11 @@ return [
         'client_show' => [
             'title' => 'Client Metrics',
             'eyebrow' => 'Client detail',
-            'description' => 'Real order, billing, and purchase references are shown alongside the current placeholder challenge metrics until live account syncing is connected.',
+            'description' => 'Review the client\'s commercial data, linked trading account state, and latest sync details from one internal screen.',
             'back' => 'Back to Clients',
             'client_summary' => 'Client Summary',
             'metrics_overview' => 'Metrics Overview',
-            'placeholder_note' => 'These metrics are placeholder administrative values sourced from the latest trading account when available. Live platform calculations and real account sync remain out of scope for this phase.',
+            'placeholder_note' => 'Metrics are sourced from the latest linked trading account and the local sync layer.',
             'account_snapshot' => 'Latest Account Snapshot',
             'billing_summary' => 'Billing Summary',
             'provider_references' => 'Provider References',
@@ -1110,8 +1110,8 @@ return [
     ],
 
     'dashboard' => [
-        'preview_title' => 'Dashboard Foundation',
-        'preview_subtitle' => 'Mock data only. The layout is prepared for live challenge sync, payout logic, and future platform integrations.',
+        'preview_title' => 'Trading Dashboard',
+        'preview_subtitle' => 'Track linked challenge accounts, synced performance metrics, payout timing, and progression status from one workspace.',
         'sidebar_label' => 'Trader workspace',
         'simulated_badge' => 'Simulated evaluation account view',
         'status_badge' => 'Interval sync preview',
@@ -1174,7 +1174,7 @@ return [
         ],
         'accounts_page' => [
             'title' => 'Trading Accounts',
-            'subtitle' => 'Mock account cards structured for future live sync and evaluation status management.',
+            'subtitle' => 'Review linked challenge accounts, sync state, and current rule progress.',
         ],
         'purchases' => [
             'title' => 'Paid Challenge Purchases',
@@ -1186,7 +1186,7 @@ return [
         ],
         'payouts_page' => [
             'title' => 'Payouts',
-            'subtitle' => 'Eligibility messaging aligned to the payout policy and the client’s consistency rule brief.',
+            'subtitle' => 'Monitor funded payout timing and eligibility using the stored account lifecycle data.',
         ],
         'settings_page' => [
             'title' => 'Settings',

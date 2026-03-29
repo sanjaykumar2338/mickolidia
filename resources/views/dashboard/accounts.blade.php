@@ -45,6 +45,14 @@
                                     <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('site.dashboard.purchases.order_date') }}</dt>
                                     <dd class="mt-2 font-semibold text-white">{{ $purchase['created_at'] }}</dd>
                                 </div>
+                                <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Trading account</dt>
+                                    <dd class="mt-2 font-semibold text-white">{{ $purchase['account_reference'] }}</dd>
+                                </div>
+                                <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Sync status</dt>
+                                    <dd class="mt-2 font-semibold text-white">{{ $purchase['sync_status'] }}</dd>
+                                </div>
                             </dl>
                         </article>
                     @endforeach
@@ -52,37 +60,56 @@
             </div>
         @endif
 
-        <div class="grid gap-5 lg:grid-cols-2">
-            @foreach ($accounts as $account)
-                <article class="surface-panel rounded-[2rem] p-6">
-                    <div class="flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $account['plan'] }}</p>
-                            <h2 class="mt-2 text-2xl font-semibold text-white">{{ $account['reference'] }}</h2>
-                        </div>
-                        <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-sm text-slate-200">{{ $account['status'] }}</span>
-                    </div>
-
-                    <dl class="mt-6 grid gap-4 sm:grid-cols-2">
-                        <div class="surface-card rounded-3xl p-5">
-                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.stage') }}</dt>
-                            <dd class="mt-3 text-lg font-semibold text-white">{{ $account['stage'] }}</dd>
-                        </div>
-                        <div class="surface-card rounded-3xl p-5">
-                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.cards.balance') }}</dt>
-                            <dd class="mt-3 text-lg font-semibold text-white">{{ $account['balance'] }}</dd>
-                        </div>
-                        <div class="surface-card rounded-3xl p-5 sm:col-span-2">
-                            <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.progress') }}</dt>
-                            <dd class="mt-3 text-lg font-semibold text-white">{{ $account['progress'] }}</dd>
-                            <div class="mt-4 h-2 rounded-full bg-white/6">
-                                <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-sky-400" style="width: {{ $account['progress'] }}"></div>
+        @if ($hasTradingAccounts)
+            <div class="grid gap-5 lg:grid-cols-2">
+                @foreach ($accounts as $account)
+                    <article class="surface-panel rounded-[2rem] p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $account['plan'] }}</p>
+                                <h2 class="mt-2 text-2xl font-semibold text-white">{{ $account['reference'] }}</h2>
                             </div>
+                            <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-sm text-slate-200">{{ $account['status'] }}</span>
                         </div>
-                    </dl>
-                </article>
-            @endforeach
-        </div>
+
+                        <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.stage') }}</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['stage'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.cards.balance') }}</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['balance'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Equity</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['equity'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Last synced</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['last_synced_at'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5 sm:col-span-2">
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.progress') }}</dt>
+                                    <span class="text-sm font-semibold text-slate-300">{{ $account['sync_status'] }}</span>
+                                </div>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['progress'] }}</dd>
+                                <div class="mt-4 h-2 rounded-full bg-white/6">
+                                    <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-sky-400" style="width: {{ $account['progress_value'] }}%"></div>
+                                </div>
+                            </div>
+                        </dl>
+                    </article>
+                @endforeach
+            </div>
+        @else
+            <div class="surface-panel rounded-[2rem] p-6">
+                <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.accounts_page.title') }}</p>
+                <h2 class="mt-3 text-2xl font-semibold text-white">{{ $emptyState['title'] }}</h2>
+                <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">{{ $emptyState['message'] }}</p>
+            </div>
+        @endif
 
         <div class="surface-card rounded-[2rem] p-6">
             <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.home.plans.eyebrow') }}</p>

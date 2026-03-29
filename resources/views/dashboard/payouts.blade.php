@@ -15,17 +15,17 @@
         <div class="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
             <section class="surface-panel rounded-[2rem] p-6">
                 <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.payouts.queue_title') }}</p>
-                <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-400">{{ __('site.dashboard.payouts.queue_copy') }}</p>
+                <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-400">Payout timing now reads from the linked trading account lifecycle, funded state, and stored payout eligibility fields.</p>
 
                 <div class="mt-6 space-y-3">
                     <div class="rounded-2xl border border-white/8 bg-white/3 px-4 py-4 text-sm text-slate-300">
-                        {{ __('site.dashboard.payouts.cycle_note') }}
+                        {{ $payoutSummary['cycle_note'] }}
                     </div>
                     <div class="rounded-2xl border border-white/8 bg-white/3 px-4 py-4 text-sm text-slate-300">
-                        {{ __('site.dashboard.consistency.message') }}
+                        Current payout status: {{ $payoutSummary['status'] }}
                     </div>
                     <div class="rounded-2xl border border-white/8 bg-white/3 px-4 py-4 text-sm text-slate-300">
-                        {{ __('site.dashboard.payouts.progressive_note') }}
+                        Eligible profit follows the stored profit split and only becomes available once the account reaches funded payout conditions.
                     </div>
                 </div>
             </section>
