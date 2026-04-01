@@ -4,45 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\Pricing\ChallengePricingService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, ChallengePricingService $pricingService): View
     {
-        return view('dashboard.index', $this->dashboardViewData());
+        return view('dashboard.index', $this->dashboardViewData($request, $pricingService));
     }
 
-    public function accounts(): View
+    public function accounts(Request $request, ChallengePricingService $pricingService): View
     {
-        return view('dashboard.accounts', $this->dashboardViewData());
+        return view('dashboard.accounts', $this->dashboardViewData($request, $pricingService));
     }
 
-    public function payouts(): View
+    public function payouts(Request $request, ChallengePricingService $pricingService): View
     {
-        return view('dashboard.payouts', $this->dashboardViewData());
+        return view('dashboard.payouts', $this->dashboardViewData($request, $pricingService));
     }
 
-    public function settings(): View
+    public function settings(Request $request, ChallengePricingService $pricingService): View
     {
-        return view('dashboard.settings', $this->dashboardViewData());
+        return view('dashboard.settings', $this->dashboardViewData($request, $pricingService));
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function dashboardViewData(): array
+    private function dashboardViewData(Request $request, ChallengePricingService $pricingService): array
     {
+        $availablePlans = $this->availablePlans($request, $pricingService);
+
         /** @var User|null $user */
         $user = auth()->user();
 
         if (! $user instanceof User) {
-            return $this->emptyDashboardState();
+            return $this->emptyDashboardState($availablePlans);
         }
 
         $user->loadMissing([
             'profile',
+            'ctraderConnection',
             'challengeTradingAccounts.challengePlan',
             'challengePurchases.order',
         ]);
@@ -64,6 +69,7 @@ class DashboardController extends Controller
             'consistencyBanner' => $this->consistencyBanner($primaryAccount, $user->challengePurchases->count()),
             'accounts' => $accounts->map(fn (TradingAccount $account): array => $this->accountCardPayload($account))->all(),
             'payoutSummary' => $this->payoutSummary($primaryAccount),
+            'ctraderConnection' => $this->ctraderConnectionPayload($user),
             'profile' => [
                 'name' => $user->name,
                 'email' => $user->email,
@@ -72,6 +78,7 @@ class DashboardController extends Controller
             ],
             'purchasedChallenges' => $this->purchasedChallenges(),
             'hasTradingAccounts' => $accounts->isNotEmpty(),
+            'availablePlans' => $availablePlans,
             'emptyState' => [
                 'title' => 'No challenge accounts linked yet',
                 'message' => 'Paid challenges stay visible below. A trading account card appears here once the purchase is provisioned and linked for sync.',
@@ -82,7 +89,7 @@ class DashboardController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function emptyDashboardState(): array
+    private function emptyDashboardState(array $availablePlans): array
     {
         return [
             'primaryAccount' => null,
@@ -91,6 +98,7 @@ class DashboardController extends Controller
             'consistencyBanner' => $this->consistencyBanner(null, 0),
             'accounts' => [],
             'payoutSummary' => $this->payoutSummary(null),
+            'ctraderConnection' => $this->ctraderConnectionPayload(null),
             'profile' => [
                 'name' => '',
                 'email' => '',
@@ -99,6 +107,7 @@ class DashboardController extends Controller
             ],
             'purchasedChallenges' => collect(),
             'hasTradingAccounts' => false,
+            'availablePlans' => $availablePlans,
             'emptyState' => [
                 'title' => 'No challenge accounts linked yet',
                 'message' => 'Your dashboard will populate here after a paid challenge is provisioned.',
@@ -122,6 +131,8 @@ class DashboardController extends Controller
             'account_status' => $this->humanizeStatus((string) $account->account_status),
             'platform_account_id' => $account->platform_account_id ?: 'Link pending',
             'platform_login' => $account->platform_login ?: 'Link pending',
+            'platform_environment' => $account->platform_environment ?: 'Pending',
+            'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
             'balance' => $this->formatMoney((float) $account->balance),
@@ -129,6 +140,8 @@ class DashboardController extends Controller
             'equity' => $this->formatMoney((float) $account->equity),
             'total_profit' => $this->formatMoney((float) $account->total_profit),
             'today_profit' => $this->formatMoney((float) $account->today_profit),
+            'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
+            'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
             'drawdown_percent' => number_format((float) $account->drawdown_percent, 1).'%',
             'profit_target_percent' => number_format((float) $account->profit_target_percent, 1).'%',
             'daily_drawdown_limit_percent' => number_format((float) $account->daily_drawdown_limit_percent, 1).'%',
@@ -142,9 +155,27 @@ class DashboardController extends Controller
             'first_payout_eligible_at' => $this->formatDateTime($account->first_payout_eligible_at),
             'sync_error' => $account->sync_error,
             'payout_cycle_days' => (int) ($plan['funded']['payout_cycle_days'] ?? $account->challengePlan?->payout_cycle_days ?? 14),
-            'first_payout_days' => (int) ($plan['funded']['first_withdrawal_days'] ?? $account->challengePlan?->first_payout_days ?? 21),
+            'first_payout_days' => (int) ($plan['funded']['first_withdrawal_days'] ?? $account->challengePlan?->first_payout_days ?? 7),
             'leverage' => $plan['phases'][0]['leverage'] ?? null,
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function availablePlans(Request $request, ChallengePricingService $pricingService): array
+    {
+        $launchDiscountApplied = $pricingService->launchDiscountApplied($request);
+
+        return collect($pricingService->catalog(null, $launchDiscountApplied))
+            ->flatMap(static fn (array $definition): array => array_values($definition['plans'] ?? []))
+            ->sortBy([
+                ['challenge_type', 'asc'],
+                ['account_size', 'asc'],
+                ['currency', 'asc'],
+            ])
+            ->values()
+            ->all();
     }
 
     /**
@@ -254,9 +285,10 @@ class DashboardController extends Controller
     private function accountCardPayload(TradingAccount $account): array
     {
         return [
+            'id' => $account->id,
             'reference' => $account->account_reference ?? 'N/A',
             'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
-            'status' => $account->status,
+            'status' => $this->humanizeStatus((string) ($account->account_status ?: $account->status ?: 'active')),
             'stage' => $account->stage,
             'balance' => $this->formatMoney((float) $account->balance),
             'equity' => $this->formatMoney((float) $account->equity),
@@ -264,6 +296,13 @@ class DashboardController extends Controller
             'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
+            'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
+            'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
+            'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
+            'platform_environment' => strtoupper((string) ($account->platform_environment ?: 'pending')),
+            'platform_account_id' => $account->platform_account_id ?: 'Link pending',
+            'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
         ];
     }
 
@@ -376,5 +415,39 @@ class DashboardController extends Controller
         }
 
         return 'Not synced yet';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function ctraderConnectionPayload(?User $user): array
+    {
+        $connection = $user?->ctraderConnection;
+
+        return [
+            'is_connected' => $connection !== null && filled($connection->access_token),
+            'broker_name' => (string) config('services.ctrader.broker_name', 'IC Markets'),
+            'authorized_accounts_count' => is_array($connection?->authorized_accounts) ? count($connection->authorized_accounts) : 0,
+            'authorized_accounts' => collect($connection?->authorized_accounts ?? [])
+                ->filter(fn ($row): bool => is_array($row))
+                ->map(fn (array $row): array => [
+                    'id' => (string) ($row['ctid_trader_account_id'] ?? ''),
+                    'label' => trim(sprintf(
+                        '%s%s%s',
+                        (string) ($row['trader_login'] ?? 'Account'),
+                        filled($row['trader_login'] ?? null) ? ' / ' : '',
+                        strtoupper((string) ($row['environment'] ?? 'demo'))
+                    )),
+                    'broker' => (string) ($row['broker_title_short'] ?? config('services.ctrader.broker_name', 'IC Markets')),
+                ])
+                ->filter(fn (array $row): bool => $row['id'] !== '')
+                ->values()
+                ->all(),
+            'last_authorized_at' => $this->formatDateTime($connection?->last_authorized_at),
+            'last_synced_accounts_at' => $this->formatDateTime($connection?->last_synced_accounts_at),
+            'last_error' => $connection?->last_error,
+            'connect_url' => route('ctrader.auth.connect'),
+            'link_url' => route('ctrader.auth.link-account'),
+        ];
     }
 }

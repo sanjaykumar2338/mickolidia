@@ -120,6 +120,18 @@
                             <dt class="text-slate-400">Last Synced</dt>
                             <dd class="mt-2 font-semibold text-white">{{ $providerReferences['last_synced_at'] }}</dd>
                         </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Daily Drawdown</dt>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->daily_drawdown, 2) }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Total Drawdown</dt>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->max_drawdown, 2) }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Profit Target Progress</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ number_format((float) $latestAccount->profit_target_progress_percent, 1) }}%</dd>
+                        </div>
                     </dl>
 
                     @if ($providerReferences['sync_error'] !== 'None')
@@ -193,6 +205,14 @@
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                     <dt class="text-slate-400">Last Synced</dt>
                     <dd class="font-semibold text-white">{{ $providerReferences['last_synced_at'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Authorized Accounts</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['authorized_accounts_count'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Last Authorized</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['last_authorized_at'] }}</dd>
                 </div>
             </dl>
         </section>

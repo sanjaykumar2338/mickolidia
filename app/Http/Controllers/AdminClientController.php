@@ -14,6 +14,7 @@ class AdminClientController extends Controller
         $clients = User::query()
             ->with([
                 'profile',
+                'ctraderConnection',
                 'latestChallengeTradingAccount.challengePlan',
                 'latestTradingAccount.challengePlan',
                 'latestOrder.paymentAttempts',
@@ -32,6 +33,7 @@ class AdminClientController extends Controller
     {
         $user->loadMissing([
             'profile',
+            'ctraderConnection',
             'latestChallengeTradingAccount.challengePlan',
             'latestTradingAccount.challengePlan',
             'latestOrder.paymentAttempts',
@@ -91,6 +93,10 @@ class AdminClientController extends Controller
                         ? $this->humanizeStatus((string) $latestAccount->sync_status)
                         : 'Not synced',
                 ],
+                [
+                    'label' => 'cTrader Auth',
+                    'value' => $user->ctraderConnection?->last_authorized_at !== null ? 'Connected' : 'Pending',
+                ],
             ],
             'latestAccount' => $latestAccount,
             'billing' => [
@@ -112,6 +118,8 @@ class AdminClientController extends Controller
                 'platform_environment' => $latestAccount?->platform_environment ?? 'N/A',
                 'last_synced_at' => $this->formatDateTime($latestAccount?->last_synced_at),
                 'sync_error' => $latestAccount?->sync_error ?? 'None',
+                'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
+                'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
             ],
         ]);
     }

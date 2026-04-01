@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->hasMany(ChallengePurchase::class);
     }
 
+    public function ctraderConnection(): HasOne
+    {
+        return $this->hasOne(CTraderConnection::class);
+    }
+
     public function latestOrder(): HasOne
     {
         return $this->hasOne(Order::class)->latestOfMany();

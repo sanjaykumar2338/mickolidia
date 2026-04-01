@@ -50,14 +50,27 @@ class CheckoutController extends Controller
             $launchPromoCodeInput = (string) data_get($retryOrder?->metadata, 'launch_promo.code', '');
         }
 
+        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($launchPromoCodeInput);
+
+        if ($launchPromoCode !== null) {
+            $request->session()->put('launch_offer', [
+                'decision' => 'apply',
+                'applied' => true,
+                'promo_code' => $launchPromoCode,
+            ]);
+        }
+
+        $launchDiscountApplied = $pricingService->launchDiscountApplied($request, $launchPromoCode);
+        $launchPromoCode = $pricingService->launchPromoCodeForRequest($request, $launchPromoCode);
+
         return view('checkout.index', [
             'order' => $retryOrder,
-            'selectedPlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency),
+            'selectedPlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, $launchDiscountApplied),
             'selectedChallengeType' => $selectedType,
             'selectedAccountSize' => $selectedSize,
             'selectedCurrency' => $selectedCurrency,
-            'launchPromoCode' => $this->normalizeLaunchPromoCode($launchPromoCodeInput),
-            'launchPromoCodeInput' => $launchPromoCodeInput,
+            'launchPromoCode' => $launchPromoCode,
+            'launchPromoCodeInput' => $launchPromoCode ?? '',
             'checkoutCountries' => config('wolforix.checkout_countries', []),
             'paymentProviders' => $paymentManager->providers(),
         ]);
@@ -99,27 +112,39 @@ class CheckoutController extends Controller
             'accept_refund_policy.accepted' => __('site.checkout.validation.accept_refund_policy'),
         ]);
 
-        try {
-            $selectedPlan = $pricingService->resolvePlan(
-                $validated['challenge_type'],
-                (int) $validated['account_size'],
-                $validated['currency'],
-            );
-        } catch (InvalidArgumentException) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'account_size' => __('validation.in'),
-                ]);
-        }
-
-        $launchPromoCode = $this->normalizeLaunchPromoCode($validated['promo_code'] ?? null);
+        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($validated['promo_code'] ?? null);
 
         if (($validated['promo_code'] ?? null) !== null && trim((string) $validated['promo_code']) !== '' && $launchPromoCode === null) {
             return back()
                 ->withInput()
                 ->withErrors([
                     'promo_code' => __('site.checkout.validation.promo_code'),
+                ]);
+        }
+
+        if ($launchPromoCode !== null) {
+            $request->session()->put('launch_offer', [
+                'decision' => 'apply',
+                'applied' => true,
+                'promo_code' => $launchPromoCode,
+            ]);
+        }
+
+        $launchDiscountApplied = $pricingService->launchDiscountApplied($request, $launchPromoCode);
+        $launchPromoCode = $pricingService->launchPromoCodeForRequest($request, $launchPromoCode);
+
+        try {
+            $selectedPlan = $pricingService->resolvePlan(
+                $validated['challenge_type'],
+                (int) $validated['account_size'],
+                $validated['currency'],
+                $launchDiscountApplied,
+            );
+        } catch (InvalidArgumentException) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'account_size' => __('validation.in'),
                 ]);
         }
 
@@ -199,12 +224,17 @@ class CheckoutController extends Controller
             return $order;
         });
 
-        $successUrl = route('checkout.success').'?provider='.$validated['payment_provider'].'&session_id={CHECKOUT_SESSION_ID}';
+        $successUrl = $validated['payment_provider'] === 'paypal'
+            ? route('paypal.success', ['order' => $order->order_number])
+            : route('checkout.success').'?provider='.$validated['payment_provider'].'&session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl = $validated['payment_provider'] === 'paypal'
+            ? route('paypal.cancel', ['order' => $order->order_number])
+            : route('checkout.cancel', ['order' => $order->order_number]);
 
         try {
             $checkoutSession = $provider->createCheckoutSession($order, [
                 'success_url' => $successUrl,
-                'cancel_url' => route('checkout.cancel', ['order' => $order->order_number]),
+                'cancel_url' => $cancelUrl,
             ]);
         } catch (Throwable $exception) {
             return back()
@@ -323,39 +353,23 @@ class CheckoutController extends Controller
      */
     private function resolveChallengePlanRecord(array $selectedPlan): ?ChallengePlan
     {
-        $basePlan = config('wolforix.challenge_catalog.'.$selectedPlan['challenge_type'].'.plans.'.$selectedPlan['account_size'], $selectedPlan);
-
         return ChallengePlan::query()->updateOrCreate(
             ['slug' => $selectedPlan['slug']],
             [
-                'name' => $basePlan['name'],
-                'account_size' => $basePlan['account_size'],
-                'currency' => 'USD',
-                'entry_fee' => $basePlan['entry_fee'],
-                'profit_target' => $basePlan['profit_target'],
-                'daily_loss_limit' => $basePlan['daily_loss_limit'],
-                'max_loss_limit' => $basePlan['max_loss_limit'],
-                'steps' => $basePlan['steps'],
-                'profit_share' => $basePlan['profit_share'],
-                'first_payout_days' => $basePlan['first_payout_days'],
-                'minimum_trading_days' => $basePlan['minimum_trading_days'],
-                'payout_cycle_days' => $basePlan['payout_cycle_days'],
+                'name' => $selectedPlan['name'],
+                'account_size' => $selectedPlan['account_size'],
+                'currency' => $selectedPlan['base_currency'] ?? 'USD',
+                'entry_fee' => $selectedPlan['entry_fee'],
+                'profit_target' => $selectedPlan['profit_target'],
+                'daily_loss_limit' => $selectedPlan['daily_loss_limit'],
+                'max_loss_limit' => $selectedPlan['max_loss_limit'],
+                'steps' => $selectedPlan['steps'],
+                'profit_share' => $selectedPlan['profit_share'],
+                'first_payout_days' => $selectedPlan['first_payout_days'],
+                'minimum_trading_days' => $selectedPlan['minimum_trading_days'],
+                'payout_cycle_days' => $selectedPlan['payout_cycle_days'],
                 'is_active' => true,
             ],
         );
-    }
-
-    private function normalizeLaunchPromoCode(?string $promoCode): ?string
-    {
-        $promoCode = trim((string) $promoCode);
-        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
-
-        if ($promoCode === '' || $expectedCode === '') {
-            return null;
-        }
-
-        return strcasecmp($promoCode, $expectedCode) === 0
-            ? $expectedCode
-            : null;
     }
 }

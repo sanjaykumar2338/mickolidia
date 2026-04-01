@@ -1,6 +1,8 @@
 <?php
 
 $stripeProviderClass = \App\Services\Payments\StripePaymentGateway::class;
+$payPalProviderClass = \App\Services\Payments\PayPalGateway::class;
+$payPalConfigured = filled((string) env('PAYPAL_CLIENT_ID')) && filled((string) env('PAYPAL_CLIENT_SECRET'));
 
 $supportedLocales = [
     'en' => [
@@ -81,7 +83,7 @@ $challengeModels = [
         'funded' => [
             'profit_split' => 80,
             'payout_cycle_days' => 14,
-            'first_withdrawal_days' => 21,
+            'first_withdrawal_days' => 7,
             'scaling_capital_percent' => null,
             'scaling_interval_months' => null,
             'consistency_rule_required' => true,
@@ -129,7 +131,7 @@ $challengeModels = [
         'funded' => [
             'profit_split' => 80,
             'payout_cycle_days' => 14,
-            'first_withdrawal_days' => 21,
+            'first_withdrawal_days' => 7,
             'scaling_capital_percent' => 25,
             'scaling_interval_months' => 3,
             'consistency_rule_required' => false,
@@ -235,11 +237,11 @@ return [
                 'coming_soon' => false,
             ],
             'paypal' => [
-                'class' => null,
-                'enabled' => false,
+                'class' => $payPalProviderClass,
+                'enabled' => $payPalConfigured,
                 'label' => 'PayPal',
-                'description' => 'PayPal will be connected in a later milestone.',
-                'coming_soon' => true,
+                'description' => 'Checkout with PayPal account approval and server-side order capture.',
+                'coming_soon' => ! $payPalConfigured,
             ],
         ],
     ],

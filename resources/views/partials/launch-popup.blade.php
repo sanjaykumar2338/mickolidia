@@ -1,16 +1,15 @@
 @php
     $launchPromoCode = (string) config('wolforix.launch_discount.code', '');
-    $launchPlansHref = request()->routeIs('home')
-        ? '#plans'
-        : route('home').'#plans';
+    $launchPlansHref = route('home').'#plans';
+    $launchOfferReturnHref = route('home');
 @endphp
 
-<div data-launch-popup class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
+<div data-launch-popup class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <button type="submit" form="launch-offer-ignore-form" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" aria-label="{{ __('site.launch_popup.close') }}"></button>
     <div class="launch-popup-card relative w-full max-w-xl overflow-hidden rounded-[2.2rem] border border-white/12 bg-[radial-gradient(circle_at_top,rgba(56,88,168,0.28),transparent_34%),linear-gradient(180deg,rgba(7,14,29,0.98),rgba(5,10,18,0.98))] px-6 py-7 shadow-[0_34px_110px_rgba(2,6,23,0.78)] sm:px-8">
         <button
-            type="button"
-            data-launch-popup-close
+            type="submit"
+            form="launch-offer-ignore-form"
             class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             aria-label="{{ __('site.launch_popup.close') }}"
         >
@@ -38,7 +37,6 @@
                 <div class="mt-3 flex justify-center">
                     <div
                         data-launch-popup-code
-                        data-launch-popup-code-value="{{ $launchPromoCode }}"
                         class="rounded-[1.3rem] border border-white/10 bg-white/5 px-5 py-3 text-center text-2xl font-semibold tracking-[0.02em] text-white"
                     >
                         {{ $launchPromoCode }}
@@ -48,16 +46,14 @@
             </div>
 
             <div class="mt-7 flex flex-col items-center gap-4">
-                <a
-                    href="{{ $launchPlansHref }}"
-                    data-launch-popup-apply
-                    data-launch-popup-close
-                    data-launch-popup-code="{{ $launchPromoCode }}"
+                <button
+                    type="submit"
+                    form="launch-offer-apply-form"
                     class="primary-cta w-full justify-center rounded-full px-8 py-4 text-base font-semibold sm:max-w-md"
                 >
                     {{ __('site.launch_popup.primary_action') }}
-                </a>
-                <button type="button" data-launch-popup-close class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                </button>
+                <button type="submit" form="launch-offer-ignore-form" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                     {{ __('site.launch_popup.secondary_action') }}
                 </button>
             </div>
@@ -77,3 +73,15 @@
         </div>
     </div>
 </div>
+
+<form id="launch-offer-apply-form" method="POST" action="{{ route('launch-offer.update') }}" class="hidden">
+    @csrf
+    <input type="hidden" name="decision" value="apply">
+    <input type="hidden" name="redirect_to" value="{{ $launchPlansHref }}">
+</form>
+
+<form id="launch-offer-ignore-form" method="POST" action="{{ route('launch-offer.update') }}" class="hidden">
+    @csrf
+    <input type="hidden" name="decision" value="ignore">
+    <input type="hidden" name="redirect_to" value="{{ $launchOfferReturnHref }}">
+</form>

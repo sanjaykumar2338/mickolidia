@@ -3,13 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', __('site.meta.default_title'))</title>
     <meta name="description" content="@yield('description', __('site.meta.description'))">
     <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="selection:bg-amber-400/30 selection:text-white">
+<body
+    class="selection:bg-amber-400/30 selection:text-white"
+    data-launch-promo-code="{{ session('launch_offer.applied') ? config('wolforix.launch_discount.code') : '' }}"
+>
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div class="absolute inset-0 grid-pattern opacity-40"></div>
         <div class="absolute left-[8%] top-[-12rem] h-[28rem] w-[28rem] rounded-full bg-amber-400/8 blur-3xl"></div>
@@ -18,7 +22,9 @@
 
     @include('partials.public-nav')
     @include('partials.site-search')
-    @include('partials.launch-popup')
+    @if (request()->routeIs('home') && ! session()->has('launch_offer.decision'))
+        @include('partials.launch-popup')
+    @endif
     @include('partials.cookie-consent-banner')
 
     @if (session('checkout_success') || session('trial_success'))

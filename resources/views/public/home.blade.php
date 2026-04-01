@@ -6,12 +6,17 @@
     $initialPlan = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? $challengeCatalog[$defaultChallengeType]['plans'][(int) $defaultChallengeSize]
         : null;
+    $plansUrl = request()->routeIs('home')
+        ? '#plans'
+        : route('home').'#plans';
+    $defaultCheckoutParams = array_filter([
+        'challenge_type' => $defaultChallengeType,
+        'account_size' => $defaultChallengeSize,
+        'currency' => $defaultCurrency,
+        'promo_code' => $launchPromoCode,
+    ], static fn ($value) => $value !== null && $value !== '');
     $defaultCheckoutUrl = $defaultChallengeType !== null && $defaultChallengeSize !== null
-        ? route('checkout.show', [
-            'challenge_type' => $defaultChallengeType,
-            'account_size' => $defaultChallengeSize,
-            'currency' => $defaultCurrency,
-        ])
+        ? route('checkout.show', $defaultCheckoutParams)
         : route('checkout.show');
     $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
         return match ($currency) {
@@ -102,9 +107,7 @@
                         <div class="mobile-hero-footer">
                             <div class="mobile-hero-actions">
                                 <a
-                                    href="{{ $defaultCheckoutUrl }}"
-                                    data-checkout-cta
-                                    data-checkout-base="{{ route('checkout.show') }}"
+                                    href="{{ $plansUrl }}"
                                     class="primary-cta mobile-hero-primary rounded-full px-4 py-4 text-base font-semibold"
                                 >
                                     {{ __('site.home.primary_cta') }}
@@ -149,9 +152,7 @@
 
                         <div class="mt-8 flex flex-wrap items-start gap-4">
                             <a
-                                href="{{ $defaultCheckoutUrl }}"
-                                data-checkout-cta
-                                data-checkout-base="{{ route('checkout.show') }}"
+                                href="{{ $plansUrl }}"
                                 class="primary-cta rounded-full px-8 py-4 text-base font-semibold"
                             >
                                 {{ __('site.home.primary_cta') }}
@@ -228,7 +229,7 @@
                     <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
                         <div class="surface-panel rounded-[2rem] p-6">
                             <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.currency_label') }}</p>
-                            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                            <div class="challenge-currency-strip mt-4">
                                 @foreach ($currencies as $currencyCode => $currencyMeta)
                                     <button
                                         type="button"
@@ -268,7 +269,7 @@
 
                             <div class="mt-8">
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.size_label') }}</p>
-                                <div class="mt-4 flex flex-wrap gap-3">
+                                <div class="challenge-size-grid mt-4">
                                     @foreach ($challengeSizes as $size)
                                         <button
                                             type="button"
@@ -507,12 +508,11 @@
                     <div class="surface-card rounded-[1.8rem] p-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.checkout.payment_methods_title') }}</p>
                         <div class="mt-4 space-y-3 text-sm">
-                            <div class="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-emerald-100">
-                                {{ __('site.checkout.buttons.stripe') }}
-                            </div>
-                            <div class="rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-slate-400">
-                                {{ __('site.checkout.buttons.paypal') }}
-                            </div>
+                            @foreach ($paymentProviders as $providerKey => $provider)
+                                <div class="rounded-2xl border px-4 py-3 {{ $provider['enabled'] ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100' : 'border-white/8 bg-white/4 text-slate-400' }}">
+                                    {{ __('site.checkout.buttons.'.$providerKey) }}
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -527,7 +527,7 @@
                     data-checkout-base="{{ route('checkout.show') }}"
                     class="primary-cta mt-6 inline-flex rounded-full px-8 py-4 text-base font-semibold"
                 >
-                    {{ __('site.checkout.submit') }}
+                    {{ __('site.home.challenge_selector.start_button') }}
                 </a>
             </div>
         </div>

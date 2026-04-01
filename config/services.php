@@ -1,5 +1,8 @@
 <?php
 
+$paypalBaseUrl = env('PAYPAL_BASE_URL');
+$paypalMode = env('PAYPAL_MODE', 'sandbox');
+
 return [
 
     /*
@@ -28,14 +31,38 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'mode' => $paypalMode,
+        'base_url' => is_string($paypalBaseUrl) && $paypalBaseUrl !== ''
+            ? $paypalBaseUrl
+            : ($paypalMode === 'live'
+                ? 'https://api-m.paypal.com'
+                : 'https://api-m.sandbox.paypal.com'),
+        'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
+        'timeout' => (int) env('PAYPAL_TIMEOUT', 15),
+    ],
+
     'ctrader' => [
-        'base_url' => env('CTRADER_BASE_URL'),
+        'broker_name' => env('CTRADER_BROKER_NAME', 'IC Markets'),
+        'auth_url' => env('CTRADER_AUTH_URL', 'https://id.ctrader.com/my/settings/openapi/grantingaccess/'),
+        'token_url' => env('CTRADER_TOKEN_URL', 'https://openapi.ctrader.com/apps/token'),
+        'base_url' => env('CTRADER_BASE_URL', 'https://openapi.ctrader.com'),
         'access_token' => env('CTRADER_ACCESS_TOKEN'),
         'client_id' => env('CTRADER_CLIENT_ID'),
         'client_secret' => env('CTRADER_CLIENT_SECRET'),
+        'redirect_uri' => env('CTRADER_REDIRECT_URI'),
+        'scope' => env('CTRADER_SCOPE', 'accounts'),
         'account_endpoint' => env('CTRADER_ACCOUNT_ENDPOINT', '/accounts/{account}'),
-        'timeout' => env('CTRADER_TIMEOUT', 10),
+        'timeout' => env('CTRADER_TIMEOUT', 15),
         'environment' => env('CTRADER_ENVIRONMENT', 'demo'),
+        'transport' => [
+            'scheme' => env('CTRADER_TRANSPORT_SCHEME', 'wss'),
+            'json_port' => (int) env('CTRADER_JSON_PORT', 5036),
+            'demo_host' => env('CTRADER_DEMO_HOST', 'demo.ctraderapi.com'),
+            'live_host' => env('CTRADER_LIVE_HOST', 'live.ctraderapi.com'),
+        ],
     ],
 
     'trading_economics' => [

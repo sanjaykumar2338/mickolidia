@@ -6,6 +6,8 @@ return [
         'ctrader' => [
             'enabled' => env('CTRADER_SYNC_ENABLED', false),
             'use_mock_data' => env('CTRADER_USE_MOCK_DATA', false),
+            'history_days' => (int) env('CTRADER_HISTORY_DAYS', 90),
+            'history_max_rows' => (int) env('CTRADER_HISTORY_MAX_ROWS', 500),
         ],
     ],
 
@@ -14,6 +16,6 @@ return [
         'use_queue' => env('TRADING_SYNC_USE_QUEUE', true),
         'queue' => env('TRADING_SYNC_QUEUE', 'trading-sync'),
         'chunk_size' => (int) env('TRADING_SYNC_CHUNK_SIZE', 50),
-        'cron' => env('TRADING_SYNC_CRON', '*/15 * * * *'),
+        'cron' => env('TRADING_SYNC_CRON', '*/5 * * * *'),
     ],
 ];

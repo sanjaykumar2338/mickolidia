@@ -13,6 +13,7 @@ class TradingAccount extends Model
 
     protected $fillable = [
         'user_id',
+        'ctrader_connection_id',
         'challenge_plan_id',
         'order_id',
         'challenge_purchase_id',
@@ -131,6 +132,11 @@ class TradingAccount extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function ctraderConnection(): BelongsTo
+    {
+        return $this->belongsTo(CTraderConnection::class);
     }
 
     public function challengePlan(): BelongsTo

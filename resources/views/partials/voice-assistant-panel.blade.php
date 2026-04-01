@@ -12,6 +12,12 @@
         'es' => 'es-ES',
         'fr' => 'fr-FR',
     ];
+    $voicePlanSizes = collect(config('wolforix.challenge_models.one_step.pricing', []))
+        ->keys()
+        ->map(fn ($size) => ((int) $size / 1000).'K')
+        ->implode(', ');
+    $firstPayoutDays = (int) config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 7);
+    $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
     $faqVoiceIndex = [];
 
     foreach ($voiceLocales as $voiceLocale) {
@@ -61,6 +67,77 @@
                 ];
             }
         }
+
+        $faqVoiceIndex = [
+            ...$faqVoiceIndex,
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.contact.voice_input_placeholder', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_payout_fallback', [
+                    'first_payout_days' => $firstPayoutDays,
+                    'payout_cycle_days' => $payoutCycleDays,
+                ], $voiceLocale),
+                'url' => route('payout-policy'),
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_input_placeholder', [], $voiceLocale),
+                    Lang::get('site.contact.voice_payout_fallback', [
+                        'first_payout_days' => $firstPayoutDays,
+                        'payout_cycle_days' => $payoutCycleDays,
+                    ], $voiceLocale),
+                    'payout first payout first withdrawal retiro retirada auszahlung retrait payout cycle',
+                ]))),
+            ],
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_plan_fallback', ['sizes' => $voicePlanSizes], $voiceLocale),
+                'url' => route('home').'#plans',
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_plan_fallback', ['sizes' => $voicePlanSizes], $voiceLocale),
+                    'plan challenge account size funded one step two step 5k 10k 25k 50k 100k',
+                ]))),
+            ],
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_checkout_fallback', [], $voiceLocale),
+                'url' => route('login'),
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_checkout_fallback', [], $voiceLocale),
+                    'checkout login signup register sign in get plan auth account',
+                ]))),
+            ],
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_discount_fallback', [], $voiceLocale),
+                'url' => route('home'),
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_discount_fallback', [], $voiceLocale),
+                    'discount promo promo code launch code get discount ignore rabat descuento remise',
+                ]))),
+            ],
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_rules_fallback', [], $voiceLocale),
+                'url' => route('faq'),
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_rules_fallback', [], $voiceLocale),
+                    'rules drawdown max loss daily loss consistency phase leverage challenge',
+                ]))),
+            ],
+        ];
     }
 
     $voiceAssistantConfig = [
@@ -68,7 +145,14 @@
         'intro_title' => __('site.contact.voice_intro_title'),
         'intro_message' => __('site.contact.voice_intro_message'),
         'intro_blocked' => __('site.contact.voice_intro_blocked'),
-        'plan_fallback' => __('site.home.challenge_selector.types.one_step.description').' '.__('site.home.challenge_selector.types.two_step.description'),
+        'plan_fallback' => __('site.contact.voice_plan_fallback', ['sizes' => $voicePlanSizes]),
+        'payout_fallback' => __('site.contact.voice_payout_fallback', [
+            'first_payout_days' => $firstPayoutDays,
+            'payout_cycle_days' => $payoutCycleDays,
+        ]),
+        'rules_fallback' => __('site.contact.voice_rules_fallback'),
+        'checkout_fallback' => __('site.contact.voice_checkout_fallback'),
+        'discount_fallback' => __('site.contact.voice_discount_fallback'),
         'support_fallback' => __('site.contact.voice_support_fallback', [
             'email' => config('wolforix.support.email'),
         ]),

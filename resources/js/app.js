@@ -43,29 +43,31 @@ document.addEventListener('DOMContentLoaded', () => {
         .replaceAll("'", '&#39;');
     const assistantLocaleProfiles = {
         en: {
-            regex: /\b(hello|hi|hey|when|what|how|can|payout|rule|challenge|account|support|login)\b/i,
-            tokens: ['hello', 'hi', 'when', 'what', 'how', 'can', 'payout', 'rules', 'challenge', 'account', 'support', 'login'],
+            regex: /\b(hello|hi|hey|when|what|how|can|payout|withdraw|rule|challenge|funded|account|support|login|checkout|discount)\b/i,
+            tokens: ['hello', 'hi', 'hey', 'when', 'what', 'how', 'can', 'payout', 'withdraw', 'rules', 'challenge', 'funded', 'account', 'support', 'login', 'checkout', 'discount', 'plan', 'drawdown', 'news'],
         },
         es: {
-            regex: /[¿¡ñáéíóú]|\b(hola|cuando|como|puedo|retiro|regla|desafio|cuenta|soporte|inicio)\b/i,
-            tokens: ['hola', 'cuando', 'como', 'puedo', 'retiro', 'regla', 'desafio', 'challenge', 'cuenta', 'soporte', 'iniciar'],
+            regex: /[¿¡ñáéíóú]|\b(hola|cuando|como|puedo|retiro|payout|regla|desafio|challenge|cuenta|funded|soporte|inicio|descuento|checkout)\b/i,
+            tokens: ['hola', 'cuando', 'como', 'puedo', 'retiro', 'payout', 'regla', 'desafio', 'challenge', 'cuenta', 'funded', 'soporte', 'iniciar', 'descuento', 'checkout', 'plan', 'drawdown', 'noticias'],
         },
         fr: {
-            regex: /[àâçéèêëîïôùûüÿœæ]|\b(bonjour|quand|comment|puis|paiement|retrait|regle|challenge|compte|support)\b/i,
-            tokens: ['bonjour', 'quand', 'comment', 'puis', 'paiement', 'retrait', 'regle', 'challenge', 'compte', 'support'],
+            regex: /[àâçéèêëîïôùûüÿœæ]|\b(bonjour|quand|comment|puis|paiement|retrait|regle|challenge|compte|support|connexion|remise)\b/i,
+            tokens: ['bonjour', 'quand', 'comment', 'puis', 'paiement', 'retrait', 'regle', 'challenge', 'compte', 'support', 'connexion', 'remise', 'plan', 'drawdown', 'actualites'],
         },
         de: {
-            regex: /[äöüß]|\b(hallo|wann|wie|kann|auszahlung|regel|challenge|konto|support|login)\b/i,
-            tokens: ['hallo', 'wann', 'wie', 'kann', 'auszahlung', 'regel', 'challenge', 'konto', 'support', 'login'],
+            regex: /[äöüß]|\b(hallo|wann|wie|kann|auszahlung|regel|challenge|konto|support|login|rabatt|checkout)\b/i,
+            tokens: ['hallo', 'wann', 'wie', 'kann', 'auszahlung', 'regel', 'challenge', 'konto', 'support', 'login', 'rabatt', 'checkout', 'plan', 'drawdown', 'nachrichten'],
         },
     };
     const assistantIntentProfiles = {
         greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo'],
-        support: ['support', 'help', 'contact', 'email', 'ayuda', 'soporte', 'aide', 'hilfe'],
-        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe'],
-        payout: ['payout', 'withdraw', 'withdrawal', 'profit split', 'payment', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung'],
-        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'consistency', 'news', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles'],
-        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'one step', 'two step', 'plan', 'desafio', 'cuenta', 'konto', 'compte'],
+        support: ['support', 'help', 'contact', 'email', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing'],
+        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse'],
+        payout: ['payout', 'withdraw', 'withdrawal', 'profit split', 'payment', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal'],
+        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'consistency', 'news', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss'],
+        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'one step', 'two step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2'],
+        checkout: ['checkout', 'buy', 'purchase', 'order', 'plan kaufen', 'comprar', 'pedido', 'commande'],
+        discount: ['discount', 'promo', 'promo code', 'launch code', 'rabatt', 'descuento', 'remise', 'coupon'],
     };
 
     const launchPromoStorageKey = 'wolforix-launch-promo-code';
@@ -111,7 +113,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    syncLaunchPromoCodeToCheckoutLinks();
+    const sessionLaunchPromoCode = normalizePromoCode(document.body?.dataset.launchPromoCode ?? '');
+
+    if (sessionLaunchPromoCode !== '') {
+        setLaunchPromoCode(sessionLaunchPromoCode);
+    } else {
+        storage.remove(launchPromoStorageKey);
+    }
+
+    syncLaunchPromoCodeToCheckoutLinks(sessionLaunchPromoCode);
 
     const setBodyState = (className, enabled) => {
         document.body.classList.toggle(className, enabled);
@@ -168,79 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const launchPopup = document.querySelector('[data-launch-popup]');
 
-    if (launchPopup instanceof HTMLElement) {
-        const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
-        const copyButton = launchPopup.querySelector('[data-launch-popup-copy]');
-        const applyButton = launchPopup.querySelector('[data-launch-popup-apply]');
-        const codeDisplay = launchPopup.querySelector('[data-launch-popup-code]');
-        const storageKey = 'wolforix-launch-popup-dismissed';
-        const launchPromoCode = normalizePromoCode(
-            codeDisplay?.getAttribute('data-launch-popup-code-value')
-            ?? applyButton?.getAttribute('data-launch-popup-code')
-            ?? '',
-        );
-
-        const closePopup = () => {
-            launchPopup.classList.remove('flex');
-            launchPopup.classList.add('hidden');
-            document.documentElement.classList.remove('overflow-hidden');
-            document.body.classList.remove('overflow-hidden');
-            storage.set(storageKey, '1');
-        };
-        const activateLaunchPromoCode = () => {
-            if (launchPromoCode === '') {
-                return;
-            }
-
-            setLaunchPromoCode(launchPromoCode);
-            syncLaunchPromoCodeToCheckoutLinks(launchPromoCode);
-        };
-
-        if (storage.get(storageKey) !== '1') {
-            launchPopup.classList.remove('hidden');
-            launchPopup.classList.add('flex');
-            document.documentElement.classList.add('overflow-hidden');
-            document.body.classList.add('overflow-hidden');
-        }
-
-        closeButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                closePopup();
-            });
-        });
-
-        if (applyButton instanceof HTMLAnchorElement) {
-            applyButton.addEventListener('click', () => {
-                activateLaunchPromoCode();
-            });
-        }
-
-        if (copyButton instanceof HTMLButtonElement) {
-            copyButton.addEventListener('click', async () => {
-                activateLaunchPromoCode();
-
-                const defaultLabel = copyButton.dataset.copyDefault ?? copyButton.textContent ?? '';
-                const successLabel = copyButton.dataset.copySuccess ?? defaultLabel;
-
-                try {
-                    if (navigator.clipboard?.writeText) {
-                        await navigator.clipboard.writeText(launchPromoCode);
-                    }
-
-                    copyButton.textContent = successLabel;
-                } catch (error) {
-                    copyButton.textContent = successLabel;
-                }
-
-                window.setTimeout(() => {
-                    copyButton.textContent = defaultLabel;
-                }, 1800);
-            });
-        }
+    if (launchPopup instanceof HTMLElement && !launchPopup.classList.contains('hidden')) {
+        const ignoreForm = document.getElementById('launch-offer-ignore-form');
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && launchPopup.classList.contains('flex')) {
-                closePopup();
+            if (event.key === 'Escape' && ignoreForm instanceof HTMLFormElement) {
+                ignoreForm.requestSubmit();
             }
         });
     }
@@ -1134,6 +1077,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 || voiceName.includes('moira')
                 || voiceName.includes('serena')
                 || voiceName.includes('allison')
+                || voiceName.includes('ava')
+                || voiceName.includes('sofia')
+                || voiceName.includes('anna')
+                || voiceName.includes('eva')
             ) {
                 score += 12;
             }
@@ -1320,9 +1267,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             utterance.lang = selectedVoice?.lang ?? locale;
-            utterance.volume = 0.95;
-            utterance.rate = 0.92;
-            utterance.pitch = 0.94;
+            utterance.volume = 0.9;
+            utterance.rate = 0.88;
+            utterance.pitch = 0.9;
 
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
@@ -1448,6 +1395,42 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         };
 
+        const buildPayoutFallbackResponse = (localeBase = pageLocaleBase) => {
+            return {
+                locale: localeBase,
+                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
+                question: assistantConfig.assistant_name ?? '',
+                answer: assistantConfig.payout_fallback ?? '',
+            };
+        };
+
+        const buildRulesFallbackResponse = (localeBase = pageLocaleBase) => {
+            return {
+                locale: localeBase,
+                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
+                question: assistantConfig.assistant_name ?? '',
+                answer: assistantConfig.rules_fallback ?? '',
+            };
+        };
+
+        const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase) => {
+            return {
+                locale: localeBase,
+                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
+                question: assistantConfig.assistant_name ?? '',
+                answer: assistantConfig.checkout_fallback ?? '',
+            };
+        };
+
+        const buildDiscountFallbackResponse = (localeBase = pageLocaleBase) => {
+            return {
+                locale: localeBase,
+                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
+                question: assistantConfig.assistant_name ?? '',
+                answer: assistantConfig.discount_fallback ?? '',
+            };
+        };
+
         const scoreVoiceItem = (item, normalizedQuery, tokens, preferredLocales, intents) => {
             let score = 0;
 
@@ -1487,6 +1470,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            const meaningfulTokens = tokens.filter((token) => token.length > 2);
+            const matchedTokens = meaningfulTokens.filter((token) => item.haystack.includes(token));
+
+            score += matchedTokens.length * 9;
+
+            if (matchedTokens.length >= Math.min(3, meaningfulTokens.length) && matchedTokens.length > 0) {
+                score += 18;
+            }
+
             intents.forEach((intent) => {
                 assistantIntentProfiles[intent]?.forEach((keyword) => {
                     if (item.haystack.includes(normalizeText(keyword))) {
@@ -1517,12 +1509,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const bestMatch = rankedMatches.find((item) => item.score > 0) ?? null;
 
-            if (bestMatch && bestMatch.score >= 32) {
+            if (bestMatch && bestMatch.score >= 24) {
                 return bestMatch;
+            }
+
+            if (intents.includes('payout') && String(assistantConfig.payout_fallback ?? '').trim() !== '') {
+                return buildPayoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            if (intents.includes('rules') && String(assistantConfig.rules_fallback ?? '').trim() !== '') {
+                return buildRulesFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
             }
 
             if (intents.includes('plans') && String(assistantConfig.plan_fallback ?? '').trim() !== '') {
                 return buildPlanFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            if ((intents.includes('checkout') || intents.includes('login')) && String(assistantConfig.checkout_fallback ?? '').trim() !== '') {
+                return buildCheckoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            if (intents.includes('discount') && String(assistantConfig.discount_fallback ?? '').trim() !== '') {
+                return buildDiscountFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
             }
 
             if ((intents.includes('support') || intents.includes('login')) && String(assistantConfig.support_fallback ?? '').trim() !== '') {
@@ -1863,19 +1871,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const wolfiModal = document.querySelector('[data-wolfi-modal]');
     const wolfiLaunchButtons = document.querySelectorAll('[data-wolfi-launch]');
 
-    if (wolfiModal instanceof HTMLElement) {
-        const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
-        const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
-        const modalController = modalAssistant?.__wolfiController ?? null;
+        if (wolfiModal instanceof HTMLElement) {
+            const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
+            const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
+            const modalController = modalAssistant?.__wolfiController ?? null;
 
         const setWolfiModalState = (open, { userInitiated = false } = {}) => {
-            wolfiModal.classList.toggle('hidden', !open);
-            wolfiModal.classList.toggle('flex', open);
-            document.documentElement.classList.toggle('overflow-hidden', open);
-            document.body.classList.toggle('overflow-hidden', open);
+                wolfiModal.classList.toggle('hidden', !open);
+                wolfiModal.classList.toggle('flex', open);
 
-            wolfiLaunchButtons.forEach((button) => {
-                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                wolfiLaunchButtons.forEach((button) => {
+                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
             });
 
             if (open) {

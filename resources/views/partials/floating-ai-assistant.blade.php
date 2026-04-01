@@ -31,10 +31,22 @@
 
     <div class="wolfi-modal-card">
         <div class="flex items-start justify-between gap-4">
-            <div class="max-w-md">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.ai_assistant.name') }}</p>
-                <h2 id="wolfi-modal-title" class="mt-3 text-2xl font-semibold text-white">{{ __('site.contact.voice_title') }}</h2>
-                <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.contact.voice_copy') }}</p>
+            <div class="flex items-start gap-4">
+                <div class="wolfi-avatar-shell shrink-0">
+                    <img
+                        src="{{ asset('newfolder/IMG_8542.png') }}"
+                        alt="{{ __('site.ai_assistant.name') }}"
+                        class="wolfi-avatar-image"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+
+                <div class="max-w-md">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.ai_assistant.name') }}</p>
+                    <h2 id="wolfi-modal-title" class="mt-3 text-2xl font-semibold text-white">{{ __('site.contact.voice_title') }}</h2>
+                    <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.contact.voice_copy') }}</p>
+                </div>
             </div>
 
             <button

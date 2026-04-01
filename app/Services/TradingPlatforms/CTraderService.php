@@ -3,11 +3,16 @@
 namespace App\Services\TradingPlatforms;
 
 use App\Models\TradingAccount;
-use Illuminate\Support\Facades\Http;
+use App\Services\CTraderService as LiveCTraderService;
 use RuntimeException;
 
 class CTraderService implements TradingPlatformClientInterface
 {
+    public function __construct(
+        private readonly LiveCTraderService $ctraderService,
+    ) {
+    }
+
     public function slug(): string
     {
         return 'ctrader';
@@ -20,8 +25,7 @@ class CTraderService implements TradingPlatformClientInterface
 
     public function isConfigured(): bool
     {
-        return filled(config('services.ctrader.base_url'))
-            && filled(config('services.ctrader.access_token'));
+        return $this->ctraderService->isConfigured();
     }
 
     /**
@@ -41,71 +45,7 @@ class CTraderService implements TradingPlatformClientInterface
             throw new RuntimeException('cTrader credentials are missing.');
         }
 
-        $identifier = $account->platform_account_id ?: $account->platform_login;
-
-        if (! is_string($identifier) || trim($identifier) === '') {
-            throw new RuntimeException('The trading account is not linked to a cTrader account ID or login.');
-        }
-
-        $baseUrl = rtrim((string) config('services.ctrader.base_url'), '/');
-        $endpoint = str_replace('{account}', urlencode($identifier), (string) config('services.ctrader.account_endpoint', '/accounts/{account}'));
-
-        $response = Http::timeout((int) config('services.ctrader.timeout', 10))
-            ->acceptJson()
-            ->withToken((string) config('services.ctrader.access_token'))
-            ->get($baseUrl.$endpoint);
-
-        $response->throw();
-
-        $payload = $response->json();
-
-        if (! is_array($payload)) {
-            throw new RuntimeException('cTrader returned an unexpected response payload.');
-        }
-
-        return $this->normalizePayload($payload, $account);
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     * @return array<string, mixed>
-     */
-    private function normalizePayload(array $payload, TradingAccount $account): array
-    {
-        $balance = (float) data_get($payload, 'balance', data_get($payload, 'account.balance', $account->balance));
-        $equity = (float) data_get($payload, 'equity', data_get($payload, 'account.equity', $account->equity ?: $balance));
-        $profitLoss = (float) data_get($payload, 'profit_loss', data_get($payload, 'profitLoss', data_get($payload, 'account.netProfit', $balance - (float) $account->starting_balance)));
-        $todayProfit = (float) data_get($payload, 'today_profit', data_get($payload, 'todayProfit', $account->today_profit));
-        $maxDrawdown = (float) data_get($payload, 'max_drawdown', data_get($payload, 'maxDrawdown', max((float) $account->starting_balance - min($balance, $equity), 0)));
-        $dailyDrawdown = (float) data_get($payload, 'daily_drawdown', data_get($payload, 'dailyDrawdown', $account->daily_drawdown));
-        $tradingDays = (int) data_get($payload, 'trading_days_completed', data_get($payload, 'tradingDaysCompleted', $account->trading_days_completed));
-        $phaseIndex = (int) data_get($payload, 'phase_index', data_get($payload, 'phaseIndex', $account->phase_index ?: 1));
-        $platformAccountId = data_get($payload, 'platform_account_id', data_get($payload, 'accountId', $account->platform_account_id));
-        $platformLogin = data_get($payload, 'platform_login', data_get($payload, 'login', $account->platform_login));
-
-        return [
-            'platform_account_id' => is_scalar($platformAccountId) && (string) $platformAccountId !== '' ? (string) $platformAccountId : null,
-            'platform_login' => is_scalar($platformLogin) && (string) $platformLogin !== '' ? (string) $platformLogin : null,
-            'platform_environment' => (string) data_get($payload, 'platform_environment', config('services.ctrader.environment', 'demo')),
-            'platform_status' => (string) data_get($payload, 'platform_status', data_get($payload, 'status', 'connected')),
-            'balance' => $balance,
-            'equity' => $equity,
-            'profit_loss' => $profitLoss,
-            'total_profit' => (float) data_get($payload, 'total_profit', data_get($payload, 'totalProfit', $profitLoss)),
-            'today_profit' => $todayProfit,
-            'daily_drawdown' => $dailyDrawdown,
-            'max_drawdown' => $maxDrawdown,
-            'drawdown_percent' => (float) data_get($payload, 'drawdown_percent'),
-            'trading_days_completed' => $tradingDays,
-            'account_phase' => (string) data_get($payload, 'account_phase', $account->account_phase ?: 'challenge'),
-            'phase_index' => $phaseIndex,
-            'account_status' => (string) data_get($payload, 'account_status', 'active'),
-            'is_funded' => (bool) data_get($payload, 'is_funded', $account->is_funded),
-            'stage' => (string) data_get($payload, 'stage', $account->stage),
-            'activated_at' => data_get($payload, 'activated_at'),
-            'synced_at' => data_get($payload, 'synced_at', now()->toIso8601String()),
-            'raw' => $payload,
-        ];
+        return $this->ctraderService->syncAccountData($account);
     }
 
     /**
@@ -126,7 +66,7 @@ class CTraderService implements TradingPlatformClientInterface
             'platform_account_id' => $account->platform_account_id ?: 'mock-'.$account->id,
             'platform_login' => $account->platform_login ?: 'mock-login-'.$account->id,
             'platform_environment' => (string) config('services.ctrader.environment', 'demo'),
-            'platform_status' => 'connected',
+            'platform_status' => 'mock',
             'balance' => $balance,
             'equity' => $equity,
             'profit_loss' => $totalProfit,

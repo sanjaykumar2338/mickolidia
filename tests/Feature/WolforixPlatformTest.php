@@ -13,15 +13,24 @@ use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Tests\TestCase;
+use Tests\Fixtures\FakePayPalPaymentGateway;
 use Tests\Fixtures\FakeStripePaymentGateway;
 
 class WolforixPlatformTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutMiddleware(ValidateCsrfToken::class);
+    }
 
     public function test_public_pages_render_successfully(): void
     {
@@ -266,7 +275,7 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Modern Prop Trading')
-            ->assertSee('Get Funded. Get Paid. No Time Limits.')
+            ->assertSee('Get Funded. Get Paid. Instant Funding Access.')
             ->assertSee('Pass the challenge. Access funded accounts. Withdraw fast.')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
@@ -280,7 +289,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('🇺🇸')
             ->assertSee('🇪🇺')
             ->assertSee('🇬🇧')
-            ->assertSee('No Time Limits')
+            ->assertSee('Instant Funding Access')
             ->assertSee('Fast Payouts')
             ->assertSee('Scaling +25% Capital')
             ->assertSee('Up to 90% Profit Split')
@@ -297,13 +306,14 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Funded Account')
             ->assertSee('Get funded and start earning profits from your very first payout.')
             ->assertSee('Choose your model, pass the evaluation, and access real capital with clear rules and fast payouts.')
-            ->assertSee('20% OFF - Limited Launch Offer')
             ->assertSee('Launch Discount - Limited Time Only')
             ->assertSee('20% OFF - Launch Access Ending Soon')
             ->assertSee(config('wolforix.launch_discount.code'))
-            ->assertSee('Get Funded Now')
+            ->assertSee('Start Challenge')
+            ->assertSee('Get Plan')
+            ->assertSee('Get Discount')
+            ->assertSee('Ignore')
             ->assertSee('$49')
-            ->assertSee('$39')
             ->assertSee('Secure checkout')
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
@@ -312,14 +322,70 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('About')
             ->assertSee('Contact Us')
             ->assertSee('Search the site')
-            ->assertSee('Continue to Secure Checkout')
-            ->assertSee('Stripe card checkout is live in this milestone.')
+            ->assertSee('Pay with card through Stripe using the same protected order and fulfillment flow.')
             ->assertSee('Wolforix does not provide brokerage services, investment advice, or portfolio management.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
             ->assertDontSee('Dashboard Preview')
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
+    }
+
+    public function test_launch_offer_apply_persists_discount_for_the_session(): void
+    {
+        $response = $this->from(route('home'))
+            ->post(route('launch-offer.update'), [
+                'decision' => 'apply',
+                'redirect_to' => route('home').'#plans',
+            ]);
+
+        $response
+            ->assertRedirect(route('home').'#plans')
+            ->assertSessionHas('launch_offer.decision', 'apply')
+            ->assertSessionHas('launch_offer.applied', true)
+            ->assertSessionHas('launch_offer.promo_code', config('wolforix.launch_discount.code'));
+
+        $this->withSession([
+            'launch_offer' => [
+                'decision' => 'apply',
+                'applied' => true,
+                'promo_code' => config('wolforix.launch_discount.code'),
+            ],
+        ])->get(route('home'))
+            ->assertOk()
+            ->assertSee('Get Plan')
+            ->assertSee('$39')
+            ->assertSee('20% OFF - Limited Launch Offer');
+    }
+
+    public function test_launch_offer_ignore_keeps_regular_pricing_visible(): void
+    {
+        $response = $this->from(route('home'))
+            ->post(route('launch-offer.update'), [
+                'decision' => 'ignore',
+                'redirect_to' => route('home'),
+            ]);
+
+        $response
+            ->assertRedirect(route('home'))
+            ->assertSessionHas('launch_offer', function (array $launchOffer): bool {
+                return ($launchOffer['decision'] ?? null) === 'ignore'
+                    && ($launchOffer['applied'] ?? null) === false
+                    && array_key_exists('promo_code', $launchOffer)
+                    && $launchOffer['promo_code'] === null;
+            });
+
+        $this->withSession([
+            'launch_offer' => [
+                'decision' => 'ignore',
+                'applied' => false,
+                'promo_code' => null,
+            ],
+        ])->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('20% OFF - Launch Access Ending Soon')
+            ->assertSee('$49')
+            ->assertDontSee('$39');
     }
 
     public function test_dashboard_routes_require_authentication(): void
@@ -329,9 +395,46 @@ class WolforixPlatformTest extends TestCase
             route('dashboard.accounts'),
             route('dashboard.payouts'),
             route('dashboard.settings'),
+            route('ctrader.auth.connect'),
+            route('ctrader.auth.redirect'),
+            route('ctrader.auth.callback'),
         ] as $url) {
             $this->get($url)->assertRedirect(route('login'));
         }
+
+        $this->withoutMiddleware(ValidateCsrfToken::class)
+            ->post(route('ctrader.auth.link-account'), [
+                'trading_account_id' => 1,
+                'platform_account_id' => '12345',
+            ])->assertRedirect(route('login'));
+    }
+
+    public function test_authenticated_user_can_start_ctrader_authorization_flow(): void
+    {
+        $user = User::factory()->create();
+
+        config([
+            'services.ctrader.client_id' => 'client-id',
+            'services.ctrader.client_secret' => 'client-secret',
+            'services.ctrader.auth_url' => 'https://id.ctrader.com/my/settings/openapi/grantingaccess/',
+            'services.ctrader.token_url' => 'https://openapi.ctrader.com/apps/token',
+            'services.ctrader.scope' => 'accounts',
+            'services.ctrader.redirect_uri' => 'http://localhost/auth/callback',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('ctrader.auth.redirect'))
+            ->assertRedirect('https://id.ctrader.com/my/settings/openapi/grantingaccess/?client_id=client-id&redirect_uri=http%3A%2F%2Flocalhost%2Fauth%2Fcallback&scope=accounts&product=web');
+    }
+
+    public function test_ctrader_callback_requires_an_authorization_code(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('ctrader.auth.callback'))
+            ->assertRedirect(route('dashboard.accounts'))
+            ->assertSessionHas('error', 'cTrader did not return an authorization code.');
     }
 
     public function test_authenticated_users_can_access_dashboard_foundation_pages(): void
@@ -390,6 +493,26 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Terms & Conditions')
             ->assertSee('country of residence')
             ->assertSee('Cancellation and Refund Policy');
+    }
+
+    public function test_checkout_page_uses_regular_pricing_when_launch_offer_is_ignored(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->withSession([
+                'launch_offer' => [
+                    'decision' => 'ignore',
+                    'applied' => false,
+                    'promo_code' => null,
+                ],
+            ])->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'EUR',
+            ]))
+            ->assertOk()
+            ->assertDontSee('Launch promo code')
+            ->assertSee('266.00')
+            ->assertDontSee('213.00');
     }
 
     public function test_100k_plans_apply_the_profit_split_upgrade_rules(): void
@@ -515,7 +638,7 @@ class WolforixPlatformTest extends TestCase
             'email' => 'account-owner@example.com',
         ]);
 
-        $plan = app(ChallengePricingService::class)->resolvePlan('two_step', 50000, 'EUR');
+        $plan = app(ChallengePricingService::class)->resolvePlan('two_step', 50000, 'EUR', true);
 
         $response = $this->actingAs($user)->post(route('checkout.store'), [
             'full_name' => 'Test Trader',
@@ -600,6 +723,129 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 25000,
             'platform_slug' => 'ctrader',
             'account_status' => 'pending_activation',
+        ]);
+    }
+
+    public function test_checkout_can_redirect_to_paypal_when_the_gateway_is_enabled(): void
+    {
+        $this->useFakePayPalGateway();
+        $user = User::factory()->create([
+            'email' => 'paypal-owner@example.com',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'PayPal Trader',
+            'email' => 'paypal-billing@example.com',
+            'street_address' => '8 Sandbox Street',
+            'city' => 'Lisbon',
+            'postal_code' => '1100-101',
+            'country' => 'PT',
+            'challenge_type' => 'two_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'paypal',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $response->assertRedirect('https://paypal.test/checkout/fake-paypal-order-'.$order->id);
+        $this->assertSame('paypal', $order->payment_provider);
+        $this->assertSame('fake-paypal-order-'.$order->id, $order->external_checkout_id);
+        $this->assertDatabaseHas('payment_attempts', [
+            'order_id' => $order->id,
+            'provider' => 'paypal',
+            'provider_session_id' => 'fake-paypal-order-'.$order->id,
+            'status' => 'redirected',
+        ]);
+    }
+
+    public function test_paypal_success_captures_the_order_and_reuses_the_existing_fulfillment_flow(): void
+    {
+        $this->useFakePayPalGateway();
+        $user = User::factory()->create([
+            'email' => 'paypal-success@example.com',
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'PayPal Success Trader',
+            'email' => 'paypal-success-billing@example.com',
+            'street_address' => '11 PayPal Road',
+            'city' => 'Dublin',
+            'postal_code' => 'D02',
+            'country' => 'IE',
+            'challenge_type' => 'one_step',
+            'account_size' => 5000,
+            'currency' => 'USD',
+            'payment_provider' => 'paypal',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->get(route('paypal.success', [
+            'order' => $order->order_number,
+            'token' => $order->external_checkout_id,
+        ]))
+            ->assertOk()
+            ->assertSee('Challenge order confirmed')
+            ->assertSee($order->order_number);
+
+        $order->refresh();
+
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame(Order::STATUS_COMPLETED, $order->order_status);
+        $this->assertSame('fake-paypal-capture-'.$order->id, $order->external_payment_id);
+        $this->assertDatabaseHas('challenge_purchases', [
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('payment_attempts', [
+            'order_id' => $order->id,
+            'provider' => 'paypal',
+            'provider_payment_id' => 'fake-paypal-capture-'.$order->id,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_paypal_cancel_marks_the_order_canceled_and_keeps_retry_available(): void
+    {
+        $this->useFakePayPalGateway();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'PayPal Retry Trader',
+            'email' => 'paypal-retry@example.com',
+            'street_address' => '12 Retry Street',
+            'city' => 'Rome',
+            'postal_code' => '00100',
+            'country' => 'IT',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'EUR',
+            'payment_provider' => 'paypal',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->get(route('paypal.cancel', [
+            'order' => $order->order_number,
+            'token' => $order->external_checkout_id,
+        ]))
+            ->assertOk()
+            ->assertSee('Retry Payment')
+            ->assertSee($order->order_number);
+
+        $order->refresh();
+
+        $this->assertSame(Order::PAYMENT_CANCELED, $order->payment_status);
+        $this->assertSame(Order::STATUS_CANCELED, $order->order_status);
+        $this->assertDatabaseMissing('challenge_purchases', [
+            'order_id' => $order->id,
         ]);
     }
 
@@ -728,7 +974,7 @@ class WolforixPlatformTest extends TestCase
             'max_loss_limit' => 10,
             'steps' => 2,
             'profit_share' => 80,
-            'first_payout_days' => 21,
+            'first_payout_days' => 7,
             'minimum_trading_days' => 3,
             'payout_cycle_days' => 14,
             'is_active' => true,
@@ -795,8 +1041,8 @@ class WolforixPlatformTest extends TestCase
         config()->set('trading.sync.enabled', true);
         config()->set('trading.platforms.ctrader.enabled', true);
         config()->set('trading.platforms.ctrader.use_mock_data', false);
-        config()->set('services.ctrader.base_url', null);
-        config()->set('services.ctrader.access_token', null);
+        config()->set('services.ctrader.client_id', null);
+        config()->set('services.ctrader.client_secret', null);
 
         $account = TradingAccount::query()->create([
             'user_id' => User::factory()->create()->id,
@@ -950,7 +1196,7 @@ class WolforixPlatformTest extends TestCase
             'max_loss_limit' => 8,
             'steps' => 1,
             'profit_share' => 80,
-            'first_payout_days' => 21,
+            'first_payout_days' => 7,
             'minimum_trading_days' => 3,
             'payout_cycle_days' => 14,
             'is_active' => true,
@@ -1110,6 +1356,13 @@ class WolforixPlatformTest extends TestCase
     private function useFakeStripeGateway(): void
     {
         config()->set('wolforix.payments.providers.stripe.class', FakeStripePaymentGateway::class);
+    }
+
+    private function useFakePayPalGateway(): void
+    {
+        config()->set('wolforix.payments.providers.paypal.class', FakePayPalPaymentGateway::class);
+        config()->set('wolforix.payments.providers.paypal.enabled', true);
+        config()->set('wolforix.payments.providers.paypal.coming_soon', false);
     }
 
     /**

@@ -2,23 +2,32 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TrialController;
 use Illuminate\Support\Facades\Route;
 
 Route::match(['get', 'post'], '/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
+Route::post('/launch-offer', [PublicPageController::class, 'updateLaunchOffer'])->name('launch-offer.update');
 Route::middleware('auth')->group(function (): void {
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/checkout/order', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::post('/challenge-checkout', [CheckoutController::class, 'store'])->name('challenge.checkout.store');
+    Route::get('/auth/ctrader/connect', [CTraderAuthController::class, 'redirect'])->name('ctrader.auth.connect');
+    Route::get('/auth/ctrader/redirect', [CTraderAuthController::class, 'redirect'])->name('ctrader.auth.redirect');
+    Route::get('/auth/callback', [CTraderAuthController::class, 'callback'])->name('ctrader.auth.callback');
+    Route::post('/auth/ctrader/link-account', [CTraderAuthController::class, 'linkAccount'])->name('ctrader.auth.link-account');
 });
 Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+Route::get('/paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
+Route::get('/paypal/cancel', [PayPalController::class, 'cancel'])->name('paypal.cancel');
 Route::post('/payments/stripe/webhook', StripeWebhookController::class)->name('payments.stripe.webhook');
 
 Route::middleware('guest')->group(function (): void {

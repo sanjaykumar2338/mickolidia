@@ -3,13 +3,14 @@
 namespace App\Services\Pricing;
 
 use InvalidArgumentException;
+use Illuminate\Http\Request;
 
 class ChallengePricingService
 {
     /**
      * @return array<string, mixed>
      */
-    public function catalog(?string $currency = null): array
+    public function catalog(?string $currency = null, ?bool $launchDiscountEnabled = null): array
     {
         $catalog = [];
 
@@ -26,6 +27,7 @@ class ChallengePricingService
                     $challengeType,
                     (int) $accountSize,
                     $currency,
+                    $launchDiscountEnabled,
                 );
             }
         }
@@ -74,7 +76,7 @@ class ChallengePricingService
     /**
      * @return array<string, mixed>
      */
-    public function resolvePlan(string $challengeType, int $accountSize, ?string $currency = null): array
+    public function resolvePlan(string $challengeType, int $accountSize, ?string $currency = null, ?bool $launchDiscountEnabled = null): array
     {
         $definition = config("wolforix.challenge_models.{$challengeType}");
 
@@ -90,7 +92,7 @@ class ChallengePricingService
         }
 
         $currency = $this->normalizeCurrency($currency);
-        $priceSnapshot = $this->priceSnapshot((float) $usdBasePrice, $currency);
+        $priceSnapshot = $this->priceSnapshot((float) $usdBasePrice, $currency, $launchDiscountEnabled);
         $firstPhase = $definition['phases'][0];
         $fundedRules = $this->fundedRules($definition, $accountSize);
 
@@ -131,12 +133,12 @@ class ChallengePricingService
     /**
      * @return array<string, mixed>
      */
-    public function resolvePlanBySlug(string $slug, ?string $currency = null): array
+    public function resolvePlanBySlug(string $slug, ?string $currency = null, ?bool $launchDiscountEnabled = null): array
     {
-        foreach ($this->catalog($currency) as $challengeType => $definition) {
+        foreach ($this->catalog($currency, $launchDiscountEnabled) as $challengeType => $definition) {
             foreach ($definition['plans'] as $accountSize => $plan) {
                 if (($plan['slug'] ?? null) === $slug) {
-                    return $this->resolvePlan($challengeType, (int) $accountSize, $currency);
+                    return $this->resolvePlan($challengeType, (int) $accountSize, $currency, $launchDiscountEnabled);
                 }
             }
         }
@@ -157,12 +159,12 @@ class ChallengePricingService
     /**
      * @return array<string, mixed>
      */
-    public function priceSnapshot(float $usdBasePrice, ?string $currency = null): array
+    public function priceSnapshot(float $usdBasePrice, ?string $currency = null, ?bool $launchDiscountEnabled = null): array
     {
         $currency = $this->normalizeCurrency($currency);
         $rate = (float) config("wolforix.currencies.{$currency}.rate", 1);
         $launchDiscount = config('wolforix.launch_discount', []);
-        $discountEnabled = (bool) ($launchDiscount['enabled'] ?? false);
+        $discountEnabled = $this->activeLaunchDiscount($launchDiscountEnabled);
         $discountPercent = $discountEnabled ? (float) ($launchDiscount['percent'] ?? 0) : null;
 
         $listPrice = round($usdBasePrice * $rate, 0);
@@ -179,6 +181,50 @@ class ChallengePricingService
             'discount_amount' => $discountEnabled ? round($listPrice - $finalPrice, 0) : 0.0,
             'discount_enabled' => $discountEnabled,
         ];
+    }
+
+    public function normalizeLaunchPromoCode(?string $promoCode): ?string
+    {
+        $promoCode = trim((string) $promoCode);
+        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
+
+        if ($promoCode === '' || $expectedCode === '') {
+            return null;
+        }
+
+        return strcasecmp($promoCode, $expectedCode) === 0
+            ? $expectedCode
+            : null;
+    }
+
+    public function launchDiscountApplied(?Request $request = null, ?string $promoCode = null): bool
+    {
+        if ($this->normalizeLaunchPromoCode($promoCode) !== null) {
+            return true;
+        }
+
+        $request ??= app()->bound('request') ? request() : null;
+
+        return $request instanceof Request
+            && $request->hasSession()
+            && (bool) $request->session()->get('launch_offer.applied', false);
+    }
+
+    public function launchPromoCodeForRequest(?Request $request = null, ?string $promoCode = null): ?string
+    {
+        $normalizedPromoCode = $this->normalizeLaunchPromoCode($promoCode);
+
+        if ($normalizedPromoCode !== null) {
+            return $normalizedPromoCode;
+        }
+
+        if (! $this->launchDiscountApplied($request)) {
+            return null;
+        }
+
+        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
+
+        return $expectedCode !== '' ? $expectedCode : null;
     }
 
     private function normalizeCurrency(?string $currency): string
@@ -202,5 +248,14 @@ class ChallengePricingService
             $definition['funded'] ?? [],
             $definition['funded_overrides'][$accountSize] ?? [],
         );
+    }
+
+    private function activeLaunchDiscount(?bool $launchDiscountEnabled = null): bool
+    {
+        if (! (bool) config('wolforix.launch_discount.enabled', false)) {
+            return false;
+        }
+
+        return $launchDiscountEnabled ?? false;
     }
 }

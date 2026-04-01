@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SyncTradingAccountJob;
+use App\Jobs\SyncCTraderAccount;
 use App\Models\TradingAccount;
 use App\Services\TradingAccounts\TradingAccountSyncService;
 use Illuminate\Console\Command;
@@ -36,7 +36,7 @@ class SyncTradingAccounts extends Command
 
         foreach ($accounts as $account) {
             if ($queued) {
-                SyncTradingAccountJob::dispatch($account->id);
+                SyncCTraderAccount::dispatch($account->id);
                 $this->line("Queued account #{$account->id} for sync.");
 
                 continue;

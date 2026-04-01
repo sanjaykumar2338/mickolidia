@@ -65,6 +65,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'ctrader' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/ctrader.log'),
+            'level' => env('CTRADER_LOG_LEVEL', env('LOG_LEVEL', 'debug')),
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

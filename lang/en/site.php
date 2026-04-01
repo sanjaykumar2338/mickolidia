@@ -74,12 +74,12 @@ return [
 
     'home' => [
         'eyebrow' => 'Modern Prop Trading',
-        'title' => 'Get Funded. Get Paid. No Time Limits.',
+        'title' => 'Get Funded. Get Paid. Instant Funding Access.',
         'description' => 'Pass the challenge. Access funded accounts. Withdraw fast.',
         'mobile_title' => [
             'line_1' => 'Get Funded.',
             'line_2' => 'Get Paid.',
-            'line_3' => 'No Time Limits.',
+            'line_3' => 'Instant Funding Access.',
         ],
         'mobile_description' => [
             'line_1' => 'Pass the challenge. Access funded accounts.',
@@ -93,7 +93,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR ready',
             'Launch pricing active',
-            'First withdrawal after 21 days',
+            'First payout after 7 days',
         ],
         'hero_panel' => [
             'title' => 'Core rule stack',
@@ -109,7 +109,7 @@ return [
         'image_caption' => 'Branding integration',
         'image_copy' => 'The supplied client artwork drives the gold identity while the platform UI stays dark, restrained, and SaaS-focused.',
         'feature_cards' => [
-            'No Time Limits',
+            'Instant Funding Access',
             'Fast Payouts',
             'Scaling +25% Capital',
             'Up to 90% Profit Split',
@@ -126,18 +126,18 @@ return [
             'type_label' => 'Challenge type',
             'size_label' => 'Account size',
             'insight_title' => 'Model overview',
-            'entry_fee' => 'Launch price',
-            'current_price' => 'Launch price',
+            'entry_fee' => 'Entry fee',
+            'current_price' => 'Current price',
             'original_price' => 'Regular price',
             'discount_badge' => '20% OFF - Limited Launch Offer',
             'discount_urgency' => 'Launch Discount - Limited Time Only',
-            'start_button' => 'Start Challenge',
+            'start_button' => 'Get Plan',
             'review_policy' => 'Review payout policy',
             'faq_link' => 'Read FAQ',
             'unlimited' => 'Unlimited',
             'highlights' => [
                 '20% launch pricing active',
-                'First withdrawal after 21 days',
+                'First payout after 7 days',
                 'Unlimited evaluation duration',
             ],
             'currencies' => [
@@ -183,7 +183,7 @@ return [
                     'label' => '2-Step Pro',
                     'description' => 'Lower risk. Higher scaling potential. Designed for consistency and long-term growth.',
                     'note_title' => '2-Step Pro funded model',
-                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, payouts every 14 days, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
+                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, a first payout after 7 days, payouts every 14 days after that, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
                 ],
             ],
         ],
@@ -212,7 +212,7 @@ return [
                 ],
                 [
                     'title' => 'Payout safeguards visible early',
-                    'description' => 'The 14-day payout cycle, first withdrawal after 21 days across funded accounts, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
+                    'description' => 'The 7-day first payout, 14-day payout cycle after that, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
                 ],
                 [
                     'title' => 'Multilingual from the start',
@@ -323,18 +323,18 @@ return [
 
     'launch_popup' => [
         'title' => '20% OFF - Launch Access Ending Soon',
-        'description' => 'Secure your funded account at launch pricing before it is gone.',
+        'description' => 'Activate your 20% launch discount before the offer disappears.',
         'secondary_copy' => 'Limited spots are available. Once filled, prices increase.',
         'promo_label' => 'Promo code',
-        'auto_apply_notice' => 'This launch code is applied automatically when you continue.',
+        'auto_apply_notice' => 'The discount is only activated if you choose Get Discount. Ignore keeps regular pricing visible.',
         'copy_code' => 'Copy code',
         'code_copied' => 'Code copied',
-        'primary_action' => 'Get Funded Now',
-        'secondary_action' => 'Maybe later',
+        'primary_action' => 'Get Discount',
+        'secondary_action' => 'Ignore',
         'benefits' => [
-            'Instant access',
+            '20% saved instantly',
             'Real capital opportunity',
-            'No delays',
+            'Session-based activation',
         ],
         'close' => 'Close launch offer',
     ],
@@ -342,7 +342,7 @@ return [
     'auth' => [
         'eyebrow' => 'Secure access',
         'title' => 'Login or create your account to continue.',
-        'description' => 'Paid challenge checkout now requires authentication so orders, Stripe payment results, and purchased challenges stay attached to the correct user account.',
+        'description' => 'Paid challenge checkout now requires authentication so orders, payment results, and purchased challenges stay attached to the correct user account.',
         'notice' => 'Your selected challenge and currency will be preserved after login or registration and you will return directly to checkout.',
         'home_action' => 'Return Home',
         'dashboard_action' => 'Dashboard',
@@ -364,7 +364,7 @@ return [
         ],
         'register' => [
             'title' => 'Create account',
-            'copy' => 'New to Wolforix? Create your account first, then complete your billing details and proceed to Stripe.',
+            'copy' => 'New to Wolforix? Create your account first, then complete your billing details and continue with the payment method you choose at checkout.',
             'name' => 'Full name',
             'email' => 'Email',
             'password' => 'Password',
@@ -512,7 +512,7 @@ return [
         'title' => 'Move from plan selection into the real payment flow.',
         'description' => 'Challenge selection stays on the homepage, while billing data, provider choice, order creation, and redirect-based payment are handled on a dedicated checkout page.',
         'page_title' => 'Complete your challenge order',
-        'page_description' => 'Wolforix now creates a real order record and starts a real Stripe checkout session using server-side pricing. PayPal is kept ready for later without changing the checkout architecture.',
+        'page_description' => 'Wolforix creates a real order record first, then starts Stripe or PayPal checkout using server-side pricing and the same protected fulfillment flow.',
         'secure_badge' => 'Server-side pricing active',
         'order_summary' => 'Order summary',
         'supporting_title' => 'What happens next',
@@ -524,7 +524,7 @@ return [
             'The consent text explicitly states that the challenge is a simulated trading evaluation.',
         ],
         'current_selection' => 'Current selection',
-        'redirect_note' => 'The homepage now forwards directly into a dedicated checkout page where billing data, payment provider choice, and Stripe checkout session creation are handled securely.',
+        'redirect_note' => 'The homepage now forwards directly into a dedicated checkout page where billing data, payment provider choice, and secure Stripe or PayPal checkout are handled safely on the server.',
         'promo_code_title' => 'Launch promo code',
         'promo_code_label' => 'Promo code',
         'promo_code_badge' => '20% launch access',
@@ -556,8 +556,8 @@ return [
         'provider_coming_soon' => 'Coming Soon',
         'back_to_plans' => 'Back to Plans',
         'buttons' => [
-            'stripe' => 'Stripe card checkout is live in this milestone.',
-            'paypal' => 'PayPal will be added later through the same order and payment architecture.',
+            'stripe' => 'Pay with card through Stripe using the same protected order and fulfillment flow.',
+            'paypal' => 'Pay with PayPal using approval redirect and server-side order capture.',
         ],
         'providers' => [
             'stripe' => [
@@ -566,7 +566,7 @@ return [
             ],
             'paypal' => [
                 'label' => 'PayPal',
-                'description' => 'Prepared in the architecture and UI, but not connected yet.',
+                'description' => 'Secure PayPal approval flow with server-side capture and the same Wolforix order fulfillment path.',
             ],
         ],
         'success' => [
@@ -713,7 +713,7 @@ return [
                 'items' => [
                     [
                         'question' => 'How often are payouts processed?',
-                        'answer' => 'Funded accounts are reviewed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles. The first withdrawal becomes available after 21 days.',
+                        'answer' => 'Funded accounts are reviewed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles. The first withdrawal becomes available after 7 days.',
                     ],
                     [
                         'question' => 'How is my payout calculated?',
@@ -808,15 +808,20 @@ return [
         'live_chat_button' => 'Start live chat',
         'live_chat_subject' => 'Live chat support request',
         'voice_title' => 'Wolfi AI assistant',
-        'voice_copy' => 'Ask Wolfi by voice or text. Responses are matched against Wolforix FAQ content, rules, payouts, and support guidance.',
+        'voice_copy' => 'Ask Wolfi by voice or text. Responses are matched against Wolforix FAQ content, challenge rules, payouts, discount flow, and support guidance.',
         'voice_ready' => 'Wolfi is ready.',
         'voice_listening' => 'Listening... tap again to stop.',
         'voice_unsupported' => 'Voice input is not supported in this browser. You can still type a question.',
         'voice_no_match' => 'No close FAQ answer was found. Try a clearer question or open the full FAQ.',
         'voice_intro_title' => 'Wolfi is here.',
-        'voice_intro_message' => 'Hi, I’m Wolfi. I can help with plans, payouts, rules, and general platform questions.',
+        'voice_intro_message' => 'Hi, I’m Wolfi. I can help with plans, payouts, rules, discounts, and general platform questions.',
         'voice_intro_blocked' => 'Wolfi opened, but your browser blocked immediate audio playback. Tap Play answer to hear the reply.',
         'voice_support_fallback' => 'I can help with rules, payouts, plans, and general platform questions. For billing or account-specific help, contact :email.',
+        'voice_plan_fallback' => 'Wolforix currently offers 1-Step Instant and 2-Step Pro models in 5K, 10K, 25K, 50K, and 100K sizes. Choose the model that fits your risk tolerance, then use Get Plan to continue.',
+        'voice_payout_fallback' => 'The first payout becomes available after 7 days. After that, payouts follow a 14-day cycle, subject to the funded account rules and consistency checks.',
+        'voice_rules_fallback' => '1-Step uses a 10% target, 4% max daily loss, and 8% max total loss. 2-Step uses 10% then 5% targets with 5% max daily loss, 10% max total loss, and a minimum of 3 trading days per phase.',
+        'voice_checkout_fallback' => 'Click Get Plan on the selected challenge, then sign in or create your account before checkout. Wolforix sends you back to the correct plan after authentication.',
+        'voice_discount_fallback' => 'Use the launch popup and click Get Discount to activate the 20% offer for the current session. If you ignore it, regular pricing stays visible and the discount is not applied.',
         'voice_input_label' => 'Ask a question',
         'voice_input_placeholder' => 'Example: When can I request my first payout?',
         'voice_submit' => 'Get answer',
@@ -969,7 +974,7 @@ return [
                         'title' => 'Payout Eligibility',
                         'paragraphs' => [
                             'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
-                            'Funded accounts can request the first withdrawal after 21 days. 2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
+                            'Funded accounts can request the first withdrawal after 7 days. 2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
                             '1-Step funded accounts operate on the same 14-day payout rhythm but require obligatory consistency-rule compliance before payout approval.',
                         ],
                     ],
@@ -1168,7 +1173,7 @@ return [
             'rules_title' => 'Rule stack',
             'rules_copy' => 'The preview below is aligned to the final 2-Step launch model so targets, risk limits, leverage, and payout timing remain obvious near account metrics.',
             'payout_title' => 'Payout section',
-            'payout_copy' => 'Payout previews now reflect 14-day cycles, first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and +25% scaling every 3 months for profitable 2-Step accounts.',
+            'payout_copy' => 'Payout previews now reflect 14-day cycles, a first withdrawal after 7 days across funded accounts, 1-Step consistency requirements, and +25% scaling every 3 months for profitable 2-Step accounts.',
             'settings_title' => 'Profile & settings',
             'settings_copy' => 'A placeholder profile area keeps the dashboard ready for language preferences, KYC, and account security controls.',
         ],
@@ -1198,13 +1203,13 @@ return [
             'cycle_note' => 'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
             'placeholder_status' => 'Manual review placeholder',
             'queue_title' => 'Payout queue preview',
-            'queue_copy' => '14-day payout cycles, first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
+            'queue_copy' => '14-day payout cycles, a first withdrawal after 7 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
             'progressive_note' => '2-Step funded accounts can scale by +25% capital every 3 months if profitable. 1-Step funded accounts keep the obligatory consistency rule before payout approval.',
             'requirements_title' => 'Eligibility checklist',
             'requirements' => [
                 'Minimum trading days for the active phase must be met.',
                 '1-Step funded accounts must satisfy the obligatory consistency rule before profit becomes payout-eligible.',
-                'Funded accounts can request the first withdrawal after 21 days.',
+                'Funded accounts can request the first withdrawal after 7 days.',
                 'No rule violations may be present on the account and all payout requests remain subject to internal trade review.',
             ],
             'cta' => 'Payout request placeholder',

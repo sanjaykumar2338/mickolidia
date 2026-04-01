@@ -5,6 +5,7 @@ namespace App\Services\TradingAccounts;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Services\TradingPlatforms\TradingPlatformManager;
+use App\Support\CTrader\CTraderAuthorizationRequiredException;
 use App\Support\TradingMetricsCalculator;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -61,7 +62,7 @@ class TradingAccountSyncService
                 $workingCopy->exists = true;
                 $workingCopy->forceFill(array_merge($snapshot, $metrics));
 
-                if ($workingCopy->activated_at === null && (($snapshot['account_status'] ?? null) === 'active' || ($snapshot['platform_status'] ?? null) === 'connected')) {
+                if ($workingCopy->activated_at === null && in_array(($snapshot['platform_status'] ?? null), ['connected', 'live_connected', 'mock'], true)) {
                     $workingCopy->activated_at = $completedAt;
                 }
 
@@ -133,6 +134,10 @@ class TradingAccountSyncService
                 'status' => 'success',
                 'account_id' => $account->id,
             ];
+        } catch (CTraderAuthorizationRequiredException $exception) {
+            report($exception);
+
+            return $this->markAuthorizationRequired($account, $log, $exception->getMessage());
         } catch (Throwable $exception) {
             report($exception);
 
@@ -183,6 +188,37 @@ class TradingAccountSyncService
 
         return [
             'status' => 'skipped',
+            'account_id' => $account->id,
+            'message' => $message,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function markAuthorizationRequired(TradingAccount $account, TradingAccountSyncLog $log, string $message): array
+    {
+        $completedAt = now();
+
+        DB::transaction(function () use ($account, $log, $message, $completedAt): void {
+            TradingAccount::query()->whereKey($account->id)->update([
+                'sync_status' => 'skipped',
+                'platform_status' => 'authorization_required',
+                'sync_error' => $message,
+                'sync_error_at' => $completedAt,
+                'last_sync_started_at' => $log->started_at,
+                'last_sync_completed_at' => $completedAt,
+            ]);
+
+            $log->forceFill([
+                'status' => 'skipped',
+                'message' => $message,
+                'completed_at' => $completedAt,
+            ])->save();
+        });
+
+        return [
+            'status' => 'authorization_required',
             'account_id' => $account->id,
             'message' => $message,
         ];
