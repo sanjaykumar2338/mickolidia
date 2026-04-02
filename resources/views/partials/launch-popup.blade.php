@@ -5,12 +5,19 @@
 @endphp
 
 <div data-launch-popup class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-    <button type="submit" form="launch-offer-ignore-form" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" aria-label="{{ __('site.launch_popup.close') }}"></button>
+    <button
+        type="submit"
+        form="launch-offer-ignore-form"
+        data-launch-popup-close
+        class="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+        aria-label="{{ __('site.launch_popup.close') }}"
+    ></button>
     <div class="launch-popup-card relative w-full max-w-xl overflow-hidden rounded-[2.2rem] border border-white/12 bg-[radial-gradient(circle_at_top,rgba(56,88,168,0.28),transparent_34%),linear-gradient(180deg,rgba(7,14,29,0.98),rgba(5,10,18,0.98))] px-6 py-7 shadow-[0_34px_110px_rgba(2,6,23,0.78)] sm:px-8">
         <button
             type="submit"
             form="launch-offer-ignore-form"
-            class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+            data-launch-popup-close
+            class="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             aria-label="{{ __('site.launch_popup.close') }}"
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -18,10 +25,10 @@
             </svg>
         </button>
 
-        <div class="absolute inset-x-12 top-0 h-36 rounded-full bg-amber-300/25 blur-3xl"></div>
-        <div class="absolute -bottom-10 left-8 h-24 w-40 rounded-full bg-sky-400/15 blur-3xl"></div>
+        <div class="pointer-events-none absolute inset-x-12 top-0 h-36 rounded-full bg-amber-300/25 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-10 left-8 h-24 w-40 rounded-full bg-sky-400/15 blur-3xl"></div>
 
-        <div class="relative">
+        <div class="relative z-10">
             <h2 id="launch-popup-title" class="max-w-lg text-3xl font-semibold leading-tight text-white sm:text-[2.8rem]">
                 {{ __('site.launch_popup.title') }}
             </h2>

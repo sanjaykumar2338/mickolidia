@@ -380,76 +380,76 @@
                                 </a>
                             </div>
 
-                            <div data-plan-detail-groups class="mt-8 grid gap-4 xl:grid-cols-3">
+                            <div data-plan-detail-groups class="challenge-detail-groups mt-8">
                                 @foreach ($initialPlan['phases'] as $phase)
-                                    <section class="surface-card rounded-[1.6rem] p-5">
-                                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.'.$phase['key']) }}</p>
-                                        <dl class="mt-4 space-y-3 text-sm">
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_target') }}</dt>
-                                                <dd class="font-semibold text-white">{{ $phase['profit_target'] }}%</dd>
+                                    <section class="challenge-detail-card surface-card rounded-[1.6rem] p-5">
+                                        <p class="challenge-detail-title text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.'.$phase['key']) }}</p>
+                                        <dl class="challenge-metric-list mt-4 text-sm">
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_target') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ $phase['profit_target'] }}%</dd>
                                             </div>
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.daily_loss') }}</dt>
-                                                <dd class="font-semibold text-white">{{ $phase['daily_loss_limit'] }}%</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.daily_loss') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ $phase['daily_loss_limit'] }}%</dd>
                                             </div>
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.total_loss') }}</dt>
-                                                <dd class="font-semibold text-white">{{ $phase['max_loss_limit'] }}%</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.total_loss') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ $phase['max_loss_limit'] }}%</dd>
                                             </div>
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.minimum_days') }}</dt>
-                                                <dd class="font-semibold text-white">{{ $phase['minimum_trading_days'] }}</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.minimum_days') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ $phase['minimum_trading_days'] }}</dd>
                                             </div>
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</dt>
-                                                <dd class="font-semibold text-white">{{ $phase['maximum_trading_days'] === null ? __('site.home.challenge_selector.unlimited') : $phase['maximum_trading_days'] }}</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ $phase['maximum_trading_days'] === null ? __('site.home.challenge_selector.unlimited') : $phase['maximum_trading_days'] }}</dd>
                                             </div>
                                             @if ($phase['leverage'])
-                                                <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                    <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.leverage') }}</dt>
-                                                    <dd class="font-semibold text-white">{{ $phase['leverage'] }}</dd>
+                                                <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                    <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.leverage') }}</dt>
+                                                    <dd class="challenge-metric-value font-semibold text-white">{{ $phase['leverage'] }}</dd>
                                                 </div>
                                             @endif
                                         </dl>
                                     </section>
                                 @endforeach
 
-                                <section class="surface-card rounded-[1.6rem] p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.funded') }}</p>
-                                    <dl class="mt-4 space-y-3 text-sm">
-                                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                            <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
-                                            <dd class="font-semibold text-white">{{ $initialPlan['funded']['profit_split'] }}%</dd>
+                                <section class="challenge-detail-card surface-card rounded-[1.6rem] p-5">
+                                    <p class="challenge-detail-title text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.phase_titles.funded') }}</p>
+                                    <dl class="challenge-metric-list mt-4 text-sm">
+                                        <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                            <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
+                                            <dd class="challenge-metric-value font-semibold text-white">{{ $initialPlan['funded']['profit_split'] }}%</dd>
                                         </div>
                                         @if (! empty($initialPlan['funded']['profit_split_upgrade']))
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share_upgrade') }}</dt>
-                                                <dd class="max-w-[11rem] text-right font-semibold text-white">
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.profit_share_upgrade') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">
                                                     {{ str_replace([':percent', ':payouts'], [(string) $initialPlan['funded']['profit_split_upgrade']['profit_split'], (string) $initialPlan['funded']['profit_split_upgrade']['after_consecutive_payouts']], __('site.home.challenge_selector.value_templates.profit_split_upgrade')) }}
                                                 </dd>
                                             </div>
                                         @endif
-                                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                            <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</dt>
-                                            <dd class="font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['payout_cycle_days'], __('site.home.challenge_selector.value_templates.days')) }}</dd>
+                                        <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                            <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.payout_cycle') }}</dt>
+                                            <dd class="challenge-metric-value font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['payout_cycle_days'], __('site.home.challenge_selector.value_templates.days')) }}</dd>
                                         </div>
                                         @if ($initialPlan['funded']['first_withdrawal_days'])
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
-                                                <dd class="font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['first_withdrawal_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.first_withdrawal') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ str_replace(':days', (string) $initialPlan['funded']['first_withdrawal_days'], __('site.home.challenge_selector.value_templates.after_days')) }}</dd>
                                             </div>
                                         @endif
                                         @if ($initialPlan['funded']['scaling_capital_percent'] && $initialPlan['funded']['scaling_interval_months'])
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.scaling') }}</dt>
-                                                <dd class="max-w-[11rem] text-right font-semibold text-white">{{ str_replace([':percent', ':months'], [(string) $initialPlan['funded']['scaling_capital_percent'], (string) $initialPlan['funded']['scaling_interval_months']], __('site.home.challenge_selector.value_templates.scaling')) }}</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.scaling') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ str_replace([':percent', ':months'], [(string) $initialPlan['funded']['scaling_capital_percent'], (string) $initialPlan['funded']['scaling_interval_months']], __('site.home.challenge_selector.value_templates.scaling')) }}</dd>
                                             </div>
                                         @endif
                                         @if ($initialPlan['funded']['consistency_rule_required'])
-                                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                                <dt class="text-slate-400">{{ __('site.home.challenge_selector.metrics.consistency_rule') }}</dt>
-                                                <dd class="font-semibold text-white">{{ __('site.home.challenge_selector.consistency_required') }}</dd>
+                                            <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                                <dt class="challenge-metric-term text-slate-400">{{ __('site.home.challenge_selector.metrics.consistency_rule') }}</dt>
+                                                <dd class="challenge-metric-value font-semibold text-white">{{ __('site.home.challenge_selector.consistency_required') }}</dd>
                                             </div>
                                         @endif
                                     </dl>

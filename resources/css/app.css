@@ -774,6 +774,51 @@ h6 {
     box-shadow: none;
 }
 
+.challenge-detail-groups {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16.25rem), 1fr));
+    align-items: start;
+}
+
+.challenge-detail-card {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+}
+
+.challenge-detail-title {
+    line-height: 1.45;
+    letter-spacing: 0.18em;
+}
+
+.challenge-metric-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.challenge-metric-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.9rem;
+    min-height: 5rem;
+}
+
+.challenge-metric-term {
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+.challenge-metric-value {
+    max-width: 9rem;
+    text-align: right;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
 .wolfi-avatar-shell {
     position: relative;
     display: inline-flex;

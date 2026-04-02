@@ -287,6 +287,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (launchPopup instanceof HTMLElement && !launchPopup.classList.contains('hidden')) {
         const ignoreForm = document.getElementById('launch-offer-ignore-form');
+        const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
+
+        closeButtons.forEach((button) => {
+            if (!(button instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            button.addEventListener('click', (event) => {
+                if (!(ignoreForm instanceof HTMLFormElement)) {
+                    return;
+                }
+
+                event.preventDefault();
+                ignoreForm.requestSubmit();
+            });
+        });
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && ignoreForm instanceof HTMLFormElement) {
@@ -663,9 +679,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
             );
             const renderMetricRows = (rows) => rows.map(([label, value]) => `
-                <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                    <dt class="text-slate-400">${label}</dt>
-                    <dd class="font-semibold text-white">${value}</dd>
+                <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                    <dt class="challenge-metric-term text-slate-400">${label}</dt>
+                    <dd class="challenge-metric-value font-semibold text-white">${value}</dd>
                 </div>
             `).join('');
 
@@ -688,9 +704,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     return `
-                        <section class="surface-card rounded-[1.6rem] p-5">
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.[phase.key] ?? phase.key}</p>
-                            <dl class="mt-4 space-y-3 text-sm">
+                        <section class="challenge-detail-card surface-card rounded-[1.6rem] p-5">
+                            <p class="challenge-detail-title text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.[phase.key] ?? phase.key}</p>
+                            <dl class="challenge-metric-list mt-4 text-sm">
                                 ${renderMetricRows(phaseRows)}
                             </dl>
                         </section>
@@ -729,9 +745,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 detailGroups.innerHTML = `
                     ${phaseCards}
-                    <section class="surface-card rounded-[1.6rem] p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.funded ?? 'Funded Account'}</p>
-                        <dl class="mt-4 space-y-3 text-sm">
+                    <section class="challenge-detail-card surface-card rounded-[1.6rem] p-5">
+                        <p class="challenge-detail-title text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">${ui.phase_titles?.funded ?? 'Funded Account'}</p>
+                        <dl class="challenge-metric-list mt-4 text-sm">
                             ${renderMetricRows(fundedRows)}
                         </dl>
                     </section>
