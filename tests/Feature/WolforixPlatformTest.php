@@ -14,6 +14,7 @@ use App\Services\Pricing\ChallengePricingService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -193,6 +194,103 @@ class WolforixPlatformTest extends TestCase
         $this->assertCheckoutSelectionMatchesUrl($selection, $response->headers->get('Location'));
 
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_facebook_social_callback_creates_user_and_links_provider(): void
+    {
+        Mail::fake();
+
+        config()->set('services.facebook.client_id', 'facebook-client');
+        config()->set('services.facebook.client_secret', 'facebook-secret');
+        config()->set('services.facebook.redirect_uri', 'http://localhost/auth/facebook/callback');
+
+        Http::fake([
+            'https://graph.facebook.com/v20.0/oauth/access_token*' => Http::response([
+                'access_token' => 'facebook-token',
+            ]),
+            'https://graph.facebook.com/me*' => Http::response([
+                'id' => 'facebook-user-001',
+                'name' => 'Facebook Trader',
+                'email' => 'social-facebook@example.com',
+                'picture' => [
+                    'data' => [
+                        'url' => 'https://cdn.example.com/facebook-trader.png',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $response = $this->withSession([
+            'social_auth_state_facebook' => 'facebook-state',
+        ])->get(route('social.callback', [
+            'provider' => 'facebook',
+            'state' => 'facebook-state',
+            'code' => 'facebook-code',
+        ]));
+
+        $response->assertRedirect(route('home'));
+
+        $user = User::query()->where('email', 'social-facebook@example.com')->firstOrFail();
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('social_accounts', [
+            'user_id' => $user->id,
+            'provider' => 'facebook',
+            'provider_user_id' => 'facebook-user-001',
+            'provider_email' => 'social-facebook@example.com',
+        ]);
+
+        Mail::assertSent(WelcomeMail::class, function (WelcomeMail $mail): bool {
+            return $mail->hasTo('social-facebook@example.com');
+        });
+    }
+
+    public function test_apple_social_callback_links_existing_user_by_email(): void
+    {
+        config()->set('services.apple.client_id', 'apple-client');
+        config()->set('services.apple.client_secret', 'apple-secret');
+        config()->set('services.apple.redirect_uri', 'http://localhost/auth/apple/callback');
+
+        $user = User::factory()->create([
+            'email' => 'apple-linked@example.com',
+            'password' => 'password123',
+        ]);
+
+        Http::fake([
+            'https://appleid.apple.com/auth/token' => Http::response([
+                'id_token' => $this->fakeIdToken([
+                    'iss' => 'https://appleid.apple.com',
+                    'aud' => 'apple-client',
+                    'exp' => now()->addMinutes(10)->timestamp,
+                    'sub' => 'apple-user-001',
+                    'email' => 'apple-linked@example.com',
+                    'email_verified' => true,
+                    'is_private_email' => false,
+                ]),
+            ]),
+        ]);
+
+        $response = $this->withSession([
+            'social_auth_state_apple' => 'apple-state',
+        ])->post(route('social.callback', ['provider' => 'apple']), [
+            'state' => 'apple-state',
+            'code' => 'apple-code',
+            'user' => json_encode([
+                'name' => [
+                    'firstName' => 'Apple',
+                    'lastName' => 'Trader',
+                ],
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertAuthenticatedAs($user->fresh());
+        $this->assertDatabaseHas('social_accounts', [
+            'user_id' => $user->id,
+            'provider' => 'apple',
+            'provider_user_id' => 'apple-user-001',
+            'provider_email' => 'apple-linked@example.com',
+        ]);
     }
 
     public function test_users_can_request_and_complete_a_password_reset(): void
@@ -1389,6 +1487,31 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('XAU/USD');
     }
 
+    public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'existing-demo@example.com',
+            'password' => 'password123',
+            'status' => 'active',
+        ]);
+
+        $response = $this->post(route('trial.store'), [
+            'email' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $response
+            ->assertRedirect(route('trial.dashboard'))
+            ->assertSessionHas('trial_user_id', $user->id);
+
+        $this->assertAuthenticatedAs($user->fresh());
+        $this->assertDatabaseHas('trading_accounts', [
+            'user_id' => $user->id,
+            'is_trial' => true,
+            'trial_status' => 'active',
+        ]);
+    }
+
     public function test_authenticated_user_can_start_a_trial_from_the_trial_page(): void
     {
         $user = User::factory()->create([
@@ -1561,5 +1684,22 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame((string) $selection['challenge_type'], $query['challenge_type'] ?? null);
         $this->assertSame((string) $selection['account_size'], (string) ($query['account_size'] ?? ''));
         $this->assertSame((string) $selection['currency'], $query['currency'] ?? null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $claims
+     */
+    private function fakeIdToken(array $claims): string
+    {
+        $header = [
+            'alg' => 'none',
+            'typ' => 'JWT',
+        ];
+
+        return implode('.', [
+            rtrim(strtr(base64_encode(json_encode($header, JSON_THROW_ON_ERROR)), '+/', '-_'), '='),
+            rtrim(strtr(base64_encode(json_encode($claims, JSON_THROW_ON_ERROR)), '+/', '-_'), '='),
+            'signature',
+        ]);
     }
 }

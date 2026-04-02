@@ -11,23 +11,27 @@
         [
             'key' => 'google',
             'label' => __('site.auth.login.social_google'),
-            'route_names' => ['social.google.redirect', 'auth.google.redirect', 'login.google.redirect', 'oauth.google.redirect'],
+            'route_name' => 'social.redirect',
         ],
         [
             'key' => 'facebook',
             'label' => __('site.auth.login.social_facebook'),
-            'route_names' => ['social.facebook.redirect', 'auth.facebook.redirect', 'login.facebook.redirect', 'oauth.facebook.redirect'],
+            'route_name' => 'social.redirect',
         ],
         [
             'key' => 'apple',
             'label' => __('site.auth.login.social_apple'),
-            'route_names' => ['social.apple.redirect', 'auth.apple.redirect', 'login.apple.redirect', 'oauth.apple.redirect'],
+            'route_name' => 'social.redirect',
         ],
     ];
 
     $socialProviders = array_map(static function (array $provider): array {
-        $routeName = collect($provider['route_names'])->first(static fn (string $candidate): bool => Route::has($candidate));
-        $provider['href'] = $routeName ? route($routeName) : null;
+        $provider['configured'] = filled(config('services.'.$provider['key'].'.client_id'))
+            && filled(config('services.'.$provider['key'].'.client_secret'))
+            && filled(config('services.'.$provider['key'].'.redirect_uri'));
+        $provider['href'] = $provider['configured'] && Route::has($provider['route_name'])
+            ? route($provider['route_name'], ['provider' => $provider['key']])
+            : null;
 
         return $provider;
     }, $socialProviders);

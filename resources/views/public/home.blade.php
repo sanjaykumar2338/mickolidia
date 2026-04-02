@@ -228,30 +228,55 @@
         </div>
     </section>
 
+    @php
+        $trustItems = trans('site.home.trust.items');
+        $primaryTrustItems = array_slice(is_array($trustItems) ? $trustItems : [], 0, 4);
+        $secondaryTrustItems = trans('site.home.trust.support_items');
+        $secondaryTrustItems = is_array($secondaryTrustItems) ? $secondaryTrustItems : [];
+    @endphp
+
     <section class="px-6 pt-6 lg:px-8 lg:pt-8">
         <div class="mx-auto max-w-7xl">
-            <div class="surface-panel rounded-[2rem] p-6 sm:p-8">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="surface-panel rounded-[2rem] p-5 sm:p-6">
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.72fr)] xl:items-start">
                     <div class="max-w-3xl">
                         <span class="section-label">{{ __('site.home.trust.eyebrow') }}</span>
-                        <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.trust.title') }}</h2>
-                        <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.home.trust.description') }}</p>
-                    </div>
-                    <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                        {{ __('site.home.trust.cta') }}
-                    </a>
-                </div>
+                        <h2 class="mt-4 text-2xl font-semibold text-white sm:text-[2rem]">{{ __('site.home.trust.title') }}</h2>
+                        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{{ __('site.home.trust.description') }}</p>
 
-                <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    @foreach (trans('site.home.trust.items') as $item)
-                        <article class="rounded-[1.7rem] border border-white/8 bg-white/3 p-5">
-                            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10 text-emerald-100">
-                                {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
-                            </span>
-                            <p class="mt-4 text-lg font-semibold text-white">{{ $item['title'] }}</p>
-                            <p class="mt-3 text-sm leading-7 text-slate-400">{{ $item['description'] }}</p>
-                        </article>
-                    @endforeach
+                        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                            @foreach ($primaryTrustItems as $item)
+                                <article class="rounded-[1.45rem] border border-white/8 bg-white/3 p-4">
+                                    <div class="flex items-start gap-3">
+                                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/18 bg-emerald-500/10 text-emerald-100">
+                                            {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold leading-6 text-white">{{ $item['title'] }}</p>
+                                            <p class="mt-1 text-xs leading-5 text-slate-400">{{ $item['description'] }}</p>
+                                        </div>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5 xl:max-w-sm xl:justify-self-end">
+                        <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.home.trust.cta') }}
+                        </a>
+
+                        @if ($secondaryTrustItems !== [])
+                            <ul class="mt-4 space-y-3">
+                                @foreach ($secondaryTrustItems as $item)
+                                    <li class="flex items-start gap-3 text-xs leading-5 text-slate-400">
+                                        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"></span>
+                                        <span>{{ $item }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

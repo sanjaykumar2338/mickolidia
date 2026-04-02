@@ -44,25 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const assistantLocaleProfiles = {
         en: {
             regex: /\b(hello|hi|hey|when|what|how|can|payout|withdraw|rule|challenge|funded|account|support|login|checkout|discount)\b/i,
-            tokens: ['hello', 'hi', 'hey', 'when', 'what', 'how', 'can', 'payout', 'withdraw', 'rules', 'challenge', 'funded', 'account', 'support', 'login', 'checkout', 'discount', 'plan', 'drawdown', 'news'],
+            tokens: ['hello', 'hi', 'hey', 'when', 'what', 'how', 'can', 'payout', 'withdraw', 'rules', 'challenge', 'funded', 'account', 'support', 'login', 'checkout', 'discount', 'plan', 'drawdown', 'news', 'trial', 'demo'],
         },
         es: {
             regex: /[¿¡ñáéíóú]|\b(hola|cuando|como|puedo|retiro|payout|regla|desafio|challenge|cuenta|funded|soporte|inicio|descuento|checkout)\b/i,
-            tokens: ['hola', 'cuando', 'como', 'puedo', 'retiro', 'payout', 'regla', 'desafio', 'challenge', 'cuenta', 'funded', 'soporte', 'iniciar', 'descuento', 'checkout', 'plan', 'drawdown', 'noticias'],
+            tokens: ['hola', 'cuando', 'como', 'puedo', 'retiro', 'payout', 'regla', 'desafio', 'challenge', 'cuenta', 'funded', 'soporte', 'iniciar', 'descuento', 'checkout', 'plan', 'drawdown', 'noticias', 'prueba', 'demo'],
         },
         fr: {
             regex: /[àâçéèêëîïôùûüÿœæ]|\b(bonjour|quand|comment|puis|paiement|retrait|regle|challenge|compte|support|connexion|remise)\b/i,
-            tokens: ['bonjour', 'quand', 'comment', 'puis', 'paiement', 'retrait', 'regle', 'challenge', 'compte', 'support', 'connexion', 'remise', 'plan', 'drawdown', 'actualites'],
+            tokens: ['bonjour', 'quand', 'comment', 'puis', 'paiement', 'retrait', 'regle', 'challenge', 'compte', 'support', 'connexion', 'remise', 'plan', 'drawdown', 'actualites', 'essai', 'demo'],
         },
         de: {
             regex: /[äöüß]|\b(hallo|wann|wie|kann|auszahlung|regel|challenge|konto|support|login|rabatt|checkout)\b/i,
-            tokens: ['hallo', 'wann', 'wie', 'kann', 'auszahlung', 'regel', 'challenge', 'konto', 'support', 'login', 'rabatt', 'checkout', 'plan', 'drawdown', 'nachrichten'],
+            tokens: ['hallo', 'wann', 'wie', 'kann', 'auszahlung', 'regel', 'challenge', 'konto', 'support', 'login', 'rabatt', 'checkout', 'plan', 'drawdown', 'nachrichten', 'test', 'demo'],
         },
     };
     const assistantIntentProfiles = {
         greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo'],
         support: ['support', 'help', 'contact', 'email', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing'],
         login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse'],
+        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto'],
         payout: ['payout', 'withdraw', 'withdrawal', 'profit split', 'payment', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal'],
         rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'consistency', 'news', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss'],
         plans: ['plan', 'challenge', 'account size', 'size', 'model', 'one step', 'two step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2'],
@@ -75,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 intro: 'Ask me about payouts, rules, or the best next step for your account.',
                 default: 'If you want, I can also break that down step by step.',
                 support: 'If you want, I can point you to the fastest support option.',
+                trial: 'If you want, I can guide you into the free demo flow.',
                 plans: 'If you want, I can compare the 1-Step and 2-Step models for you.',
                 payout: 'If you want, I can also explain the timing and what happens after you submit a request.',
                 rules: 'If you want, I can turn the rules into a quick checklist.',
@@ -87,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 intro: 'Preguntame por payouts, reglas o por el mejor siguiente paso para tu cuenta.',
                 default: 'Si quieres, tambien te lo explico paso a paso.',
                 support: 'Si quieres, te llevo a la opcion de soporte mas rapida.',
+                trial: 'Si quieres, te guio para entrar al flujo de demo gratis.',
                 plans: 'Si quieres, te comparo el modelo 1-Step con el 2-Step.',
                 payout: 'Si quieres, tambien te explico el calendario y que pasa despues de enviar la solicitud.',
                 rules: 'Si quieres, te resumo las reglas en una checklist rapida.',
@@ -99,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 intro: 'Frag mich nach Auszahlungen, Regeln oder dem besten naechsten Schritt fuer dein Konto.',
                 default: 'Wenn du willst, erklaere ich dir das auch Schritt fuer Schritt.',
                 support: 'Wenn du willst, zeige ich dir den schnellsten Support-Weg.',
+                trial: 'Wenn du willst, fuehre ich dich in den kostenlosen Demoablauf.',
                 plans: 'Wenn du willst, vergleiche ich dir 1-Step und 2-Step direkt.',
                 payout: 'Wenn du willst, erklaere ich dir auch den Zeitplan und was nach der Anfrage passiert.',
                 rules: 'Wenn du willst, fasse ich dir die Regeln als kurze Checkliste zusammen.',
@@ -111,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 intro: 'Demandez-moi les payouts, les regles ou le meilleur prochain pas pour votre compte.',
                 default: 'Si vous voulez, je peux aussi vous l expliquer etape par etape.',
                 support: 'Si vous voulez, je peux vous orienter vers l option de support la plus rapide.',
+                trial: 'Si vous voulez, je peux vous guider vers le parcours de demo gratuit.',
                 plans: 'Si vous voulez, je peux comparer pour vous les modeles 1-Step et 2-Step.',
                 payout: 'Si vous voulez, je peux aussi expliquer le timing et ce qui se passe apres votre demande.',
                 rules: 'Si vous voulez, je peux resumer les regles sous forme de checklist rapide.',
@@ -129,9 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         es: {
             rate: 0.98,
-            pitch: 0.84,
-            volume: 0.96,
-            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose'],
+            pitch: 0.82,
+            volume: 0.95,
+            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe'],
             femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria'],
         },
         de: {
@@ -143,9 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         fr: {
             rate: 0.97,
-            pitch: 0.84,
+            pitch: 0.82,
             volume: 0.95,
-            maleVoices: ['male', 'thomas', 'daniel', 'henri', 'alexandre', 'antoine', 'nicolas'],
+            maleVoices: ['male', 'thomas', 'daniel', 'henri', 'alexandre', 'antoine', 'nicolas', 'paul', 'remy', 'yannick'],
             femaleVoices: ['female', 'amelie', 'aurelie', 'virginie', 'marie', 'julie'],
         },
     };
@@ -1533,6 +1538,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const voiceBase = normalizeLocaleCode(voiceLocale);
             const voiceName = String(voice.name ?? '').toLowerCase();
             const speechProfile = resolveAssistantSpeechProfile(requestedBase);
+            const isMaleVoice = speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword));
+            const isFemaleVoice = speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword));
+            const isNaturalVoice = voiceName.includes('natural') || voiceName.includes('neural');
             let score = 0;
 
             if (voiceLocale === requestedLocale) {
@@ -1543,16 +1551,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += 54;
             }
 
-            if (voiceName.includes('natural') || voiceName.includes('neural')) {
+            if (isNaturalVoice) {
                 score += 18;
             }
 
-            if (speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword))) {
-                score += 20;
+            if (isMaleVoice) {
+                score += 28;
             }
 
-            if (speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword))) {
-                score -= 8;
+            if (isFemaleVoice) {
+                score -= 24;
             }
 
             if (voiceName.includes('premium') || voiceName.includes('enhanced')) {
@@ -1571,8 +1579,32 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const findSpeechVoice = (locale) => {
-            return [...availableSpeechVoices]
-                .sort((left, right) => rankSpeechVoice(right, locale) - rankSpeechVoice(left, locale))[0]
+            const requestedLocale = String(locale ?? '').toLowerCase();
+            const requestedBase = normalizeLocaleCode(requestedLocale);
+            const speechProfile = resolveAssistantSpeechProfile(requestedBase);
+            const rankedVoices = [...availableSpeechVoices]
+                .map((voice) => {
+                    const voiceName = String(voice.name ?? '').toLowerCase();
+                    const voiceLocale = String(voice.lang ?? '').toLowerCase();
+                    const voiceBase = normalizeLocaleCode(voiceLocale);
+
+                    return {
+                        voice,
+                        score: rankSpeechVoice(voice, locale),
+                        exactLocale: voiceLocale === requestedLocale,
+                        baseLocale: voiceBase === requestedBase,
+                        isMaleVoice: speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword)),
+                        isFemaleVoice: speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword)),
+                        isNaturalVoice: voiceName.includes('natural') || voiceName.includes('neural'),
+                    };
+                })
+                .sort((left, right) => right.score - left.score);
+
+            return rankedVoices.find((item) => item.exactLocale && item.isMaleVoice)?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && item.isMaleVoice)?.voice
+                ?? rankedVoices.find((item) => item.isMaleVoice && (item.isNaturalVoice || item.voice.default))?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && !item.isFemaleVoice)?.voice
+                ?? rankedVoices[0]?.voice
                 ?? null;
         };
 
@@ -1770,6 +1802,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                if (status instanceof HTMLElement) {
+                    status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
+                }
+
                 setPlayButtonState(true);
             });
 
@@ -1781,6 +1817,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearPendingReplyPlayback();
                 activeReplyUtterance = null;
                 setPlayButtonState(false, true);
+
+                if (status instanceof HTMLElement) {
+                    status.textContent = status.dataset.readyMessage ?? status.textContent ?? '';
+                }
             });
 
             utterance.addEventListener('error', () => {
@@ -1792,8 +1832,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeReplyUtterance = null;
                 setPlayButtonState(false, true);
 
-                if (userInitiated && status instanceof HTMLElement && introBlockedMessage !== '') {
-                    status.textContent = introBlockedMessage;
+                if (status instanceof HTMLElement) {
+                    status.textContent = userInitiated && introBlockedMessage !== ''
+                        ? introBlockedMessage
+                        : (status.dataset.readyMessage ?? status.textContent ?? '');
                 }
             });
 
@@ -1899,6 +1941,14 @@ document.addEventListener('DOMContentLoaded', () => {
             intent: 'plans',
         });
 
+        const buildTrialFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.trial_fallback ?? '',
+            source: 'fallback',
+            intent: 'trial',
+        });
+
         const buildPayoutFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
             localeBase,
             question: assistantConfig.assistant_name ?? '',
@@ -1929,6 +1979,14 @@ document.addEventListener('DOMContentLoaded', () => {
             answer: assistantConfig.discount_fallback ?? '',
             source: 'fallback',
             intent: 'discount',
+        });
+
+        const buildGeneralFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.general_fallback ?? '',
+            source: 'fallback',
+            intent: 'default',
         });
 
         const enhanceAssistantResponse = (response) => {
@@ -2042,6 +2100,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return buildPayoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
             }
 
+            if (intents.includes('trial') && String(assistantConfig.trial_fallback ?? '').trim() !== '') {
+                return buildTrialFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
             if (intents.includes('rules') && String(assistantConfig.rules_fallback ?? '').trim() !== '') {
                 return buildRulesFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
             }
@@ -2060,6 +2122,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if ((intents.includes('support') || intents.includes('login')) && String(assistantConfig.support_fallback ?? '').trim() !== '') {
                 return buildSupportFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            if (String(assistantConfig.general_fallback ?? '').trim() !== '') {
+                return buildGeneralFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
             }
 
             return null;

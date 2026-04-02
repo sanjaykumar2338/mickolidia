@@ -7,19 +7,25 @@
     aria-expanded="false"
 >
     <span class="assistant-fab-shimmer" aria-hidden="true"></span>
-    <span class="assistant-fab-halo" aria-hidden="true"></span>
-    <span class="assistant-fab-orbit assistant-fab-orbit-left" aria-hidden="true"></span>
-    <span class="assistant-fab-orbit assistant-fab-orbit-right" aria-hidden="true"></span>
-    <span class="assistant-fab-core" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.75a3.25 3.25 0 0 1 3.25 3.25v4a3.25 3.25 0 1 1-6.5 0V8A3.25 3.25 0 0 1 12 4.75Z" />
-            <path stroke-linecap="round" d="M6.75 11.75a5.25 5.25 0 0 0 10.5 0" />
-            <path stroke-linecap="round" d="M12 17v2.25" />
-            <path stroke-linecap="round" d="M9.5 19.25h5" />
-        </svg>
+    <span class="assistant-fab-label" aria-hidden="true">
+        <span class="assistant-fab-label-kicker">{{ __('site.ai_assistant.name') }}</span>
+        <span class="assistant-fab-label-text">{{ __('site.ai_assistant.floating_cta') }}</span>
     </span>
-    <span class="assistant-fab-ping" aria-hidden="true"></span>
-    <span class="sr-only">{{ __('site.ai_assistant.floating_label') }}</span>
+    <span class="assistant-fab-avatar-wrap" aria-hidden="true">
+        <span class="assistant-fab-halo"></span>
+        <span class="assistant-fab-orbit assistant-fab-orbit-left"></span>
+        <span class="assistant-fab-orbit assistant-fab-orbit-right"></span>
+        <span class="assistant-fab-core">
+            <img
+                src="{{ asset('newfolder/IMG_8542.png') }}"
+                alt=""
+                class="assistant-fab-avatar"
+                loading="eager"
+                decoding="async"
+            >
+        </span>
+        <span class="assistant-fab-ping"></span>
+    </span>
 </button>
 
 <div
@@ -52,10 +58,10 @@
                     </video>
                 </div>
 
-                <div class="max-w-md" data-wolfi-stage="intro">
+                <div class="max-w-xl" data-wolfi-stage="intro">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.ai_assistant.name') }}</p>
-                    <h2 id="wolfi-modal-title" class="mt-3 text-2xl font-semibold text-white">{{ __('site.contact.voice_title') }}</h2>
-                    <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.contact.voice_copy') }}</p>
+                    <h2 id="wolfi-modal-title" class="mt-3 text-2xl font-semibold text-white sm:text-[2.1rem]">{{ __('site.contact.voice_title') }}</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-[15px]">{{ __('site.contact.voice_copy') }}</p>
                 </div>
             </div>
 

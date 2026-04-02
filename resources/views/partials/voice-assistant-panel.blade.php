@@ -4,7 +4,7 @@
 
     $assistantId = $assistantId ?? 'voice-assistant';
     $assistantQuestion = trim((string) ($assistantQuestion ?? request('assistant_question', '')));
-    $assistantClass = $assistantClass ?? 'rounded-[2rem] border border-white/8 bg-white/4 p-5';
+    $assistantClass = $assistantClass ?? 'rounded-[2rem] border border-white/8 bg-white/4 p-5 sm:p-6';
     $assistantExampleQuestions = trans('site.ai_assistant.example_questions');
     $voiceLocales = array_keys(config('wolforix.supported_locales', []));
     $voiceLocaleMap = [
@@ -131,6 +131,18 @@
                 'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
                 'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
                 'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'answer' => Lang::get('site.contact.voice_trial_fallback', [], $voiceLocale),
+                'url' => route('trial.register'),
+                'search_text' => trim(implode(' ', array_filter([
+                    Lang::get('site.contact.voice_trial_fallback', [], $voiceLocale),
+                    'free trial demo free demo demo account practice account trial register login email password existing user',
+                ]))),
+            ],
+            [
+                'locale' => $voiceLocale,
+                'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
+                'section' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
+                'question' => Lang::get('site.ai_assistant.name', [], $voiceLocale),
                 'answer' => Lang::get('site.contact.voice_rules_fallback', [], $voiceLocale),
                 'url' => route('faq'),
                 'search_text' => trim(implode(' ', array_filter([
@@ -151,9 +163,11 @@
             'first_payout_days' => $firstPayoutDays,
             'payout_cycle_days' => $payoutCycleDays,
         ]),
+        'trial_fallback' => __('site.contact.voice_trial_fallback'),
         'rules_fallback' => __('site.contact.voice_rules_fallback'),
         'checkout_fallback' => __('site.contact.voice_checkout_fallback'),
         'discount_fallback' => __('site.contact.voice_discount_fallback'),
+        'general_fallback' => __('site.contact.voice_general_fallback'),
         'support_fallback' => __('site.contact.voice_support_fallback', [
             'email' => config('wolforix.support.email'),
         ]),
@@ -181,13 +195,17 @@
         >
     </label>
 
-    <div class="wolfi-action-row mt-4 flex flex-wrap gap-3" data-voice-stage="controls">
+    <div class="wolfi-action-row mt-5 grid gap-3 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]" data-voice-stage="controls">
         <button
             type="button"
-            data-voice-submit
-            class="primary-cta wolfi-control-button wolfi-control-primary rounded-full px-6 py-3 text-sm font-semibold"
+            data-voice-play
+            data-play-label="{{ __('site.contact.voice_play_button') }}"
+            data-stop-label="{{ __('site.contact.voice_stop_play_button') }}"
+            data-empty-message="{{ __('site.contact.voice_play_requires_answer') }}"
+            data-speaking="{{ __('site.contact.voice_speaking') }}"
+            class="primary-cta wolfi-control-button wolfi-control-play rounded-full px-6 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
-            {{ __('site.contact.voice_submit') }}
+            {{ __('site.contact.voice_play_button') }}
         </button>
         <button
             type="button"
@@ -208,13 +226,10 @@
         </button>
         <button
             type="button"
-            data-voice-play
-            data-play-label="{{ __('site.contact.voice_play_button') }}"
-            data-stop-label="{{ __('site.contact.voice_stop_play_button') }}"
-            data-empty-message="{{ __('site.contact.voice_play_requires_answer') }}"
-            class="wolfi-control-button wolfi-control-secondary rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-45"
+            data-voice-submit
+            class="wolfi-control-button wolfi-control-secondary rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6"
         >
-            {{ __('site.contact.voice_play_button') }}
+            {{ __('site.contact.voice_submit') }}
         </button>
     </div>
 

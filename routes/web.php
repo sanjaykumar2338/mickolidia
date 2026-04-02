@@ -9,6 +9,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TrialController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,12 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
     Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+    Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+        ->where('provider', 'google|facebook|apple')
+        ->name('social.redirect');
+    Route::match(['get', 'post'], '/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+        ->where('provider', 'google|facebook|apple')
+        ->name('social.callback');
     Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'resetPasswordForm'])->name('password.reset');

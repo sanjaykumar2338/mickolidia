@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->hasMany(ChallengePurchase::class);
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function ctraderConnection(): HasOne
     {
         return $this->hasOne(CTraderConnection::class);

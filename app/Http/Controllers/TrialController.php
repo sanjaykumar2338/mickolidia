@@ -40,9 +40,29 @@ class TrialController extends Controller
         }
 
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8'],
         ]);
+
+        $existingUser = User::query()->where('email', $validated['email'])->first();
+
+        if ($existingUser instanceof User) {
+            if (! Auth::attempt([
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+            ])) {
+                return back()
+                    ->withInput($request->except('password'))
+                    ->withErrors([
+                        'email' => __('site.trial.register.existing_account_error'),
+                    ]);
+            }
+
+            $request->session()->regenerate();
+
+            return $this->redirectAuthenticatedUserToTrial($request)
+                ?? redirect()->route('trial.dashboard');
+        }
 
         $user = DB::transaction(function () use ($validated, $request): User {
             $user = User::query()->create([
@@ -64,6 +84,7 @@ class TrialController extends Controller
         });
 
         Auth::login($user);
+        $request->session()->regenerate();
         $request->session()->put('trial_user_id', $user->id);
 
         return redirect()
