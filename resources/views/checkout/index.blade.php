@@ -13,6 +13,23 @@
     $cityValue = old('city', $order?->city ?? $profile?->city);
     $postalCodeValue = old('postal_code', $order?->postal_code ?? $profile?->postal_code);
     $launchPromoCodeValue = old('promo_code', $launchPromoCodeInput ?? '');
+    $promoCodeFeedbackState = $errors->has('promo_code') ? 'error' : ($launchPromoCode !== null ? 'success' : 'idle');
+    $promoCodeFeedbackMessage = $errors->first('promo_code')
+        ?: ($launchPromoCode !== null ? __('site.checkout.promo_code_feedback.success') : __('site.checkout.promo_code_help'));
+    $basePricingState = [
+        'list_price' => number_format((float) $basePlan['list_price'], 2, '.', ''),
+        'discounted_price' => number_format((float) $basePlan['discounted_price'], 2, '.', ''),
+        'currency' => $selectedCurrency,
+        'discount_enabled' => (bool) $basePlan['discount']['enabled'],
+        'discount_badge' => (string) ($basePlan['discount']['badge'] ?? ''),
+    ];
+    $selectedPricingState = [
+        'list_price' => number_format((float) $selectedPlan['list_price'], 2, '.', ''),
+        'discounted_price' => number_format((float) $selectedPlan['discounted_price'], 2, '.', ''),
+        'currency' => $selectedCurrency,
+        'discount_enabled' => (bool) $selectedPlan['discount']['enabled'],
+        'discount_badge' => (string) ($selectedPlan['discount']['badge'] ?? ''),
+    ];
     $termsAgreement = trans('site.checkout.confirmations.terms_and_residency_html', [
         'terms_url' => route('terms'),
     ]);
@@ -40,51 +57,30 @@
     <section class="px-6 pb-12 lg:px-8">
         <div class="mx-auto grid max-w-7xl gap-8 xl:grid-cols-[0.88fr_1.12fr]">
             <aside class="space-y-6">
-                <div class="surface-panel rounded-[2rem] p-6">
+                <div class="surface-panel rounded-[2rem] p-6" data-checkout-pricing>
+                    <script type="application/json" data-checkout-base-pricing>@json($basePricingState)</script>
+                    <script type="application/json" data-checkout-selected-pricing>@json($selectedPricingState)</script>
                     <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.order_summary') }}</p>
                     <h2 class="mt-4 text-3xl font-semibold text-white">
                         {{ __('site.home.challenge_selector.types.'.$selectedChallengeType.'.label') }} / {{ (int) ($selectedAccountSize / 1000) }}K
                     </h2>
 
                     <div class="mt-5 flex flex-wrap items-center gap-3">
-                        @if ($selectedPlan['discount']['enabled'])
-                            <span class="gold-pill rounded-full px-4 py-2 text-xs font-semibold">{{ __('site.home.challenge_selector.discount_badge') }}</span>
-                        @endif
+                        <span data-checkout-discount-badge class="{{ $selectedPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">{{ __('site.home.challenge_selector.discount_badge') }}</span>
                         <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
                             {{ $selectedCurrency }}
                         </span>
                     </div>
 
                     <p class="mt-5 text-4xl font-semibold text-white">
-                        {{ number_format((float) $selectedPlan['discounted_price'], 2) }}
-                        <span class="text-lg font-medium text-slate-400">{{ $selectedCurrency }}</span>
+                        <span data-checkout-final-price>{{ number_format((float) $selectedPlan['discounted_price'], 2) }}</span>
+                        <span data-checkout-currency class="text-lg font-medium text-slate-400">{{ $selectedCurrency }}</span>
                     </p>
 
-                    @if ($selectedPlan['discount']['enabled'])
-                        <p class="mt-3 text-sm text-slate-400">
-                            {{ __('site.home.challenge_selector.original_price') }}
-                            <span class="ml-2 font-semibold line-through">{{ number_format((float) $selectedPlan['list_price'], 2) }} {{ $selectedCurrency }}</span>
-                        </p>
-                    @endif
-
-                    @if ($launchPromoCode)
-                        <div class="mt-5 rounded-[1.6rem] border border-emerald-400/24 bg-emerald-500/10 px-4 py-4">
-                            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
-                                {{ __('site.checkout.promo_code_title') }}
-                            </p>
-                            <div class="mt-3 flex flex-wrap items-center gap-3">
-                                <span class="rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-white">
-                                    {{ $launchPromoCode }}
-                                </span>
-                                <span class="rounded-full border border-emerald-400/24 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100">
-                                    {{ __('site.checkout.promo_code_applied') }}
-                                </span>
-                            </div>
-                            <p class="mt-3 text-sm leading-6 text-emerald-50/85">
-                                {{ __('site.checkout.promo_code_applied_copy') }}
-                            </p>
-                        </div>
-                    @endif
+                    <p data-checkout-original-wrap class="{{ $selectedPlan['discount']['enabled'] ? '' : 'hidden ' }}mt-3 text-sm text-slate-400">
+                        {{ __('site.home.challenge_selector.original_price') }}
+                        <span data-checkout-original-price class="ml-2 font-semibold line-through">{{ number_format((float) $selectedPlan['list_price'], 2) }} {{ $selectedCurrency }}</span>
+                    </p>
 
                     <dl class="mt-6 space-y-3 text-sm">
                         <div class="flex items-start justify-between gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
@@ -155,13 +151,48 @@
                     <input type="hidden" name="account_size" value="{{ $selectedAccountSize }}">
                     <input type="hidden" name="currency" value="{{ $selectedCurrency }}">
 
-                    <input
-                        type="hidden"
-                        name="promo_code"
-                        data-launch-promo-input
-                        data-launch-promo-expected="{{ config('wolforix.launch_discount.code') }}"
-                        value="{{ $launchPromoCodeValue }}"
+                    <div
+                        class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5"
+                        data-checkout-promo
+                        data-preview-url="{{ route('checkout.promo.preview') }}"
+                        data-challenge-type="{{ $selectedChallengeType }}"
+                        data-account-size="{{ $selectedAccountSize }}"
+                        data-currency="{{ $selectedCurrency }}"
+                        data-help-message="{{ __('site.checkout.promo_code_help') }}"
+                        data-success-message="{{ __('site.checkout.promo_code_feedback.success') }}"
+                        data-invalid-message="{{ __('site.checkout.promo_code_feedback.invalid') }}"
+                        data-applied-code="{{ $launchPromoCode ?? '' }}"
                     >
+                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.promo_code_label') }}</p>
+                        <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+                            <label class="block flex-1">
+                                <span class="sr-only">{{ __('site.checkout.promo_code_label') }}</span>
+                                <input
+                                    type="text"
+                                    name="promo_code"
+                                    value="{{ $launchPromoCodeValue }}"
+                                    data-promo-code-input
+                                    class="w-full rounded-2xl border {{ $errors->has('promo_code') ? 'border-rose-400/30' : ($launchPromoCode !== null ? 'border-emerald-400/24' : 'border-white/10') }} bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+                                    placeholder="{{ __('site.checkout.promo_code_placeholder') }}"
+                                    autocomplete="off"
+                                >
+                            </label>
+                            <button
+                                type="button"
+                                data-promo-code-apply
+                                class="inline-flex min-h-[3.25rem] items-center justify-center rounded-2xl border border-white/10 bg-white/4 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/8 sm:min-w-[8rem]"
+                            >
+                                {{ __('site.checkout.promo_code_apply') }}
+                            </button>
+                        </div>
+                        <p
+                            data-promo-code-feedback
+                            data-feedback-state="{{ $promoCodeFeedbackState }}"
+                            class="mt-4 text-sm leading-6 {{ $promoCodeFeedbackState === 'error' ? 'text-rose-100' : ($promoCodeFeedbackState === 'success' ? 'text-emerald-100' : 'text-slate-400') }}"
+                        >
+                            {{ $promoCodeFeedbackMessage }}
+                        </p>
+                    </div>
 
                     <div class="grid gap-5 md:grid-cols-2">
                         <label class="block">
@@ -240,6 +271,17 @@
 
                     <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.payment_methods_title') }}</p>
+                        <div class="mt-5 rounded-[1.4rem] border border-emerald-400/20 bg-emerald-500/10 px-4 py-4">
+                            <div class="flex items-start gap-3">
+                                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/24 bg-emerald-500/10 text-emerald-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
+                                    </svg>
+                                </span>
+                                <p class="text-sm leading-7 text-emerald-50/90">{{ __('site.checkout.trust_message') }}</p>
+                            </div>
+                        </div>
                         <div class="mt-5 space-y-3">
                             @foreach ($paymentProviders as $providerKey => $provider)
                                 <label class="block">

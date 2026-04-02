@@ -57,6 +57,7 @@ return [
         'home' => 'Startseite',
         'about' => 'Über uns',
         'about_us' => 'Über uns',
+        'security' => 'Sicherheit',
         'contact' => 'Kontakt',
         'plans' => 'Pläne',
         'faq' => 'FAQ',
@@ -74,12 +75,12 @@ return [
 
     'home' => [
         'eyebrow' => 'Modernes Prop Trading',
-        'title' => 'Funding sichern. Auszahlungen erhalten. Sofortiger Funding-Zugang.',
+        'title' => 'Funding sichern. Auszahlungen erhalten. Keine Zeitlimits.',
         'description' => 'Bestehe die Challenge. Erhalte Zugriff auf funded Konten. Lass dir Gewinne schnell auszahlen.',
         'mobile_title' => [
             'line_1' => 'Funding erhalten.',
             'line_2' => 'Auszahlungen erhalten.',
-            'line_3' => 'Sofortiger Funding-Zugang.',
+            'line_3' => 'Keine Zeitlimits.',
         ],
         'mobile_description' => [
             'line_1' => 'Bestehe die Challenge. Erhalte funded Konten.',
@@ -93,7 +94,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR bereit',
             'Launch-Preise aktiv',
-            'Erste Auszahlung nach 7 Tagen',
+            'Erste Auszahlung nach 21 Tagen',
         ],
         'hero_panel' => [
             'title' => 'Zentrale Regelstruktur',
@@ -113,6 +114,30 @@ return [
             'Schnelle Auszahlungen',
             '+25 % Kapital-Skalierung',
             'Bis zu 90 % Gewinnbeteiligung',
+        ],
+        'trust' => [
+            'eyebrow' => 'Vertrauen / Sicherheit',
+            'title' => 'Sicherheitspositionierung direkt beim ersten Besuch sichtbar.',
+            'description' => 'Wolforix baut Vertrauen rund um sichere Infrastruktur, Risikokontrollen, Monitoring und laufende ISO/IEC-27001-Ausrichtung auf.',
+            'cta' => 'Sicherheit ansehen',
+            'items' => [
+                [
+                    'title' => 'Sichere Infrastruktur',
+                    'description' => 'Geschuetztes Hosting und kontrollierter operativer Zugriff auf Kernsysteme.',
+                ],
+                [
+                    'title' => 'Erweiterte Risikokontrolle',
+                    'description' => 'Praeventive Kontrollen und Review-Ablaeufe zur Reduzierung operativer Risiken.',
+                ],
+                [
+                    'title' => 'Echtzeit-Monitoring',
+                    'description' => 'Kontinuierliche Sichtbarkeit auf Plattformaktivitaet, Ereignisse und Servicezustand.',
+                ],
+                [
+                    'title' => 'ISO/IEC 27001 ausgerichtet',
+                    'description' => 'Die Ausrichtungs-Roadmap laeuft, ohne irgendeinen Zertifizierungsanspruch.',
+                ],
+            ],
         ],
         'hero_visual' => [
             'label' => 'Trading-Desk-Vorschau',
@@ -137,7 +162,7 @@ return [
             'unlimited' => 'Unbegrenzt',
             'highlights' => [
                 '20 % Launch-Rabatt aktiv',
-                'Erste Auszahlung nach 7 Tagen',
+                'Erste Auszahlung nach 21 Tagen',
                 'Unbegrenzte Evaluationsdauer',
             ],
             'currencies' => [
@@ -183,7 +208,7 @@ return [
                     'label' => '2-Step Pro',
                     'description' => 'Weniger Risiko. Mehr Skalierungspotenzial. Entwickelt für Konsistenz und langfristiges Wachstum.',
                     'note_title' => '2-Step Pro Funded-Modell',
-                    'note_body' => 'Zwei-Phasen-Evaluation mit 1:100 Hebel in Phase 1, erster Auszahlung nach 7 Tagen, anschließenden Auszahlungen alle 14 Tage und einem Skalierungssystem für profitable Funded-Konten. Baue Konsistenz auf. Skaliere gezielt.',
+                    'note_body' => 'Zwei-Phasen-Evaluation mit 1:100 Hebel in Phase 1, erster Auszahlung nach 21 Tagen, anschließenden Auszahlungen alle 14 Tage und einem Skalierungssystem für profitable Funded-Konten. Baue Konsistenz auf. Skaliere gezielt.',
                 ],
             ],
         ],
@@ -212,7 +237,7 @@ return [
                 ],
                 [
                     'title' => 'Auszahlungs-Schutzmechanismen früh sichtbar',
-                    'description' => 'Die erste Auszahlung nach 7 Tagen, der anschließende 14-Tage-Auszahlungszyklus, die 1-Step-Konsistenzpflicht und die 2-Step-Skalierung alle 3 Monate sind bereits auf Website und im Dashboard sichtbar.',
+                    'description' => 'Die erste Auszahlung nach 21 Tagen, der anschließende 14-Tage-Auszahlungszyklus, die 1-Step-Konsistenzpflicht und die 2-Step-Skalierung alle 3 Monate sind bereits auf Website und im Dashboard sichtbar.',
                 ],
                 [
                     'title' => 'Von Anfang an mehrsprachig',
@@ -525,12 +550,18 @@ return [
         ],
         'current_selection' => 'Aktuelle Auswahl',
         'redirect_note' => 'Die Startseite leitet jetzt direkt auf eine eigene Checkout-Seite weiter, auf der Rechnungsdaten, Zahlungsanbieter und sicherer Stripe- oder PayPal-Checkout verarbeitet werden.',
-        'promo_code_title' => 'Launch-Promo-Code',
+        'promo_code_title' => 'Promo-Code',
         'promo_code_label' => 'Promo-Code',
+        'promo_code_placeholder' => 'Promo-Code eingeben',
         'promo_code_badge' => '20 % Launch-Zugang',
-        'promo_code_help' => 'Gib den Code aus dem Start-Popup ein, um das 20-%-Angebot für diese Bestellung zu aktivieren. Der Rabatt ist im Gesamtbetrag oben bereits berücksichtigt.',
+        'promo_code_help' => 'Gib einen Promo-Code ein und klicke auf Anwenden, um den Checkout-Betrag sofort zu aktualisieren.',
+        'promo_code_apply' => 'Anwenden',
         'promo_code_applied' => 'Code aktiv',
         'promo_code_applied_copy' => 'Der Launch-Code wurde automatisch angewendet und der 20-%-Rabatt ist bereits im Gesamtbetrag oben berücksichtigt.',
+        'promo_code_feedback' => [
+            'success' => 'Code erfolgreich angewendet',
+            'invalid' => 'Ungueltiger/abgelaufener Code',
+        ],
         'billing_title' => 'Rechnungsinformationen',
         'payment_methods_title' => 'Zahlungsmethoden',
         'client_data_title' => 'Kundendaten / Registrierungsdetails',
@@ -555,6 +586,7 @@ return [
         'provider_available' => 'Verfuegbar',
         'provider_coming_soon' => 'Bald verfuegbar',
         'back_to_plans' => 'Zurueck zu den Plaenen',
+        'trust_message' => 'Deine Daten werden mit branchenueblichen Sicherheitspraktiken geschuetzt, die an ISO/IEC 27001 ausgerichtet sind.',
         'buttons' => [
             'stripe' => 'Bezahle per Karte über Stripe mit demselben geschützten Bestell- und Fulfillment-Fluss.',
             'paypal' => 'Bezahle mit PayPal über Weiterleitung zur Freigabe und serverseitige Erfassung der Bestellung.',
@@ -598,7 +630,7 @@ return [
         'validation' => [
             'accept_terms_and_residency' => 'Sie muessen die AGB akzeptieren und Ihr aktuelles Wohnsitzland bestaetigen, bevor Sie fortfahren.',
             'accept_refund_policy' => 'Sie muessen der Stornierungs- und Rueckerstattungsrichtlinie zustimmen, bevor Sie fortfahren.',
-            'promo_code' => 'Dieser Launch-Promo-Code ist ungueltig. Verwende den Code aus dem Launch-Popup und versuche es erneut.',
+            'promo_code' => 'Ungueltiger/abgelaufener Code',
         ],
     ],
 
@@ -713,7 +745,7 @@ return [
                 'items' => [
                     [
                         'question' => 'Wie oft werden Auszahlungen verarbeitet?',
-                        'answer' => 'Funded-Konten werden alle 14 Tage mit einem Höchstbetrag pro Zyklus geprüft. Verbleibende auszahlungsfähige Beträge werden in den folgenden Zyklen bearbeitet. Die erste Auszahlung wird nach 7 Tagen verfügbar.',
+                        'answer' => 'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Höchstbetrag pro Zyklus. Sobald eine Anfrage eingereicht wurde, wird die Auszahlung innerhalb von 24 Stunden bearbeitet.',
                     ],
                     [
                         'question' => 'Wie wird meine Auszahlung berechnet?',
@@ -818,12 +850,14 @@ return [
         'voice_intro_blocked' => 'Wolfi wurde geöffnet, aber dein Browser hat die sofortige Audioausgabe blockiert. Tippe auf Antwort abspielen, um die Antwort zu hören.',
         'voice_support_fallback' => 'Ich kann dir bei Regeln, Auszahlungen, Plaenen und allgemeinen Plattformfragen helfen. Für Billing oder kontospezifische Hilfe kontaktiere bitte :email.',
         'voice_plan_fallback' => 'Wolforix bietet aktuell die Modelle 1-Step Instant und 2-Step Pro in den Größen 5K, 10K, 25K, 50K und 100K an. Wähle das Modell passend zu deinem Risiko und nutze anschließend Plan sichern.',
-        'voice_payout_fallback' => 'Die erste Auszahlung ist nach 7 Tagen möglich. Danach folgen Auszahlungen im 14-Tage-Rhythmus, immer vorbehaltlich der Funded-Regeln und der Konsistenzprüfung.',
+        'voice_payout_fallback' => 'Die erste Auszahlung ist nach :first_payout_days Tagen möglich. Danach folgen Auszahlungen im :payout_cycle_days-Tage-Rhythmus. Nach Einreichung einer Auszahlungsanfrage wird diese innerhalb von 24 Stunden bearbeitet, vorbehaltlich der Funded-Regeln und der Konsistenzprüfung.',
         'voice_rules_fallback' => 'Beim 1-Step gelten 10 % Gewinnziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust. Beim 2-Step gelten 10 % und 5 % Gewinnziel, 5 % maximaler Tagesverlust, 10 % maximaler Gesamtverlust und mindestens 3 Handelstage pro Phase.',
         'voice_checkout_fallback' => 'Klicke im gewählten Challenge-Modell auf Plan sichern und melde dich dann an oder erstelle ein Konto, bevor du zum Checkout gehst. Wolforix führt dich danach wieder zurück zum richtigen Plan.',
         'voice_discount_fallback' => 'Öffne das Launch-Popup und klicke auf Rabatt sichern, um das 20-%-Angebot für die aktuelle Sitzung zu aktivieren. Wenn du es ignorierst, bleibt der reguläre Preis bestehen.',
         'voice_input_label' => 'Frage stellen',
         'voice_input_placeholder' => 'Beispiel: Wann kann ich meine erste Auszahlung anfordern?',
+        'voice_suggestions_label' => 'Vorgeschlagene Fragen',
+        'voice_suggestions_copy' => 'Starte mit einer kurzen Frage und Wolfi führt dich von dort aus weiter.',
         'voice_submit' => 'Antwort holen',
         'voice_button' => 'Sprechen',
         'voice_play_button' => 'Antwort abspielen',
@@ -839,6 +873,53 @@ return [
         'voice_answer_title' => 'FAQ-basierte Antwort',
         'voice_empty' => 'Frage nach Auszahlungen, Regeln, Skalierung, Support oder Konto-Voraussetzungen.',
         'voice_open_faq' => 'Komplette FAQ oeffnen',
+    ],
+
+    'security' => [
+        'meta_title' => 'Sicherheit',
+        'eyebrow' => 'Vertrauen & Sicherheit',
+        'title' => 'Sicherheitspraktiken zum Schutz der Plattform, deines Kontos und der operativen Integritaet.',
+        'description' => 'Wolforix baut seine Sicherheitspositionierung rund um praktische Kontrollen fuer Zugriff, Monitoring, Risikoaufsicht und Datenverarbeitung auf. Die ISO/IEC-27001-Ausrichtung ist in Arbeit, eine Zertifizierung wird derzeit nicht beansprucht.',
+        'badge' => 'ISO/IEC-27001-Ausrichtung in Arbeit',
+        'note' => 'Diese Seite beschreibt aktuelle Sicherheitspraktiken und die Roadmap-Richtung, um Vertrauen zu staerken, waehrend das Programm weiter ausgebaut wird.',
+        'sections' => [
+            [
+                'title' => 'Sicherheit',
+                'description' => 'Konto- und Plattformkontrollen sind darauf ausgelegt, unautorisierten Zugriff zu reduzieren und Authentifizierungsablaeufe zu schuetzen.',
+                'items' => [
+                    'Unterstuetzung fuer Zwei-Faktor-Authentifizierung ist Teil der Konto-Zugriffskontrollen.',
+                    'Sensibler Datenverkehr und Geheimnisse werden per Verschluesselung und kontrollierter Handhabung geschuetzt.',
+                    'Kontoschutz umfasst kontrollierte Zugriffe, starke Zugangsdaten-Praktiken und Session-Schutz.',
+                ],
+            ],
+            [
+                'title' => 'Risikomanagement',
+                'description' => 'Operative Risiken werden ueber mehrschichtige Schutzmassnahmen, Monitoring und Review-Prozesse gesteuert.',
+                'items' => [
+                    'Zugriffsrechte und operative Aenderungen werden ueber kontrollierte Workflows geprueft.',
+                    'Monitoring und Alarmierung helfen, ungewoehnliche Aktivitaeten und Serviceprobleme schnell zu erkennen.',
+                    'Reaktionsprozesse sollen Vorfaelle begrenzen, Reviews unterstuetzen und die Widerstandsfaehigkeit verbessern.',
+                ],
+            ],
+            [
+                'title' => 'Datenschutz',
+                'description' => 'Die Datenverarbeitung folgt Schutz, begrenztem Zugriff und verantwortungsvollen Aufbewahrungspraktiken.',
+                'items' => [
+                    'Daten werden waehrend der Uebertragung mit modernen Verschluesselungsstandards geschuetzt.',
+                    'Der Zugriff auf sensible Informationen ist auf autorisierte Personen und Systeme beschraenkt.',
+                    'Speicherung, Aufbewahrung und Handhabung sind auf Vertraulichkeit und Integritaet ausgerichtet.',
+                ],
+            ],
+            [
+                'title' => 'Roadmap',
+                'description' => 'Die Sicherheitsreife wird weiter ausgebaut, waehrend sich Plattform und interne Kontrollen entwickeln.',
+                'items' => [
+                    'Die ISO/IEC-27001-Ausrichtung ist aktuell in Arbeit.',
+                    'Richtlinien, Dokumentation und Kontrollabdeckung werden weiter formalisiert und geprueft.',
+                    'Monitoring, Zugriffs-Governance und kontinuierliche Verbesserungspraktiken werden schrittweise erweitert.',
+                ],
+            ],
+        ],
     ],
 
     'legal' => [
@@ -968,13 +1049,20 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Auszahlungsrichtlinie',
-                'intro' => 'Auszahlungen werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet.',
+                'intro' => 'Die erste Auszahlungsanfrage ist nach 21 Tagen moeglich. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
+                'highlight' => [
+                    'title' => 'Auszahlungsverarbeitung',
+                    'items' => [
+                        'Auszahlungen innerhalb von 24 Stunden',
+                    ],
+                    'note' => 'Sobald ein Kunde eine Auszahlungsanfrage eingereicht hat, strebt Wolforix eine Bearbeitung der Auszahlung innerhalb von 24 Stunden an.',
+                ],
                 'sections' => [
                     [
                         'title' => 'Auszahlungsberechtigung',
                         'paragraphs' => [
-                            'Auszahlungen werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet.',
-                            'Funded-Konten können die erste Auszahlung nach 7 Tagen anfordern. 2-Step Funded-Konten können bei Profitabilität zudem alle 3 Monate um +25 % Kapital skaliert werden.',
+                            'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
+                            '2-Step Funded-Konten können bei Profitabilität zudem alle 3 Monate um +25 % Kapital skaliert werden.',
                             '1-Step Funded-Konten arbeiten im selben 14-Tage-Rhythmus, verlangen jedoch vor jeder Auszahlung die obligatorische Einhaltung der Konsistenzregel.',
                         ],
                     ],
@@ -1090,6 +1178,9 @@ return [
             'Wolforix bietet keine Brokerage-Dienstleistungen, Anlageberatung oder Portfolioverwaltung an. Das Unternehmen nimmt keine Einlagen an, hält keine Kundengelder und führt keine Trades im Namen von Nutzern aus.',
         ],
         'legal_title' => 'Rechtliches & Richtlinien',
+        'security_title' => 'Vertrauen & Sicherheit',
+        'security_line' => 'Sicherheit ausgerichtet an ISO/IEC-27001-Standards (in Arbeit)',
+        'security_link' => 'Sicherheit ansehen',
         'operations_title' => 'Betrieb',
         'operations_copy' => 'Support wird per E-Mail und später über Dashboard-Tickets abgewickelt. Manuelle Auszahlungen bleiben administrativ geprüft, und die Genehmigung hängt von der Einhaltung der Regeln ab.',
         'contact_title' => 'Kontakt & Support',
@@ -1173,7 +1264,7 @@ return [
             'rules_title' => 'Regelstruktur',
             'rules_copy' => 'Die Vorschau unten ist am finalen 2-Step-Launch-Modell ausgerichtet, damit Ziele, Risikogrenzen, Hebel und Auszahlungszeitpunkt nahe an den Kontokennzahlen sichtbar bleiben.',
             'payout_title' => 'Auszahlungsbereich',
-            'payout_copy' => 'Die Auszahlungsvorschau spiegelt jetzt 14-Tage-Zyklen, eine erste Auszahlung nach 7 Tagen für alle funded Konten, 1-Step-Konsistenzanforderungen und die +25-%-Skalierung alle 3 Monate für profitable 2-Step-Konten wider.',
+            'payout_copy' => 'Die Auszahlungsvorschau spiegelt jetzt 14-Tage-Zyklen, eine erste Auszahlung nach 21 Tagen für alle funded Konten, 1-Step-Konsistenzanforderungen und die +25-%-Skalierung alle 3 Monate für profitable 2-Step-Konten wider.',
             'settings_title' => 'Profil & Einstellungen',
             'settings_copy' => 'Ein Profil-Platzhalter hält das Dashboard bereit für Spracheinstellungen, KYC und Kontosicherheitsfunktionen.',
         ],
@@ -1200,16 +1291,16 @@ return [
         'payouts' => [
             'next_window' => 'Nächstes Auszahlungsfenster',
             'next_window_value' => 'Naechste 14-Tage-Pruefung in 3 Tagen',
-            'cycle_note' => 'Auszahlungen werden alle 14 Tage mit einem Hoechstbetrag pro Zyklus verarbeitet. Verbleibende auszahlungsfaehige Betraege werden in den folgenden Zyklen bearbeitet.',
+            'cycle_note' => 'Die erste Auszahlungsanfrage ist nach 21 Tagen moeglich. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
             'placeholder_status' => 'Platzhalter für manuelle Prüfung',
             'queue_title' => 'Vorschau der Auszahlungswarteschlange',
-            'queue_copy' => '14-Tage-Auszahlungszyklen, eine erste Auszahlung nach 7 Tagen für alle funded Konten, 1-Step-Konsistenzanforderungen und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
+            'queue_copy' => '14-Tage-Auszahlungszyklen, eine erste Auszahlung nach 21 Tagen für alle funded Konten, 1-Step-Konsistenzanforderungen und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
             'progressive_note' => '2-Step Funded-Konten koennen bei Profitabilitaet alle 3 Monate um +25 % Kapital skaliert werden. 1-Step Funded-Konten behalten die obligatorische Konsistenzregel vor der Auszahlungsfreigabe.',
             'requirements_title' => 'Berechtigungs-Checkliste',
             'requirements' => [
                 'Die Mindesthandelstage der aktiven Phase muessen erfuellt sein.',
                 '1-Step Funded-Konten muessen die obligatorische Konsistenzregel erfuellen, bevor Gewinn auszahlungsberechtigt wird.',
-                'Funded-Konten können die erste Auszahlung nach 7 Tagen anfordern.',
+                'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern.',
                 'Es duerfen keine Regelverstoesse auf dem Konto vorliegen und alle Auszahlungsanfragen bleiben einer internen Handelspruefung unterworfen.',
             ],
             'cta' => 'Platzhalter für Auszahlungsanfrage',

@@ -10,6 +10,26 @@
                 <h1 class="mt-5 text-4xl font-semibold text-white sm:text-5xl">{{ $page['title'] }}</h1>
                 <p class="mt-5 max-w-3xl text-base leading-8 text-slate-300">{{ $page['intro'] }}</p>
 
+                @if (! empty($page['highlight']))
+                    <div class="mt-6 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 p-6">
+                        @if (! empty($page['highlight']['title']))
+                            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ $page['highlight']['title'] }}</p>
+                        @endif
+
+                        @if (! empty($page['highlight']['items']))
+                            <ul class="{{ ! empty($page['highlight']['title']) ? 'mt-4 ' : '' }}space-y-3 text-sm leading-7 text-amber-50">
+                                @foreach ($page['highlight']['items'] as $item)
+                                    <li class="rounded-2xl border border-amber-300/12 bg-black/15 px-4 py-3">{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        @if (! empty($page['highlight']['note']))
+                            <p class="mt-4 text-sm leading-7 text-amber-50/90">{{ $page['highlight']['note'] }}</p>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="mt-10 space-y-8">
                     @foreach ($page['sections'] as $section)
                         <section class="rounded-[1.8rem] border border-white/8 bg-white/3 p-6">

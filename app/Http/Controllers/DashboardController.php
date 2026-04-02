@@ -121,6 +121,7 @@ class DashboardController extends Controller
     private function overviewAccountPayload(TradingAccount $account): array
     {
         $plan = $this->planDefinitionForAccount($account);
+        $fundedTiming = $this->fundedTiming($account, $plan);
 
         return [
             'reference' => $account->account_reference ?? 'N/A',
@@ -151,11 +152,11 @@ class DashboardController extends Controller
             'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
             'progress_label' => number_format((float) $account->profit_target_progress_percent, 0).'%',
             'profit_split' => number_format((float) $account->profit_split, 0).'%',
-            'payout_eligible_at' => $this->formatDateTime($account->payout_eligible_at),
-            'first_payout_eligible_at' => $this->formatDateTime($account->first_payout_eligible_at),
+            'payout_eligible_at' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
+            'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
-            'payout_cycle_days' => (int) ($plan['funded']['payout_cycle_days'] ?? $account->challengePlan?->payout_cycle_days ?? 14),
-            'first_payout_days' => (int) ($plan['funded']['first_withdrawal_days'] ?? $account->challengePlan?->first_payout_days ?? 7),
+            'payout_cycle_days' => $fundedTiming['payout_cycle_days'],
+            'first_payout_days' => $fundedTiming['first_payout_days'],
             'leverage' => $plan['phases'][0]['leverage'] ?? null,
         ];
     }
@@ -330,12 +331,42 @@ class DashboardController extends Controller
         }
 
         $eligibleProfit = max((float) $account->total_profit, 0) * (((float) $account->profit_split) / 100);
+        $fundedTiming = $this->fundedTiming($account, $this->planDefinitionForAccount($account));
 
         return [
-            'next_window' => $this->formatDateTime($account->payout_eligible_at),
+            'next_window' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'eligible_profit' => $this->formatMoney($eligibleProfit),
-            'cycle_note' => 'First payout eligibility: '.$this->formatDateTime($account->first_payout_eligible_at),
+            'cycle_note' => 'First payout eligibility: '.$this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'status' => $this->humanizeStatus((string) $account->account_status),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     * @return array{first_payout_days:int,payout_cycle_days:int,first_payout_eligible_at:mixed,payout_eligible_at:mixed}
+     */
+    private function fundedTiming(TradingAccount $account, array $plan = []): array
+    {
+        $firstPayoutDays = (int) ($plan['funded']['first_withdrawal_days']
+            ?? $account->challengePlan?->first_payout_days
+            ?? config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 21));
+        $payoutCycleDays = (int) ($plan['funded']['payout_cycle_days']
+            ?? $account->challengePlan?->payout_cycle_days
+            ?? 14);
+        $firstPayoutEligibleAt = $account->first_payout_eligible_at;
+        $payoutEligibleAt = $account->payout_eligible_at;
+
+        if ($account->activated_at !== null) {
+            $firstPayoutEligibleAt = $account->activated_at->copy()->addDays($firstPayoutDays);
+            $cycleStartedAt = $account->payout_cycle_started_at ?? $account->activated_at;
+            $payoutEligibleAt = $cycleStartedAt->copy()->addDays($payoutCycleDays);
+        }
+
+        return [
+            'first_payout_days' => $firstPayoutDays,
+            'payout_cycle_days' => $payoutCycleDays,
+            'first_payout_eligible_at' => $firstPayoutEligibleAt,
+            'payout_eligible_at' => $payoutEligibleAt,
         ];
     }
 

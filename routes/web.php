@@ -18,6 +18,7 @@ Route::post('/launch-offer', [PublicPageController::class, 'updateLaunchOffer'])
 Route::middleware('auth')->group(function (): void {
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
     Route::post('/checkout/order', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/promo-preview', [CheckoutController::class, 'previewPromo'])->name('checkout.promo.preview');
     Route::post('/challenge-checkout', [CheckoutController::class, 'store'])->name('challenge.checkout.store');
     Route::get('/auth/ctrader/connect', [CTraderAuthController::class, 'redirect'])->name('ctrader.auth.connect');
     Route::get('/auth/ctrader/redirect', [CTraderAuthController::class, 'redirect'])->name('ctrader.auth.redirect');
@@ -43,6 +44,7 @@ Route::middleware('guest')->group(function (): void {
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
 Route::get('/about', [PublicPageController::class, 'about'])->name('about');
+Route::get('/security', [PublicPageController::class, 'security'])->name('security');
 Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact');
 Route::get('/faq', [PublicPageController::class, 'faq'])->name('faq');
 Route::get('/news', [NewsController::class, 'index'])->name('news');

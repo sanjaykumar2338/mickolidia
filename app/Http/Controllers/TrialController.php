@@ -21,11 +21,11 @@ class TrialController extends Controller
             Auth::loginUsingId((int) $request->session()->get('trial_user_id'));
         }
 
-        $activeTrial = $this->activeTrialAccount($request->user());
-
-        if ($activeTrial instanceof TradingAccount) {
-            return redirect()->route('trial.dashboard');
+        if ($redirect = $this->redirectAuthenticatedUserToTrial($request)) {
+            return $redirect;
         }
+
+        $request->session()->put('url.intended', route('trial.register'));
 
         return view('trial.register', [
             'startingBalance' => (float) config('wolforix.trial.starting_balance', 10000),
@@ -35,6 +35,10 @@ class TrialController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($redirect = $this->redirectAuthenticatedUserToTrial($request)) {
+            return $redirect;
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
@@ -119,19 +123,34 @@ class TrialController extends Controller
             ->with('trial_success', __('site.trial.retry.success'));
     }
 
-    private function activeTrialAccount(?User $user): ?TradingAccount
+    private function redirectAuthenticatedUserToTrial(Request $request): ?RedirectResponse
     {
+        $user = $request->user();
+
         if (! $user instanceof User) {
             return null;
         }
 
-        $trialAccount = $user->latestTrialAccount()->first();
+        $request->session()->put('trial_user_id', $user->id);
+        $trialAccount = $this->latestTrialAccount($user);
 
-        if (! $trialAccount instanceof TradingAccount) {
-            return null;
+        if ($trialAccount instanceof TradingAccount) {
+            return redirect()->route('trial.dashboard');
         }
 
-        return $this->isTrialEnded($trialAccount) ? null : $trialAccount;
+        DB::transaction(function () use ($user): void {
+            UserProfile::query()->updateOrCreate([
+                'user_id' => $user->id,
+            ], [
+                'preferred_language' => app()->getLocale(),
+            ]);
+
+            $this->createTrialAccount($user);
+        });
+
+        return redirect()
+            ->route('trial.dashboard')
+            ->with('trial_success', __('site.trial.register.success'));
     }
 
     private function latestTrialAccount(?User $user): ?TradingAccount

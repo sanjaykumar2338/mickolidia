@@ -9,6 +9,7 @@ use App\Services\Payments\OrderFulfillmentService;
 use App\Services\Payments\PaymentManager;
 use App\Services\Pricing\ChallengePricingService;
 use InvalidArgumentException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,27 +45,28 @@ class CheckoutController extends Controller
             $selectedType,
             $pricingService,
         );
-        $launchPromoCodeInput = $request->string('promo_code')->toString();
+        $oldInput = $request->hasSession() ? $request->session()->getOldInput() : [];
+        $hasOldPromoCodeInput = is_array($oldInput) && array_key_exists('promo_code', $oldInput);
+        $launchPromoCodeInput = $hasOldPromoCodeInput
+            ? trim((string) ($oldInput['promo_code'] ?? ''))
+            : trim($request->string('promo_code')->toString());
 
         if ($launchPromoCodeInput === '') {
-            $launchPromoCodeInput = (string) data_get($retryOrder?->metadata, 'launch_promo.code', '');
+            $launchPromoCodeInput = trim((string) data_get($retryOrder?->metadata, 'launch_promo.code', ''));
         }
 
         $launchPromoCode = $pricingService->normalizeLaunchPromoCode($launchPromoCodeInput);
 
-        if ($launchPromoCode !== null) {
-            $request->session()->put('launch_offer', [
-                'decision' => 'apply',
-                'applied' => true,
-                'promo_code' => $launchPromoCode,
-            ]);
+        if (! $hasOldPromoCodeInput && $launchPromoCode === null && $launchPromoCodeInput === '') {
+            $launchPromoCode = $pricingService->launchPromoCodeForRequest($request);
+            $launchPromoCodeInput = $launchPromoCode ?? '';
         }
 
-        $launchDiscountApplied = $pricingService->launchDiscountApplied($request, $launchPromoCode);
-        $launchPromoCode = $pricingService->launchPromoCodeForRequest($request, $launchPromoCode);
+        $launchDiscountApplied = $launchPromoCode !== null;
 
         return view('checkout.index', [
             'order' => $retryOrder,
+            'basePlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, false),
             'selectedPlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, $launchDiscountApplied),
             'selectedChallengeType' => $selectedType,
             'selectedAccountSize' => $selectedSize,
@@ -112,9 +114,10 @@ class CheckoutController extends Controller
             'accept_refund_policy.accepted' => __('site.checkout.validation.accept_refund_policy'),
         ]);
 
-        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($validated['promo_code'] ?? null);
+        $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
+        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
 
-        if (($validated['promo_code'] ?? null) !== null && trim((string) $validated['promo_code']) !== '' && $launchPromoCode === null) {
+        if ($promoCodeInput !== '' && $launchPromoCode === null) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -122,16 +125,7 @@ class CheckoutController extends Controller
                 ]);
         }
 
-        if ($launchPromoCode !== null) {
-            $request->session()->put('launch_offer', [
-                'decision' => 'apply',
-                'applied' => true,
-                'promo_code' => $launchPromoCode,
-            ]);
-        }
-
-        $launchDiscountApplied = $pricingService->launchDiscountApplied($request, $launchPromoCode);
-        $launchPromoCode = $pricingService->launchPromoCodeForRequest($request, $launchPromoCode);
+        $launchDiscountApplied = $launchPromoCode !== null;
 
         try {
             $selectedPlan = $pricingService->resolvePlan(
@@ -262,6 +256,47 @@ class CheckoutController extends Controller
         return redirect()->away((string) $checkoutSession['checkout_url']);
     }
 
+    public function previewPromo(Request $request, ChallengePricingService $pricingService): JsonResponse
+    {
+        $validated = $request->validate([
+            'challenge_type' => ['required', Rule::in(array_keys(config('wolforix.challenge_models', [])))],
+            'account_size' => [
+                'required',
+                'integer',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    $challengeType = (string) $request->input('challenge_type');
+                    $pricing = config("wolforix.challenge_models.{$challengeType}.pricing", []);
+
+                    if (! array_key_exists((int) $value, $pricing)) {
+                        $fail(__('validation.in'));
+                    }
+                },
+            ],
+            'currency' => ['required', Rule::in($pricingService->supportedProviderCurrencies())],
+            'promo_code' => ['nullable', 'string', 'max:60'],
+        ]);
+
+        $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
+        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
+        $selectedPlan = $pricingService->resolvePlan(
+            $validated['challenge_type'],
+            (int) $validated['account_size'],
+            $validated['currency'],
+            $launchPromoCode !== null,
+        );
+
+        return response()->json([
+            'applied' => $launchPromoCode !== null,
+            'promo_code' => $launchPromoCode,
+            'message' => $promoCodeInput === ''
+                ? ''
+                : ($launchPromoCode !== null
+                    ? __('site.checkout.promo_code_feedback.success')
+                    : __('site.checkout.promo_code_feedback.invalid')),
+            'pricing' => $this->pricingPayload($selectedPlan),
+        ]);
+    }
+
     public function success(
         Request $request,
         PaymentManager $paymentManager,
@@ -371,5 +406,20 @@ class CheckoutController extends Controller
                 'is_active' => true,
             ],
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     * @return array<string, mixed>
+     */
+    private function pricingPayload(array $plan): array
+    {
+        return [
+            'currency' => $plan['currency'],
+            'list_price' => number_format((float) $plan['list_price'], 2, '.', ''),
+            'discounted_price' => number_format((float) $plan['discounted_price'], 2, '.', ''),
+            'discount_enabled' => (bool) data_get($plan, 'discount.enabled', false),
+            'discount_badge' => (string) data_get($plan, 'discount.badge', ''),
+        ];
     }
 }

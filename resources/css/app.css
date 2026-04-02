@@ -450,6 +450,117 @@ h6 {
     }
 }
 
+@keyframes wolfiBreath {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(0, -4px, 0) scale(1.018);
+    }
+}
+
+@keyframes wolfiGlowPulse {
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(0.96);
+    }
+
+    50% {
+        opacity: 0.86;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes wolfiRingWave {
+    0% {
+        opacity: 0.18;
+        transform: scale(0.92);
+    }
+
+    70% {
+        opacity: 0.42;
+        transform: scale(1.08);
+    }
+
+    100% {
+        opacity: 0.12;
+        transform: scale(1.14);
+    }
+}
+
+@keyframes wolfiFabDrift {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate3d(0, -3px, 0) scale(1.015);
+    }
+}
+
+@keyframes wolfiHaloPulse {
+    0%,
+    100% {
+        opacity: 0.68;
+        transform: scale(0.98);
+    }
+
+    50% {
+        opacity: 0.96;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes wolfiShimmerSweep {
+    0% {
+        opacity: 0;
+        transform: translate3d(-140%, 0, 0) rotate(18deg);
+    }
+
+    18% {
+        opacity: 0.16;
+    }
+
+    55% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate3d(160%, 0, 0) rotate(18deg);
+    }
+}
+
+@keyframes wolfiOrbit {
+    0% {
+        transform: rotate(var(--wolfi-orbit-start, 0deg)) translate3d(0, var(--wolfi-orbit-distance, -1.75rem), 0);
+    }
+
+    50% {
+        transform: rotate(calc(var(--wolfi-orbit-start, 0deg) + 180deg)) translate3d(0, calc(var(--wolfi-orbit-distance, -1.75rem) - 0.12rem), 0);
+    }
+
+    100% {
+        transform: rotate(calc(var(--wolfi-orbit-start, 0deg) + 360deg)) translate3d(0, var(--wolfi-orbit-distance, -1.75rem), 0);
+    }
+}
+
+@keyframes wolfiCursorBlink {
+    0%,
+    49% {
+        opacity: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
 .primary-cta {
     position: relative;
     display: inline-flex;
@@ -608,14 +719,14 @@ h6 {
 }
 
 .challenge-currency-strip .challenge-currency-button {
-    min-width: 5.35rem;
-    min-height: 5.35rem;
+    min-width: 5.85rem;
+    min-height: 5.7rem;
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.9rem 0.8rem;
+    padding: 0.95rem 0.78rem;
     border-radius: 1.45rem;
     text-align: center;
 }
@@ -628,7 +739,10 @@ h6 {
     margin-top: 0.45rem;
     font-size: 0.68rem;
     line-height: 1.35;
+    max-width: 100%;
     text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
 }
 
 .challenge-size-grid {
@@ -661,26 +775,72 @@ h6 {
 }
 
 .wolfi-avatar-shell {
+    position: relative;
     display: inline-flex;
-    height: 4.5rem;
-    width: 4.5rem;
+    height: 5rem;
+    width: 5rem;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     border-radius: 1.5rem;
-    border: 1px solid rgba(244, 183, 74, 0.22);
+    border: 1px solid rgba(244, 183, 74, 0.2);
     background:
-        radial-gradient(circle at top left, rgba(244, 183, 74, 0.22), transparent 48%),
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.24), transparent 48%),
         linear-gradient(180deg, rgba(17, 25, 40, 0.96) 0%, rgba(8, 13, 23, 0.94) 100%);
     box-shadow:
         0 18px 42px rgba(2, 6, 23, 0.28),
         0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    animation: wolfiBreath 5.8s ease-in-out infinite;
+    transform-origin: center;
+    will-change: transform, box-shadow;
 }
 
-.wolfi-avatar-image {
+.wolfi-avatar-shell::before,
+.wolfi-avatar-shell::after {
+    content: '';
+    position: absolute;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.wolfi-avatar-shell::before {
+    inset: -16%;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(244, 183, 74, 0.34), rgba(244, 183, 74, 0) 66%),
+        radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 44%);
+    opacity: 0.58;
+    filter: blur(14px);
+    animation: wolfiGlowPulse 4.8s ease-in-out infinite;
+}
+
+.wolfi-avatar-shell::after {
+    inset: -8%;
+    border: 1px solid rgba(244, 183, 74, 0.22);
+    opacity: 0.26;
+    animation: wolfiRingWave 4.2s ease-in-out infinite;
+}
+
+.wolfi-avatar-image,
+.wolfi-avatar-video {
+    position: relative;
+    z-index: 1;
     height: 100%;
     width: 100%;
     object-fit: cover;
+    object-position: center;
+    transform: scale(1.02);
+    transition:
+        transform 0.45s ease,
+        filter 0.32s ease,
+        opacity 0.24s ease;
+}
+
+.wolfi-avatar-video {
+    background: linear-gradient(180deg, rgba(12, 20, 34, 0.92) 0%, rgba(7, 11, 20, 0.9) 100%);
+}
+
+.wolfi-avatar-shell.is-video-playing .wolfi-avatar-video {
+    filter: saturate(1.03) contrast(1.02);
 }
 
 .assistant-promo-panel {
@@ -738,20 +898,53 @@ h6 {
 }
 
 .assistant-question-link {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
     border: 1px solid rgba(148, 163, 184, 0.12);
     background: linear-gradient(180deg, rgba(16, 23, 38, 0.88) 0%, rgba(9, 14, 24, 0.82) 100%);
     transition:
-        transform 0.22s ease,
-        border-color 0.22s ease,
-        box-shadow 0.22s ease,
-        background-color 0.22s ease;
+        transform 0.24s ease,
+        border-color 0.24s ease,
+        box-shadow 0.24s ease,
+        background-color 0.24s ease,
+        filter 0.24s ease;
 }
 
-.assistant-question-link:hover {
+.assistant-question-link::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+}
+
+.assistant-question-link:hover,
+.assistant-question-link:focus-visible {
     transform: translateY(-2px);
-    border-color: rgba(244, 183, 74, 0.26);
-    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.24);
+    border-color: rgba(244, 183, 74, 0.3);
+    box-shadow:
+        0 18px 36px rgba(2, 6, 23, 0.24),
+        0 0 0 1px rgba(244, 183, 74, 0.08) inset;
     background: linear-gradient(180deg, rgba(20, 30, 48, 0.92) 0%, rgba(10, 17, 29, 0.88) 100%);
+    filter: saturate(1.04);
+}
+
+.assistant-question-link:hover::after,
+.assistant-question-link:focus-visible::after {
+    opacity: 1;
+}
+
+.assistant-question-link:focus-visible {
+    outline: 2px solid rgba(248, 218, 134, 0.82);
+    outline-offset: 4px;
+}
+
+.assistant-question-link:active {
+    transform: translateY(0) scale(0.992);
 }
 
 .assistant-fab {
@@ -777,13 +970,30 @@ h6 {
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(7, 11, 20, 0.96) 100%);
     color: var(--ink);
+    overflow: hidden;
+    isolation: isolate;
     box-shadow:
         0 24px 56px rgba(2, 6, 23, 0.36),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     transition:
-        transform 0.22s ease,
-        box-shadow 0.22s ease,
-        filter 0.22s ease;
+        transform 0.28s ease,
+        box-shadow 0.28s ease,
+        filter 0.28s ease,
+        border-color 0.28s ease,
+        background-color 0.28s ease;
+    transform-origin: center;
+    will-change: transform, box-shadow;
+}
+
+.assistant-fab-shimmer {
+    position: absolute;
+    inset: -30% auto -30% -38%;
+    width: 44%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+    opacity: 0;
+    transform: translate3d(-140%, 0, 0) rotate(18deg);
+    animation: wolfiShimmerSweep 4.8s linear infinite;
+    pointer-events: none;
 }
 
 .assistant-fab-halo {
@@ -796,6 +1006,48 @@ h6 {
     filter: blur(12px);
     opacity: 0.8;
     pointer-events: none;
+    animation: wolfiHaloPulse 4.4s ease-in-out infinite;
+}
+
+.assistant-fab-orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.72rem;
+    height: 0.72rem;
+    margin-left: -0.36rem;
+    margin-top: -0.36rem;
+    border-radius: 999px;
+    pointer-events: none;
+    opacity: 0.42;
+    transform-origin: center;
+    animation: wolfiOrbit 10s linear infinite;
+}
+
+.assistant-fab-orbit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(248, 218, 134, 0.95), rgba(248, 218, 134, 0) 70%);
+    box-shadow: 0 0 18px rgba(248, 218, 134, 0.38);
+}
+
+.assistant-fab-orbit-left {
+    --wolfi-orbit-start: 0deg;
+    --wolfi-orbit-distance: -1.72rem;
+}
+
+.assistant-fab-orbit-right {
+    --wolfi-orbit-start: 180deg;
+    --wolfi-orbit-distance: -1.98rem;
+    opacity: 0.34;
+    animation-delay: -5s;
+}
+
+.assistant-fab-orbit-right::before {
+    background: radial-gradient(circle, rgba(103, 154, 225, 0.9), rgba(103, 154, 225, 0) 72%);
+    box-shadow: 0 0 18px rgba(103, 154, 225, 0.3);
 }
 
 .assistant-fab-core {
@@ -815,6 +1067,10 @@ h6 {
     box-shadow:
         0 14px 28px rgba(244, 183, 74, 0.22),
         0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    transition:
+        transform 0.28s ease,
+        box-shadow 0.28s ease,
+        filter 0.28s ease;
 }
 
 .assistant-fab-ping {
@@ -839,23 +1095,103 @@ h6 {
     filter: saturate(1.02);
 }
 
+.assistant-fab-button:hover .assistant-fab-core {
+    transform: scale(1.04);
+    box-shadow:
+        0 16px 32px rgba(244, 183, 74, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
 .assistant-fab-button:focus-visible {
     outline: 2px solid rgba(248, 218, 134, 0.88);
     outline-offset: 4px;
 }
 
+.assistant-fab-button:active {
+    transform: translateY(0) scale(0.985);
+}
+
+.assistant-fab-button.is-open,
+.assistant-fab-button.is-speaking,
+.assistant-fab-button.is-listening {
+    border-color: rgba(244, 183, 74, 0.3);
+    box-shadow:
+        0 34px 78px rgba(2, 6, 23, 0.46),
+        0 0 28px rgba(244, 183, 74, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.assistant-fab-button.is-open .assistant-fab-ping {
+    opacity: 0.16;
+}
+
+.assistant-fab-button.is-speaking .assistant-fab-halo,
+.assistant-fab-button.is-listening .assistant-fab-halo {
+    opacity: 1;
+    animation-duration: 2.1s;
+}
+
+.assistant-fab-button.is-speaking .assistant-fab-core,
+.assistant-fab-button.is-listening .assistant-fab-core {
+    transform: scale(1.06);
+    box-shadow:
+        0 20px 40px rgba(244, 183, 74, 0.36),
+        0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.assistant-fab-button.is-listening .assistant-fab-halo {
+    background:
+        radial-gradient(circle at 35% 28%, rgba(88, 161, 237, 0.24), rgba(88, 161, 237, 0) 54%),
+        radial-gradient(circle at 70% 72%, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 56%);
+}
+
+.assistant-fab-button.is-listening .assistant-fab-core {
+    border-color: rgba(103, 154, 225, 0.32);
+    box-shadow:
+        0 20px 40px rgba(74, 130, 208, 0.24),
+        0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
 .wolfi-modal {
     position: fixed;
-    inset: auto 0 0 0;
+    inset: 0;
     z-index: 70;
     align-items: flex-end;
     justify-content: flex-end;
     padding: 0.75rem;
+    opacity: 0;
+    visibility: hidden;
     pointer-events: none;
+    transition: opacity 0.3s ease, visibility 0s linear 0.34s;
+}
+
+.wolfi-modal.is-mounted {
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
+
+.wolfi-modal.is-open {
+    opacity: 1;
 }
 
 .wolfi-modal-backdrop {
-    display: none;
+    position: absolute;
+    inset: 0;
+    display: block;
+    background:
+        radial-gradient(circle at bottom right, rgba(244, 183, 74, 0.1), rgba(244, 183, 74, 0) 32%),
+        linear-gradient(180deg, rgba(2, 6, 23, 0.06) 0%, rgba(2, 6, 23, 0.42) 100%);
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    transition:
+        opacity 0.34s ease,
+        backdrop-filter 0.34s ease;
+}
+
+.wolfi-modal.is-open .wolfi-modal-backdrop {
+    opacity: 1;
+    backdrop-filter: blur(10px);
 }
 
 .wolfi-modal-card {
@@ -873,13 +1209,462 @@ h6 {
         linear-gradient(180deg, rgba(10, 18, 31, 0.98) 0%, rgba(5, 10, 18, 0.96) 100%);
     padding: 1.2rem;
     box-shadow: 0 32px 90px rgba(2, 6, 23, 0.5);
+    backdrop-filter: blur(18px);
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.965);
+    transition:
+        transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.32s ease,
+        box-shadow 0.32s ease,
+        border-color 0.32s ease;
+    will-change: transform, opacity;
+}
+
+.wolfi-modal-card::before,
+.wolfi-modal-card::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+}
+
+.wolfi-modal-card::before {
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    opacity: 0.72;
+}
+
+.wolfi-modal-card::after {
+    right: -18%;
+    bottom: -30%;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 72%);
+    opacity: 0.28;
+    transform: scale(0.92);
+    transition: opacity 0.34s ease, transform 0.42s ease;
+}
+
+.wolfi-modal.is-open .wolfi-modal-card {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.wolfi-modal.is-open .wolfi-modal-card::after {
+    opacity: 0.52;
+    transform: scale(1);
+}
+
+.wolfi-modal.is-speaking .wolfi-modal-card,
+.wolfi-modal.is-listening .wolfi-modal-card {
+    border-color: rgba(244, 183, 74, 0.24);
+    box-shadow:
+        0 38px 96px rgba(2, 6, 23, 0.58),
+        0 0 0 1px rgba(244, 183, 74, 0.06) inset;
+}
+
+.wolfi-modal.is-speaking .wolfi-modal-card::after {
+    opacity: 0.76;
+    transform: scale(1.08);
+}
+
+.wolfi-modal.is-listening .wolfi-modal-card::after {
+    background: radial-gradient(circle, rgba(103, 154, 225, 0.24), rgba(103, 154, 225, 0) 72%);
+    opacity: 0.72;
+    transform: scale(1.04);
+}
+
+.wolfi-modal-card::-webkit-scrollbar {
+    width: 0.45rem;
+}
+
+.wolfi-modal-card::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.22);
+}
+
+.wolfi-modal [data-wolfi-stage] {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.985);
+    transition:
+        opacity 0.3s ease,
+        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity;
+}
+
+.wolfi-modal.is-open [data-wolfi-stage='avatar'] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: 0.08s;
+}
+
+.wolfi-modal.is-open [data-wolfi-stage='intro'] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: 0.14s;
+}
+
+.wolfi-modal.is-open [data-wolfi-stage='close'] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: 0.16s;
+}
+
+.wolfi-modal.is-open [data-wolfi-stage='panel'] {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition-delay: 0.22s;
+}
+
+.wolfi-modal-close {
+    position: relative;
+    overflow: hidden;
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        background-color 0.22s ease,
+        box-shadow 0.22s ease,
+        color 0.22s ease;
+}
+
+.wolfi-modal-close:hover,
+.wolfi-modal-close:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(244, 183, 74, 0.24);
+    background: rgba(244, 183, 74, 0.08);
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.22);
+    color: #fff;
+}
+
+.wolfi-modal-close:focus-visible {
+    outline: 2px solid rgba(248, 218, 134, 0.82);
+    outline-offset: 4px;
+}
+
+.wolfi-modal-close:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.wolfi-modal.is-speaking .wolfi-avatar-shell {
+    box-shadow:
+        0 22px 52px rgba(2, 6, 23, 0.34),
+        0 0 34px rgba(244, 183, 74, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.wolfi-modal.is-speaking .wolfi-avatar-shell::before {
+    opacity: 0.94;
+    animation-duration: 2.2s;
+}
+
+.wolfi-modal.is-speaking .wolfi-avatar-shell::after {
+    opacity: 0.34;
+    animation-duration: 1.8s;
+}
+
+.wolfi-modal.is-speaking .wolfi-avatar-image,
+.wolfi-modal.is-speaking .wolfi-avatar-video {
+    transform: scale(1.045);
+}
+
+.wolfi-modal.is-listening .wolfi-avatar-video,
+.wolfi-modal.is-rendering .wolfi-avatar-video {
+    transform: scale(1.04);
+    filter: saturate(1.02);
+}
+
+.wolfi-modal.is-listening .wolfi-avatar-shell::before {
+    background:
+        radial-gradient(circle at 50% 50%, rgba(103, 154, 225, 0.28), rgba(103, 154, 225, 0) 66%),
+        radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 44%);
+    opacity: 0.86;
+}
+
+.wolfi-modal.is-listening .wolfi-avatar-shell::after {
+    border-color: rgba(103, 154, 225, 0.26);
+    opacity: 0.36;
 }
 
 .wolfi-assistant-panel {
+    position: relative;
+    overflow: hidden;
     border-radius: 1.8rem;
     border: 1px solid rgba(148, 163, 184, 0.12);
     background: linear-gradient(180deg, rgba(12, 20, 34, 0.92) 0%, rgba(7, 11, 20, 0.9) 100%);
     padding: 1.25rem;
+    box-shadow:
+        0 18px 40px rgba(2, 6, 23, 0.24),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.wolfi-voice-assistant {
+    position: relative;
+    isolation: isolate;
+}
+
+.wolfi-voice-assistant::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.08), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(84, 137, 214, 0.08), transparent 30%);
+    opacity: 0.62;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+}
+
+.wolfi-voice-assistant > * {
+    position: relative;
+    z-index: 1;
+}
+
+.wolfi-voice-assistant.is-speaking::before,
+.wolfi-voice-assistant.is-listening::before,
+.wolfi-voice-assistant.is-rendering::before {
+    opacity: 0.92;
+}
+
+.wolfi-input {
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 16px 34px rgba(2, 6, 23, 0.16);
+    transition:
+        transform 0.24s ease,
+        border-color 0.24s ease,
+        box-shadow 0.24s ease,
+        background-color 0.24s ease;
+}
+
+.wolfi-input:hover {
+    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(5, 10, 18, 0.88);
+}
+
+.wolfi-input:focus-visible {
+    transform: translateY(-1px);
+    box-shadow:
+        0 0 0 4px rgba(244, 183, 74, 0.08),
+        inset 0 0 0 1px rgba(244, 183, 74, 0.12),
+        0 18px 38px rgba(2, 6, 23, 0.18);
+}
+
+.wolfi-action-row {
+    align-items: center;
+}
+
+.wolfi-control-button {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        background-color 0.22s ease,
+        box-shadow 0.22s ease,
+        color 0.22s ease,
+        filter 0.22s ease;
+}
+
+.wolfi-control-button::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+}
+
+.wolfi-control-button:hover,
+.wolfi-control-button:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.22);
+}
+
+.wolfi-control-button:hover::after,
+.wolfi-control-button:focus-visible::after,
+.wolfi-control-button.is-active::after {
+    opacity: 1;
+}
+
+.wolfi-control-button:focus-visible {
+    outline: 2px solid rgba(248, 218, 134, 0.82);
+    outline-offset: 4px;
+}
+
+.wolfi-control-button:active {
+    transform: translateY(0) scale(0.99);
+}
+
+.wolfi-control-secondary {
+    background: linear-gradient(180deg, rgba(17, 25, 40, 0.84) 0%, rgba(8, 13, 23, 0.82) 100%);
+}
+
+.wolfi-control-secondary:hover,
+.wolfi-control-secondary:focus-visible {
+    border-color: rgba(244, 183, 74, 0.22);
+    background: linear-gradient(180deg, rgba(20, 30, 48, 0.9) 0%, rgba(10, 17, 29, 0.86) 100%);
+}
+
+.wolfi-control-button.is-active {
+    border-color: rgba(244, 183, 74, 0.28);
+    background: rgba(244, 183, 74, 0.1);
+    color: #fff9e8;
+    box-shadow:
+        0 18px 36px rgba(2, 6, 23, 0.24),
+        0 0 0 1px rgba(244, 183, 74, 0.08) inset;
+}
+
+.wolfi-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2rem;
+    padding-inline: 0.1rem;
+    transition:
+        color 0.22s ease,
+        opacity 0.22s ease,
+        transform 0.22s ease;
+}
+
+.wolfi-voice-assistant.is-listening .wolfi-status,
+.wolfi-voice-assistant.is-speaking .wolfi-status {
+    color: rgba(255, 246, 221, 0.92);
+}
+
+.wolfi-answer-card {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+        0 18px 40px rgba(2, 6, 23, 0.22);
+    transition:
+        transform 0.28s ease,
+        border-color 0.28s ease,
+        box-shadow 0.28s ease,
+        background-color 0.28s ease;
+}
+
+.wolfi-answer-card::before,
+.wolfi-answer-card::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+}
+
+.wolfi-answer-card::before {
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    opacity: 0.64;
+}
+
+.wolfi-answer-card::after {
+    right: -14%;
+    bottom: -24%;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 72%);
+    opacity: 0.18;
+    transform: scale(0.92);
+    transition: opacity 0.28s ease, transform 0.32s ease;
+}
+
+.wolfi-voice-assistant.is-rendering .wolfi-answer-card,
+.wolfi-voice-assistant.is-speaking .wolfi-answer-card {
+    border-color: rgba(244, 183, 74, 0.22);
+    box-shadow:
+        inset 0 0 0 1px rgba(244, 183, 74, 0.04),
+        0 22px 52px rgba(2, 6, 23, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.wolfi-voice-assistant.is-rendering .wolfi-answer-card::after,
+.wolfi-voice-assistant.is-speaking .wolfi-answer-card::after {
+    opacity: 0.4;
+    transform: scale(1.04);
+}
+
+.wolfi-voice-assistant.is-listening .wolfi-answer-card {
+    border-color: rgba(103, 154, 225, 0.2);
+}
+
+.wolfi-voice-assistant.is-listening .wolfi-answer-card::after {
+    background: radial-gradient(circle, rgba(103, 154, 225, 0.22), rgba(103, 154, 225, 0) 72%);
+    opacity: 0.36;
+}
+
+.wolfi-answer-question {
+    transition:
+        opacity 0.24s ease,
+        transform 0.24s ease;
+}
+
+.wolfi-answer-question.is-updating {
+    opacity: 0.74;
+    transform: translateY(-2px);
+}
+
+.wolfi-answer-text {
+    min-height: 4.5rem;
+}
+
+.wolfi-answer-text.is-revealing {
+    color: #d9e2f1;
+}
+
+.wolfi-answer-cursor {
+    display: inline-block;
+    width: 0.55ch;
+    margin-left: 0.08rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(248, 218, 134, 1), rgba(248, 218, 134, 0.32));
+    vertical-align: -0.08em;
+    animation: wolfiCursorBlink 0.9s steps(1, end) infinite;
+}
+
+.wolfi-suggestion-block {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+    transition:
+        opacity 0.28s ease,
+        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wolfi-voice-assistant.show-suggestions .wolfi-suggestion-block {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+.wolfi-suggestion-chip {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.985);
+    transition:
+        opacity 0.3s ease,
+        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--wolfi-delay, 0ms);
+}
+
+.wolfi-voice-assistant.show-suggestions .wolfi-suggestion-chip {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+}
+
+.wolfi-suggestion-chip span:last-child {
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease;
+}
+
+.wolfi-suggestion-chip:hover span:last-child,
+.wolfi-suggestion-chip:focus-visible span:last-child {
+    transform: translateX(2px) scale(1.04);
+    box-shadow: 0 12px 24px rgba(244, 183, 74, 0.16);
 }
 
 .cookie-banner {
@@ -912,16 +1697,52 @@ h6 {
     bottom: calc(14.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .assistant-fab-button,
+    .assistant-fab-shimmer,
+    .assistant-fab-halo,
+    .assistant-fab-orbit,
+    .assistant-fab-ping,
+    .wolfi-avatar-shell,
+    .wolfi-avatar-shell::before,
+    .wolfi-avatar-shell::after,
+    .wolfi-answer-cursor {
+        animation: none !important;
+    }
+
+    .wolfi-modal,
+    .wolfi-modal-backdrop,
+    .wolfi-modal-card,
+    .wolfi-modal [data-wolfi-stage],
+    .wolfi-input,
+    .wolfi-control-button,
+    .wolfi-status,
+    .wolfi-answer-card,
+    .wolfi-answer-question,
+    .wolfi-suggestion-block,
+    .wolfi-suggestion-chip,
+    .assistant-question-link {
+        transition-duration: 0.01ms !important;
+    }
+
+    .wolfi-suggestion-block,
+    .wolfi-suggestion-chip {
+        opacity: 1;
+        transform: none;
+    }
+}
+
 @media (min-width: 768px) {
     .challenge-currency-strip {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(6.5rem, 1fr));
         overflow: visible;
         padding-bottom: 0;
     }
 
     .challenge-currency-strip .challenge-currency-button {
         min-width: 0;
+        min-height: 5.95rem;
     }
 
     .challenge-size-grid {
@@ -988,8 +1809,8 @@ h6 {
     }
 
     .wolfi-avatar-shell {
-        height: 3.9rem;
-        width: 3.9rem;
+        height: 4.25rem;
+        width: 4.25rem;
     }
 
     .assistant-fab-button {

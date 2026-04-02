@@ -54,9 +54,9 @@ class ChallengeRuleEngine
         $payoutEligibleAt = null;
 
         if ((bool) $account->is_funded && $activatedAt !== null) {
-            $firstPayoutEligibleAt = $activatedAt->copy()->addDays((int) ($account->challengePlan?->first_payout_days ?? 7));
+            $firstPayoutEligibleAt = $activatedAt->copy()->addDays($rules['first_payout_days']);
             $cycleStartedAt = $account->payout_cycle_started_at ?? $activatedAt;
-            $payoutEligibleAt = $cycleStartedAt->copy()->addDays((int) ($account->challengePlan?->payout_cycle_days ?? 14));
+            $payoutEligibleAt = $cycleStartedAt->copy()->addDays($rules['payout_cycle_days']);
         }
 
         return [
@@ -124,6 +124,8 @@ class ChallengeRuleEngine
             'max_drawdown_limit_percent' => (float) ($phase['max_loss_limit'] ?? $account->max_drawdown_limit_percent ?? 0),
             'max_drawdown_limit_amount' => round($startingBalance * ((float) ($phase['max_loss_limit'] ?? $account->max_drawdown_limit_percent ?? 0) / 100), 2),
             'minimum_trading_days' => (int) ($phase['minimum_trading_days'] ?? $account->minimum_trading_days ?? 0),
+            'first_payout_days' => (int) ($definition['funded']['first_withdrawal_days'] ?? $account->challengePlan?->first_payout_days ?? config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 21)),
+            'payout_cycle_days' => (int) ($definition['funded']['payout_cycle_days'] ?? $account->challengePlan?->payout_cycle_days ?? 14),
         ];
     }
 }

@@ -6,6 +6,10 @@
             'label' => __('site.nav.about_us'),
         ],
         [
+            'href' => route('security'),
+            'label' => __('site.nav.security'),
+        ],
+        [
             'href' => route('contact'),
             'label' => __('site.nav.contact'),
         ],
@@ -50,6 +54,10 @@
         [
             'href' => route('about'),
             'label' => __('site.nav.about'),
+        ],
+        [
+            'href' => route('security'),
+            'label' => __('site.nav.security'),
         ],
     ];
 @endphp

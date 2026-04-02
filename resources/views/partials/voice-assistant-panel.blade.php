@@ -5,6 +5,7 @@
     $assistantId = $assistantId ?? 'voice-assistant';
     $assistantQuestion = trim((string) ($assistantQuestion ?? request('assistant_question', '')));
     $assistantClass = $assistantClass ?? 'rounded-[2rem] border border-white/8 bg-white/4 p-5';
+    $assistantExampleQuestions = trans('site.ai_assistant.example_questions');
     $voiceLocales = array_keys(config('wolforix.supported_locales', []));
     $voiceLocaleMap = [
         'en' => 'en-US',
@@ -16,7 +17,7 @@
         ->keys()
         ->map(fn ($size) => ((int) $size / 1000).'K')
         ->implode(', ');
-    $firstPayoutDays = (int) config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 7);
+    $firstPayoutDays = (int) config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 21);
     $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
     $faqVoiceIndex = [];
 
@@ -164,27 +165,27 @@
     data-voice-assistant
     data-page-locale="{{ str_replace('_', '-', app()->getLocale()) }}"
     data-initial-question="{{ $assistantQuestion }}"
-    class="{{ $assistantClass }}"
+    class="wolfi-voice-assistant {{ $assistantClass }}"
 >
     <script type="application/json" data-voice-assistant-index>@json($faqVoiceIndex)</script>
     <script type="application/json" data-voice-assistant-config>@json($voiceAssistantConfig)</script>
 
-    <label class="block">
+    <label class="block" data-voice-stage="input">
         <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.contact.voice_input_label') }}</span>
         <input
             data-voice-question
             type="search"
             value="{{ $assistantQuestion }}"
-            class="w-full rounded-[1.4rem] border border-white/10 bg-slate-950/80 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+            class="wolfi-input w-full rounded-[1.4rem] border border-white/10 bg-slate-950/80 px-4 py-4 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
             placeholder="{{ __('site.contact.voice_input_placeholder') }}"
         >
     </label>
 
-    <div class="mt-4 flex flex-wrap gap-3">
+    <div class="wolfi-action-row mt-4 flex flex-wrap gap-3" data-voice-stage="controls">
         <button
             type="button"
             data-voice-submit
-            class="primary-cta rounded-full px-6 py-3 text-sm font-semibold"
+            class="primary-cta wolfi-control-button wolfi-control-primary rounded-full px-6 py-3 text-sm font-semibold"
         >
             {{ __('site.contact.voice_submit') }}
         </button>
@@ -201,7 +202,7 @@
             data-audio-capture="{{ __('site.contact.voice_audio_capture') }}"
             data-permission-checking="{{ __('site.contact.voice_permission_checking') }}"
             data-secure-context="{{ __('site.contact.voice_secure_context') }}"
-            class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6"
+            class="wolfi-control-button wolfi-control-secondary rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6"
         >
             {{ __('site.contact.voice_button') }}
         </button>
@@ -211,7 +212,7 @@
             data-play-label="{{ __('site.contact.voice_play_button') }}"
             data-stop-label="{{ __('site.contact.voice_stop_play_button') }}"
             data-empty-message="{{ __('site.contact.voice_play_requires_answer') }}"
-            class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-45"
+            class="wolfi-control-button wolfi-control-secondary rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6 disabled:cursor-not-allowed disabled:opacity-45"
         >
             {{ __('site.contact.voice_play_button') }}
         </button>
@@ -221,14 +222,48 @@
         data-voice-status
         data-ready-message="{{ __('site.contact.voice_ready') }}"
         data-no-match-message="{{ __('site.contact.voice_no_match') }}"
-        class="mt-4 text-sm text-slate-400"
+        class="wolfi-status mt-4 text-sm text-slate-400"
+        data-voice-stage="status"
     >
         {{ __('site.contact.voice_ready') }}
     </p>
 
-    <div data-voice-answer class="mt-5 rounded-[1.6rem] border border-white/8 bg-slate-950/80 p-5">
+    <div data-voice-answer class="wolfi-answer-card mt-5 rounded-[1.6rem] border border-white/8 bg-slate-950/80 p-5" data-voice-stage="answer">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.contact.voice_answer_title') }}</p>
-        <p data-voice-answer-question class="mt-3 text-lg font-semibold text-white">{{ __('site.contact.voice_empty') }}</p>
-        <p data-voice-answer-text class="mt-3 text-sm leading-7 text-slate-300"></p>
+        <p data-voice-answer-question class="wolfi-answer-question mt-3 text-lg font-semibold text-white">{{ __('site.contact.voice_empty') }}</p>
+        <p data-voice-answer-text class="wolfi-answer-text mt-3 text-sm leading-7 text-slate-300" aria-live="polite" aria-atomic="true"></p>
     </div>
+
+    @if (is_array($assistantExampleQuestions) && $assistantExampleQuestions !== [])
+        <div class="wolfi-suggestion-block mt-5" data-voice-suggestions data-voice-stage="suggestions">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.contact.voice_suggestions_label') }}</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('site.contact.voice_suggestions_copy') }}</p>
+                </div>
+                <span class="hidden rounded-full border border-amber-400/18 bg-amber-400/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-100 sm:inline-flex">
+                    {{ __('site.ai_assistant.preview_badge') }}
+                </span>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                @foreach ($assistantExampleQuestions as $question)
+                    <button
+                        type="button"
+                        data-voice-suggestion
+                        data-question="{{ $question }}"
+                        class="assistant-question-link wolfi-suggestion-chip flex items-center justify-between gap-4 rounded-[1.4rem] px-4 py-3 text-left"
+                        style="--wolfi-delay: {{ $loop->index * 70 }}ms;"
+                    >
+                        <span class="text-sm font-medium text-slate-100">{{ $question }}</span>
+                        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-400/22 bg-amber-400/10 text-amber-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+                            </svg>
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>

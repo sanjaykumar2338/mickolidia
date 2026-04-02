@@ -39,6 +39,7 @@ class WolforixPlatformTest extends TestCase
             route('password.request'),
             route('home'),
             route('about'),
+            route('security'),
             route('contact'),
             route('faq'),
             route('news'),
@@ -77,6 +78,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Live chat')
             ->assertSee('Wolfi AI assistant')
             ->assertSee('Play answer')
+            ->assertSee('Suggested prompts')
+            ->assertSee('Can I trade during news?')
             ->assertSee('"locale":"en"', false)
             ->assertSee('"locale":"de"', false)
             ->assertSee('"locale":"es"', false)
@@ -275,7 +278,7 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('Modern Prop Trading')
-            ->assertSee('Get Funded. Get Paid. Instant Funding Access.')
+            ->assertSee('Get Funded. Get Paid. No Time Limits.')
             ->assertSee('Pass the challenge. Access funded accounts. Withdraw fast.')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
@@ -293,6 +296,11 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Fast Payouts')
             ->assertSee('Scaling +25% Capital')
             ->assertSee('Up to 90% Profit Split')
+            ->assertSee('Trust / Security')
+            ->assertSee('Secure infrastructure')
+            ->assertSee('Advanced risk control')
+            ->assertSee('Real-time monitoring')
+            ->assertSee('ISO/IEC 27001 aligned')
             ->assertSee('Talk to Your AI Assistant')
             ->assertSee('Start Chat')
             ->assertSee('Can I trade during news?')
@@ -323,6 +331,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Contact Us')
             ->assertSee('Search the site')
             ->assertSee('Pay with card through Stripe using the same protected order and fulfillment flow.')
+            ->assertSee('Security aligned with ISO/IEC 27001 standards (in progress)')
             ->assertSee('Wolforix does not provide brokerage services, investment advice, or portfolio management.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
@@ -473,6 +482,31 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('1-Step Instant');
     }
 
+    public function test_spanish_locale_uses_compact_currency_labels_on_the_homepage(): void
+    {
+        $this->withSession(['locale' => 'es'])
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('Prueba Gratis')
+            ->assertSee('Moneda')
+            ->assertSee('$ · USD')
+            ->assertSee('£ · GBP')
+            ->assertDontSee('Dólar estadounidense')
+            ->assertDontSee('Libra esterlina');
+    }
+
+    public function test_security_page_contains_key_trust_sections(): void
+    {
+        $this->get(route('security'))
+            ->assertOk()
+            ->assertSee('Trust & Security')
+            ->assertSee('Security')
+            ->assertSee('Risk Management')
+            ->assertSee('Data Protection')
+            ->assertSee('Roadmap')
+            ->assertSee('ISO/IEC 27001 alignment is currently in progress.');
+    }
+
     public function test_checkout_page_renders_selected_plan_and_provider_options(): void
     {
         $this->actingAs(User::factory()->create())
@@ -484,15 +518,68 @@ class WolforixPlatformTest extends TestCase
         ]))
             ->assertOk()
             ->assertSee('Complete your challenge order')
-            ->assertSee('Launch promo code')
+            ->assertSee('Promo code')
+            ->assertSee('Apply')
             ->assertSee(config('wolforix.launch_discount.code'))
-            ->assertSee('Code applied')
+            ->assertSee('Code applied successfully')
+            ->assertSee('Regular price')
             ->assertSee('Stripe')
             ->assertSee('PayPal')
             ->assertSee('EUR')
+            ->assertSee('Your data is protected using industry-standard security practices aligned with ISO/IEC 27001.')
             ->assertSee('Terms & Conditions')
             ->assertSee('country of residence')
             ->assertSee('Cancellation and Refund Policy');
+    }
+
+    public function test_checkout_promo_preview_returns_discounted_pricing_for_valid_code(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'promo_code' => config('wolforix.launch_discount.code'),
+            ])
+            ->assertOk()
+            ->assertJson([
+                'applied' => true,
+                'promo_code' => config('wolforix.launch_discount.code'),
+                'message' => 'Code applied successfully',
+                'pricing' => [
+                    'discount_enabled' => true,
+                    'discounted_price' => '231.00',
+                    'list_price' => '289.00',
+                    'currency' => 'USD',
+                ],
+            ]);
+    }
+
+    public function test_checkout_promo_preview_returns_invalid_feedback_for_bad_code(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'promo_code' => 'INVALIDCODE',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'applied' => false,
+                'promo_code' => null,
+                'message' => 'Invalid/expired code',
+                'pricing' => [
+                    'discount_enabled' => false,
+                    'discounted_price' => '289.00',
+                    'list_price' => '289.00',
+                    'currency' => 'USD',
+                ],
+            ]);
     }
 
     public function test_checkout_page_uses_regular_pricing_when_launch_offer_is_ignored(): void
@@ -974,7 +1061,7 @@ class WolforixPlatformTest extends TestCase
             'max_loss_limit' => 10,
             'steps' => 2,
             'profit_share' => 80,
-            'first_payout_days' => 7,
+            'first_payout_days' => 21,
             'minimum_trading_days' => 3,
             'payout_cycle_days' => 14,
             'is_active' => true,
@@ -1119,7 +1206,8 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('payout-policy'))
             ->assertOk()
-            ->assertSee('Payouts are processed every 14 days with a maximum limit per cycle.');
+            ->assertSee('First withdrawal requests become available after 21 days.')
+            ->assertSee('Payments within 24 hours');
     }
 
     public function test_company_information_contains_the_updated_address(): void
@@ -1196,7 +1284,7 @@ class WolforixPlatformTest extends TestCase
             'max_loss_limit' => 8,
             'steps' => 1,
             'profit_share' => 80,
-            'first_payout_days' => 7,
+            'first_payout_days' => 21,
             'minimum_trading_days' => 3,
             'payout_cycle_days' => 14,
             'is_active' => true,
@@ -1299,6 +1387,101 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('This is a Trial Account.')
             ->assertSee('No withdrawals')
             ->assertSee('XAU/USD');
+    }
+
+    public function test_authenticated_user_can_start_a_trial_from_the_trial_page(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'existing-trial-user@example.com',
+            'password' => 'password123',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('trial.register'))
+            ->assertRedirect(route('trial.dashboard'))
+            ->assertSessionHas('trial_user_id', $user->id);
+
+        $trialAccount = TradingAccount::query()
+            ->where('user_id', $user->id)
+            ->where('is_trial', true)
+            ->first();
+
+        $this->assertNotNull($trialAccount);
+        $this->assertSame('active', $trialAccount->trial_status);
+    }
+
+    public function test_existing_user_login_from_trial_page_returns_to_trial_access(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'trial-login@example.com',
+            'password' => 'password123',
+        ]);
+
+        $this->get(route('trial.register'))->assertOk();
+
+        $this->post(route('login.store'), [
+            'login_email' => $user->email,
+            'login_password' => 'password123',
+        ])->assertRedirect(route('trial.register'));
+
+        $this->assertAuthenticatedAs($user);
+
+        $this->get(route('trial.register'))
+            ->assertRedirect(route('trial.dashboard'))
+            ->assertSessionHas('trial_user_id', $user->id);
+
+        $this->assertDatabaseHas('trading_accounts', [
+            'user_id' => $user->id,
+            'is_trial' => true,
+            'trial_status' => 'active',
+        ]);
+    }
+
+    public function test_authenticated_user_with_ended_trial_is_sent_to_the_trial_dashboard(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'ended-trial-user@example.com',
+            'password' => 'password123',
+        ]);
+
+        TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-TRIAL-ENDED01',
+            'platform' => 'cTrader Demo',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Ended',
+            'account_type' => 'trial',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 0,
+            'equity' => 0,
+            'daily_drawdown' => 500,
+            'max_drawdown' => 1000,
+            'profit_loss' => -1000,
+            'total_profit' => -1000,
+            'today_profit' => -250,
+            'drawdown_percent' => 10,
+            'consistency_limit_percent' => 40,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 1,
+            'allowed_symbols' => ['XAU/USD', 'EUR/USD', 'USD/JPY'],
+            'trial_status' => 'ended',
+            'trial_started_at' => now()->subDays(4),
+            'last_activity_at' => now()->subDay(),
+            'ended_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('trial.register'))
+            ->assertRedirect(route('trial.dashboard'))
+            ->assertSessionHas('trial_user_id', $user->id);
+
+        $this->actingAs($user)
+            ->get(route('trial.dashboard'))
+            ->assertOk()
+            ->assertSee('Your trial has ended.');
+
+        $this->assertCount(1, TradingAccount::query()->where('user_id', $user->id)->where('is_trial', true)->get());
     }
 
     public function test_trial_retry_archives_previous_trial_and_creates_a_new_one(): void

@@ -63,6 +63,35 @@
         SVG,
     ];
     $mobileFeatureIcons = $featureIcons;
+    $trustIcons = [
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 12A4.5 4.5 0 0 1 12 7.5h7.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 4.5 19.5 7.5 16.5 10.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12A4.5 4.5 0 0 1 12 16.5H4.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 19.5 4.5 16.5 7.5 13.5" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v16.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h9v9h-9z" />
+        </svg>
+        SVG,
+        <<<'SVG'
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z" />
+        </svg>
+        SVG,
+    ];
     $challengeUi = [
         'unlimited' => __('site.home.challenge_selector.unlimited'),
         'discount_badge' => __('site.home.challenge_selector.discount_badge'),
@@ -199,6 +228,35 @@
         </div>
     </section>
 
+    <section class="px-6 pt-6 lg:px-8 lg:pt-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="surface-panel rounded-[2rem] p-6 sm:p-8">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="max-w-3xl">
+                        <span class="section-label">{{ __('site.home.trust.eyebrow') }}</span>
+                        <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.trust.title') }}</h2>
+                        <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.home.trust.description') }}</p>
+                    </div>
+                    <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                        {{ __('site.home.trust.cta') }}
+                    </a>
+                </div>
+
+                <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    @foreach (trans('site.home.trust.items') as $item)
+                        <article class="rounded-[1.7rem] border border-white/8 bg-white/3 p-5">
+                            <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-500/10 text-emerald-100">
+                                {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
+                            </span>
+                            <p class="mt-4 text-lg font-semibold text-white">{{ $item['title'] }}</p>
+                            <p class="mt-3 text-sm leading-7 text-slate-400">{{ $item['description'] }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="plans" class="px-6 pt-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <span class="section-label">{{ __('site.home.plans.eyebrow') }}</span>
@@ -240,7 +298,7 @@
                                             <span class="text-lg">{{ $currencyMeta['flag'] ?? '' }}</span>
                                             <span>{{ $currencyCode }}</span>
                                         </span>
-                                        <span class="mt-2 block text-xs uppercase tracking-[0.22em] text-slate-400">
+                                        <span class="mt-2 block text-[0.7rem] leading-4 tracking-[0.08em] text-slate-400 whitespace-normal">
                                             {{ $currencyMeta['symbol'] ?? '' }} · {{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}
                                         </span>
                                     </button>

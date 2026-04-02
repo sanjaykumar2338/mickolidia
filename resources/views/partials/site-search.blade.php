@@ -37,6 +37,12 @@
             'url' => route('about'),
         ],
         [
+            'section' => __('site.search.section_labels.page'),
+            'title' => __('site.nav.security'),
+            'description' => __('site.security.description'),
+            'url' => route('security'),
+        ],
+        [
             'section' => __('site.search.section_labels.support'),
             'title' => __('site.nav.contact'),
             'description' => __('site.contact.description'),

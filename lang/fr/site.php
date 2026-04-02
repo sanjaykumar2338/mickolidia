@@ -53,6 +53,7 @@ return array_replace_recursive($en, [
         'home' => 'Accueil',
         'about' => 'À Propos',
         'about_us' => 'À Propos de Nous',
+        'security' => 'Sécurité',
         'contact' => 'Contactez-nous',
         'plans' => 'Plans',
         'faq' => 'FAQ',
@@ -69,12 +70,12 @@ return array_replace_recursive($en, [
     ],
     'home' => [
         'eyebrow' => 'Prop Trading Moderne',
-        'title' => 'Obtenez un compte funded. Soyez payé. Accès instantané au funding.',
+        'title' => 'Obtenez un compte funded. Soyez payé. Sans limite de temps.',
         'description' => 'Réussissez le challenge. Accédez à des comptes funded. Retirez rapidement.',
         'mobile_title' => [
             'line_1' => 'Obtenez un compte funded.',
             'line_2' => 'Soyez payé.',
-            'line_3' => 'Accès instantané au funding.',
+            'line_3' => 'Sans limite de temps.',
         ],
         'mobile_description' => [
             'line_1' => 'Réussissez le challenge. Accédez à des comptes funded.',
@@ -88,13 +89,37 @@ return array_replace_recursive($en, [
         'badges' => [
             'EN / DE / ES / FR prêt',
             'Tarifs de lancement actifs',
-            'Premier retrait après 7 jours',
+            'Premier retrait après 21 jours',
         ],
         'feature_cards' => [
             'Accès instantané au funding',
             'Payouts rapides',
             'Scaling +25 % de capital',
             'Jusqu’à 90 % de profit split',
+        ],
+        'trust' => [
+            'eyebrow' => 'Confiance / Sécurité',
+            'title' => 'Le positionnement sécurité visible dès la première visite.',
+            'description' => 'Wolforix renforce la confiance autour d’une infrastructure sécurisée, de contrôles de risque, du monitoring et d’un alignement ISO/IEC 27001 en cours.',
+            'cta' => 'Voir la sécurité',
+            'items' => [
+                [
+                    'title' => 'Infrastructure sécurisée',
+                    'description' => 'Hébergement protégé et accès opérationnel contrôlé sur les systèmes clés.',
+                ],
+                [
+                    'title' => 'Contrôle avancé du risque',
+                    'description' => 'Contrôles préventifs et circuits de revue pour réduire le risque opérationnel.',
+                ],
+                [
+                    'title' => 'Monitoring en temps réel',
+                    'description' => 'Visibilité continue sur l’activité de la plateforme, les événements et la santé du service.',
+                ],
+                [
+                    'title' => 'Aligné ISO/IEC 27001',
+                    'description' => 'La feuille de route d’alignement est en cours sans aucune revendication de certification.',
+                ],
+            ],
         ],
         'hero_visual' => [
             'label' => 'Aperçu du trading desk',
@@ -125,7 +150,7 @@ return array_replace_recursive($en, [
             'unlimited' => 'Illimité',
             'highlights' => [
                 'Tarif de lancement -20 % actif',
-                'Premier retrait après 7 jours',
+                'Premier retrait après 21 jours',
                 'Durée d’évaluation illimitée',
             ],
             'currencies' => [
@@ -183,7 +208,7 @@ return array_replace_recursive($en, [
                 ],
                 [
                     'title' => 'Protections payout visibles très tôt',
-                    'description' => 'Le premier retrait après 7 jours, le cycle de payout de 14 jours ensuite, la cohérence obligatoire en 1-Step et le scaling 2-Step tous les 3 mois sont déjà visibles sur le site et le dashboard.',
+                    'description' => 'Le premier retrait après 21 jours, le cycle de payout de 14 jours ensuite, la cohérence obligatoire en 1-Step et le scaling 2-Step tous les 3 mois sont déjà visibles sur le site et le dashboard.',
                 ],
                 [
                     'title' => 'Multilingue dès le départ',
@@ -363,12 +388,14 @@ return array_replace_recursive($en, [
         'voice_intro_blocked' => 'Wolfi s’est ouvert, mais votre navigateur a bloqué la lecture audio immédiate. Touchez Lire la réponse pour l’entendre.',
         'voice_support_fallback' => 'Je peux vous aider sur les règles, les payouts, les plans et les questions générales de plateforme. Pour la facturation ou l’aide spécifique au compte, contactez :email.',
         'voice_plan_fallback' => 'Wolforix propose actuellement les modèles 1-Step Instant et 2-Step Pro en tailles 5K, 10K, 25K, 50K et 100K. Choisissez le modèle adapté à votre risque, puis utilisez Obtenir le plan pour continuer.',
-        'voice_payout_fallback' => 'Le premier payout devient disponible après 7 jours. Ensuite, les payouts suivent un cycle de 14 jours, sous réserve des règles funded et des contrôles de cohérence.',
+        'voice_payout_fallback' => 'Le premier retrait devient disponible après :first_payout_days jours. Ensuite, les payouts suivent un cycle de :payout_cycle_days jours. Une fois la demande de retrait envoyée, elle est traitée sous 24 heures, sous réserve des règles funded et des contrôles de cohérence.',
         'voice_rules_fallback' => 'Le 1-Step utilise un objectif de 10 %, une perte journalière maximale de 4 % et une perte totale maximale de 8 %. Le 2-Step utilise des objectifs de 10 % puis 5 %, avec 5 % de perte journalière maximale, 10 % de perte totale maximale et un minimum de 3 jours tradés par phase.',
         'voice_checkout_fallback' => 'Cliquez sur Obtenir le plan dans le challenge choisi, puis connectez-vous ou créez votre compte avant le checkout. Wolforix vous ramène ensuite vers le bon plan.',
         'voice_discount_fallback' => 'Ouvrez le popup de lancement et cliquez sur Obtenir la remise pour activer l’offre de 20 % pendant la session en cours. Si vous l’ignorez, le tarif standard reste affiché et la remise ne s’applique pas.',
         'voice_input_label' => 'Poser une question',
         'voice_input_placeholder' => 'Exemple : Quand puis-je demander mon premier payout ?',
+        'voice_suggestions_label' => 'Questions suggérées',
+        'voice_suggestions_copy' => 'Commencez par une question rapide et Wolfi guidera la suite de l’échange.',
         'voice_submit' => 'Obtenir une réponse',
         'voice_button' => 'Parler',
         'voice_play_button' => 'Lire la réponse',
@@ -385,15 +412,68 @@ return array_replace_recursive($en, [
         'voice_empty' => 'Posez une question sur les payouts, les règles, le scaling, le support ou l’éligibilité du compte.',
         'voice_open_faq' => 'Ouvrir la FAQ complète',
     ],
+    'security' => [
+        'meta_title' => 'Sécurité',
+        'eyebrow' => 'Confiance & Sécurité',
+        'title' => 'Des pratiques de sécurité pensées pour protéger la plateforme, votre compte et l’intégrité opérationnelle.',
+        'description' => 'Wolforix construit son positionnement sécurité autour de contrôles concrets d’accès, de monitoring, de supervision du risque et de gestion des données. L’alignement ISO/IEC 27001 est en cours et aucune certification n’est revendiquée à ce stade.',
+        'badge' => 'Alignement ISO/IEC 27001 en cours',
+        'note' => 'Cette page décrit les pratiques de sécurité actuelles et la direction de la feuille de route afin de renforcer la confiance pendant que le programme continue de mûrir.',
+        'sections' => [
+            [
+                'title' => 'Sécurité',
+                'description' => 'Les contrôles de compte et de plateforme sont conçus pour réduire les accès non autorisés et protéger les flux d’authentification.',
+                'items' => [
+                    'La prise en charge de l’authentification à deux facteurs fait partie des contrôles d’accès au compte.',
+                    'Le trafic sensible et les secrets sont protégés par chiffrement et par une gestion contrôlée.',
+                    'La protection du compte inclut accès contrôlé, bonnes pratiques d’identifiants et garde-fous de session.',
+                ],
+            ],
+            [
+                'title' => 'Gestion des Risques',
+                'description' => 'Le risque opérationnel est géré via des sauvegardes multicouches, du monitoring et des processus de revue.',
+                'items' => [
+                    'Les droits d’accès et les changements opérationnels sont revus dans des workflows contrôlés.',
+                    'Le monitoring et les alertes aident à détecter rapidement activité inhabituelle et incidents de service.',
+                    'Les processus de réponse visent à contenir les incidents, soutenir la revue et améliorer la résilience.',
+                ],
+            ],
+            [
+                'title' => 'Protection des Données',
+                'description' => 'La gestion des données s’organise autour de la protection, de l’accès limité et de pratiques de conservation responsables.',
+                'items' => [
+                    'Les données sont protégées en transit grâce à des standards modernes de chiffrement.',
+                    'L’accès aux informations sensibles est limité aux personnes et systèmes autorisés.',
+                    'Le stockage, la conservation et la manipulation sont pensés pour soutenir confidentialité et intégrité.',
+                ],
+            ],
+            [
+                'title' => 'Feuille de Route',
+                'description' => 'La maturité sécurité continue de s’étendre à mesure que la plateforme et les contrôles internes évoluent.',
+                'items' => [
+                    'L’alignement ISO/IEC 27001 est actuellement en cours.',
+                    'Les politiques, la documentation et la couverture des contrôles continuent d’être formalisées et revues.',
+                    'Le monitoring, la gouvernance des accès et l’amélioration continue continueront de se renforcer dans le temps.',
+                ],
+            ],
+        ],
+    ],
     'checkout' => [
         'page_description' => 'Wolforix crée d’abord une vraie commande, puis lance Stripe ou PayPal avec un pricing calculé côté serveur et le même flux de fulfillment sécurisé.',
         'redirect_note' => 'La homepage redirige maintenant vers une page de checkout dédiée où les informations de facturation, le choix du provider et le paiement Stripe ou PayPal sont traités en toute sécurité.',
-        'promo_code_title' => 'Code promo de lancement',
+        'promo_code_title' => 'Code promo',
         'promo_code_label' => 'Code promo',
+        'promo_code_placeholder' => 'Saisissez votre code promo',
         'promo_code_badge' => 'Accès lancement 20 %',
-        'promo_code_help' => 'Saisissez le code affiché dans le popup d’ouverture pour activer l’offre de 20 % sur cette commande. La remise est déjà reflétée dans le montant affiché ci-dessus.',
+        'promo_code_help' => 'Saisissez un code promo puis cliquez sur Appliquer pour mettre à jour instantanément le total du checkout.',
+        'promo_code_apply' => 'Appliquer',
         'promo_code_applied' => 'Code appliqué',
         'promo_code_applied_copy' => 'Le code de lancement a été appliqué automatiquement et la remise de 20 % est déjà reflétée dans le total ci-dessus.',
+        'promo_code_feedback' => [
+            'success' => 'Code appliqué avec succès',
+            'invalid' => 'Code invalide/expiré',
+        ],
+        'trust_message' => 'Vos données sont protégées au moyen de pratiques de sécurité standard du secteur alignées sur l’ISO/IEC 27001.',
         'buttons' => [
             'stripe' => 'Payez par carte via Stripe avec le même flux sécurisé de commande et de fulfillment.',
             'paypal' => 'Payez avec PayPal via redirection d’approbation et capture sécurisée côté serveur.',
@@ -407,7 +487,7 @@ return array_replace_recursive($en, [
             ],
         ],
         'validation' => [
-            'promo_code' => 'Ce code promo de lancement est invalide. Utilisez le code affiché dans le popup de lancement puis réessayez.',
+            'promo_code' => 'Code invalide/expiré',
         ],
     ],
     'footer' => [
@@ -416,6 +496,9 @@ return array_replace_recursive($en, [
             'Wolforix Ltd. exerce comme société d’évaluation et d’éducation au trading propriétaire. Toutes les activités de trading sont réalisées dans un environnement simulé utilisant des fonds virtuels et ne représentent pas une participation réelle au marché.',
             'Wolforix ne fournit pas de services de brokerage, de conseil en investissement ou de gestion de portefeuille. La société n’accepte pas de dépôts, ne détient pas de fonds clients et n’exécute pas d’ordres pour le compte des utilisateurs.',
         ],
+        'security_title' => 'Confiance & Sécurité',
+        'security_line' => 'Sécurité alignée sur les standards ISO/IEC 27001 (en cours)',
+        'security_link' => 'Voir la sécurité',
         'contact_title' => 'Contact & Support',
         'contact_copy' => 'Besoin d’aide directe avant d’acheter ? Contactez le support ou ouvrez Wolfi pour obtenir rapidement des réponses sur les règles et la plateforme.',
     ],

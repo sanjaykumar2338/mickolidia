@@ -69,6 +69,113 @@ document.addEventListener('DOMContentLoaded', () => {
         checkout: ['checkout', 'buy', 'purchase', 'order', 'plan kaufen', 'comprar', 'pedido', 'commande'],
         discount: ['discount', 'promo', 'promo code', 'launch code', 'rabatt', 'descuento', 'remise', 'coupon'],
     };
+    const assistantConversationProfiles = {
+        en: {
+            followups: {
+                intro: 'Ask me about payouts, rules, or the best next step for your account.',
+                default: 'If you want, I can also break that down step by step.',
+                support: 'If you want, I can point you to the fastest support option.',
+                plans: 'If you want, I can compare the 1-Step and 2-Step models for you.',
+                payout: 'If you want, I can also explain the timing and what happens after you submit a request.',
+                rules: 'If you want, I can turn the rules into a quick checklist.',
+                checkout: 'If you want, I can guide you through the checkout flow step by step.',
+                discount: 'If you want, I can tell you exactly where to apply the code.',
+            },
+        },
+        es: {
+            followups: {
+                intro: 'Preguntame por payouts, reglas o por el mejor siguiente paso para tu cuenta.',
+                default: 'Si quieres, tambien te lo explico paso a paso.',
+                support: 'Si quieres, te llevo a la opcion de soporte mas rapida.',
+                plans: 'Si quieres, te comparo el modelo 1-Step con el 2-Step.',
+                payout: 'Si quieres, tambien te explico el calendario y que pasa despues de enviar la solicitud.',
+                rules: 'Si quieres, te resumo las reglas en una checklist rapida.',
+                checkout: 'Si quieres, te guio por el checkout paso a paso.',
+                discount: 'Si quieres, te digo exactamente donde aplicar el codigo.',
+            },
+        },
+        de: {
+            followups: {
+                intro: 'Frag mich nach Auszahlungen, Regeln oder dem besten naechsten Schritt fuer dein Konto.',
+                default: 'Wenn du willst, erklaere ich dir das auch Schritt fuer Schritt.',
+                support: 'Wenn du willst, zeige ich dir den schnellsten Support-Weg.',
+                plans: 'Wenn du willst, vergleiche ich dir 1-Step und 2-Step direkt.',
+                payout: 'Wenn du willst, erklaere ich dir auch den Zeitplan und was nach der Anfrage passiert.',
+                rules: 'Wenn du willst, fasse ich dir die Regeln als kurze Checkliste zusammen.',
+                checkout: 'Wenn du willst, fuehre ich dich Schritt fuer Schritt durch den Checkout.',
+                discount: 'Wenn du willst, sage ich dir genau, wo du den Code eintraegst.',
+            },
+        },
+        fr: {
+            followups: {
+                intro: 'Demandez-moi les payouts, les regles ou le meilleur prochain pas pour votre compte.',
+                default: 'Si vous voulez, je peux aussi vous l expliquer etape par etape.',
+                support: 'Si vous voulez, je peux vous orienter vers l option de support la plus rapide.',
+                plans: 'Si vous voulez, je peux comparer pour vous les modeles 1-Step et 2-Step.',
+                payout: 'Si vous voulez, je peux aussi expliquer le timing et ce qui se passe apres votre demande.',
+                rules: 'Si vous voulez, je peux resumer les regles sous forme de checklist rapide.',
+                checkout: 'Si vous voulez, je peux vous guider dans le checkout etape par etape.',
+                discount: 'Si vous voulez, je peux vous dire exactement ou appliquer le code.',
+            },
+        },
+    };
+    const assistantSpeechProfiles = {
+        en: {
+            rate: 0.97,
+            pitch: 0.82,
+            volume: 0.95,
+            maleVoices: ['male', 'guy', 'davis', 'daniel', 'alex', 'arthur', 'thomas', 'tom', 'fred', 'gordon', 'nathan', 'oliver', 'matthew', 'michael', 'aaron', 'david'],
+            femaleVoices: ['female', 'aria', 'jenny', 'samantha', 'moira', 'serena', 'allison', 'ava', 'sofia', 'anna', 'eva'],
+        },
+        es: {
+            rate: 0.98,
+            pitch: 0.84,
+            volume: 0.96,
+            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose'],
+            femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria'],
+        },
+        de: {
+            rate: 0.96,
+            pitch: 0.82,
+            volume: 0.95,
+            maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus'],
+            femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva'],
+        },
+        fr: {
+            rate: 0.97,
+            pitch: 0.84,
+            volume: 0.95,
+            maleVoices: ['male', 'thomas', 'daniel', 'henri', 'alexandre', 'antoine', 'nicolas'],
+            femaleVoices: ['female', 'amelie', 'aurelie', 'virginie', 'marie', 'julie'],
+        },
+    };
+    const resolveAssistantConversationProfile = (locale) => assistantConversationProfiles[normalizeLocaleCode(locale)] ?? assistantConversationProfiles.en;
+    const resolveAssistantSpeechProfile = (locale) => assistantSpeechProfiles[normalizeLocaleCode(locale)] ?? assistantSpeechProfiles.en;
+    const ensureSentenceEnding = (value) => {
+        const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
+
+        if (normalized === '') {
+            return '';
+        }
+
+        return /[.!?…]$/.test(normalized) ? normalized : `${normalized}.`;
+    };
+    const maybeAppendSentence = (value, addition) => {
+        const base = ensureSentenceEnding(value);
+        const extra = ensureSentenceEnding(addition);
+
+        if (base === '' || extra === '') {
+            return base || extra;
+        }
+
+        const comparableExtra = extra.replace(/[.!?…]$/, '');
+
+        if (normalizeText(base).includes(normalizeText(comparableExtra))) {
+            return base;
+        }
+
+        return `${base} ${extra}`.trim();
+    };
 
     const launchPromoStorageKey = 'wolforix-launch-promo-code';
     const normalizePromoCode = (value) => (value ?? '').toString().trim();
@@ -804,20 +911,173 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const launchPromoInput = document.querySelector('[data-launch-promo-input]');
+    const checkoutPromo = document.querySelector('[data-checkout-promo]');
+    const checkoutPricing = document.querySelector('[data-checkout-pricing]');
 
-    if (launchPromoInput instanceof HTMLInputElement) {
-        const expectedPromoCode = normalizePromoCode(launchPromoInput.dataset.launchPromoExpected);
-        const syncPromoInput = () => {
-            if (expectedPromoCode !== '' && normalizePromoCode(launchPromoInput.value).toLowerCase() === expectedPromoCode.toLowerCase()) {
-                setLaunchPromoCode(expectedPromoCode);
-                syncLaunchPromoCodeToCheckoutLinks(expectedPromoCode);
+    if (checkoutPromo instanceof HTMLElement && checkoutPricing instanceof HTMLElement) {
+        const input = checkoutPromo.querySelector('[data-promo-code-input]');
+        const applyButton = checkoutPromo.querySelector('[data-promo-code-apply]');
+        const feedback = checkoutPromo.querySelector('[data-promo-code-feedback]');
+        const finalPrice = checkoutPricing.querySelector('[data-checkout-final-price]');
+        const currencyLabel = checkoutPricing.querySelector('[data-checkout-currency]');
+        const originalWrap = checkoutPricing.querySelector('[data-checkout-original-wrap]');
+        const originalPrice = checkoutPricing.querySelector('[data-checkout-original-price]');
+        const discountBadge = checkoutPricing.querySelector('[data-checkout-discount-badge]');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const basePricingScript = checkoutPricing.querySelector('[data-checkout-base-pricing]');
+        const selectedPricingScript = checkoutPricing.querySelector('[data-checkout-selected-pricing]');
+
+        const parsePricingState = (script) => {
+            if (!(script instanceof HTMLScriptElement)) {
+                return null;
+            }
+
+            try {
+                return JSON.parse(script.textContent ?? 'null');
+            } catch (error) {
+                return null;
             }
         };
 
-        syncPromoInput();
-        launchPromoInput.addEventListener('change', syncPromoInput);
-        launchPromoInput.addEventListener('blur', syncPromoInput);
+        const basePricing = parsePricingState(basePricingScript);
+        const selectedPricing = parsePricingState(selectedPricingScript) ?? basePricing;
+
+        if (
+            input instanceof HTMLInputElement
+            && applyButton instanceof HTMLButtonElement
+            && feedback instanceof HTMLElement
+            && finalPrice instanceof HTMLElement
+            && currencyLabel instanceof HTMLElement
+            && originalWrap instanceof HTMLElement
+            && originalPrice instanceof HTMLElement
+            && discountBadge instanceof HTMLElement
+            && basePricing
+            && selectedPricing
+        ) {
+            let appliedCode = normalizePromoCode(checkoutPromo.dataset.appliedCode ?? '');
+            const previewUrl = checkoutPromo.dataset.previewUrl ?? '';
+            const challengeType = checkoutPromo.dataset.challengeType ?? '';
+            const accountSize = checkoutPromo.dataset.accountSize ?? '';
+            const currency = checkoutPromo.dataset.currency ?? '';
+            const helpMessage = checkoutPromo.dataset.helpMessage ?? '';
+            const successMessage = checkoutPromo.dataset.successMessage ?? '';
+            const invalidMessage = checkoutPromo.dataset.invalidMessage ?? '';
+            const feedbackStates = ['text-slate-400', 'text-emerald-100', 'text-rose-100'];
+
+            const renderFeedback = (state, message) => {
+                feedback.dataset.feedbackState = state;
+                feedback.classList.remove(...feedbackStates);
+                feedback.classList.add(
+                    state === 'success'
+                        ? 'text-emerald-100'
+                        : state === 'error'
+                            ? 'text-rose-100'
+                            : 'text-slate-400',
+                );
+                feedback.textContent = message;
+            };
+
+            const renderPricing = (pricing) => {
+                finalPrice.textContent = pricing.discounted_price ?? basePricing.discounted_price ?? '';
+                currencyLabel.textContent = pricing.currency ?? basePricing.currency ?? '';
+                const discountEnabled = Boolean(pricing.discount_enabled);
+
+                originalWrap.classList.toggle('hidden', !discountEnabled);
+                discountBadge.classList.toggle('hidden', !discountEnabled);
+
+                if (discountEnabled) {
+                    if (typeof pricing.discount_badge === 'string' && pricing.discount_badge.trim() !== '') {
+                        discountBadge.textContent = pricing.discount_badge;
+                    }
+
+                    originalPrice.textContent = `${pricing.list_price} ${pricing.currency}`;
+                }
+            };
+
+            const setIdleState = () => {
+                appliedCode = '';
+                renderPricing(basePricing);
+                renderFeedback('idle', helpMessage);
+                storage.remove(launchPromoStorageKey);
+                syncLaunchPromoCodeToCheckoutLinks('');
+            };
+
+            renderPricing(selectedPricing);
+
+            if (appliedCode !== '') {
+                renderFeedback('success', feedback.textContent.trim() || successMessage);
+            }
+
+            input.addEventListener('input', () => {
+                const normalizedInput = normalizePromoCode(input.value);
+
+                if (normalizedInput === '' || normalizedInput.toLowerCase() !== appliedCode.toLowerCase()) {
+                    setIdleState();
+                }
+            });
+
+            applyButton.addEventListener('click', async () => {
+                const promoCode = normalizePromoCode(input.value);
+
+                if (promoCode === '') {
+                    setIdleState();
+                    return;
+                }
+
+                if (previewUrl === '' || challengeType === '' || accountSize === '' || currency === '') {
+                    renderFeedback('error', invalidMessage);
+                    return;
+                }
+
+                applyButton.disabled = true;
+
+                try {
+                    const response = await fetch(previewUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: JSON.stringify({
+                            challenge_type: challengeType,
+                            account_size: accountSize,
+                            currency,
+                            promo_code: promoCode,
+                        }),
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(payload?.message ?? invalidMessage);
+                    }
+
+                    renderPricing(payload.pricing ?? basePricing);
+
+                    if (payload.applied) {
+                        appliedCode = normalizePromoCode(payload.promo_code ?? promoCode);
+                        input.value = appliedCode;
+                        renderFeedback('success', payload.message ?? successMessage);
+                        setLaunchPromoCode(appliedCode);
+                        syncLaunchPromoCodeToCheckoutLinks(appliedCode);
+                    } else {
+                        appliedCode = '';
+                        renderFeedback('error', payload.message ?? invalidMessage);
+                        storage.remove(launchPromoStorageKey);
+                        syncLaunchPromoCodeToCheckoutLinks('');
+                    }
+                } catch (error) {
+                    appliedCode = '';
+                    renderPricing(basePricing);
+                    renderFeedback('error', error instanceof Error ? error.message : invalidMessage);
+                    storage.remove(launchPromoStorageKey);
+                    syncLaunchPromoCodeToCheckoutLinks('');
+                } finally {
+                    applyButton.disabled = false;
+                }
+            });
+        }
     }
 
     const searchInput = document.querySelector('[data-faq-search]');
@@ -898,6 +1158,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = voiceAssistant.querySelector('[data-voice-status]');
         const answerQuestion = voiceAssistant.querySelector('[data-voice-answer-question]');
         const answerText = voiceAssistant.querySelector('[data-voice-answer-text]');
+        const suggestionButtons = [...voiceAssistant.querySelectorAll('[data-voice-suggestion]')];
+        const modalRoot = voiceAssistant.closest('[data-wolfi-modal]');
         const voiceIndex = indexScript instanceof HTMLScriptElement
             ? JSON.parse(indexScript.textContent ?? '[]')
             : [];
@@ -966,7 +1228,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let queuedReplyPlayback = null;
         let microphonePermissionState = 'prompt';
         let permissionListenerBound = false;
+        let isRenderingResponse = false;
+        let renderingStateTimeoutId = null;
+        let suggestionRevealTimeoutId = null;
+        let answerRevealToken = 0;
+        let answerRevealTimeoutIds = [];
+        let answerQuestionTimeoutId = null;
+        const reducedMotionQuery = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(prefers-reduced-motion: reduce)')
+            : null;
         const voiceDebug = () => {};
+        const prefersReducedMotion = () => reducedMotionQuery?.matches ?? false;
 
         const getPreferredAssistantLocales = (query = '') => {
             const rawQuery = String(query ?? '');
@@ -1006,8 +1278,195 @@ document.addEventListener('DOMContentLoaded', () => {
                 .map(([intent]) => intent);
         };
 
+        const clearTimedCallbacks = (timeoutIds) => {
+            timeoutIds.forEach((timeoutId) => {
+                window.clearTimeout(timeoutId);
+            });
+            timeoutIds.length = 0;
+        };
+
+        const syncAssistantVisualState = () => {
+            voiceAssistant.classList.toggle('is-speaking', isSpeakingReply);
+            voiceAssistant.classList.toggle('is-listening', isListening);
+            voiceAssistant.classList.toggle('is-rendering', isRenderingResponse);
+
+            if (modalRoot instanceof HTMLElement) {
+                modalRoot.classList.toggle('is-speaking', isSpeakingReply);
+                modalRoot.classList.toggle('is-listening', isListening);
+                modalRoot.classList.toggle('is-rendering', isRenderingResponse);
+                modalRoot.dispatchEvent(new CustomEvent('wolfi:statechange', {
+                    detail: {
+                        speaking: isSpeakingReply,
+                        listening: isListening,
+                        rendering: isRenderingResponse,
+                    },
+                    bubbles: true,
+                }));
+            }
+        };
+
+        const setRenderingState = (rendering, { settleAfter = null } = {}) => {
+            if (renderingStateTimeoutId !== null) {
+                window.clearTimeout(renderingStateTimeoutId);
+                renderingStateTimeoutId = null;
+            }
+
+            isRenderingResponse = rendering;
+            syncAssistantVisualState();
+
+            if (rendering && typeof settleAfter === 'number' && settleAfter >= 0) {
+                renderingStateTimeoutId = window.setTimeout(() => {
+                    renderingStateTimeoutId = null;
+                    isRenderingResponse = false;
+                    syncAssistantVisualState();
+                }, settleAfter);
+            }
+        };
+
+        const clearSuggestionReveal = () => {
+            if (suggestionRevealTimeoutId !== null) {
+                window.clearTimeout(suggestionRevealTimeoutId);
+                suggestionRevealTimeoutId = null;
+            }
+        };
+
+        const revealSuggestionPrompts = ({ reset = false, immediate = prefersReducedMotion() } = {}) => {
+            if (suggestionButtons.length === 0) {
+                return;
+            }
+
+            clearSuggestionReveal();
+
+            if (reset) {
+                voiceAssistant.classList.remove('show-suggestions');
+            }
+
+            if (immediate) {
+                voiceAssistant.classList.add('show-suggestions');
+                return;
+            }
+
+            suggestionRevealTimeoutId = window.setTimeout(() => {
+                suggestionRevealTimeoutId = null;
+                voiceAssistant.classList.add('show-suggestions');
+            }, reset ? 140 : 60);
+        };
+
+        const resetSuggestionPrompts = () => {
+            clearSuggestionReveal();
+            voiceAssistant.classList.remove('show-suggestions');
+        };
+
+        const stopAnswerReveal = ({ clear = false } = {}) => {
+            answerRevealToken += 1;
+            clearTimedCallbacks(answerRevealTimeoutIds);
+
+            if (answerText instanceof HTMLElement) {
+                answerText.classList.remove('is-revealing');
+
+                if (clear) {
+                    answerText.textContent = '';
+                } else if (answerText.querySelector('.wolfi-answer-cursor')) {
+                    answerText.textContent = currentAnswerText;
+                }
+            }
+        };
+
+        const getAnswerRevealDelay = (token) => {
+            if (/[.!?]$/.test(token)) {
+                return 116;
+            }
+
+            if (/[,;:]$/.test(token)) {
+                return 72;
+            }
+
+            return 34;
+        };
+
+        const animateAnswerQuestion = (text) => {
+            if (!(answerQuestion instanceof HTMLElement)) {
+                return;
+            }
+
+            if (answerQuestionTimeoutId !== null) {
+                window.clearTimeout(answerQuestionTimeoutId);
+                answerQuestionTimeoutId = null;
+            }
+
+            answerQuestion.classList.add('is-updating');
+            answerQuestion.textContent = text;
+
+            answerQuestionTimeoutId = window.setTimeout(() => {
+                answerQuestion.classList.remove('is-updating');
+                answerQuestionTimeoutId = null;
+            }, prefersReducedMotion() ? 0 : 180);
+        };
+
+        const revealAnswerText = (text) => {
+            if (!(answerText instanceof HTMLElement)) {
+                return;
+            }
+
+            const nextText = String(text ?? '').trim();
+
+            stopAnswerReveal({
+                clear: true,
+            });
+
+            if (nextText === '') {
+                answerText.textContent = '';
+                return;
+            }
+
+            if (prefersReducedMotion()) {
+                answerText.textContent = nextText;
+                return;
+            }
+
+            const revealToken = answerRevealToken;
+            const words = nextText.split(/\s+/).filter(Boolean);
+            const content = document.createElement('span');
+            const cursor = document.createElement('span');
+            cursor.className = 'wolfi-answer-cursor';
+            cursor.setAttribute('aria-hidden', 'true');
+            answerText.classList.add('is-revealing');
+            answerText.replaceChildren(content, cursor);
+            let visibleWordCount = 0;
+
+            const step = () => {
+                if (revealToken !== answerRevealToken) {
+                    return;
+                }
+
+                visibleWordCount = Math.min(words.length, visibleWordCount + (visibleWordCount < 8 ? 2 : 3));
+                content.textContent = words.slice(0, visibleWordCount).join(' ');
+
+                if (visibleWordCount < words.length) {
+                    const timeoutId = window.setTimeout(step, getAnswerRevealDelay(words[visibleWordCount - 1] ?? ''));
+                    answerRevealTimeoutIds.push(timeoutId);
+                    return;
+                }
+
+                const finalizeTimeoutId = window.setTimeout(() => {
+                    if (revealToken !== answerRevealToken) {
+                        return;
+                    }
+
+                    cursor.remove();
+                    answerText.classList.remove('is-revealing');
+                }, 180);
+
+                answerRevealTimeoutIds.push(finalizeTimeoutId);
+            };
+
+            step();
+        };
+
         const setPlayButtonState = (speaking, enabled = currentAnswerText.trim() !== '') => {
             if (!(playButton instanceof HTMLButtonElement)) {
+                isSpeakingReply = speaking;
+                syncAssistantVisualState();
                 return;
             }
 
@@ -1021,6 +1480,8 @@ document.addEventListener('DOMContentLoaded', () => {
             playButton.classList.toggle('border-amber-400/35', speaking);
             playButton.classList.toggle('bg-amber-400/10', speaking);
             playButton.classList.toggle('text-amber-50', speaking);
+            playButton.classList.toggle('is-active', speaking && enabled);
+            syncAssistantVisualState();
         };
 
         const setActiveSpeechLocale = (nextLocale) => {
@@ -1055,6 +1516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const voiceLocale = String(voice.lang ?? '').toLowerCase();
             const voiceBase = normalizeLocaleCode(voiceLocale);
             const voiceName = String(voice.name ?? '').toLowerCase();
+            const speechProfile = resolveAssistantSpeechProfile(requestedBase);
             let score = 0;
 
             if (voiceLocale === requestedLocale) {
@@ -1069,20 +1531,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += 18;
             }
 
-            if (
-                voiceName.includes('female')
-                || voiceName.includes('aria')
-                || voiceName.includes('jenny')
-                || voiceName.includes('samantha')
-                || voiceName.includes('moira')
-                || voiceName.includes('serena')
-                || voiceName.includes('allison')
-                || voiceName.includes('ava')
-                || voiceName.includes('sofia')
-                || voiceName.includes('anna')
-                || voiceName.includes('eva')
-            ) {
-                score += 12;
+            if (speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword))) {
+                score += 20;
+            }
+
+            if (speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword))) {
+                score -= 8;
+            }
+
+            if (voiceName.includes('premium') || voiceName.includes('enhanced')) {
+                score += 6;
             }
 
             if (voice.default) {
@@ -1231,6 +1689,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        const resetAssistantSurface = () => {
+            stopAnswerReveal();
+            resetSuggestionPrompts();
+            setRenderingState(false);
+
+            if (answerQuestionTimeoutId !== null) {
+                window.clearTimeout(answerQuestionTimeoutId);
+                answerQuestionTimeoutId = null;
+            }
+
+            if (answerQuestion instanceof HTMLElement) {
+                answerQuestion.classList.remove('is-updating');
+            }
+        };
+
         const speakAnswer = (
             text = currentAnswerText,
             locale = currentAnswerSpeechLocale,
@@ -1249,6 +1722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const synthesis = window.speechSynthesis;
             const utterance = new SpeechSynthesisUtterance(normalizedText);
+            const speechProfile = resolveAssistantSpeechProfile(locale);
             const selectedVoice = findSpeechVoice(locale)
                 ?? availableSpeechVoices.find((voice) => voice.default)
                 ?? availableSpeechVoices[0]
@@ -1267,9 +1741,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             utterance.lang = selectedVoice?.lang ?? locale;
-            utterance.volume = 0.9;
-            utterance.rate = 0.88;
-            utterance.pitch = 0.9;
+            utterance.volume = speechProfile.volume;
+            utterance.rate = speechProfile.rate;
+            utterance.pitch = speechProfile.pitch;
 
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
@@ -1368,66 +1842,97 @@ document.addEventListener('DOMContentLoaded', () => {
             startPlayback();
         };
 
-        const buildIntroResponse = (localeBase = pageLocaleBase) => {
+        const buildAssistantResponse = ({
+            localeBase = pageLocaleBase,
+            question = assistantConfig.assistant_name ?? '',
+            answer = '',
+            source = 'fallback',
+            intent = 'default',
+        } = {}) => {
             return {
                 locale: localeBase,
                 speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.intro_title ?? assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.intro_message ?? '',
+                question,
+                answer,
+                source,
+                intent,
             };
         };
 
-        const buildSupportFallbackResponse = (localeBase = pageLocaleBase) => {
-            return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.support_fallback ?? '',
-            };
-        };
+        const buildIntroResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.intro_title ?? assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.intro_message ?? '',
+            source: 'intro',
+            intent: 'intro',
+        });
 
-        const buildPlanFallbackResponse = (localeBase = pageLocaleBase) => {
-            return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.plan_fallback ?? '',
-            };
-        };
+        const buildSupportFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.support_fallback ?? '',
+            source: 'fallback',
+            intent: 'support',
+        });
 
-        const buildPayoutFallbackResponse = (localeBase = pageLocaleBase) => {
-            return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.payout_fallback ?? '',
-            };
-        };
+        const buildPlanFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.plan_fallback ?? '',
+            source: 'fallback',
+            intent: 'plans',
+        });
 
-        const buildRulesFallbackResponse = (localeBase = pageLocaleBase) => {
-            return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.rules_fallback ?? '',
-            };
-        };
+        const buildPayoutFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.payout_fallback ?? '',
+            source: 'fallback',
+            intent: 'payout',
+        });
 
-        const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase) => {
-            return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.checkout_fallback ?? '',
-            };
-        };
+        const buildRulesFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.rules_fallback ?? '',
+            source: 'fallback',
+            intent: 'rules',
+        });
 
-        const buildDiscountFallbackResponse = (localeBase = pageLocaleBase) => {
+        const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.checkout_fallback ?? '',
+            source: 'fallback',
+            intent: 'checkout',
+        });
+
+        const buildDiscountFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+            localeBase,
+            question: assistantConfig.assistant_name ?? '',
+            answer: assistantConfig.discount_fallback ?? '',
+            source: 'fallback',
+            intent: 'discount',
+        });
+
+        const enhanceAssistantResponse = (response) => {
+            if (!response) {
+                return response;
+            }
+
+            const localeBase = normalizeLocaleCode(response.locale) || pageLocaleBase;
+            const followups = resolveAssistantConversationProfile(localeBase).followups ?? {};
+            let answer = ensureSentenceEnding(response.answer ?? '');
+
+            if (response.source === 'intro') {
+                answer = maybeAppendSentence(answer, followups.intro ?? '');
+            } else if (response.source === 'fallback') {
+                answer = maybeAppendSentence(answer, followups[response.intent] ?? followups.default ?? '');
+            }
+
             return {
-                locale: localeBase,
-                speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
-                question: assistantConfig.assistant_name ?? '',
-                answer: assistantConfig.discount_fallback ?? '',
+                ...response,
+                answer,
             };
         };
 
@@ -1510,7 +2015,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const bestMatch = rankedMatches.find((item) => item.score > 0) ?? null;
 
             if (bestMatch && bestMatch.score >= 24) {
-                return bestMatch;
+                return {
+                    ...bestMatch,
+                    source: 'faq',
+                    intent: intents[0] ?? 'default',
+                };
             }
 
             if (intents.includes('payout') && String(assistantConfig.payout_fallback ?? '').trim() !== '') {
@@ -1555,9 +2064,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response) {
                 currentAnswerText = '';
                 queuedReplyPlayback = null;
-                answerQuestion.textContent = input instanceof HTMLInputElement ? input.value : '';
-                answerText.textContent = '';
+                stopAnswerReveal({
+                    clear: true,
+                });
+                animateAnswerQuestion(input instanceof HTMLInputElement ? input.value : '');
                 setPlayButtonState(false, false);
+                setRenderingState(false);
+                revealSuggestionPrompts();
 
                 if (status instanceof HTMLElement) {
                     status.textContent = status.dataset.noMatchMessage ?? status.textContent ?? '';
@@ -1566,11 +2079,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            answerQuestion.textContent = response.question ?? '';
-            answerText.textContent = response.answer ?? '';
-            currentAnswerText = response.answer ?? '';
+            const enhancedResponse = enhanceAssistantResponse(response);
 
-            const responseSpeechLocale = setActiveSpeechLocale(resolveItemSpeechLocale(response));
+            animateAnswerQuestion(enhancedResponse.question ?? '');
+            revealAnswerText(enhancedResponse.answer ?? '');
+            currentAnswerText = enhancedResponse.answer ?? '';
+            setRenderingState(true, {
+                settleAfter: prefersReducedMotion() ? 0 : 640,
+            });
+            revealSuggestionPrompts({
+                reset: enhancedResponse.source === 'intro',
+            });
+
+            const responseSpeechLocale = setActiveSpeechLocale(resolveItemSpeechLocale(enhancedResponse));
             currentAnswerSpeechLocale = responseSpeechLocale;
             setPlayButtonState(false, currentAnswerText.trim() !== '');
 
@@ -1620,11 +2141,13 @@ document.addEventListener('DOMContentLoaded', () => {
             force = false,
         } = {}) => {
             if (!force && (hasConversation || hasPlayedIntro) && currentAnswerText.trim() !== '') {
+                revealSuggestionPrompts();
                 focusInput();
                 return;
             }
 
             hasPlayedIntro = true;
+            resetSuggestionPrompts();
             presentResponse(buildIntroResponse(getPreferredAssistantLocales(input instanceof HTMLInputElement ? input.value : '')[0] ?? pageLocaleBase), {
                 autoSpeak: userInitiated,
                 userInitiated,
@@ -1658,7 +2181,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
+
+            input.addEventListener('focus', () => {
+                revealSuggestionPrompts();
+            });
         }
+
+        suggestionButtons.forEach((button) => {
+            if (!(button instanceof HTMLButtonElement) || !(input instanceof HTMLInputElement)) {
+                return;
+            }
+
+            button.addEventListener('click', () => {
+                const nextQuestion = button.dataset.question?.trim() ?? button.textContent?.trim() ?? '';
+
+                if (nextQuestion === '') {
+                    return;
+                }
+
+                input.value = nextQuestion;
+                renderAnswer(nextQuestion, {
+                    userInitiated: true,
+                });
+                focusInput();
+            });
+        });
 
         if (playButton instanceof HTMLButtonElement) {
             if (!('speechSynthesis' in window)) {
@@ -1714,6 +2261,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 micButton.classList.toggle('border-amber-400/35', listening);
                 micButton.classList.toggle('bg-amber-400/10', listening);
                 micButton.classList.toggle('text-amber-50', listening);
+                micButton.classList.toggle('is-active', listening);
+                syncAssistantVisualState();
             };
 
             const setStatusMessage = (message) => {
@@ -1856,7 +2405,13 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAnswer(initialQuestion, {
                 autoSpeak: false,
             });
+        } else if (!(modalRoot instanceof HTMLElement)) {
+            revealSuggestionPrompts({
+                immediate: prefersReducedMotion(),
+            });
         }
+
+        syncAssistantVisualState();
 
         voiceAssistant.__wolfiController = {
             activateIntro,
@@ -1864,6 +2419,8 @@ document.addEventListener('DOMContentLoaded', () => {
             cleanup: () => {
                 cancelSpokenReply();
                 cleanupVoiceSession();
+                resetAssistantSurface();
+                syncAssistantVisualState();
             },
         };
     });
@@ -1871,35 +2428,178 @@ document.addEventListener('DOMContentLoaded', () => {
     const wolfiModal = document.querySelector('[data-wolfi-modal]');
     const wolfiLaunchButtons = document.querySelectorAll('[data-wolfi-launch]');
 
-        if (wolfiModal instanceof HTMLElement) {
-            const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
-            const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
-            const modalController = modalAssistant?.__wolfiController ?? null;
+    if (wolfiModal instanceof HTMLElement) {
+        const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
+        const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
+        const modalController = modalAssistant?.__wolfiController ?? null;
+        const wolfiAvatarShell = wolfiModal.querySelector('.wolfi-avatar-shell');
+        const wolfiAvatarVideo = wolfiModal.querySelector('[data-wolfi-avatar-video]');
+        const modalMotionQuery = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(prefers-reduced-motion: reduce)')
+            : null;
+        let modalIsOpen = false;
+        let modalHideTimeoutId = null;
+        let lastWolfiTrigger = null;
 
-        const setWolfiModalState = (open, { userInitiated = false } = {}) => {
-                wolfiModal.classList.toggle('hidden', !open);
-                wolfiModal.classList.toggle('flex', open);
+        const prefersReducedMotion = () => modalMotionQuery?.matches ?? false;
+        const getWolfiTransitionDuration = () => (prefersReducedMotion() ? 20 : 360);
 
-                wolfiLaunchButtons.forEach((button) => {
-                    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const clearWolfiModalHideTimeout = () => {
+            if (modalHideTimeoutId !== null) {
+                window.clearTimeout(modalHideTimeoutId);
+                modalHideTimeoutId = null;
+            }
+        };
+
+        const syncWolfiAvatarPlayback = ({
+            active = modalIsOpen && (
+                wolfiModal.classList.contains('is-speaking')
+                || wolfiModal.classList.contains('is-listening')
+                || wolfiModal.classList.contains('is-rendering')
+            ),
+        } = {}) => {
+            if (!(wolfiAvatarVideo instanceof HTMLVideoElement)) {
+                return;
+            }
+
+            if (!modalIsOpen || !active) {
+                wolfiAvatarShell?.classList.remove('is-video-playing');
+                wolfiAvatarVideo.pause();
+
+                if (wolfiAvatarVideo.currentTime > 0.01) {
+                    try {
+                        wolfiAvatarVideo.currentTime = 0;
+                    } catch (error) {
+                        // Ignore seek failures while resetting the idle frame.
+                    }
+                }
+
+                return;
+            }
+
+            wolfiAvatarVideo.muted = true;
+            wolfiAvatarShell?.classList.add('is-video-playing');
+
+            const playPromise = wolfiAvatarVideo.play();
+
+            if (playPromise instanceof Promise) {
+                playPromise.catch(() => {
+                    wolfiAvatarShell?.classList.remove('is-video-playing');
+                });
+            }
+        };
+
+        const syncWolfiLaunchButtons = ({
+            open = modalIsOpen,
+            speaking = wolfiModal.classList.contains('is-speaking'),
+            listening = wolfiModal.classList.contains('is-listening'),
+        } = {}) => {
+            wolfiLaunchButtons.forEach((button) => {
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+                button.classList.toggle('is-open', open);
+                button.classList.toggle('is-speaking', open && speaking);
+                button.classList.toggle('is-listening', open && listening);
             });
+        };
+
+        const scheduleWolfiModalHide = () => {
+            clearWolfiModalHideTimeout();
+
+            modalHideTimeoutId = window.setTimeout(() => {
+                modalHideTimeoutId = null;
+
+                if (modalIsOpen) {
+                    return;
+                }
+
+                wolfiModal.classList.add('hidden');
+                wolfiModal.classList.remove('flex', 'is-mounted', 'is-speaking', 'is-listening', 'is-rendering');
+            }, getWolfiTransitionDuration());
+        };
+
+        const setWolfiModalState = (open, { userInitiated = false, triggerButton = null } = {}) => {
+            if (open && modalIsOpen) {
+                modalController?.focusInput?.();
+                return;
+            }
+
+            if (!open && !modalIsOpen) {
+                return;
+            }
 
             if (open) {
+                modalIsOpen = true;
+                clearWolfiModalHideTimeout();
+
+                if (triggerButton instanceof HTMLElement) {
+                    lastWolfiTrigger = triggerButton;
+                }
+
+                wolfiModal.classList.remove('hidden');
+                wolfiModal.classList.add('flex', 'is-mounted');
+                wolfiModal.setAttribute('aria-hidden', 'false');
+                syncWolfiLaunchButtons({
+                    open: true,
+                    speaking: false,
+                    listening: false,
+                });
+
+                window.requestAnimationFrame(() => {
+                    wolfiModal.classList.add('is-open');
+                    syncWolfiAvatarPlayback({
+                        active: true,
+                    });
+                });
+
                 modalController?.activateIntro({
                     userInitiated,
                     force: true,
                 });
                 modalController?.focusInput?.();
-            } else {
-                modalController?.cleanup?.();
+                return;
+            }
+
+            modalIsOpen = false;
+            wolfiModal.setAttribute('aria-hidden', 'true');
+            wolfiModal.classList.remove('is-open');
+            modalController?.cleanup?.();
+            syncWolfiLaunchButtons({
+                open: false,
+                speaking: false,
+                listening: false,
+            });
+            syncWolfiAvatarPlayback({
+                active: false,
+            });
+            scheduleWolfiModalHide();
+
+            if (lastWolfiTrigger instanceof HTMLElement) {
+                const triggerToFocus = lastWolfiTrigger;
+                window.setTimeout(() => {
+                    triggerToFocus.focus();
+                }, prefersReducedMotion() ? 0 : 140);
             }
         };
+
+        wolfiModal.addEventListener('wolfi:statechange', (event) => {
+            syncWolfiLaunchButtons({
+                open: modalIsOpen,
+                speaking: Boolean(event.detail?.speaking),
+                listening: Boolean(event.detail?.listening),
+            });
+            syncWolfiAvatarPlayback({
+                active: Boolean(event.detail?.speaking)
+                    || Boolean(event.detail?.listening)
+                    || Boolean(event.detail?.rendering),
+            });
+        });
 
         wolfiLaunchButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.preventDefault();
                 setWolfiModalState(true, {
                     userInitiated: true,
+                    triggerButton: button,
                 });
             });
         });
@@ -1911,7 +2611,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && wolfiModal.classList.contains('flex')) {
+            if (event.key === 'Escape' && modalIsOpen) {
                 setWolfiModalState(false);
             }
         });

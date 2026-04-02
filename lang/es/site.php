@@ -57,6 +57,7 @@ return [
         'home' => 'Inicio',
         'about' => 'Sobre Nosotros',
         'about_us' => 'Sobre Nosotros',
+        'security' => 'Seguridad',
         'contact' => 'Contáctanos',
         'plans' => 'Planes',
         'faq' => 'FAQ',
@@ -74,12 +75,12 @@ return [
 
     'home' => [
         'eyebrow' => 'Prop Trading Moderno',
-        'title' => 'Consigue fondeo. Cobra. Acceso inmediato al funded.',
+        'title' => 'Consigue fondeo. Cobra. Sin límites de tiempo.',
         'description' => 'Supera el challenge. Accede a cuentas fondeadas. Retira rápido.',
         'mobile_title' => [
             'line_1' => 'Consigue fondeo.',
             'line_2' => 'Cobra.',
-            'line_3' => 'Acceso inmediato al funded.',
+            'line_3' => 'Sin límites de tiempo.',
         ],
         'mobile_description' => [
             'line_1' => 'Supera el challenge. Accede a cuentas fondeadas.',
@@ -93,7 +94,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR listo',
             'Precios de lanzamiento activos',
-            'Primer payout después de 7 días',
+            'Primer retiro después de 21 días',
         ],
         'hero_panel' => [
             'title' => 'Conjunto principal de reglas',
@@ -113,6 +114,30 @@ return [
             'Cobros rápidos',
             'Escalado de capital +25 %',
             'Hasta 90 % Profit Split',
+        ],
+        'trust' => [
+            'eyebrow' => 'Confianza / Seguridad',
+            'title' => 'La posicion de seguridad visible desde la primera visita.',
+            'description' => 'Wolforix esta reforzando la confianza con infraestructura segura, controles de riesgo, monitorizacion y trabajo de alineacion con ISO/IEC 27001 en curso.',
+            'cta' => 'Ver seguridad',
+            'items' => [
+                [
+                    'title' => 'Infraestructura segura',
+                    'description' => 'Hosting protegido y acceso operativo controlado en los sistemas centrales.',
+                ],
+                [
+                    'title' => 'Control de riesgo avanzado',
+                    'description' => 'Controles preventivos y flujos de revision para reducir el riesgo operativo.',
+                ],
+                [
+                    'title' => 'Monitorizacion en tiempo real',
+                    'description' => 'Visibilidad continua sobre la actividad de la plataforma, eventos y salud del servicio.',
+                ],
+                [
+                    'title' => 'Alineado con ISO/IEC 27001',
+                    'description' => 'La hoja de ruta de alineacion esta en curso y no implica ninguna certificacion.',
+                ],
+            ],
         ],
         'hero_visual' => [
             'label' => 'Vista previa del trading desk',
@@ -137,13 +162,13 @@ return [
             'unlimited' => 'Ilimitado',
             'highlights' => [
                 '20 % de descuento de lanzamiento activo',
-                'Primer payout después de 7 días',
+                'Primer retiro después de 21 días',
                 'Duración de evaluación ilimitada',
             ],
             'currencies' => [
-                'USD' => 'Dólar estadounidense',
+                'USD' => 'USD',
                 'EUR' => 'Euro',
-                'GBP' => 'Libra esterlina',
+                'GBP' => 'GBP',
             ],
             'phase_titles' => [
                 'single_phase' => 'Fase única',
@@ -183,7 +208,7 @@ return [
                     'label' => '2-Step Pro',
                     'description' => 'Menor riesgo. Mayor potencial de escalado. Diseñado para la consistencia y el crecimiento a largo plazo.',
                     'note_title' => 'Modelo funded 2-Step Pro',
-                    'note_body' => 'Evaluación en dos fases con apalancamiento 1:100 en la Fase 1, primer payout después de 7 días, payouts cada 14 días a partir de ahí y un sistema de escalado para cuentas funded rentables. Construye consistencia. Escala con control.',
+                    'note_body' => 'Evaluación en dos fases con apalancamiento 1:100 en la Fase 1, primer retiro después de 21 días, payouts cada 14 días a partir de ahí y un sistema de escalado para cuentas funded rentables. Construye consistencia. Escala con control.',
                 ],
             ],
         ],
@@ -212,7 +237,7 @@ return [
                 ],
                 [
                     'title' => 'Protecciones de payout visibles desde el inicio',
-                    'description' => 'El primer payout a los 7 días, el ciclo de payout de 14 días después de eso, la obligación de consistencia en 1-Step y el escalado 2-Step cada 3 meses ya aparecen tanto en la web como en el dashboard.',
+                    'description' => 'El primer retiro a los 21 días, el ciclo de payout de 14 días después de eso, la obligación de consistencia en 1-Step y el escalado 2-Step cada 3 meses ya aparecen tanto en la web como en el dashboard.',
                 ],
                 [
                     'title' => 'Multilingüe desde el principio',
@@ -525,12 +550,18 @@ return [
         ],
         'current_selection' => 'Seleccion actual',
         'redirect_note' => 'La homepage ahora redirige directamente a una página de checkout dedicada, donde se gestionan de forma segura los datos de facturación, el proveedor de pago y el checkout con Stripe o PayPal.',
-        'promo_code_title' => 'Código promo de lanzamiento',
+        'promo_code_title' => 'Código promocional',
         'promo_code_label' => 'Código promocional',
+        'promo_code_placeholder' => 'Introduce tu código promocional',
         'promo_code_badge' => 'Acceso launch 20 %',
-        'promo_code_help' => 'Introduce el código del popup inicial para activar la oferta del 20 % en este pedido. El descuento ya se refleja en el total mostrado arriba.',
+        'promo_code_help' => 'Introduce un código promocional y pulsa Aplicar para actualizar el total del checkout al instante.',
+        'promo_code_apply' => 'Aplicar',
         'promo_code_applied' => 'Código aplicado',
         'promo_code_applied_copy' => 'El código de lanzamiento se aplicó automáticamente y el descuento del 20 % ya se refleja en el total mostrado arriba.',
+        'promo_code_feedback' => [
+            'success' => 'Código aplicado correctamente',
+            'invalid' => 'Código inválido/caducado',
+        ],
         'billing_title' => 'Informacion de Facturacion',
         'payment_methods_title' => 'Metodos de Pago',
         'client_data_title' => 'Datos del cliente / registro',
@@ -555,6 +586,7 @@ return [
         'provider_available' => 'Disponible',
         'provider_coming_soon' => 'Proximamente',
         'back_to_plans' => 'Volver a los Planes',
+        'trust_message' => 'Tus datos estan protegidos con practicas de seguridad estandar de la industria alineadas con ISO/IEC 27001.',
         'buttons' => [
             'stripe' => 'Paga con tarjeta a través de Stripe usando el mismo flujo protegido de pedido y cumplimiento.',
             'paypal' => 'Paga con PayPal mediante aprobación externa y captura segura en el servidor.',
@@ -598,7 +630,7 @@ return [
         'validation' => [
             'accept_terms_and_residency' => 'Debes aceptar los Terminos y Condiciones y confirmar tu pais de residencia actual antes de continuar.',
             'accept_refund_policy' => 'Debes aceptar la Politica de Cancelacion y Reembolso antes de continuar.',
-            'promo_code' => 'Este codigo promocional de lanzamiento no es valido. Usa el codigo mostrado en el popup de lanzamiento e intentalo de nuevo.',
+            'promo_code' => 'Código inválido/caducado',
         ],
     ],
 
@@ -713,7 +745,7 @@ return [
                 'items' => [
                     [
                         'question' => '¿Con qué frecuencia se procesan los payouts?',
-                        'answer' => 'Las cuentas funded se revisan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores. El primer retiro queda disponible después de 7 días.',
+                        'answer' => 'Las cuentas funded pueden solicitar el primer retiro después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo. Una vez enviada la solicitud, el payout se procesa dentro de 24 horas.',
                     ],
                     [
                         'question' => '¿Cómo se calcula mi payout?',
@@ -818,12 +850,14 @@ return [
         'voice_intro_blocked' => 'Wolfi se abrió, pero tu navegador bloqueó el audio inmediato. Toca Reproducir respuesta para escucharla.',
         'voice_support_fallback' => 'Puedo ayudarte con reglas, payouts, planes y preguntas generales de la plataforma. Para facturación o ayuda específica de cuenta, contacta con :email.',
         'voice_plan_fallback' => 'Wolforix ofrece actualmente los modelos 1-Step Instant y 2-Step Pro en tamaños de 5K, 10K, 25K, 50K y 100K. Elige el modelo que mejor encaje con tu riesgo y luego usa Obtener plan para continuar.',
-        'voice_payout_fallback' => 'El primer payout se solicita después de 7 días. A partir de ahí, los payouts siguen un ciclo de 14 días, siempre sujeto a las reglas funded y a los controles de consistencia.',
+        'voice_payout_fallback' => 'El primer retiro se puede solicitar después de :first_payout_days días. A partir de ahí, los payouts siguen un ciclo de :payout_cycle_days días. Una vez enviada la solicitud de retiro, se procesa dentro de 24 horas, siempre sujeto a las reglas funded y a los controles de consistencia.',
         'voice_rules_fallback' => 'El 1-Step exige 10 % de objetivo, 4 % de pérdida diaria máxima y 8 % de pérdida total máxima. El 2-Step usa objetivos del 10 % y 5 %, con 5 % de pérdida diaria máxima, 10 % de pérdida total máxima y un mínimo de 3 días operados por fase.',
         'voice_checkout_fallback' => 'Haz clic en Obtener plan dentro del challenge elegido y después inicia sesión o crea tu cuenta antes del checkout. Wolforix te devuelve al plan correcto tras la autenticación.',
         'voice_discount_fallback' => 'Abre el popup de lanzamiento y pulsa Obtener descuento para activar la oferta del 20 % durante la sesión actual. Si lo ignoras, se mantiene el precio regular y el descuento no se aplica.',
         'voice_input_label' => 'Haz una pregunta',
         'voice_input_placeholder' => 'Ejemplo: ¿Cuando puedo solicitar mi primer payout?',
+        'voice_suggestions_label' => 'Preguntas sugeridas',
+        'voice_suggestions_copy' => 'Empieza con una pregunta rápida y Wolfi guiará la conversación desde ahí.',
         'voice_submit' => 'Obtener respuesta',
         'voice_button' => 'Hablar',
         'voice_play_button' => 'Reproducir respuesta',
@@ -839,6 +873,53 @@ return [
         'voice_answer_title' => 'Respuesta basada en FAQ',
         'voice_empty' => 'Pregunta por payouts, reglas, escalado, soporte o elegibilidad de cuenta.',
         'voice_open_faq' => 'Abrir FAQ completa',
+    ],
+
+    'security' => [
+        'meta_title' => 'Seguridad',
+        'eyebrow' => 'Confianza y Seguridad',
+        'title' => 'Practicas de seguridad disenadas para proteger la plataforma, tu cuenta y la integridad operativa.',
+        'description' => 'Wolforix esta construyendo su posicionamiento de seguridad alrededor de controles practicos de acceso, monitorizacion, supervision del riesgo y gestion de datos. La alineacion con ISO/IEC 27001 esta en progreso y no se reclama certificacion en esta etapa.',
+        'badge' => 'Alineacion con ISO/IEC 27001 en progreso',
+        'note' => 'Esta pagina describe las practicas actuales de seguridad y la direccion de la hoja de ruta para reforzar la confianza mientras el programa sigue madurando.',
+        'sections' => [
+            [
+                'title' => 'Seguridad',
+                'description' => 'Los controles de cuenta y plataforma estan pensados para reducir el acceso no autorizado y proteger los flujos de autenticacion.',
+                'items' => [
+                    'El soporte para autenticacion de dos factores forma parte de los controles de acceso a la cuenta.',
+                    'El trafico sensible y los secretos se protegen con cifrado y gestion controlada.',
+                    'La proteccion de la cuenta incluye accesos controlados, buenas practicas de credenciales y salvaguardas de sesion.',
+                ],
+            ],
+            [
+                'title' => 'Gestion de Riesgo',
+                'description' => 'El riesgo operativo se gestiona mediante salvaguardas en capas, monitorizacion y procesos de revision.',
+                'items' => [
+                    'Los permisos de acceso y los cambios operativos se revisan mediante flujos controlados.',
+                    'La monitorizacion y las alertas ayudan a detectar rapido actividad inusual y problemas de servicio.',
+                    'Los procesos de respuesta estan disenados para contener incidencias, apoyar revisiones y mejorar la resiliencia.',
+                ],
+            ],
+            [
+                'title' => 'Proteccion de Datos',
+                'description' => 'La gestion de datos se estructura alrededor de la proteccion, el acceso limitado y practicas responsables de retencion.',
+                'items' => [
+                    'Los datos se protegen en transito mediante estandares modernos de cifrado.',
+                    'El acceso a informacion sensible se limita a personal y sistemas autorizados.',
+                    'El almacenamiento, la retencion y la manipulacion se orientan a preservar confidencialidad e integridad.',
+                ],
+            ],
+            [
+                'title' => 'Hoja de Ruta',
+                'description' => 'La madurez de seguridad sigue ampliandose a medida que evolucionan la plataforma y los controles internos.',
+                'items' => [
+                    'La alineacion con ISO/IEC 27001 esta actualmente en progreso.',
+                    'Las politicas, la documentacion y la cobertura de controles siguen formalizandose y revisandose.',
+                    'La monitorizacion, la gobernanza de accesos y la mejora continua seguiran ampliandose con el tiempo.',
+                ],
+            ],
+        ],
     ],
 
     'legal' => [
@@ -968,13 +1049,20 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Política de Payout',
-                'intro' => 'Los payouts se procesan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
+                'intro' => 'La primera solicitud de retiro queda disponible después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
+                'highlight' => [
+                    'title' => 'Procesamiento de payouts',
+                    'items' => [
+                        'Pagos dentro de 24 horas',
+                    ],
+                    'note' => 'Una vez que el cliente envía una solicitud de retiro, Wolforix busca procesar el payout dentro de 24 horas.',
+                ],
                 'sections' => [
                     [
                         'title' => 'Elegibilidad para payout',
                         'paragraphs' => [
-                            'Los payouts se procesan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
-                            'Las cuentas funded pueden solicitar el primer retiro después de 7 días. Las cuentas funded 2-Step además pueden escalar +25 % de capital cada 3 meses si son rentables.',
+                            'Las cuentas funded pueden solicitar el primer retiro después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
+                            'Las cuentas funded 2-Step además pueden escalar +25 % de capital cada 3 meses si son rentables.',
                             'Las cuentas funded 1-Step operan con el mismo ritmo de 14 días, pero requieren el cumplimiento obligatorio de la regla de consistencia antes de aprobar payouts.',
                         ],
                     ],
@@ -1090,6 +1178,9 @@ return [
             'Wolforix no ofrece servicios de broker, asesoramiento de inversión ni gestión de carteras. La empresa no acepta depósitos, no mantiene fondos de clientes y no ejecuta operaciones en nombre de los usuarios.',
         ],
         'legal_title' => 'Legal y políticas',
+        'security_title' => 'Confianza y Seguridad',
+        'security_line' => 'Seguridad alineada con los estandares ISO/IEC 27001 (en progreso)',
+        'security_link' => 'Ver seguridad',
         'operations_title' => 'Operaciones',
         'operations_copy' => 'El soporte se gestiona por correo y, más adelante, por tickets dentro del dashboard. Los retiros manuales siguen revisados por administración y la aprobación depende del cumplimiento de reglas.',
         'contact_title' => 'Contacto y soporte',
@@ -1173,7 +1264,7 @@ return [
             'rules_title' => 'Conjunto de reglas',
             'rules_copy' => 'La vista previa de abajo está alineada con el modelo final 2-Step para que objetivos, límites de riesgo, apalancamiento y tiempos de payout sigan visibles junto a las métricas de la cuenta.',
             'payout_title' => 'Sección de payout',
-            'payout_copy' => 'La vista previa de payout ahora refleja ciclos de 14 días, un primer retiro después de 7 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y el escalado de +25 % cada 3 meses para cuentas 2-Step rentables.',
+            'payout_copy' => 'La vista previa de payout ahora refleja ciclos de 14 días, un primer retiro después de 21 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y el escalado de +25 % cada 3 meses para cuentas 2-Step rentables.',
             'settings_title' => 'Perfil y ajustes',
             'settings_copy' => 'Un área de perfil placeholder deja el dashboard listo para preferencias de idioma, KYC y controles de seguridad de cuenta.',
         ],
@@ -1200,16 +1291,16 @@ return [
         'payouts' => [
             'next_window' => 'Próxima ventana de payout',
             'next_window_value' => 'Próxima revisión de 14 días en 3 días',
-            'cycle_note' => 'Los payouts se procesan cada 14 días con un límite máximo por ciclo. Los payouts elegibles restantes se procesarán en ciclos posteriores.',
+            'cycle_note' => 'La primera solicitud de retiro queda disponible después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
             'placeholder_status' => 'Placeholder de revisión manual',
             'queue_title' => 'Vista previa de la cola de payouts',
-            'queue_copy' => 'Los ciclos de payout de 14 días, un primer retiro después de 7 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
+            'queue_copy' => 'Los ciclos de payout de 14 días, un primer retiro después de 21 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
             'progressive_note' => 'Las cuentas funded 2-Step pueden escalar +25 % de capital cada 3 meses si son rentables. Las cuentas funded 1-Step mantienen la regla de consistencia obligatoria antes de aprobar payouts.',
             'requirements_title' => 'Lista de elegibilidad',
             'requirements' => [
                 'Deben cumplirse los días mínimos de la fase activa.',
                 'Las cuentas funded 1-Step deben cumplir la regla de consistencia obligatoria antes de que el beneficio sea elegible para payout.',
-                'Las cuentas funded pueden solicitar el primer retiro después de 7 días.',
+                'Las cuentas funded pueden solicitar el primer retiro después de 21 días.',
                 'No puede haber violaciones de reglas en la cuenta y todas las solicitudes de payout quedan sujetas a revisión interna del trading.',
             ],
             'cta' => 'Placeholder de solicitud de payout',

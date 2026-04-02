@@ -69,6 +69,11 @@ class PublicPageController extends Controller
         return view('public.about');
     }
 
+    public function security(): View
+    {
+        return view('public.security');
+    }
+
     public function contact(): View
     {
         return view('public.contact', [

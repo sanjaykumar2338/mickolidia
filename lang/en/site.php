@@ -57,6 +57,7 @@ return [
         'home' => 'Home',
         'about' => 'About',
         'about_us' => 'About Us',
+        'security' => 'Security',
         'contact' => 'Contact Us',
         'plans' => 'Plans',
         'faq' => 'FAQ',
@@ -74,12 +75,12 @@ return [
 
     'home' => [
         'eyebrow' => 'Modern Prop Trading',
-        'title' => 'Get Funded. Get Paid. Instant Funding Access.',
+        'title' => 'Get Funded. Get Paid. No Time Limits.',
         'description' => 'Pass the challenge. Access funded accounts. Withdraw fast.',
         'mobile_title' => [
             'line_1' => 'Get Funded.',
             'line_2' => 'Get Paid.',
-            'line_3' => 'Instant Funding Access.',
+            'line_3' => 'No Time Limits.',
         ],
         'mobile_description' => [
             'line_1' => 'Pass the challenge. Access funded accounts.',
@@ -93,7 +94,7 @@ return [
         'badges' => [
             'EN / DE / ES / FR ready',
             'Launch pricing active',
-            'First payout after 7 days',
+            'First withdrawal after 21 days',
         ],
         'hero_panel' => [
             'title' => 'Core rule stack',
@@ -113,6 +114,30 @@ return [
             'Fast Payouts',
             'Scaling +25% Capital',
             'Up to 90% Profit Split',
+        ],
+        'trust' => [
+            'eyebrow' => 'Trust / Security',
+            'title' => 'Security positioning visible from the first visit.',
+            'description' => 'Wolforix is building operational trust around secure infrastructure, risk controls, monitoring, and ISO/IEC 27001 alignment work that is currently in progress.',
+            'cta' => 'View Security',
+            'items' => [
+                [
+                    'title' => 'Secure infrastructure',
+                    'description' => 'Protected hosting and controlled operational access across core systems.',
+                ],
+                [
+                    'title' => 'Advanced risk control',
+                    'description' => 'Preventive controls and review paths designed to reduce operational risk.',
+                ],
+                [
+                    'title' => 'Real-time monitoring',
+                    'description' => 'Continuous visibility into platform activity, events, and service health.',
+                ],
+                [
+                    'title' => 'ISO/IEC 27001 aligned',
+                    'description' => 'Alignment roadmap in progress without any certification claim.',
+                ],
+            ],
         ],
         'hero_visual' => [
             'label' => 'Trading desk preview',
@@ -137,7 +162,7 @@ return [
             'unlimited' => 'Unlimited',
             'highlights' => [
                 '20% launch pricing active',
-                'First payout after 7 days',
+                'First withdrawal after 21 days',
                 'Unlimited evaluation duration',
             ],
             'currencies' => [
@@ -183,7 +208,7 @@ return [
                     'label' => '2-Step Pro',
                     'description' => 'Lower risk. Higher scaling potential. Designed for consistency and long-term growth.',
                     'note_title' => '2-Step Pro funded model',
-                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, a first payout after 7 days, payouts every 14 days after that, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
+                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, a first withdrawal after 21 days, payouts every 14 days after that, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
                 ],
             ],
         ],
@@ -212,7 +237,7 @@ return [
                 ],
                 [
                     'title' => 'Payout safeguards visible early',
-                    'description' => 'The 7-day first payout, 14-day payout cycle after that, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
+                    'description' => 'The 21-day first withdrawal, 14-day payout cycle after that, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
                 ],
                 [
                     'title' => 'Multilingual from the start',
@@ -525,12 +550,18 @@ return [
         ],
         'current_selection' => 'Current selection',
         'redirect_note' => 'The homepage now forwards directly into a dedicated checkout page where billing data, payment provider choice, and secure Stripe or PayPal checkout are handled safely on the server.',
-        'promo_code_title' => 'Launch promo code',
+        'promo_code_title' => 'Promo code',
         'promo_code_label' => 'Promo code',
+        'promo_code_placeholder' => 'Enter your promo code',
         'promo_code_badge' => '20% launch access',
-        'promo_code_help' => 'Enter the launch code from the opening popup to attach the 20% offer to this order. Launch pricing is already reflected in the amount above.',
+        'promo_code_help' => 'Enter a promo code and click Apply to update the checkout total instantly.',
+        'promo_code_apply' => 'Apply',
         'promo_code_applied' => 'Code applied',
         'promo_code_applied_copy' => 'The launch code was applied automatically and the 20% launch offer is already reflected in the total above.',
+        'promo_code_feedback' => [
+            'success' => 'Code applied successfully',
+            'invalid' => 'Invalid/expired code',
+        ],
         'billing_title' => 'Billing information',
         'payment_methods_title' => 'Payment methods',
         'client_data_title' => 'Client data / registration details',
@@ -555,6 +586,7 @@ return [
         'provider_available' => 'Available',
         'provider_coming_soon' => 'Coming Soon',
         'back_to_plans' => 'Back to Plans',
+        'trust_message' => 'Your data is protected using industry-standard security practices aligned with ISO/IEC 27001.',
         'buttons' => [
             'stripe' => 'Pay with card through Stripe using the same protected order and fulfillment flow.',
             'paypal' => 'Pay with PayPal using approval redirect and server-side order capture.',
@@ -598,7 +630,7 @@ return [
         'validation' => [
             'accept_terms_and_residency' => 'You must accept the Terms & Conditions and confirm your current country of residence before continuing.',
             'accept_refund_policy' => 'You must accept the Cancellation and Refund Policy before continuing.',
-            'promo_code' => 'This launch promo code is invalid. Use the code shown in the launch popup and try again.',
+            'promo_code' => 'Invalid/expired code',
         ],
     ],
 
@@ -713,7 +745,7 @@ return [
                 'items' => [
                     [
                         'question' => 'How often are payouts processed?',
-                        'answer' => 'Funded accounts are reviewed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles. The first withdrawal becomes available after 7 days.',
+                        'answer' => 'Funded accounts can request the first withdrawal after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle. Once a withdrawal request is submitted, payouts are processed within 24 hours.',
                     ],
                     [
                         'question' => 'How is my payout calculated?',
@@ -818,12 +850,14 @@ return [
         'voice_intro_blocked' => 'Wolfi opened, but your browser blocked immediate audio playback. Tap Play answer to hear the reply.',
         'voice_support_fallback' => 'I can help with rules, payouts, plans, and general platform questions. For billing or account-specific help, contact :email.',
         'voice_plan_fallback' => 'Wolforix currently offers 1-Step Instant and 2-Step Pro models in 5K, 10K, 25K, 50K, and 100K sizes. Choose the model that fits your risk tolerance, then use Get Plan to continue.',
-        'voice_payout_fallback' => 'The first payout becomes available after 7 days. After that, payouts follow a 14-day cycle, subject to the funded account rules and consistency checks.',
+        'voice_payout_fallback' => 'The first withdrawal becomes available after :first_payout_days days. After that, payouts follow a :payout_cycle_days-day cycle. Once a withdrawal request is submitted, it is processed within 24 hours, subject to the funded account rules and consistency checks.',
         'voice_rules_fallback' => '1-Step uses a 10% target, 4% max daily loss, and 8% max total loss. 2-Step uses 10% then 5% targets with 5% max daily loss, 10% max total loss, and a minimum of 3 trading days per phase.',
         'voice_checkout_fallback' => 'Click Get Plan on the selected challenge, then sign in or create your account before checkout. Wolforix sends you back to the correct plan after authentication.',
         'voice_discount_fallback' => 'Use the launch popup and click Get Discount to activate the 20% offer for the current session. If you ignore it, regular pricing stays visible and the discount is not applied.',
         'voice_input_label' => 'Ask a question',
         'voice_input_placeholder' => 'Example: When can I request my first payout?',
+        'voice_suggestions_label' => 'Suggested prompts',
+        'voice_suggestions_copy' => 'Start with a quick question and Wolfi will guide the conversation from there.',
         'voice_submit' => 'Get answer',
         'voice_button' => 'Speak',
         'voice_play_button' => 'Play answer',
@@ -839,6 +873,53 @@ return [
         'voice_answer_title' => 'FAQ-based answer',
         'voice_empty' => 'Ask about payouts, rules, scaling, support, or account eligibility.',
         'voice_open_faq' => 'Open full FAQ',
+    ],
+
+    'security' => [
+        'meta_title' => 'Security',
+        'eyebrow' => 'Trust & Security',
+        'title' => 'Security practices designed to protect the platform, your account, and operational integrity.',
+        'description' => 'Wolforix is building its security positioning around practical controls for access, monitoring, risk oversight, and data handling. ISO/IEC 27001 alignment is in progress, and no certification is claimed at this stage.',
+        'badge' => 'ISO/IEC 27001 alignment in progress',
+        'note' => 'This page describes current security practices and roadmap direction intended to strengthen trust while the broader program continues to mature.',
+        'sections' => [
+            [
+                'title' => 'Security',
+                'description' => 'Account and platform controls are designed to reduce unauthorized access and protect authentication flows.',
+                'items' => [
+                    'Two-factor authentication support is included in account-access controls.',
+                    'Sensitive traffic and secrets are protected with encryption and controlled handling.',
+                    'Account protection measures include controlled access, strong credential practices, and session safeguards.',
+                ],
+            ],
+            [
+                'title' => 'Risk Management',
+                'description' => 'Operational risk is managed through layered safeguards, monitoring, and review processes.',
+                'items' => [
+                    'Access rights and operational changes are reviewed through controlled workflows.',
+                    'Monitoring and alerting help identify unusual activity and service issues quickly.',
+                    'Response processes are designed to contain issues, support review, and improve resilience.',
+                ],
+            ],
+            [
+                'title' => 'Data Protection',
+                'description' => 'Data handling is structured around protection, limited access, and responsible retention practices.',
+                'items' => [
+                    'Data is protected in transit using modern encryption standards.',
+                    'Access to sensitive information is limited to authorized personnel and systems.',
+                    'Storage, retention, and handling practices are designed to support confidentiality and integrity.',
+                ],
+            ],
+            [
+                'title' => 'Roadmap',
+                'description' => 'Security maturity continues to expand as the platform and internal controls evolve.',
+                'items' => [
+                    'ISO/IEC 27001 alignment is currently in progress.',
+                    'Policy, documentation, and control coverage continue to be formalized and reviewed.',
+                    'Monitoring, access governance, and continuous-improvement practices will keep expanding over time.',
+                ],
+            ],
+        ],
     ],
 
     'legal' => [
@@ -968,13 +1049,20 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Payout Policy',
-                'intro' => 'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
+                'intro' => 'First withdrawal requests become available after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle.',
+                'highlight' => [
+                    'title' => 'Payout processing',
+                    'items' => [
+                        'Payments within 24 hours',
+                    ],
+                    'note' => 'Once a client submits a withdrawal request, Wolforix aims to process the payout within 24 hours.',
+                ],
                 'sections' => [
                     [
                         'title' => 'Payout Eligibility',
                         'paragraphs' => [
-                            'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
-                            'Funded accounts can request the first withdrawal after 7 days. 2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
+                            'Funded accounts can request the first withdrawal after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle.',
+                            '2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
                             '1-Step funded accounts operate on the same 14-day payout rhythm but require obligatory consistency-rule compliance before payout approval.',
                         ],
                     ],
@@ -1090,6 +1178,9 @@ return [
             'Wolforix does not provide brokerage services, investment advice, or portfolio management. The company does not accept deposits, hold client funds, or execute trades on behalf of users.',
         ],
         'legal_title' => 'Legal & Policies',
+        'security_title' => 'Trust & Security',
+        'security_line' => 'Security aligned with ISO/IEC 27001 standards (in progress)',
+        'security_link' => 'View Security',
         'operations_title' => 'Operations',
         'operations_copy' => 'Support is handled through email and later dashboard ticketing. Manual withdrawals remain admin-reviewed, and payout approval depends on rule compliance.',
         'contact_title' => 'Contact & Support',
@@ -1173,7 +1264,7 @@ return [
             'rules_title' => 'Rule stack',
             'rules_copy' => 'The preview below is aligned to the final 2-Step launch model so targets, risk limits, leverage, and payout timing remain obvious near account metrics.',
             'payout_title' => 'Payout section',
-            'payout_copy' => 'Payout previews now reflect 14-day cycles, a first withdrawal after 7 days across funded accounts, 1-Step consistency requirements, and +25% scaling every 3 months for profitable 2-Step accounts.',
+            'payout_copy' => 'Payout previews now reflect 14-day cycles, a first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and +25% scaling every 3 months for profitable 2-Step accounts.',
             'settings_title' => 'Profile & settings',
             'settings_copy' => 'A placeholder profile area keeps the dashboard ready for language preferences, KYC, and account security controls.',
         ],
@@ -1200,16 +1291,16 @@ return [
         'payouts' => [
             'next_window' => 'Next payout window',
             'next_window_value' => 'Next 14-day review in 3 days',
-            'cycle_note' => 'Payouts are processed every 14 days with a maximum limit per cycle. Remaining eligible payouts will be processed in subsequent cycles.',
+            'cycle_note' => 'First withdrawal requests become available after 21 days. After that, payout requests follow a 14-day cycle with a maximum limit per cycle.',
             'placeholder_status' => 'Manual review placeholder',
             'queue_title' => 'Payout queue preview',
-            'queue_copy' => '14-day payout cycles, a first withdrawal after 7 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
+            'queue_copy' => '14-day payout cycles, a first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
             'progressive_note' => '2-Step funded accounts can scale by +25% capital every 3 months if profitable. 1-Step funded accounts keep the obligatory consistency rule before payout approval.',
             'requirements_title' => 'Eligibility checklist',
             'requirements' => [
                 'Minimum trading days for the active phase must be met.',
                 '1-Step funded accounts must satisfy the obligatory consistency rule before profit becomes payout-eligible.',
-                'Funded accounts can request the first withdrawal after 7 days.',
+                'Funded accounts can request the first withdrawal after 21 days.',
                 'No rule violations may be present on the account and all payout requests remain subject to internal trade review.',
             ],
             'cta' => 'Payout request placeholder',
