@@ -78,14 +78,30 @@ class WolforixPlatformTest extends TestCase
             ->assertSee(config('wolforix.support.email'))
             ->assertSee('Live chat')
             ->assertSee('Wolfi AI assistant')
+            ->assertSee('Wolfi\'s answer')
             ->assertSee('Play answer')
             ->assertSee('Suggested prompts')
             ->assertSee('Can I trade during news?')
+            ->assertSee('Let me make sure I answer the right thing.')
             ->assertSee('"locale":"en"', false)
             ->assertSee('"locale":"de"', false)
             ->assertSee('"locale":"es"', false)
             ->assertSee('"locale":"fr"', false)
             ->assertSee(route('faq'), false);
+    }
+
+    public function test_german_contact_page_uses_the_refined_wolfi_copy(): void
+    {
+        $this->withSession([
+            'locale' => 'de',
+        ])->get(route('contact'))
+            ->assertOk()
+            ->assertSee('Support, Live-Chat und FAQ-Sprachhilfe an einem Ort.')
+            ->assertSee('Wolfi AI-Assistent')
+            ->assertSee('Wolfis Antwort')
+            ->assertSee('Ich höre zu... tippe erneut zum Stoppen.')
+            ->assertSee('Ich will sicherstellen, dass ich die richtige Frage beantworte.')
+            ->assertSee('Starte mit einer kurzen Frage, und Wolfi führt dich von dort aus weiter.');
     }
 
     public function test_news_page_renders_demo_calendar_filters_and_events(): void

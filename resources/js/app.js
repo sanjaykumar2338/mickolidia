@@ -61,15 +61,46 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const assistantIntentProfiles = {
         greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo'],
-        support: ['support', 'help', 'contact', 'email', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing'],
-        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse'],
-        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto'],
-        payout: ['payout', 'withdraw', 'withdrawal', 'profit split', 'payment', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal'],
-        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'consistency', 'news', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss'],
-        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'one step', 'two step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2'],
-        checkout: ['checkout', 'buy', 'purchase', 'order', 'plan kaufen', 'comprar', 'pedido', 'commande'],
-        discount: ['discount', 'promo', 'promo code', 'launch code', 'rabatt', 'descuento', 'remise', 'coupon'],
+        support: ['support', 'help', 'contact', 'email', 'live chat', 'ticket', 'customer service', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing', 'refund'],
+        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'sign up', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse', 'connexion'],
+        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'trial access', 'demo login', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto'],
+        payout: ['payout', 'get paid', 'paid', 'cash out', 'withdraw', 'withdrawal', 'withdraw money', 'profit split', 'payment', 'processing time', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal'],
+        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'max daily loss', 'max total loss', 'consistency', 'news', 'news trading', 'stop loss', 'trading days', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss'],
+        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'which challenge', 'which plan', 'best plan', 'difference', 'compare', 'single phase', 'funded account', 'one step', 'two step', '1-step', '2-step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2'],
+        checkout: ['checkout', 'buy', 'purchase', 'order', 'pay', 'payment method', 'stripe', 'paypal', 'plan kaufen', 'comprar', 'pedido', 'commande'],
+        discount: ['discount', 'promo', 'promo code', 'launch code', 'launch offer', 'coupon', 'rabatt', 'descuento', 'remise'],
     };
+    const assistantNoiseWords = new Set([
+        'a', 'an', 'and', 'are', 'as', 'at', 'be', 'can', 'do', 'for', 'from', 'help', 'how', 'i', 'if', 'in', 'is', 'it', 'me', 'my', 'of', 'on', 'or', 'please', 'the', 'this', 'to', 'we', 'what', 'when', 'where', 'which', 'who', 'why', 'with', 'you', 'your',
+        'al', 'algo', 'como', 'con', 'cual', 'cuales', 'de', 'del', 'donde', 'el', 'en', 'es', 'esta', 'estoy', 'hola', 'la', 'las', 'lo', 'los', 'me', 'mi', 'para', 'por', 'puedo', 'que', 'se', 'si', 'tu', 'una', 'uno', 'y',
+        'aber', 'auch', 'bei', 'bin', 'bitte', 'das', 'dass', 'dein', 'dem', 'den', 'der', 'die', 'du', 'ein', 'eine', 'einer', 'eines', 'es', 'fuer', 'für', 'ich', 'im', 'ist', 'mit', 'oder', 'und', 'was', 'wenn', 'wie', 'wo', 'zu',
+        'alors', 'avec', 'bonjour', 'comment', 'dans', 'de', 'des', 'du', 'est', 'et', 'je', 'la', 'le', 'les', 'mon', 'ou', 'pour', 'pouvez', 'puis', 'que', 'quoi', 'si', 'sur', 'une', 'vous',
+    ].map(normalizeText));
+    const assistantFollowupMarkers = [
+        'also',
+        'and',
+        'and for',
+        'and if',
+        'how about',
+        'plus',
+        'what about',
+        'what if',
+        'ademas',
+        'además',
+        'tambien',
+        'también',
+        'y',
+        'y para',
+        'y si',
+        'auch',
+        'und',
+        'und wenn',
+        'wie sieht es mit',
+        'aussi',
+        'et',
+        'et pour',
+        'et si',
+    ].map(normalizeText);
     const assistantConversationProfiles = {
         en: {
             followups: {
@@ -99,15 +130,15 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         de: {
             followups: {
-                intro: 'Frag mich nach Auszahlungen, Regeln oder dem besten naechsten Schritt fuer dein Konto.',
-                default: 'Wenn du willst, erklaere ich dir das auch Schritt fuer Schritt.',
-                support: 'Wenn du willst, zeige ich dir den schnellsten Support-Weg.',
-                trial: 'Wenn du willst, fuehre ich dich in den kostenlosen Demoablauf.',
-                plans: 'Wenn du willst, vergleiche ich dir 1-Step und 2-Step direkt.',
-                payout: 'Wenn du willst, erklaere ich dir auch den Zeitplan und was nach der Anfrage passiert.',
+                intro: 'Frag mich nach Auszahlungen, Regeln oder dem besten nächsten Schritt für dein Konto.',
+                default: 'Wenn du willst, erkläre ich dir das auch Schritt für Schritt.',
+                support: 'Wenn du willst, zeige ich dir den schnellsten Weg zum Support.',
+                trial: 'Wenn du willst, führe ich dich direkt in den kostenlosen Demoablauf.',
+                plans: 'Wenn du willst, vergleiche ich 1-Step und 2-Step direkt für dich.',
+                payout: 'Wenn du willst, erkläre ich dir auch den Zeitplan und was nach deiner Anfrage passiert.',
                 rules: 'Wenn du willst, fasse ich dir die Regeln als kurze Checkliste zusammen.',
-                checkout: 'Wenn du willst, fuehre ich dich Schritt fuer Schritt durch den Checkout.',
-                discount: 'Wenn du willst, sage ich dir genau, wo du den Code eintraegst.',
+                checkout: 'Wenn du willst, führe ich dich Schritt für Schritt durch den Checkout.',
+                discount: 'Wenn du willst, zeige ich dir genau, wo du den Code eingibst.',
             },
         },
         fr: {
@@ -126,41 +157,134 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const assistantSpeechProfiles = {
         en: {
-            rate: 0.97,
-            pitch: 0.82,
-            volume: 0.95,
+            rate: 0.93,
+            pitch: 0.8,
+            volume: 1,
             maleVoices: ['male', 'guy', 'davis', 'daniel', 'alex', 'arthur', 'thomas', 'tom', 'fred', 'gordon', 'nathan', 'oliver', 'matthew', 'michael', 'aaron', 'david'],
             femaleVoices: ['female', 'aria', 'jenny', 'samantha', 'moira', 'serena', 'allison', 'ava', 'sofia', 'anna', 'eva'],
             preferredVoices: ['arthur', 'oliver', 'thomas', 'alex', 'matthew'],
         },
         es: {
-            rate: 1.01,
-            pitch: 0.88,
-            volume: 0.95,
+            rate: 0.96,
+            pitch: 0.84,
+            volume: 1,
             maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe', 'alejandro', 'andres', 'mateo', 'nicolas', 'sebastian', 'sergio', 'tomas', 'bruno', 'martin', 'gael'],
             femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria', 'paloma', 'conchita', 'carmen', 'marisol', 'isabela', 'elvira'],
             preferredVoices: ['diego', 'jorge', 'alvaro', 'carlos', 'sebastian', 'alejandro', 'andres', 'javier', 'nicolas', 'mateo'],
             avoidVoices: ['monica', 'paulina', 'paloma', 'sofia', 'lucia', 'maria', 'conchita', 'carmen', 'marisol'],
         },
         de: {
-            rate: 0.96,
+            rate: 0.94,
             pitch: 0.82,
-            volume: 0.95,
-            maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus'],
-            femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva'],
-            preferredVoices: ['daniel', 'markus', 'florian', 'stefan'],
+            volume: 1,
+            maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus', 'jonas', 'lukas', 'felix', 'johann', 'moritz', 'benjamin'],
+            femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi'],
+            preferredVoices: ['daniel', 'markus', 'florian', 'stefan', 'jonas', 'lukas', 'felix'],
+            avoidVoices: ['anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi'],
         },
         fr: {
-            rate: 0.97,
-            pitch: 0.82,
-            volume: 0.95,
+            rate: 0.94,
+            pitch: 0.8,
+            volume: 1,
             maleVoices: ['male', 'thomas', 'daniel', 'henri', 'alexandre', 'antoine', 'nicolas', 'paul', 'remy', 'yannick'],
             femaleVoices: ['female', 'amelie', 'aurelie', 'virginie', 'marie', 'julie'],
             preferredVoices: ['thomas', 'alexandre', 'antoine', 'nicolas', 'henri'],
         },
     };
+    const assistantSpeechCleanupProfiles = {
+        en: {
+            andWord: 'and',
+            percentWord: 'percent',
+            aroundClock: 'twenty four seven',
+            oneStep: 'one step',
+            twoStep: 'two step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        es: {
+            andWord: 'y',
+            percentWord: 'por ciento',
+            aroundClock: 'veinticuatro siete',
+            oneStep: 'uno step',
+            twoStep: 'dos step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        de: {
+            andWord: 'und',
+            percentWord: 'Prozent',
+            aroundClock: 'vierundzwanzig sieben',
+            oneStep: 'eins step',
+            twoStep: 'zwei step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        fr: {
+            andWord: 'et',
+            percentWord: 'pour cent',
+            aroundClock: 'vingt quatre sur sept',
+            oneStep: 'un step',
+            twoStep: 'deux step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+    };
     const resolveAssistantConversationProfile = (locale) => assistantConversationProfiles[normalizeLocaleCode(locale)] ?? assistantConversationProfiles.en;
     const resolveAssistantSpeechProfile = (locale) => assistantSpeechProfiles[normalizeLocaleCode(locale)] ?? assistantSpeechProfiles.en;
+    const getVoiceMatchKey = (voice) => normalizeText(`${voice?.name ?? ''} ${voice?.voiceURI ?? ''}`);
+    const voiceMatchesKeywords = (voiceKey, keywords = []) => keywords.some((keyword) => voiceKey.includes(normalizeText(keyword)));
+    const isNaturalVoiceKey = (voiceKey) => ['natural', 'neural', 'online', 'premium', 'enhanced'].some((keyword) => voiceKey.includes(keyword));
+    const prepareAnswerTextForSpeech = (text, locale) => {
+        const localeBase = normalizeLocaleCode(locale);
+        const profile = assistantSpeechCleanupProfiles[localeBase] ?? assistantSpeechCleanupProfiles.en;
+
+        return String(text ?? '')
+            .replace(/\s*\/\s*/g, ', ')
+            .replace(/\s*&\s*/g, ` ${profile.andWord} `)
+            .replace(/24\s*\/\s*7/gi, profile.aroundClock)
+            .replace(/\b1[\s-]*step\b/gi, profile.oneStep)
+            .replace(/\b2[\s-]*step\b/gi, profile.twoStep)
+            .replace(/\bcTrader\b/gi, profile.cTrader)
+            .replace(/ISO\s*\/\s*IEC\s*27001/gi, profile.isoLabel)
+            .replace(/(\d+)\s*%/g, `$1 ${profile.percentWord}`)
+            .replace(/\b(\d{1,3})K\b/g, '$1 K')
+            .replace(/[;:]/g, ', ')
+            .replace(/\(([^)]+)\)/g, ', $1, ')
+            .replace(/["“”]/g, '')
+            .replace(/\s+/g, ' ')
+            .replace(/,\s*,+/g, ', ')
+            .trim();
+    };
+    const extractAssistantSearchTerms = (query = '') => {
+        const normalizedQuery = normalizeText(query);
+        const rawTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+        const meaningfulTokens = uniqueValues(rawTokens.filter((token) => token.length > 1 && !assistantNoiseWords.has(token)));
+        const phraseTokens = uniqueValues(meaningfulTokens.flatMap((token, index) => {
+            const next = meaningfulTokens[index + 1];
+
+            return next ? [`${token} ${next}`] : [];
+        }).filter((token) => token.length > 5));
+
+        return {
+            normalizedQuery,
+            rawTokens,
+            meaningfulTokens,
+            phraseTokens,
+        };
+    };
+    const isFollowupQuery = (query = '', meaningfulTokens = []) => {
+        const normalizedQuery = normalizeText(query);
+
+        if (normalizedQuery === '' || meaningfulTokens.length === 0 || meaningfulTokens.length > 5) {
+            return false;
+        }
+
+        return assistantFollowupMarkers.some((marker) => (
+            normalizedQuery === marker
+            || normalizedQuery.startsWith(`${marker} `)
+            || normalizedQuery.includes(` ${marker} `)
+        ));
+    };
     const ensureSentenceEnding = (value) => {
         const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
 
@@ -1206,6 +1330,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ...(Array.isArray(window.navigator.languages) ? window.navigator.languages : []),
             window.navigator.language,
         ].map(normalizeLocaleCode)).filter(Boolean);
+        const speechRecognitionLocales = uniqueValues([
+            ...(Array.isArray(window.navigator.languages) ? window.navigator.languages : []),
+            window.navigator.language,
+            pageLocale,
+        ].map(normalizeLocaleCode)).filter(Boolean);
         const introBlockedMessage = assistantConfig.intro_blocked ?? '';
         const enrichedVoiceIndex = voiceIndex.map((item) => {
             const localeBase = normalizeLocaleCode(item.locale);
@@ -1241,10 +1370,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         let recognition = null;
-        let activeSpeechLocale = resolveSpeechLocale();
+        let activeSpeechLocale = resolveSpeechLocale(speechRecognitionLocales);
         let availableSpeechVoices = [];
         let currentAnswerText = '';
         let currentAnswerSpeechLocale = activeSpeechLocale;
+        let activeConversationLocale = speechRecognitionLocales[0] ?? pageLocaleBase;
+        let lastResolvedContext = {
+            intent: 'default',
+            locale: pageLocaleBase,
+            terms: [],
+        };
         let isSpeakingReply = false;
         let isListening = false;
         let hasConversation = false;
@@ -1524,6 +1659,37 @@ document.addEventListener('DOMContentLoaded', () => {
             return activeSpeechLocale;
         };
 
+        const syncConversationLocale = (nextLocale) => {
+            const normalizedLocale = normalizeLocaleCode(nextLocale);
+
+            if (normalizedLocale === '') {
+                return activeConversationLocale;
+            }
+
+            activeConversationLocale = normalizedLocale;
+            setActiveSpeechLocale(resolveSpeechLocale([
+                activeConversationLocale,
+                ...speechRecognitionLocales,
+            ]));
+
+            return activeConversationLocale;
+        };
+        const rememberResolvedContext = (response) => {
+            if (!response || response.source === 'intro' || response.source === 'clarify') {
+                return;
+            }
+
+            const localeBase = normalizeLocaleCode(response.locale) || activeConversationLocale;
+            const contextSeed = `${response.question ?? ''} ${response.answer ?? ''}`;
+            const { meaningfulTokens } = extractAssistantSearchTerms(contextSeed);
+
+            lastResolvedContext = {
+                intent: response.intent ?? lastResolvedContext.intent ?? 'default',
+                locale: localeBase,
+                terms: meaningfulTokens.slice(0, 6),
+            };
+        };
+
         const refreshSpeechVoices = () => {
             if (!('speechSynthesis' in window)) {
                 return;
@@ -1541,13 +1707,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const requestedBase = normalizeLocaleCode(requestedLocale);
             const voiceLocale = String(voice.lang ?? '').toLowerCase();
             const voiceBase = normalizeLocaleCode(voiceLocale);
-            const voiceName = String(voice.name ?? '').toLowerCase();
+            const voiceKey = getVoiceMatchKey(voice);
             const speechProfile = resolveAssistantSpeechProfile(requestedBase);
-            const isMaleVoice = speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword));
-            const isFemaleVoice = speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword));
-            const isPreferredVoice = (speechProfile.preferredVoices ?? []).some((keyword) => voiceName.includes(keyword));
-            const isAvoidVoice = (speechProfile.avoidVoices ?? []).some((keyword) => voiceName.includes(keyword));
-            const isNaturalVoice = voiceName.includes('natural') || voiceName.includes('neural');
+            const isMaleVoice = voiceMatchesKeywords(voiceKey, speechProfile.maleVoices);
+            const isFemaleVoice = voiceMatchesKeywords(voiceKey, speechProfile.femaleVoices);
+            const isPreferredVoice = voiceMatchesKeywords(voiceKey, speechProfile.preferredVoices ?? []);
+            const isAvoidVoice = voiceMatchesKeywords(voiceKey, speechProfile.avoidVoices ?? []);
+            const isNaturalVoice = isNaturalVoiceKey(voiceKey);
             let score = 0;
 
             if (voiceLocale === requestedLocale) {
@@ -1578,10 +1744,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 score -= 32;
             }
 
-            if (voiceName.includes('premium') || voiceName.includes('enhanced')) {
-                score += 6;
-            }
-
             if (voice.default) {
                 score += 8;
             }
@@ -1599,7 +1761,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const speechProfile = resolveAssistantSpeechProfile(requestedBase);
             const rankedVoices = [...availableSpeechVoices]
                 .map((voice) => {
-                    const voiceName = String(voice.name ?? '').toLowerCase();
+                    const voiceKey = getVoiceMatchKey(voice);
                     const voiceLocale = String(voice.lang ?? '').toLowerCase();
                     const voiceBase = normalizeLocaleCode(voiceLocale);
 
@@ -1608,15 +1770,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         score: rankSpeechVoice(voice, locale),
                         exactLocale: voiceLocale === requestedLocale,
                         baseLocale: voiceBase === requestedBase,
-                        isMaleVoice: speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword)),
-                        isFemaleVoice: speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword)),
-                        isPreferredVoice: (speechProfile.preferredVoices ?? []).some((keyword) => voiceName.includes(keyword)),
-                        isNaturalVoice: voiceName.includes('natural') || voiceName.includes('neural'),
+                        isMaleVoice: voiceMatchesKeywords(voiceKey, speechProfile.maleVoices),
+                        isFemaleVoice: voiceMatchesKeywords(voiceKey, speechProfile.femaleVoices),
+                        isPreferredVoice: voiceMatchesKeywords(voiceKey, speechProfile.preferredVoices ?? []),
+                        isNaturalVoice: isNaturalVoiceKey(voiceKey),
                     };
                 })
                 .sort((left, right) => right.score - left.score);
 
-            return rankedVoices.find((item) => item.exactLocale && item.isMaleVoice)?.voice
+            return rankedVoices.find((item) => item.exactLocale && item.isMaleVoice && item.isNaturalVoice)?.voice
+                ?? rankedVoices.find((item) => item.exactLocale && item.isPreferredVoice && item.isNaturalVoice)?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && item.isMaleVoice && item.isNaturalVoice)?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && item.isPreferredVoice && item.isNaturalVoice)?.voice
+                ?? rankedVoices.find((item) => item.exactLocale && item.isMaleVoice)?.voice
                 ?? rankedVoices.find((item) => item.exactLocale && item.isPreferredVoice)?.voice
                 ?? rankedVoices.find((item) => item.exactLocale && !item.isFemaleVoice)?.voice
                 ?? rankedVoices.find((item) => item.baseLocale && item.isMaleVoice)?.voice
@@ -1780,8 +1946,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } = {},
         ) => {
             const normalizedText = String(text ?? '').trim();
+            const spokenText = prepareAnswerTextForSpeech(normalizedText, locale);
 
-            if (!('speechSynthesis' in window) || normalizedText === '') {
+            if (!('speechSynthesis' in window) || spokenText === '') {
                 cancelSpokenReply(false);
                 return;
             }
@@ -1789,7 +1956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshSpeechVoices();
 
             const synthesis = window.speechSynthesis;
-            const utterance = new SpeechSynthesisUtterance(normalizedText);
+            const utterance = new SpeechSynthesisUtterance(spokenText);
             const speechProfile = resolveAssistantSpeechProfile(locale);
             const selectedVoice = findSpeechVoice(locale)
                 ?? availableSpeechVoices.find((voice) => voice.default)
@@ -1812,6 +1979,14 @@ document.addEventListener('DOMContentLoaded', () => {
             utterance.volume = speechProfile.volume;
             utterance.rate = speechProfile.rate;
             utterance.pitch = speechProfile.pitch;
+
+            voiceDebug('voice selected', {
+                locale,
+                voice: selectedVoice?.name ?? null,
+                voiceURI: selectedVoice?.voiceURI ?? null,
+                voiceLang: selectedVoice?.lang ?? null,
+                spokenText,
+            });
 
             if (selectedVoice) {
                 utterance.voice = selectedVoice;
@@ -2008,6 +2183,25 @@ document.addEventListener('DOMContentLoaded', () => {
             source: 'fallback',
             intent: 'default',
         });
+        const buildClarificationResponse = (localeBase = pageLocaleBase, suggestions = []) => {
+            const normalizedSuggestions = uniqueValues(suggestions.map((suggestion) => String(suggestion ?? '').trim()).filter(Boolean)).slice(0, 3);
+            const fallbackSuggestions = Array.isArray(assistantConfig.example_questions)
+                ? assistantConfig.example_questions.filter(Boolean).slice(0, 3)
+                : [];
+            const suggestionText = (normalizedSuggestions.length > 0 ? normalizedSuggestions : fallbackSuggestions).join(' / ');
+            const template = String(assistantConfig.clarify_intro ?? '').trim();
+            const answer = suggestionText !== ''
+                ? template.replace(':suggestions', suggestionText)
+                : (assistantConfig.general_fallback ?? '');
+
+            return buildAssistantResponse({
+                localeBase,
+                question: assistantConfig.clarify_title ?? assistantConfig.assistant_name ?? '',
+                answer,
+                source: 'clarify',
+                intent: 'default',
+            });
+        };
 
         const enhanceAssistantResponse = (response) => {
             if (!response) {
@@ -2030,22 +2224,26 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         };
 
-        const scoreVoiceItem = (item, normalizedQuery, tokens, preferredLocales, intents) => {
+        const scoreVoiceItem = (item, normalizedQuery, searchTerms, meaningfulTokens, contextTokens, preferredLocales, intents) => {
             let score = 0;
+            const matchedSearchTerms = searchTerms.filter((term) => item.haystack.includes(term));
+            const matchedMeaningfulTokens = meaningfulTokens.filter((token) => item.haystack.includes(token));
+            const matchedContextTokens = contextTokens.filter((token) => item.haystack.includes(token));
+            const matchedPhraseTerms = searchTerms.filter((term) => term.includes(' ') && item.haystack.includes(term));
 
-            if (item.questionNormalized === normalizedQuery) {
+            if (normalizedQuery !== '' && item.questionNormalized === normalizedQuery) {
                 score += 240;
             }
 
-            if (item.questionNormalized.startsWith(normalizedQuery)) {
+            if (normalizedQuery.length >= 8 && item.questionNormalized.startsWith(normalizedQuery)) {
                 score += 140;
             }
 
-            if (item.questionNormalized.includes(normalizedQuery)) {
+            if (normalizedQuery.length >= 10 && item.questionNormalized.includes(normalizedQuery)) {
                 score += 110;
             }
 
-            if (item.haystack.includes(normalizedQuery)) {
+            if (normalizedQuery.length >= 12 && item.haystack.includes(normalizedQuery)) {
                 score += 80;
             }
 
@@ -2055,7 +2253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += 24;
             }
 
-            tokens.forEach((token, index) => {
+            meaningfulTokens.forEach((token, index) => {
                 if (item.questionNormalized.includes(token)) {
                     score += index === 0 ? 18 : 14;
                 }
@@ -2069,12 +2267,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            const meaningfulTokens = tokens.filter((token) => token.length > 2);
-            const matchedTokens = meaningfulTokens.filter((token) => item.haystack.includes(token));
+            score += matchedMeaningfulTokens.length * 10;
+            score += matchedContextTokens.length * 6;
+            score += matchedPhraseTerms.length * 12;
 
-            score += matchedTokens.length * 9;
-
-            if (matchedTokens.length >= Math.min(3, meaningfulTokens.length) && matchedTokens.length > 0) {
+            if (matchedMeaningfulTokens.length >= Math.min(3, meaningfulTokens.length) && matchedMeaningfulTokens.length > 0) {
                 score += 18;
             }
 
@@ -2086,29 +2283,76 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            return score;
+            return {
+                score,
+                matchedSearchTermsCount: matchedSearchTerms.length,
+                matchedMeaningfulTokensCount: matchedMeaningfulTokens.length,
+                matchedContextTokensCount: matchedContextTokens.length,
+                coverage: meaningfulTokens.length > 0
+                    ? matchedMeaningfulTokens.length / meaningfulTokens.length
+                    : 0,
+            };
         };
 
         const findBestResponse = (query) => {
-            const normalizedQuery = normalizeText(query);
-            const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+            const {
+                normalizedQuery,
+                rawTokens,
+                meaningfulTokens,
+                phraseTokens,
+            } = extractAssistantSearchTerms(query);
             const preferredLocales = getPreferredAssistantLocales(query);
-            const intents = detectAssistantIntents(query);
+            const followupQuery = isFollowupQuery(query, meaningfulTokens);
+            let intents = detectAssistantIntents(query);
 
-            if (normalizedQuery === '' || (intents.includes('greeting') && tokens.length <= 4)) {
+            if (followupQuery && lastResolvedContext.intent !== 'default' && !intents.includes(lastResolvedContext.intent)) {
+                intents = [
+                    ...intents,
+                    lastResolvedContext.intent,
+                ];
+            }
+
+            const contextTokens = followupQuery
+                ? lastResolvedContext.terms.slice(0, 4)
+                : [];
+            const searchTerms = uniqueValues([
+                ...meaningfulTokens,
+                ...phraseTokens,
+                ...contextTokens,
+            ]);
+
+            if (normalizedQuery === '' || (intents.includes('greeting') && rawTokens.length <= 4)) {
                 return buildIntroResponse(preferredLocales[0] ?? pageLocaleBase);
             }
 
             const rankedMatches = enrichedVoiceIndex
                 .map((item) => ({
                     ...item,
-                    score: scoreVoiceItem(item, normalizedQuery, tokens, preferredLocales, intents),
+                    ...scoreVoiceItem(item, normalizedQuery, searchTerms, meaningfulTokens, contextTokens, preferredLocales, intents),
                 }))
                 .sort((left, right) => right.score - left.score);
+            const positiveMatches = rankedMatches.filter((item) => item.score > 0);
+            const bestMatch = positiveMatches[0] ?? null;
+            const runnerUp = positiveMatches[1] ?? null;
+            const hasStrongFaqMatch = Boolean(bestMatch) && (
+                bestMatch.score >= 82
+                || (
+                    bestMatch.matchedMeaningfulTokensCount >= Math.max(2, Math.min(3, meaningfulTokens.length))
+                    && bestMatch.coverage >= 0.55
+                )
+                || (
+                    bestMatch.score >= 56
+                    && bestMatch.coverage >= 0.38
+                    && (!runnerUp || bestMatch.score - runnerUp.score >= 14)
+                )
+                || (
+                    meaningfulTokens.length <= 2
+                    && bestMatch.score >= 44
+                    && bestMatch.matchedMeaningfulTokensCount >= 1
+                )
+            );
 
-            const bestMatch = rankedMatches.find((item) => item.score > 0) ?? null;
-
-            if (bestMatch && bestMatch.score >= 24) {
+            if (hasStrongFaqMatch) {
                 return {
                     ...bestMatch,
                     source: 'faq',
@@ -2142,6 +2386,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if ((intents.includes('support') || intents.includes('login')) && String(assistantConfig.support_fallback ?? '').trim() !== '') {
                 return buildSupportFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            const clarificationCandidates = positiveMatches
+                .filter((item) => item.localeBase === (preferredLocales[0] ?? pageLocaleBase) && item.score >= 20)
+                .slice(0, 3)
+                .map((item) => item.question);
+
+            if (clarificationCandidates.length > 0) {
+                return buildClarificationResponse(preferredLocales[0] ?? pageLocaleBase, clarificationCandidates);
             }
 
             if (String(assistantConfig.general_fallback ?? '').trim() !== '') {
@@ -2182,6 +2435,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const enhancedResponse = enhanceAssistantResponse(response);
+            syncConversationLocale(enhancedResponse.locale ?? pageLocaleBase);
+            rememberResolvedContext(enhancedResponse);
 
             animateAnswerQuestion(enhancedResponse.question ?? '');
             revealAnswerText(enhancedResponse.answer ?? '');
@@ -2227,9 +2482,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } = {},
         ) => {
             const normalizedQuery = normalizeText(query);
+            const detectedLocales = getPreferredAssistantLocales(query);
 
             if (normalizedQuery !== '') {
                 hasConversation = true;
+                syncConversationLocale(detectedLocales[0] ?? activeConversationLocale);
             }
 
             presentResponse(findBestResponse(query), {
@@ -2439,7 +2696,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
 
                 try {
-                    recognition.lang = activeSpeechLocale;
+                    recognition.lang = resolveSpeechLocale([
+                        activeConversationLocale,
+                        ...speechRecognitionLocales,
+                    ]);
                     recognition.start();
                 } catch (error) {
                     setMicState(false);

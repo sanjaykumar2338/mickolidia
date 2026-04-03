@@ -158,6 +158,9 @@
         'intro_title' => __('site.contact.voice_intro_title'),
         'intro_message' => __('site.contact.voice_intro_message'),
         'intro_blocked' => __('site.contact.voice_intro_blocked'),
+        'clarify_title' => __('site.contact.voice_clarify_title'),
+        'clarify_intro' => __('site.contact.voice_clarify_intro'),
+        'example_questions' => is_array($assistantExampleQuestions) ? array_values($assistantExampleQuestions) : [],
         'plan_fallback' => __('site.contact.voice_plan_fallback', ['sizes' => $voicePlanSizes]),
         'payout_fallback' => __('site.contact.voice_payout_fallback', [
             'first_payout_days' => $firstPayoutDays,
