@@ -285,10 +285,21 @@
     <section id="plans" class="px-6 pt-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <span class="section-label">{{ __('site.home.plans.eyebrow') }}</span>
-            <div class="mt-5">
-                <div class="max-w-3xl">
-                    <h2 class="text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.plans.title') }}</h2>
-                    <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.home.plans.description') }}</p>
+            <div class="mt-5 max-w-4xl">
+                <p class="text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.5rem]">
+                    {{ __('site.home.plans.description') }}
+                </p>
+                <div class="mt-6 inline-flex items-center gap-4 rounded-[1.4rem] border border-white/8 bg-white/4 px-4 py-3 sm:px-5">
+                    <span class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                        {{ __('site.home.plans.platform_label') }}:
+                    </span>
+                    <img
+                        src="{{ asset('branding/mt5-logo.svg') }}"
+                        alt="{{ __('site.home.plans.platform_value') }}"
+                        class="h-8 w-auto sm:h-9"
+                        loading="lazy"
+                        decoding="async"
+                    >
                 </div>
             </div>
 

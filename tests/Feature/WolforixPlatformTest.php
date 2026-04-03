@@ -430,8 +430,9 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('No risk. No credit card.')
             ->assertSee('Single Phase')
             ->assertSee('Funded Account')
-            ->assertSee('Get funded and start earning profits from your very first payout.')
             ->assertSee('Choose your model, pass the evaluation, and access real capital with clear rules and fast payouts.')
+            ->assertSee('Platform:')
+            ->assertSee('MT5')
             ->assertSee('Launch Discount - Limited Time Only')
             ->assertSee('20% OFF - Launch Access Ending Soon')
             ->assertSee(config('wolforix.launch_discount.code'))
@@ -453,6 +454,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Wolforix does not provide brokerage services, investment advice, or portfolio management.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
+            ->assertSee(asset('branding/mt5-logo.svg'), false)
             ->assertDontSee('Dashboard Preview')
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');

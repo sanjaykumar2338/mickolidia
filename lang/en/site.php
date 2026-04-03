@@ -221,6 +221,8 @@ return [
             'eyebrow' => 'Challenge plans',
             'title' => 'Get funded and start earning profits from your very first payout.',
             'description' => 'Choose your model, pass the evaluation, and access real capital with clear rules and fast payouts.',
+            'platform_label' => 'Platform',
+            'platform_value' => 'MT5',
             'badge' => 'Final launch-ready challenge models',
             'entry_fee' => 'Entry fee',
             'profit_target' => 'Profit target',

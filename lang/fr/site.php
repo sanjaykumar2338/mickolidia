@@ -137,6 +137,8 @@ return array_replace_recursive($en, [
             'eyebrow' => 'Plans Challenge',
             'title' => 'Obtenez un compte funded et commencez à gagner dès votre tout premier payout.',
             'description' => 'Choisissez votre modèle, réussissez l’évaluation et accédez à un capital réel avec des règles claires et des payouts rapides.',
+            'platform_label' => 'Plateforme',
+            'platform_value' => 'MT5',
             'badge' => 'Modèles prêts pour le lancement',
         ],
         'challenge_selector' => [

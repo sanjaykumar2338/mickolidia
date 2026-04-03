@@ -221,6 +221,8 @@ return [
             'eyebrow' => 'Challenge-Pläne',
             'title' => 'Lass dich funden und verdiene ab deiner ersten Auszahlung.',
             'description' => 'Wähle dein Modell, bestehe die Evaluation und erhalte Zugang zu realem Kapital mit klaren Regeln und schnellen Auszahlungen.',
+            'platform_label' => 'Plattform',
+            'platform_value' => 'MT5',
             'badge' => 'Finale launch-bereite Challenge-Modelle',
             'entry_fee' => 'Teilnahmegebühr',
             'profit_target' => 'Gewinnziel',

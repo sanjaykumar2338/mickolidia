@@ -221,6 +221,8 @@ return [
             'eyebrow' => 'Planes de challenge',
             'title' => 'Obtén funding y empieza a generar beneficios desde tu primer payout.',
             'description' => 'Elige tu modelo, supera la evaluación y accede a capital real con reglas claras y payouts rápidos.',
+            'platform_label' => 'Plataforma',
+            'platform_value' => 'MT5',
             'badge' => 'Modelos finales listos para lanzamiento',
             'entry_fee' => 'Cuota de entrada',
             'profit_target' => 'Objetivo de beneficio',
