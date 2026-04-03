@@ -36,9 +36,9 @@
                     </div>
 
                     <div class="mt-8 flex flex-wrap items-center gap-4">
-                        <a href="{{ route('contact') }}#voice-assistant" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
+                        <button type="button" data-wolfi-launch class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.ai_assistant.start_chat') }}
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -58,8 +58,10 @@
 
                         <div class="mt-6 space-y-3">
                             @foreach ($assistantQuestions as $question)
-                                <a
-                                    href="{{ route('contact', ['assistant_question' => $question]) }}#voice-assistant"
+                                <button
+                                    type="button"
+                                    data-wolfi-launch
+                                    data-wolfi-question="{{ $question }}"
                                     class="assistant-question-link flex items-center justify-between gap-4 rounded-[1.4rem] px-4 py-3 text-left"
                                 >
                                     <span class="text-sm font-medium text-slate-100">{{ $question }}</span>
@@ -68,7 +70,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
                                         </svg>
                                     </span>
-                                </a>
+                                </button>
                             @endforeach
                         </div>
                     </div>

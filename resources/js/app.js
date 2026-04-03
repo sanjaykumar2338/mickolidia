@@ -2498,6 +2498,23 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceAssistant.__wolfiController = {
             activateIntro,
             focusInput,
+            askQuestion: (question, { userInitiated = true } = {}) => {
+                const nextQuestion = String(question ?? '').trim();
+
+                if (nextQuestion === '' || !(input instanceof HTMLInputElement)) {
+                    activateIntro({
+                        userInitiated,
+                        force: true,
+                    });
+                    return;
+                }
+
+                input.value = nextQuestion;
+                renderAnswer(nextQuestion, {
+                    userInitiated,
+                });
+                focusInput();
+            },
             cleanup: () => {
                 cancelSpokenReply();
                 cleanupVoiceSession();
@@ -2600,7 +2617,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const setWolfiModalState = (open, { userInitiated = false, triggerButton = null } = {}) => {
+            const triggerQuestion = triggerButton instanceof HTMLElement
+                ? (triggerButton.dataset.wolfiQuestion?.trim() ?? '')
+                : '';
+
             if (open && modalIsOpen) {
+                if (triggerQuestion !== '') {
+                    modalController?.askQuestion?.(triggerQuestion, {
+                        userInitiated,
+                    });
+                } else {
+                    modalController?.activateIntro?.({
+                        userInitiated,
+                        force: true,
+                    });
+                }
                 modalController?.focusInput?.();
                 return;
             }
@@ -2633,10 +2664,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
 
-                modalController?.activateIntro({
-                    userInitiated,
-                    force: true,
-                });
+                if (triggerQuestion !== '') {
+                    modalController?.askQuestion?.(triggerQuestion, {
+                        userInitiated,
+                    });
+                } else {
+                    modalController?.activateIntro({
+                        userInitiated,
+                        force: true,
+                    });
+                }
                 modalController?.focusInput?.();
                 return;
             }

@@ -1007,15 +1007,14 @@ h6 {
 .assistant-fab-button {
     position: fixed;
     display: inline-flex;
-    min-height: 4.5rem;
+    height: 4.35rem;
+    width: 4.35rem;
     align-items: center;
-    gap: 0.8rem;
-    padding: 0.42rem 0.44rem 0.42rem 1rem;
-    justify-content: flex-start;
+    justify-content: center;
     border-radius: 999px;
     border: 1px solid rgba(148, 163, 184, 0.14);
     background:
-        radial-gradient(circle at 12% 20%, rgba(244, 183, 74, 0.16), rgba(244, 183, 74, 0) 28%),
+        radial-gradient(circle at 50% 26%, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 34%),
         linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(7, 11, 20, 0.96) 100%);
     color: white;
     overflow: hidden;
@@ -1054,39 +1053,12 @@ h6 {
     pointer-events: none;
 }
 
-.assistant-fab-label {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 0;
-}
-
-.assistant-fab-label-kicker {
-    font-size: 0.6rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.26em;
-    text-transform: uppercase;
-    color: rgba(248, 218, 134, 0.76);
-}
-
-.assistant-fab-label-text {
-    font-size: 0.94rem;
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: 0.01em;
-    color: rgba(255, 255, 255, 0.96);
-    white-space: nowrap;
-}
-
 .assistant-fab-avatar-wrap {
     position: relative;
     z-index: 1;
     display: inline-flex;
-    height: 3.95rem;
-    width: 3.95rem;
+    height: 4rem;
+    width: 4rem;
     flex: none;
     align-items: center;
     justify-content: center;
@@ -1188,8 +1160,8 @@ h6 {
 
 .assistant-fab-ping {
     position: absolute;
-    top: 0.32rem;
-    right: 0.36rem;
+    top: 0.36rem;
+    right: 0.42rem;
     z-index: 2;
     height: 0.5rem;
     width: 0.5rem;
@@ -1206,10 +1178,6 @@ h6 {
         0 0 22px rgba(244, 183, 74, 0.16),
         0 0 0 1px rgba(255, 255, 255, 0.08) inset;
     filter: saturate(1.02);
-}
-
-.assistant-fab-button:hover .assistant-fab-label-text {
-    color: #fff9eb;
 }
 
 .assistant-fab-button:hover .assistant-fab-core {
@@ -1241,12 +1209,6 @@ h6 {
         0 34px 78px rgba(2, 6, 23, 0.46),
         0 0 28px rgba(244, 183, 74, 0.18),
         0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-}
-
-.assistant-fab-button.is-open .assistant-fab-label-text,
-.assistant-fab-button.is-speaking .assistant-fab-label-text,
-.assistant-fab-button.is-listening .assistant-fab-label-text {
-    color: #fff9eb;
 }
 
 .assistant-fab-button.is-open .assistant-fab-ping {
@@ -1941,22 +1903,18 @@ h6 {
     }
 
     .assistant-fab-button {
-        min-height: 4.65rem;
-        padding: 0.44rem 0.48rem 0.44rem 1.05rem;
+        height: 4.3rem;
+        width: 4.3rem;
     }
 
     .assistant-fab-avatar-wrap {
-        height: 4.1rem;
-        width: 4.1rem;
+        height: 3.95rem;
+        width: 3.95rem;
     }
 
     .assistant-fab-core {
-        height: 3.5rem;
-        width: 3.5rem;
-    }
-
-    .assistant-fab-label-text {
-        font-size: 0.98rem;
+        height: 3.35rem;
+        width: 3.35rem;
     }
 
     .wolfi-modal {
@@ -2007,22 +1965,13 @@ h6 {
     }
 
     .assistant-fab-button {
-        min-height: 4rem;
-        gap: 0.62rem;
-        padding: 0.32rem 0.36rem 0.32rem 0.8rem;
-    }
-
-    .assistant-fab-label-kicker {
-        display: none;
-    }
-
-    .assistant-fab-label-text {
-        font-size: 0.84rem;
+        height: 3.85rem;
+        width: 3.85rem;
     }
 
     .assistant-fab-avatar-wrap {
-        height: 3.7rem;
-        width: 3.7rem;
+        height: 3.55rem;
+        width: 3.55rem;
     }
 
     .assistant-fab-core {

@@ -285,13 +285,10 @@
     <section id="plans" class="px-6 pt-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
             <span class="section-label">{{ __('site.home.plans.eyebrow') }}</span>
-            <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="mt-5">
                 <div class="max-w-3xl">
                     <h2 class="text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.plans.title') }}</h2>
                     <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.home.plans.description') }}</p>
-                </div>
-                <div class="gold-pill rounded-full px-4 py-2 text-sm font-medium">
-                    {{ __('site.home.plans.badge') }}
                 </div>
             </div>
 
