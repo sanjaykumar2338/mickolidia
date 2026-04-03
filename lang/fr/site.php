@@ -481,17 +481,35 @@ return array_replace_recursive($en, [
             'success' => 'Code appliqué avec succès',
             'invalid' => 'Code invalide/expiré',
         ],
+        'payment_methods_title' => 'Choisissez votre moyen de paiement',
+        'payment_methods_subtitle' => 'Checkout sécurisé • Activation instantanée du compte',
         'trust_message' => 'Vos données sont protégées au moyen de pratiques de sécurité standard du secteur alignées sur l’ISO/IEC 27001.',
+        'provider_available' => 'Disponible',
+        'provider_coming_soon' => 'Bientôt',
+        'provider_recommended' => 'Recommandé',
+        'payment_method_points' => [
+            'Paiement sécurisé',
+            'Activation instantanée du compte',
+            'Aucun frais caché',
+        ],
         'buttons' => [
             'stripe' => 'Payez par carte via Stripe avec le même flux sécurisé de commande et de fulfillment.',
             'paypal' => 'Payez avec PayPal via redirection d’approbation et capture sécurisée côté serveur.',
         ],
         'providers' => [
             'stripe' => [
+                'label' => 'Stripe',
                 'description' => 'Checkout carte sécurisé avec Stripe et confirmation de commande via webhook.',
+                'summary' => 'Payez en toute sécurité par carte',
+                'supporting' => 'Confirmation rapide et instantanée',
+                'cta' => 'Payer par carte',
             ],
             'paypal' => [
+                'label' => 'PayPal',
                 'description' => 'Flux PayPal sécurisé avec approbation externe et capture côté serveur, relié au même parcours de commande Wolforix.',
+                'summary' => 'Payez avec votre compte PayPal',
+                'supporting' => 'Sécurisé et reconnu',
+                'cta' => 'Payer avec PayPal',
             ],
         ],
         'validation' => [

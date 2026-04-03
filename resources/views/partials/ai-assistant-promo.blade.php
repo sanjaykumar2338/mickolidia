@@ -1,5 +1,6 @@
 @php
     $assistantQuestions = trans('site.ai_assistant.example_questions');
+    $supportEmail = config('wolforix.support.email');
 @endphp
 
 <section id="site-ai-assistant" class="px-6 pb-14 pt-6 lg:px-8 lg:pb-18">
@@ -74,6 +75,63 @@
                             @endforeach
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="assistant-support-strip relative z-10 mt-8 border-t border-white/8 pt-8 sm:mt-10 sm:pt-10">
+                <div class="max-w-3xl">
+                    <span class="section-label">{{ __('site.footer.contact_title') }}</span>
+                    <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
+                        {{ __('site.footer.contact_copy') }}
+                    </p>
+                </div>
+
+                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                    <a href="mailto:{{ $supportEmail }}" class="assistant-support-card group rounded-[1.6rem] px-5 py-5 sm:px-6">
+                        <div class="flex items-start gap-4">
+                            <span class="assistant-support-icon inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7.5 12 13l8-5.5" />
+                                    <rect x="3" y="5" width="18" height="14" rx="2.5" />
+                                </svg>
+                            </span>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.contact.email_title') }}</p>
+                                <p class="mt-3 text-xl font-semibold text-white">{{ $supportEmail }}</p>
+                                <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.contact.email_copy') }}</p>
+                                <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-amber-100 transition group-hover:text-white">
+                                    {{ __('site.contact.email_button') }}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="{{ route('contact').'#live-chat' }}" class="assistant-support-card group rounded-[1.6rem] px-5 py-5 sm:px-6">
+                        <div class="flex items-start gap-4">
+                            <span class="assistant-support-icon inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-sky-400/18 bg-sky-400/10 text-sky-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 19.5 4.8 21a.4.4 0 0 1-.63-.33V6.75A2.75 2.75 0 0 1 6.92 4h10.16a2.75 2.75 0 0 1 2.75 2.75v8.5A2.75 2.75 0 0 1 17.08 18H8.52L7 19.5Z" />
+                                </svg>
+                            </span>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">{{ __('site.contact.live_chat_title') }}</p>
+                                <p class="mt-3 text-xl font-semibold text-white">{{ __('site.contact.live_chat_button') }}</p>
+                                <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.contact.live_chat_note') }}</p>
+                                <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-100 transition group-hover:text-white">
+                                    {{ __('site.contact.live_chat_button') }}
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

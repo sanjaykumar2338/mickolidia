@@ -573,7 +573,8 @@ return [
             'invalid' => 'Ungueltiger/abgelaufener Code',
         ],
         'billing_title' => 'Rechnungsinformationen',
-        'payment_methods_title' => 'Zahlungsmethoden',
+        'payment_methods_title' => 'Waehle deine Zahlungsmethode',
+        'payment_methods_subtitle' => 'Sicherer Checkout • Sofortige Kontoaktivierung',
         'client_data_title' => 'Kundendaten / Registrierungsdetails',
         'full_name' => 'Vollständiger Name',
         'email' => 'E-Mail-Adresse',
@@ -595,8 +596,14 @@ return [
         'submit' => 'Zum sicheren Checkout',
         'provider_available' => 'Verfuegbar',
         'provider_coming_soon' => 'Bald verfuegbar',
+        'provider_recommended' => 'Empfohlen',
         'back_to_plans' => 'Zurueck zu den Plaenen',
         'trust_message' => 'Deine Daten werden mit branchenueblichen Sicherheitspraktiken geschuetzt, die an ISO/IEC 27001 ausgerichtet sind.',
+        'payment_method_points' => [
+            'Sichere Zahlung',
+            'Sofortige Kontoaktivierung',
+            'Keine versteckten Gebuehren',
+        ],
         'buttons' => [
             'stripe' => 'Bezahle per Karte über Stripe mit demselben geschützten Bestell- und Fulfillment-Fluss.',
             'paypal' => 'Bezahle mit PayPal über Weiterleitung zur Freigabe und serverseitige Erfassung der Bestellung.',
@@ -605,10 +612,16 @@ return [
             'stripe' => [
                 'label' => 'Stripe',
                 'description' => 'Sicherer externer Kartencheckout mit webhook-basierter Bestellbestaetigung.',
+                'summary' => 'Sicher mit Karte bezahlen',
+                'supporting' => 'Schnelle und sofortige Bestaetigung',
+                'cta' => 'Mit Karte bezahlen',
             ],
             'paypal' => [
                 'label' => 'PayPal',
                 'description' => 'Sicherer PayPal-Freigabefluss mit serverseitiger Capture-Logik und derselben internen Wolforix-Bestellabwicklung.',
+                'summary' => 'Mit deinem PayPal-Konto bezahlen',
+                'supporting' => 'Sicher und vertraut',
+                'cta' => 'Mit PayPal bezahlen',
             ],
         ],
         'success' => [

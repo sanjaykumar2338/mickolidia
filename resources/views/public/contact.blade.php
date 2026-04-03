@@ -31,7 +31,7 @@
 
     <section class="px-6 pt-10 lg:px-8">
         <div class="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-            <article class="surface-panel rounded-[2rem] p-6">
+            <article id="live-chat" class="surface-panel scroll-mt-28 rounded-[2rem] p-6">
                 <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.contact.email_title') }}</p>
                 <h2 class="mt-4 text-2xl font-semibold text-white">{{ $supportEmail }}</h2>
                 <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.contact.email_copy') }}</p>

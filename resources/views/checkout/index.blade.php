@@ -36,6 +36,33 @@
     $refundAgreement = trans('site.checkout.confirmations.refund_policy_html', [
         'refund_url' => route('refund-policy'),
     ]);
+    $paymentMethodHighlights = trans('site.checkout.payment_method_points');
+    $paymentMethodHighlights = is_array($paymentMethodHighlights) ? $paymentMethodHighlights : [];
+    $providerCardMeta = [
+        'stripe' => [
+            'logo' => '<span class="inline-flex items-center rounded-[1rem] border border-[#8c86ff]/18 bg-[#635bff] px-4 py-2 shadow-[0_10px_24px_rgba(99,91,255,0.18)]"><img src="'.asset('branding/stripe-logo.svg').'" alt="Stripe" class="block h-4 w-auto"></span>',
+            'icon' => <<<'SVG'
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h9m-9 4.5h9m-9 4.5h5.25" />
+                </svg>
+            SVG,
+            'card_classes' => 'border-[#8c86ff]/22 bg-[#635bff]/10 peer-checked:border-[#9f9bff]/46 peer-checked:bg-[#635bff]/16',
+            'badge_classes' => 'border-[#8c86ff]/20 bg-[#635bff]/12 text-[#e4e5ff]',
+            'cta_classes' => 'border-[#8c86ff]/18 bg-[#635bff]/12 text-[#eef0ff]',
+        ],
+        'paypal' => [
+            'logo' => '<span class="inline-flex items-center rounded-[1rem] border border-white/10 bg-white px-3 py-2 shadow-[0_10px_24px_rgba(2,6,23,0.16)]"><img src="'.asset('branding/paypal-logo.png').'" alt="PayPal" class="block h-5 w-auto"></span>',
+            'icon' => <<<'SVG'
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 7.5h7.5a3 3 0 0 1 0 6H9.75l-1.5 4.5H5.25l2.1-8.4A2.63 2.63 0 0 1 9.9 7.5Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 18h4.2a2.85 2.85 0 0 0 2.79-2.22l.81-3.78" />
+                </svg>
+            SVG,
+            'card_classes' => 'border-[#4db2ff]/16 bg-[#0f3b81]/10 peer-checked:border-[#61c0ff]/34 peer-checked:bg-[#0f3b81]/14',
+            'badge_classes' => 'border-[#4db2ff]/16 bg-[#0f3b81]/12 text-[#d9f0ff]',
+            'cta_classes' => 'border-[#4db2ff]/14 bg-[#0f3b81]/12 text-[#e6f5ff]',
+        ],
+    ];
 @endphp
 
 @section('content')
@@ -109,24 +136,6 @@
                     </dl>
                 </div>
 
-                <div class="surface-card rounded-[2rem] p-6">
-                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.payment_methods_title') }}</p>
-                    <div class="mt-5 space-y-3">
-                        @foreach ($paymentProviders as $providerKey => $provider)
-                            <div class="rounded-[1.6rem] border {{ $provider['enabled'] ? 'border-emerald-400/20 bg-emerald-500/10' : 'border-white/8 bg-white/3' }} px-4 py-4">
-                                <div class="flex items-center justify-between gap-4">
-                                    <div>
-                                        <p class="text-sm font-semibold {{ $provider['enabled'] ? 'text-emerald-100' : 'text-white' }}">{{ __('site.checkout.providers.'.$providerKey.'.label') }}</p>
-                                        <p class="mt-1 text-sm leading-6 {{ $provider['enabled'] ? 'text-emerald-50/80' : 'text-slate-400' }}">{{ __('site.checkout.providers.'.$providerKey.'.description') }}</p>
-                                    </div>
-                                    <span class="rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] {{ $provider['enabled'] ? 'text-emerald-100' : 'text-slate-400' }}">
-                                        {{ $provider['enabled'] ? __('site.checkout.provider_available') : __('site.checkout.provider_coming_soon') }}
-                                    </span>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
             </aside>
 
             <div class="surface-panel rounded-[2rem] p-6 sm:p-8">
@@ -270,20 +279,11 @@
                     </div>
 
                     <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.payment_methods_title') }}</p>
-                        <div class="mt-5 rounded-[1.4rem] border border-emerald-400/20 bg-emerald-500/10 px-4 py-4">
-                            <div class="flex items-start gap-3">
-                                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/24 bg-emerald-500/10 text-emerald-100">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
-                                    </svg>
-                                </span>
-                                <p class="text-sm leading-7 text-emerald-50/90">{{ __('site.checkout.trust_message') }}</p>
-                            </div>
-                        </div>
-                        <div class="mt-5 space-y-3">
+                        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">{{ __('site.checkout.payment_methods_title') }}</p>
+                        <p class="mt-3 text-sm leading-6 text-slate-400">{{ __('site.checkout.payment_methods_subtitle') }}</p>
+                        <div class="mt-5 grid gap-4 xl:grid-cols-2">
                             @foreach ($paymentProviders as $providerKey => $provider)
+                                @php($cardMeta = $providerCardMeta[$providerKey] ?? $providerCardMeta['stripe'])
                                 <label class="block">
                                     <input
                                         type="radio"
@@ -293,18 +293,62 @@
                                         @checked(old('payment_provider', config('wolforix.payments.default_provider')) === $providerKey)
                                         @disabled(! $provider['enabled'])
                                     >
-                                    <span class="flex rounded-[1.6rem] border border-white/8 bg-white/3 px-4 py-4 transition peer-checked:border-amber-300/30 peer-checked:bg-amber-400/10 {{ $provider['enabled'] ? 'cursor-pointer hover:border-white/16 hover:bg-white/5' : 'cursor-not-allowed opacity-60' }}">
-                                        <span class="flex-1">
-                                            <span class="block text-sm font-semibold text-white">{{ __('site.checkout.providers.'.$providerKey.'.label') }}</span>
-                                            <span class="mt-2 block text-sm leading-6 text-slate-400">{{ __('site.checkout.providers.'.$providerKey.'.description') }}</span>
+                                    <span class="block rounded-[1.65rem] border border-white/8 px-5 py-5 transition peer-checked:shadow-[0_24px_52px_rgba(2,6,23,0.22)] {{ $cardMeta['card_classes'] }} {{ $provider['enabled'] ? 'cursor-pointer hover:border-white/16 hover:bg-white/5' : 'cursor-not-allowed opacity-60' }}">
+                                        <span class="flex flex-wrap items-start justify-between gap-3">
+                                            <span class="flex min-w-0 items-center gap-3">
+                                                {!! $cardMeta['logo'] !!}
+                                                <span class="block min-w-0">
+                                                    <span class="block text-xl font-semibold text-white">{{ __('site.checkout.providers.'.$providerKey.'.label') }}</span>
+                                                    @if ($providerKey === 'stripe')
+                                                        <span class="mt-1 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] {{ $cardMeta['badge_classes'] }}">
+                                                            {{ __('site.checkout.provider_recommended') }}
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                            </span>
+                                            <span class="inline-flex max-w-full shrink-0 items-center justify-center self-start rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] {{ $provider['enabled'] ? 'text-white/80' : 'text-slate-400' }}">
+                                                {{ $provider['enabled'] ? __('site.checkout.provider_available') : __('site.checkout.provider_coming_soon') }}
+                                            </span>
                                         </span>
-                                        <span class="ml-4 self-start rounded-full border border-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                                            {{ $provider['enabled'] ? __('site.checkout.provider_available') : __('site.checkout.provider_coming_soon') }}
+                                        <span class="mt-5 block text-sm font-medium text-slate-100">{{ __('site.checkout.providers.'.$providerKey.'.summary') }}</span>
+                                        <span class="mt-2 block text-sm leading-6 text-slate-400">{{ __('site.checkout.providers.'.$providerKey.'.supporting') }}</span>
+                                        <span class="mt-5 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold {{ $cardMeta['cta_classes'] }}">
+                                            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white/85">
+                                                {!! $cardMeta['icon'] !!}
+                                            </span>
+                                            <span>{{ __('site.checkout.providers.'.$providerKey.'.cta') }}</span>
                                         </span>
                                     </span>
                                 </label>
                             @endforeach
                         </div>
+                        @if ($paymentMethodHighlights !== [])
+                            <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                                @foreach ($paymentMethodHighlights as $highlight)
+                                    <div class="flex items-center gap-3 rounded-[1.35rem] border border-white/8 bg-black/15 px-4 py-3 text-sm text-slate-200">
+                                        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-200">
+                                            @if ($loop->index === 0)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
+                                                </svg>
+                                            @elseif ($loop->index === 1)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2.25" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                </svg>
+                                            @else
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 9 17.25l10.5-10.5" />
+                                                </svg>
+                                            @endif
+                                        </span>
+                                        <span>{{ $highlight }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                        <p class="mt-4 text-xs leading-6 text-slate-500">{{ __('site.checkout.trust_message') }}</p>
                     </div>
 
                     <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">

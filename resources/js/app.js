@@ -131,13 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
             volume: 0.95,
             maleVoices: ['male', 'guy', 'davis', 'daniel', 'alex', 'arthur', 'thomas', 'tom', 'fred', 'gordon', 'nathan', 'oliver', 'matthew', 'michael', 'aaron', 'david'],
             femaleVoices: ['female', 'aria', 'jenny', 'samantha', 'moira', 'serena', 'allison', 'ava', 'sofia', 'anna', 'eva'],
+            preferredVoices: ['arthur', 'oliver', 'thomas', 'alex', 'matthew'],
         },
         es: {
-            rate: 0.98,
-            pitch: 0.82,
+            rate: 1.01,
+            pitch: 0.88,
             volume: 0.95,
-            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe'],
-            femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria'],
+            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe', 'alejandro', 'andres', 'mateo', 'nicolas', 'sebastian', 'sergio', 'tomas', 'bruno', 'martin', 'gael'],
+            femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria', 'paloma', 'conchita', 'carmen', 'marisol', 'isabela', 'elvira'],
+            preferredVoices: ['diego', 'jorge', 'alvaro', 'carlos', 'sebastian', 'alejandro', 'andres', 'javier', 'nicolas', 'mateo'],
+            avoidVoices: ['monica', 'paulina', 'paloma', 'sofia', 'lucia', 'maria', 'conchita', 'carmen', 'marisol'],
         },
         de: {
             rate: 0.96,
@@ -145,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
             volume: 0.95,
             maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus'],
             femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva'],
+            preferredVoices: ['daniel', 'markus', 'florian', 'stefan'],
         },
         fr: {
             rate: 0.97,
@@ -152,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             volume: 0.95,
             maleVoices: ['male', 'thomas', 'daniel', 'henri', 'alexandre', 'antoine', 'nicolas', 'paul', 'remy', 'yannick'],
             femaleVoices: ['female', 'amelie', 'aurelie', 'virginie', 'marie', 'julie'],
+            preferredVoices: ['thomas', 'alexandre', 'antoine', 'nicolas', 'henri'],
         },
     };
     const resolveAssistantConversationProfile = (locale) => assistantConversationProfiles[normalizeLocaleCode(locale)] ?? assistantConversationProfiles.en;
@@ -1540,6 +1545,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const speechProfile = resolveAssistantSpeechProfile(requestedBase);
             const isMaleVoice = speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword));
             const isFemaleVoice = speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword));
+            const isPreferredVoice = (speechProfile.preferredVoices ?? []).some((keyword) => voiceName.includes(keyword));
+            const isAvoidVoice = (speechProfile.avoidVoices ?? []).some((keyword) => voiceName.includes(keyword));
             const isNaturalVoice = voiceName.includes('natural') || voiceName.includes('neural');
             let score = 0;
 
@@ -1559,8 +1566,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 score += 28;
             }
 
+            if (isPreferredVoice) {
+                score += 22;
+            }
+
             if (isFemaleVoice) {
                 score -= 24;
+            }
+
+            if (isAvoidVoice) {
+                score -= 32;
             }
 
             if (voiceName.includes('premium') || voiceName.includes('enhanced')) {
@@ -1595,13 +1610,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         baseLocale: voiceBase === requestedBase,
                         isMaleVoice: speechProfile.maleVoices.some((keyword) => voiceName.includes(keyword)),
                         isFemaleVoice: speechProfile.femaleVoices.some((keyword) => voiceName.includes(keyword)),
+                        isPreferredVoice: (speechProfile.preferredVoices ?? []).some((keyword) => voiceName.includes(keyword)),
                         isNaturalVoice: voiceName.includes('natural') || voiceName.includes('neural'),
                     };
                 })
                 .sort((left, right) => right.score - left.score);
 
             return rankedVoices.find((item) => item.exactLocale && item.isMaleVoice)?.voice
+                ?? rankedVoices.find((item) => item.exactLocale && item.isPreferredVoice)?.voice
+                ?? rankedVoices.find((item) => item.exactLocale && !item.isFemaleVoice)?.voice
                 ?? rankedVoices.find((item) => item.baseLocale && item.isMaleVoice)?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && item.isPreferredVoice)?.voice
+                ?? rankedVoices.find((item) => item.baseLocale && !item.isFemaleVoice && item.isNaturalVoice)?.voice
                 ?? rankedVoices.find((item) => item.isMaleVoice && (item.isNaturalVoice || item.voice.default))?.voice
                 ?? rankedVoices.find((item) => item.baseLocale && !item.isFemaleVoice)?.voice
                 ?? rankedVoices[0]?.voice

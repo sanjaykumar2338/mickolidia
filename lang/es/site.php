@@ -573,7 +573,8 @@ return [
             'invalid' => 'Código inválido/caducado',
         ],
         'billing_title' => 'Informacion de Facturacion',
-        'payment_methods_title' => 'Metodos de Pago',
+        'payment_methods_title' => 'Elige tu metodo de pago',
+        'payment_methods_subtitle' => 'Checkout seguro • Activacion instantanea de cuenta',
         'client_data_title' => 'Datos del cliente / registro',
         'full_name' => 'Nombre completo',
         'email' => 'Correo electrónico',
@@ -595,8 +596,14 @@ return [
         'submit' => 'Continuar al Checkout Seguro',
         'provider_available' => 'Disponible',
         'provider_coming_soon' => 'Proximamente',
+        'provider_recommended' => 'Recomendado',
         'back_to_plans' => 'Volver a los Planes',
         'trust_message' => 'Tus datos estan protegidos con practicas de seguridad estandar de la industria alineadas con ISO/IEC 27001.',
+        'payment_method_points' => [
+            'Pago seguro',
+            'Activacion instantanea de cuenta',
+            'Sin comisiones ocultas',
+        ],
         'buttons' => [
             'stripe' => 'Paga con tarjeta a través de Stripe usando el mismo flujo protegido de pedido y cumplimiento.',
             'paypal' => 'Paga con PayPal mediante aprobación externa y captura segura en el servidor.',
@@ -605,10 +612,16 @@ return [
             'stripe' => [
                 'label' => 'Stripe',
                 'description' => 'Checkout externo seguro con tarjeta y confirmacion del pedido mediante webhooks.',
+                'summary' => 'Paga de forma segura con tarjeta',
+                'supporting' => 'Confirmacion rapida e instantanea',
+                'cta' => 'Pagar con tarjeta',
             ],
             'paypal' => [
                 'label' => 'PayPal',
                 'description' => 'Flujo seguro de aprobación con PayPal y captura en servidor, integrado con el mismo pedido interno de Wolforix.',
+                'summary' => 'Paga con tu cuenta PayPal',
+                'supporting' => 'Seguro y de confianza',
+                'cta' => 'Pagar con PayPal',
             ],
         ],
         'success' => [

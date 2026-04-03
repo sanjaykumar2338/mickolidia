@@ -573,7 +573,8 @@ return [
             'invalid' => 'Invalid/expired code',
         ],
         'billing_title' => 'Billing information',
-        'payment_methods_title' => 'Payment methods',
+        'payment_methods_title' => 'Choose your payment method',
+        'payment_methods_subtitle' => 'Secure checkout • Instant account setup',
         'client_data_title' => 'Client data / registration details',
         'full_name' => 'Full name',
         'email' => 'Email address',
@@ -595,8 +596,14 @@ return [
         'submit' => 'Continue to Secure Checkout',
         'provider_available' => 'Available',
         'provider_coming_soon' => 'Coming Soon',
+        'provider_recommended' => 'Recommended',
         'back_to_plans' => 'Back to Plans',
         'trust_message' => 'Your data is protected using industry-standard security practices aligned with ISO/IEC 27001.',
+        'payment_method_points' => [
+            'Secure payment',
+            'Instant account activation',
+            'No hidden fees',
+        ],
         'buttons' => [
             'stripe' => 'Pay with card through Stripe using the same protected order and fulfillment flow.',
             'paypal' => 'Pay with PayPal using approval redirect and server-side order capture.',
@@ -605,10 +612,16 @@ return [
             'stripe' => [
                 'label' => 'Stripe',
                 'description' => 'Secure external card checkout with webhook-based order confirmation.',
+                'summary' => 'Pay securely with card',
+                'supporting' => 'Fast and instant confirmation',
+                'cta' => 'Pay with Card',
             ],
             'paypal' => [
                 'label' => 'PayPal',
                 'description' => 'Secure PayPal approval flow with server-side capture and the same Wolforix order fulfillment path.',
+                'summary' => 'Pay using your PayPal account',
+                'supporting' => 'Secure and trusted',
+                'cta' => 'Pay with PayPal',
             ],
         ],
         'success' => [
