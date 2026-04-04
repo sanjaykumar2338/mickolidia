@@ -168,19 +168,19 @@ document.addEventListener('DOMContentLoaded', () => {
             rate: 0.96,
             pitch: 0.84,
             volume: 1,
-            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe', 'alejandro', 'andres', 'mateo', 'nicolas', 'sebastian', 'sergio', 'tomas', 'bruno', 'martin', 'gael'],
-            femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria', 'paloma', 'conchita', 'carmen', 'marisol', 'isabela', 'elvira'],
-            preferredVoices: ['diego', 'jorge', 'alvaro', 'carlos', 'sebastian', 'alejandro', 'andres', 'javier', 'nicolas', 'mateo'],
-            avoidVoices: ['monica', 'paulina', 'paloma', 'sofia', 'lucia', 'maria', 'conchita', 'carmen', 'marisol'],
+            maleVoices: ['male', 'jorge', 'diego', 'carlos', 'enrique', 'raul', 'pablo', 'antonio', 'alvaro', 'juan', 'jose', 'miguel', 'javier', 'felipe', 'alejandro', 'andres', 'mateo', 'nicolas', 'sebastian', 'sergio', 'tomas', 'bruno', 'martin', 'gael', 'eddy', 'reed', 'rocko', 'grandpa'],
+            femaleVoices: ['female', 'monica', 'paulina', 'helena', 'sofia', 'lucia', 'maria', 'paloma', 'conchita', 'carmen', 'marisol', 'isabela', 'elvira', 'flo', 'grandma', 'sandy', 'shelley'],
+            preferredVoices: ['diego', 'jorge', 'alvaro', 'carlos', 'sebastian', 'alejandro', 'andres', 'javier', 'nicolas', 'mateo', 'eddy', 'rocko', 'reed', 'grandpa'],
+            avoidVoices: ['monica', 'paulina', 'paloma', 'sofia', 'lucia', 'maria', 'conchita', 'carmen', 'marisol', 'flo', 'grandma', 'sandy', 'shelley'],
         },
         de: {
             rate: 0.94,
             pitch: 0.82,
             volume: 1,
-            maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus', 'jonas', 'lukas', 'felix', 'johann', 'moritz', 'benjamin'],
-            femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi'],
-            preferredVoices: ['daniel', 'markus', 'florian', 'stefan', 'jonas', 'lukas', 'felix'],
-            avoidVoices: ['anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi'],
+            maleVoices: ['male', 'daniel', 'markus', 'hans', 'florian', 'stefan', 'klaus', 'jonas', 'lukas', 'felix', 'johann', 'moritz', 'benjamin', 'eddy', 'reed', 'rocko', 'grandpa'],
+            femaleVoices: ['female', 'anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi', 'flo', 'grandma', 'sandy', 'shelley'],
+            preferredVoices: ['daniel', 'markus', 'florian', 'stefan', 'jonas', 'lukas', 'felix', 'eddy', 'rocko', 'reed', 'grandpa'],
+            avoidVoices: ['anna', 'petra', 'helena', 'sabina', 'eva', 'vicki', 'katja', 'susi', 'flo', 'grandma', 'sandy', 'shelley'],
         },
         fr: {
             rate: 0.94,
@@ -1395,10 +1395,35 @@ document.addEventListener('DOMContentLoaded', () => {
         let answerRevealToken = 0;
         let answerRevealTimeoutIds = [];
         let answerQuestionTimeoutId = null;
+        let speechVoiceRequestToken = 0;
+        let pendingSpeechVoiceResolvers = [];
         const reducedMotionQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(prefers-reduced-motion: reduce)')
             : null;
-        const voiceDebug = () => {};
+        const voiceDebugEnabled = (() => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+
+                return ['1', 'true', 'yes', 'on'].includes(normalizeText(params.get('wolfi_debug')));
+            } catch (error) {
+                return false;
+            }
+        })();
+        const voiceDebug = (label, payload = {}) => {
+            if (!voiceDebugEnabled) {
+                return;
+            }
+
+            const entry = {
+                label,
+                payload,
+                timestamp: new Date().toISOString(),
+            };
+
+            window.__wolfiVoiceDebug = window.__wolfiVoiceDebug ?? [];
+            window.__wolfiVoiceDebug.push(entry);
+            console.info('[Wolfi voice]', label, payload);
+        };
         const prefersReducedMotion = () => reducedMotionQuery?.matches ?? false;
 
         const getPreferredAssistantLocales = (query = '') => {
@@ -1699,6 +1724,44 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceDebug('voices refreshed', {
                 count: availableSpeechVoices.length,
                 locales: availableSpeechVoices.map((voice) => voice.lang).filter(Boolean).slice(0, 10),
+                voices: availableSpeechVoices.map((voice) => ({
+                    name: voice.name,
+                    lang: voice.lang,
+                    default: !!voice.default,
+                    localService: !!voice.localService,
+                })),
+            });
+
+            if (availableSpeechVoices.length > 0 && pendingSpeechVoiceResolvers.length > 0) {
+                const resolvers = [...pendingSpeechVoiceResolvers];
+                pendingSpeechVoiceResolvers = [];
+                resolvers.forEach((resolve) => resolve([...availableSpeechVoices]));
+            }
+        };
+
+        const waitForSpeechVoices = (timeout = 1800) => {
+            if (!('speechSynthesis' in window)) {
+                return Promise.resolve([]);
+            }
+
+            refreshSpeechVoices();
+
+            if (availableSpeechVoices.length > 0) {
+                return Promise.resolve([...availableSpeechVoices]);
+            }
+
+            return new Promise((resolve) => {
+                const finish = (voices = availableSpeechVoices) => {
+                    window.clearTimeout(timeoutId);
+                    pendingSpeechVoiceResolvers = pendingSpeechVoiceResolvers.filter((resolver) => resolver !== finish);
+                    resolve([...voices]);
+                };
+                const timeoutId = window.setTimeout(() => {
+                    refreshSpeechVoices();
+                    finish(availableSpeechVoices);
+                }, timeout);
+
+                pendingSpeechVoiceResolvers.push(finish);
             });
         };
 
@@ -1898,6 +1961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const cancelSpokenReply = (enabled = currentAnswerText.trim() !== '') => {
+            speechVoiceRequestToken += 1;
             clearPendingReplyPlayback();
             activeReplyUtterance = null;
 
@@ -1938,13 +2002,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const speakAnswer = (
+        const speakAnswer = async (
             text = currentAnswerText,
             locale = currentAnswerSpeechLocale,
             {
                 userInitiated = false,
             } = {},
         ) => {
+            const playbackRequestToken = ++speechVoiceRequestToken;
             const normalizedText = String(text ?? '').trim();
             const spokenText = prepareAnswerTextForSpeech(normalizedText, locale);
 
@@ -1953,15 +2018,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            refreshSpeechVoices();
+            await waitForSpeechVoices(userInitiated ? 2200 : 1800);
+
+            if (playbackRequestToken !== speechVoiceRequestToken) {
+                voiceDebug('playback aborted before selection', {
+                    locale,
+                    reason: 'superseded-request',
+                });
+                return;
+            }
 
             const synthesis = window.speechSynthesis;
             const utterance = new SpeechSynthesisUtterance(spokenText);
             const speechProfile = resolveAssistantSpeechProfile(locale);
-            const selectedVoice = findSpeechVoice(locale)
+            const preferredVoice = findSpeechVoice(locale);
+            const selectedVoice = preferredVoice
                 ?? availableSpeechVoices.find((voice) => voice.default)
                 ?? availableSpeechVoices[0]
                 ?? null;
+            const fallbackReason = preferredVoice
+                ? null
+                : (selectedVoice ? 'default-ranked-fallback' : 'browser-default-no-voice');
             const needsSpeechReset = synthesis.speaking
                 || synthesis.pending
                 || synthesis.paused
@@ -1985,6 +2062,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 voice: selectedVoice?.name ?? null,
                 voiceURI: selectedVoice?.voiceURI ?? null,
                 voiceLang: selectedVoice?.lang ?? null,
+                fallbackReason,
+                voiceCount: availableSpeechVoices.length,
                 spokenText,
             });
 
