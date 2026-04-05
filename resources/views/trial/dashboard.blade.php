@@ -37,7 +37,15 @@
                 </div>
             @endif
 
-            @if ($trialEnded)
+            @if ($trialPassed)
+                <div class="mt-5 rounded-[1.8rem] border border-emerald-400/18 bg-emerald-500/10 p-5">
+                    <p class="text-lg font-semibold text-emerald-100">{{ __('site.trial.dashboard.passed_title') }}</p>
+                    <p class="mt-3 text-sm leading-7 text-emerald-50/90">{{ __('site.trial.dashboard.passed_copy') }}</p>
+                    <a href="{{ route('home') }}#plans" class="primary-cta mt-5 inline-flex rounded-full px-8 py-4 text-base font-semibold">
+                        {{ __('site.trial.dashboard.passed_button') }}
+                    </a>
+                </div>
+            @elseif ($trialEnded)
                 <div class="mt-5 rounded-[1.8rem] border border-rose-400/18 bg-rose-500/10 p-5">
                     <p class="text-lg font-semibold text-rose-100">{{ __('site.trial.dashboard.ended_title') }}</p>
                     <p class="mt-3 text-sm leading-7 text-rose-50/90">{{ __('site.trial.dashboard.ended_copy') }}</p>
@@ -92,12 +100,20 @@
                                     <dd class="font-semibold text-white">{{ $displayRules['daily_drawdown_limit'] ?? 0 }}%</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                    <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.take_profit') }}</dt>
+                                    <dd class="font-semibold text-white">{{ $displayRules['profit_target'] ?? 8 }}%</dd>
+                                </div>
+                                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                     <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.max_limit') }}</dt>
                                     <dd class="font-semibold text-white">{{ $displayRules['max_drawdown_limit'] ?? 0 }}%</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                    <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.minimum_days') }}</dt>
+                                    <dd class="font-semibold text-white">{{ $displayRules['minimum_trading_days'] ?? 0 }}</dd>
+                                </div>
+                                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                     <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.status') }}</dt>
-                                    <dd class="font-semibold text-white">{{ $trialEnded ? __('site.trial.statuses.ended') : __('site.trial.statuses.active') }}</dd>
+                                    <dd class="font-semibold text-white">{{ __('site.trial.statuses.'.$trialStatus) }}</dd>
                                 </div>
                             </dl>
                         </div>

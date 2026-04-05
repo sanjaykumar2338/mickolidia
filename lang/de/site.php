@@ -233,6 +233,31 @@ return [
             'first_payout' => 'Erste Auszahlung',
             'minimum_days' => 'Mindesthandelstage',
         ],
+        'market_pulse' => [
+            'eyebrow' => 'Plattform-Richtung',
+            'title' => 'Market Pulse',
+            'description' => 'Echtzeit-Einblicke, damit du smarter handelst und schneller auf Marktbewegungen reagierst.',
+            'cta' => 'Live-Marktnachrichten öffnen',
+            'view_all' => 'Vollen Kalender ansehen',
+            'preview_label' => 'Zugang zu Live-News',
+            'preview_copy' => 'Prüfe anstehende Makrotermine, Forecast-Änderungen und Impact-Stufen, bevor du den nächsten Trade platzierst.',
+            'source_caption' => 'Quelle: :source. Zeiten werden in :timezone (:abbr) angezeigt.',
+            'empty' => 'Market Pulse bereitet die nächsten Live-Updates vor. Öffne den vollständigen Kalender, um aktuelle Ereignisse zu laden.',
+            'cards' => [
+                [
+                    'title' => 'High-Impact-Termine',
+                    'description' => 'Beobachte Releases, die Volatilität, Spreads und kurzfristige Risikobedingungen am stärksten bewegen können.',
+                ],
+                [
+                    'title' => 'Mehrwährungs-Fokus',
+                    'description' => 'Verfolge USD, EUR, GBP, JPY und weitere Schlüsseldevisen in einem einzigen Live-Makrofeed.',
+                ],
+                [
+                    'title' => 'Schnelle Filter',
+                    'description' => 'Wechsle in Sekunden in den vollständigen Kalender und filtere nach Impact, Währung und Zeitraum.',
+                ],
+            ],
+        ],
         'foundation' => [
             'eyebrow' => 'Plattform-Richtung',
             'title' => 'Gebaut für Vertrauen, Regeltransparenz und spätere Automatisierung.',
@@ -490,6 +515,8 @@ return [
             'description' => 'Registriere dich mit E-Mail und Passwort, um ein rein demobasiertes Wolforix-Testkonto zu erhalten.',
             'what_you_get_title' => 'Direkt enthalten',
             'balance_line' => 'Demo-Kapital: :amount',
+            'take_profit_line' => 'Take-Profit-Ziel: :percent%',
+            'minimum_days_line' => 'Mindesthandelstage: :days',
             'markets_line' => 'Verfuegbare Maerkte: :markets',
             'restrictions_line' => 'Nur Demo. Keine Auszahlungen. Zaehlt nicht als Challenge.',
             'email' => 'E-Mail',
@@ -504,8 +531,11 @@ return [
             'description' => 'Verfolge den aktuellen Status deines kostenlosen Demokontos, bevor du in eine bezahlte Evaluation wechselst.',
             'banner_title' => 'Dies ist ein Testkonto.',
             'banner_copy' => 'Das Konto ist rein demo-basiert und von bezahlten Challenges, Auszahlungen und Funded-Berechtigung getrennt.',
+            'passed_title' => 'Du hast das Free-Trial-Modell erfolgreich abgeschlossen.',
+            'passed_copy' => 'Starke Leistung. Du hast das Trial-Ziel innerhalb der angezeigten Regeln erreicht. Der naechste Schritt ist ein Simulation Account mit strukturierter Evaluation.',
+            'passed_button' => 'Simulation-Plaene ansehen',
             'ended_title' => 'Dein Test ist beendet.',
-            'ended_copy' => 'Dieses Demokonto ist nicht mehr aktiv. Starte einen neuen Test, um weiter unter denselben angezeigten Regeln zu ueben.',
+            'ended_copy' => 'Dieses Demokonto ist nicht mehr aktiv, weil die angezeigten Trial-Regeln verletzt wurden. Starte einen neuen Test, um unter derselben Regellogik weiter zu ueben.',
             'retry_button' => 'Test neu starten',
             'restrictions_title' => 'Test-Beschraenkungen',
             'restrictions' => [
@@ -518,7 +548,9 @@ return [
             'rule_labels' => [
                 'starting_balance' => 'Startkapital',
                 'daily_limit' => 'Tages-Drawdown-Limit',
+                'take_profit' => 'Take Profit',
                 'max_limit' => 'Max. Drawdown-Limit',
+                'minimum_days' => 'Mindesthandelstage',
                 'status' => 'Aktueller Status',
             ],
             'metrics' => [
@@ -539,6 +571,7 @@ return [
         ],
         'statuses' => [
             'active' => 'Aktiv',
+            'passed' => 'Bestanden',
             'ended' => 'Beendet',
         ],
     ],
@@ -892,6 +925,9 @@ return [
         'voice_play_button' => 'Antwort abspielen',
         'voice_stop_play_button' => 'Audio stoppen',
         'voice_play_requires_answer' => 'Hole zuerst eine Antwort und nutze dann Antwort abspielen.',
+        'voice_generating_audio' => 'Wolfis Stimme wird vorbereitet...',
+        'voice_external_fallback' => 'Die Premium-Stimme ist gerade nicht verfügbar. Stattdessen wird die Browser-Stimme verwendet.',
+        'voice_audio_unavailable' => 'Die Sprachwiedergabe ist gerade nicht verfügbar. Bitte versuche es in Kürze erneut.',
         'voice_speaking' => 'Wolfi spricht gerade... tippe auf Audio stoppen, um sofort stummzuschalten.',
         'voice_stop_button' => 'Stoppen',
         'voice_stopped' => 'Mikrofon gestoppt.',
@@ -902,6 +938,7 @@ return [
         'voice_secure_context' => 'Die Spracheingabe benötigt einen sicheren Browser-Kontext wie HTTPS oder localhost.',
         'voice_answer_title' => 'Wolfis Antwort',
         'voice_empty' => 'Frage nach Auszahlungen, Regeln, Skalierung, Support oder Konto-Voraussetzungen.',
+        'voice_ai_notice' => 'Die Sprachantworten werden von KI erzeugt.',
         'voice_open_faq' => 'Komplette FAQ öffnen',
     ],
 

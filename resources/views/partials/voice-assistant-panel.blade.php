@@ -19,6 +19,8 @@
         ->implode(', ');
     $firstPayoutDays = (int) config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 21);
     $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
+    $voiceTtsAvailable = (bool) config('services.openai.tts.enabled', true)
+        && filled(config('services.openai.api_key'));
     $faqVoiceIndex = [];
 
     foreach ($voiceLocales as $voiceLocale) {
@@ -174,6 +176,8 @@
         'support_fallback' => __('site.contact.voice_support_fallback', [
             'email' => config('wolforix.support.email'),
         ]),
+        'tts_available' => $voiceTtsAvailable,
+        'tts_endpoint' => route('assistant.speech'),
     ];
 @endphp
 
@@ -206,6 +210,9 @@
             data-stop-label="{{ __('site.contact.voice_stop_play_button') }}"
             data-empty-message="{{ __('site.contact.voice_play_requires_answer') }}"
             data-speaking="{{ __('site.contact.voice_speaking') }}"
+            data-generating="{{ __('site.contact.voice_generating_audio') }}"
+            data-fallback-message="{{ __('site.contact.voice_external_fallback') }}"
+            data-unavailable-message="{{ __('site.contact.voice_audio_unavailable') }}"
             class="primary-cta wolfi-control-button wolfi-control-play rounded-full px-6 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-45"
         >
             {{ __('site.contact.voice_play_button') }}
@@ -244,6 +251,10 @@
         data-voice-stage="status"
     >
         {{ __('site.contact.voice_ready') }}
+    </p>
+
+    <p class="mt-3 text-xs leading-6 text-slate-500" data-voice-stage="status-note">
+        {{ __('site.contact.voice_ai_notice') }}
     </p>
 
     <div data-voice-answer class="wolfi-answer-card mt-5 rounded-[1.6rem] border border-white/8 bg-slate-950/80 p-5" data-voice-stage="answer">

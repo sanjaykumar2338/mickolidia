@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Calendar\EconomicCalendarServiceInterface;
 use App\Services\Pricing\ChallengePricingService;
-use App\Services\Payments\PaymentManager;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ class PublicPageController extends Controller
     public function home(
         Request $request,
         ChallengePricingService $pricingService,
-        PaymentManager $paymentManager,
+        EconomicCalendarServiceInterface $calendarService,
     ): View
     {
         $this->syncLaunchOfferSession($request, $pricingService);
@@ -23,6 +24,37 @@ class PublicPageController extends Controller
         $challengeCatalog = $pricingService->catalog(null, $launchDiscountApplied);
         $defaultChallengeType = $pricingService->defaultChallengeType();
         $defaultChallengeSize = $pricingService->defaultChallengeSize($defaultChallengeType);
+        $displayTimezone = (string) config('wolforix.economic_calendar.display_timezone', 'Europe/Berlin');
+        $marketPulseNow = CarbonImmutable::now($displayTimezone);
+        $marketPulseEvents = collect($calendarService->eventsForPeriod(
+            $marketPulseNow->startOfDay(),
+            $marketPulseNow->addWeek()->endOfDay(),
+            $displayTimezone,
+        ))
+            ->map(function (array $event) use ($displayTimezone): array {
+                $scheduledAt = $event['scheduled_at'] instanceof CarbonImmutable
+                    ? $event['scheduled_at']
+                    : CarbonImmutable::parse((string) $event['scheduled_at'], $displayTimezone);
+
+                $localized = $scheduledAt->setTimezone($displayTimezone)->locale(app()->getLocale());
+
+                return array_merge($event, [
+                    'scheduled_at' => $localized,
+                    'display_time' => $localized->format('H:i'),
+                    'display_date' => $localized->isoFormat('ddd, D MMM'),
+                ]);
+            })
+            ->sortBy('scheduled_at')
+            ->values();
+
+        $marketPulsePreview = $marketPulseEvents
+            ->filter(fn (array $event): bool => $event['scheduled_at']->gte($marketPulseNow->subMinutes(30)))
+            ->take(3)
+            ->values();
+
+        if ($marketPulsePreview->isEmpty()) {
+            $marketPulsePreview = $marketPulseEvents->take(3)->values();
+        }
 
         return view('public.home', [
             'challengeCatalog' => $challengeCatalog,
@@ -31,9 +63,12 @@ class PublicPageController extends Controller
             'defaultCurrency' => config('wolforix.default_currency', 'USD'),
             'defaultChallengeType' => $defaultChallengeType,
             'defaultChallengeSize' => $defaultChallengeSize,
-            'checkoutCountries' => config('wolforix.checkout_countries', []),
             'launchPromoCode' => $pricingService->launchPromoCodeForRequest($request),
-            'paymentProviders' => $paymentManager->providers(),
+            'marketPulseEvents' => $marketPulsePreview,
+            'marketPulseSourceLabel' => $calendarService->sourceLabel(),
+            'marketPulseIsDemoMode' => $calendarService->isDemo(),
+            'marketPulseDisplayTimezone' => $displayTimezone,
+            'marketPulseTimezoneAbbreviation' => $marketPulseNow->format('T'),
         ]);
     }
 

@@ -14,6 +14,8 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.trial.register.what_you_get_title') }}</p>
                     <ul class="mt-5 space-y-3 text-sm text-slate-300">
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.balance_line', ['amount' => '$'.number_format($startingBalance, 0)]) }}</li>
+                        <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.take_profit_line', ['percent' => $displayRules['profit_target'] ?? 8]) }}</li>
+                        <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.minimum_days_line', ['days' => $displayRules['minimum_trading_days'] ?? 3]) }}</li>
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.markets_line', ['markets' => implode(', ', $allowedSymbols)]) }}</li>
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.restrictions_line') }}</li>
                     </ul>

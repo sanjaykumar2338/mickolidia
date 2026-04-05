@@ -12,6 +12,7 @@ use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TrialController;
+use App\Http\Controllers\VoiceAssistantSpeechController;
 use Illuminate\Support\Facades\Route;
 
 Route::match(['get', 'post'], '/locale/{locale}', [LocaleController::class, 'update'])->name('locale.update');
@@ -55,6 +56,9 @@ Route::get('/security', [PublicPageController::class, 'security'])->name('securi
 Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact');
 Route::get('/faq', [PublicPageController::class, 'faq'])->name('faq');
 Route::get('/news', [NewsController::class, 'index'])->name('news');
+Route::post('/assistant/speech', VoiceAssistantSpeechController::class)
+    ->middleware('throttle:20,1')
+    ->name('assistant.speech');
 Route::get('/trial/register', [TrialController::class, 'create'])->name('trial.register');
 Route::post('/trial/register', [TrialController::class, 'store'])->name('trial.store');
 Route::get('/terms', [PublicPageController::class, 'legal'])->defaults('slug', 'terms')->name('terms');

@@ -62,6 +62,19 @@ return [
         'timeout' => (int) env('PAYPAL_TIMEOUT', 15),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 20),
+        'tts' => [
+            'enabled' => filter_var(env('OPENAI_TTS_ENABLED', true), FILTER_VALIDATE_BOOL),
+            'model' => env('OPENAI_TTS_MODEL', 'gpt-4o-mini-tts'),
+            'voice' => env('OPENAI_TTS_VOICE', 'onyx'),
+            'format' => env('OPENAI_TTS_FORMAT', 'mp3'),
+            'speed' => (float) env('OPENAI_TTS_SPEED', 0.94),
+        ],
+    ],
+
     'ctrader' => [
         'broker_name' => env('CTRADER_BROKER_NAME', 'IC Markets'),
         'auth_url' => env('CTRADER_AUTH_URL', 'https://id.ctrader.com/my/settings/openapi/grantingaccess/'),

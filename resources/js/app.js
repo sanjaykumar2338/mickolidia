@@ -1316,6 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const assistantConfig = configScript instanceof HTMLScriptElement
             ? JSON.parse(configScript.textContent ?? '{}')
             : {};
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechLocaleMap = {
             en: 'en-US',
@@ -1323,6 +1324,10 @@ document.addEventListener('DOMContentLoaded', () => {
             es: 'es-ES',
             fr: 'fr-FR',
         };
+        const ttsEndpoint = typeof assistantConfig.tts_endpoint === 'string'
+            ? assistantConfig.tts_endpoint
+            : '';
+        const ttsAvailable = assistantConfig.tts_available === true;
         const pageLocale = voiceAssistant.dataset.pageLocale ?? document.documentElement.lang ?? 'en';
         const pageLocaleBase = normalizeLocaleCode(pageLocale) || 'en';
         const preferredLanguages = uniqueValues([
@@ -1386,6 +1391,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let hasPlayedIntro = false;
         let replyPlaybackTimeoutId = null;
         let activeReplyUtterance = null;
+        let activeReplyAudio = null;
+        let activeReplyAudioUrl = '';
+        let activeReplyAudioAbortController = null;
         let queuedReplyPlayback = null;
         let microphonePermissionState = 'prompt';
         let permissionListenerBound = false;
@@ -1425,6 +1433,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.info('[Wolfi voice]', label, payload);
         };
         const prefersReducedMotion = () => reducedMotionQuery?.matches ?? false;
+        const canUseBrowserSpeech = () => 'speechSynthesis' in window;
+        const canUseServerSpeech = () => ttsAvailable && ttsEndpoint !== '';
+        const canPlayVoiceReplies = () => canUseServerSpeech() || canUseBrowserSpeech();
 
         const getPreferredAssistantLocales = (query = '') => {
             const rawQuery = String(query ?? '');
@@ -1944,7 +1955,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        if ('speechSynthesis' in window) {
+        const clearReplyAudioElement = () => {
+            if (activeReplyAudio instanceof HTMLAudioElement) {
+                activeReplyAudio.pause();
+                activeReplyAudio.removeAttribute('src');
+                activeReplyAudio.load();
+            }
+
+            activeReplyAudio = null;
+
+            if (activeReplyAudioUrl !== '') {
+                URL.revokeObjectURL(activeReplyAudioUrl);
+                activeReplyAudioUrl = '';
+            }
+        };
+
+        const abortReplyAudioRequest = () => {
+            if (activeReplyAudioAbortController instanceof AbortController) {
+                activeReplyAudioAbortController.abort();
+            }
+
+            activeReplyAudioAbortController = null;
+        };
+
+        if (canUseBrowserSpeech()) {
             refreshSpeechVoices();
 
             if (typeof window.speechSynthesis.addEventListener === 'function') {
@@ -1964,8 +1998,10 @@ document.addEventListener('DOMContentLoaded', () => {
             speechVoiceRequestToken += 1;
             clearPendingReplyPlayback();
             activeReplyUtterance = null;
+            abortReplyAudioRequest();
+            clearReplyAudioElement();
 
-            if ('speechSynthesis' in window) {
+            if (canUseBrowserSpeech()) {
                 try {
                     window.speechSynthesis.cancel();
                     window.speechSynthesis.resume();
@@ -1975,6 +2011,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             setPlayButtonState(false, enabled);
+
+            if (status instanceof HTMLElement) {
+                status.textContent = status.dataset.readyMessage ?? status.textContent ?? '';
+            }
         };
 
         const focusInput = () => {
@@ -2002,6 +2042,166 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const playServerReplyAudio = async (
+            spokenText,
+            locale,
+            {
+                playbackRequestToken,
+            } = {},
+        ) => {
+            if (!canUseServerSpeech() || spokenText === '') {
+                return {
+                    status: 'unavailable',
+                };
+            }
+
+            abortReplyAudioRequest();
+            clearReplyAudioElement();
+            clearPendingReplyPlayback();
+            setPlayButtonState(true, true);
+
+            if (status instanceof HTMLElement) {
+                status.textContent = playButton?.dataset.generating ?? status.textContent ?? '';
+            }
+
+            const abortController = new AbortController();
+            activeReplyAudioAbortController = abortController;
+
+            voiceDebug('requesting server voice', {
+                endpoint: ttsEndpoint,
+                locale,
+                textLength: spokenText.length,
+            });
+
+            try {
+                const response = await fetch(ttsEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'audio/mpeg',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        text: spokenText,
+                        locale,
+                    }),
+                    signal: abortController.signal,
+                });
+
+                if (playbackRequestToken !== speechVoiceRequestToken) {
+                    return {
+                        status: 'aborted',
+                    };
+                }
+
+                if (!response.ok) {
+                    voiceDebug('server voice request failed', {
+                        locale,
+                        status: response.status,
+                    });
+
+                    return {
+                        status: 'failed',
+                    };
+                }
+
+                const audioBlob = await response.blob();
+
+                if (audioBlob.size === 0) {
+                    voiceDebug('server voice response empty', {
+                        locale,
+                    });
+
+                    return {
+                        status: 'failed',
+                    };
+                }
+
+                if (playbackRequestToken !== speechVoiceRequestToken) {
+                    return {
+                        status: 'aborted',
+                    };
+                }
+
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.preload = 'auto';
+                activeReplyAudio = audio;
+                activeReplyAudioUrl = audioUrl;
+                activeReplyAudioAbortController = null;
+
+                audio.addEventListener('play', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
+                    }
+
+                    setPlayButtonState(true, true);
+                });
+
+                audio.addEventListener('ended', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    clearReplyAudioElement();
+                    setPlayButtonState(false, true);
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = status.dataset.readyMessage ?? status.textContent ?? '';
+                    }
+                });
+
+                audio.addEventListener('error', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    clearReplyAudioElement();
+                    setPlayButtonState(false, true);
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
+                    }
+                });
+
+                await audio.play();
+
+                voiceDebug('server voice playback started', {
+                    locale,
+                    provider: 'openai',
+                });
+
+                return {
+                    status: 'played',
+                };
+            } catch (error) {
+                const aborted = error instanceof DOMException && error.name === 'AbortError';
+
+                voiceDebug(aborted ? 'server voice request aborted' : 'server voice playback error', {
+                    locale,
+                    message: error instanceof Error ? error.message : String(error),
+                });
+
+                if (!aborted && status instanceof HTMLElement && playButton?.dataset.fallbackMessage) {
+                    status.textContent = playButton.dataset.fallbackMessage;
+                }
+
+                return {
+                    status: aborted ? 'aborted' : 'failed',
+                };
+            } finally {
+                if (activeReplyAudioAbortController === abortController) {
+                    activeReplyAudioAbortController = null;
+                }
+            }
+        };
+
         const speakAnswer = async (
             text = currentAnswerText,
             locale = currentAnswerSpeechLocale,
@@ -2013,8 +2213,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const normalizedText = String(text ?? '').trim();
             const spokenText = prepareAnswerTextForSpeech(normalizedText, locale);
 
-            if (!('speechSynthesis' in window) || spokenText === '') {
+            if (spokenText === '') {
                 cancelSpokenReply(false);
+                return;
+            }
+
+            const serverPlayback = await playServerReplyAudio(spokenText, locale, {
+                playbackRequestToken,
+            });
+
+            if (serverPlayback.status === 'played' || serverPlayback.status === 'aborted') {
+                return;
+            }
+
+            if (!canUseBrowserSpeech()) {
+                setPlayButtonState(false, currentAnswerText.trim() !== '');
+
+                if (status instanceof HTMLElement) {
+                    status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
+                }
+
                 return;
             }
 
@@ -2535,7 +2753,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 status.textContent = statusMessage;
             }
 
-            if (!autoSpeak || !('speechSynthesis' in window)) {
+            if (!autoSpeak || !canPlayVoiceReplies()) {
                 queuedReplyPlayback = null;
                 return;
             }
@@ -2646,7 +2864,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (playButton instanceof HTMLButtonElement) {
-            if (!('speechSynthesis' in window)) {
+            if (!canPlayVoiceReplies()) {
                 playButton.disabled = true;
                 playButton.classList.add('opacity-60', 'cursor-not-allowed');
             } else {
@@ -2808,7 +3026,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setMicState(false);
                 setStatusMessage(pendingStatusMessage);
 
-                if (queuedReplyPlayback && 'speechSynthesis' in window) {
+                if (queuedReplyPlayback && canPlayVoiceReplies()) {
                     const queuedPlayback = queuedReplyPlayback;
                     queuedReplyPlayback = null;
                     replyPlaybackTimeoutId = window.setTimeout(() => {

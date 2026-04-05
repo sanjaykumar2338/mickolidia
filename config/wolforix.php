@@ -261,6 +261,7 @@ return [
             'USD/JPY',
         ],
         'display_rules' => [
+            'profit_target' => 8,
             'daily_drawdown_limit' => 5,
             'max_drawdown_limit' => 10,
             'minimum_trading_days' => 3,

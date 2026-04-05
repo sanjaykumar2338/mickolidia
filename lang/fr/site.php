@@ -141,6 +141,31 @@ return array_replace_recursive($en, [
             'platform_value' => 'MT5',
             'badge' => 'Modèles prêts pour le lancement',
         ],
+        'market_pulse' => [
+            'eyebrow' => 'Direction de la plateforme',
+            'title' => 'Market Pulse',
+            'description' => 'Des insights en temps réel pour trader plus intelligemment et réagir plus vite.',
+            'cta' => 'Ouvrir les news marché',
+            'view_all' => 'Voir le calendrier complet',
+            'preview_label' => 'Accès aux news en direct',
+            'preview_copy' => 'Consultez les prochains événements macro, les évolutions de prévisions et les niveaux d’impact avant votre prochain trade.',
+            'source_caption' => 'Source : :source. Horaires affichés en :timezone (:abbr).',
+            'empty' => 'Market Pulse prépare la prochaine mise à jour en direct. Ouvrez le calendrier complet pour charger les derniers événements.',
+            'cards' => [
+                [
+                    'title' => 'Événements à fort impact',
+                    'description' => 'Suivez les publications les plus susceptibles de faire bouger la volatilité, les spreads et le risque court terme.',
+                ],
+                [
+                    'title' => 'Focus multi-devises',
+                    'description' => 'Surveillez USD, EUR, GBP, JPY et d’autres devises clés depuis un seul flux macro live.',
+                ],
+                [
+                    'title' => 'Filtres rapides',
+                    'description' => 'Accédez au calendrier complet pour filtrer par impact, devise et période en quelques secondes.',
+                ],
+            ],
+        ],
         'challenge_selector' => [
             'currency_label' => 'Devise',
             'type_label' => 'Type de challenge',
@@ -412,6 +437,9 @@ return array_replace_recursive($en, [
         'voice_play_button' => 'Lire la réponse',
         'voice_stop_play_button' => 'Arrêter l’audio',
         'voice_play_requires_answer' => 'Obtenez d’abord une réponse, puis utilisez Lire la réponse.',
+        'voice_generating_audio' => 'Préparation de la voix de Wolfi...',
+        'voice_external_fallback' => 'La voix premium est indisponible pour le moment. La voix du navigateur sera utilisée à la place.',
+        'voice_audio_unavailable' => 'La lecture vocale est indisponible pour le moment. Veuillez réessayer dans un instant.',
         'voice_speaking' => 'Wolfi parle... touchez Arrêter l’audio pour le couper immédiatement.',
         'voice_stop_button' => 'Arrêter',
         'voice_stopped' => 'Microphone arrêté.',
@@ -422,6 +450,7 @@ return array_replace_recursive($en, [
         'voice_secure_context' => 'La saisie vocale nécessite un contexte navigateur sécurisé comme HTTPS ou localhost.',
         'voice_answer_title' => 'Réponse de Wolfi',
         'voice_empty' => 'Posez une question sur les payouts, les règles, le scaling, le support ou l’éligibilité du compte.',
+        'voice_ai_notice' => 'Les réponses vocales sont générées par IA.',
         'voice_open_faq' => 'Ouvrir la FAQ complète',
     ],
     'security' => [
@@ -560,6 +589,8 @@ return array_replace_recursive($en, [
             'description' => 'Inscrivez-vous avec votre email et votre mot de passe pour accéder à un compte d’essai démo Wolforix séparé des challenges payants.',
             'what_you_get_title' => 'Inclus immédiatement',
             'balance_line' => 'Solde démo : :amount',
+            'take_profit_line' => 'Objectif take profit : :percent%',
+            'minimum_days_line' => 'Jours de trading minimum : :days',
             'markets_line' => 'Marchés disponibles : :markets',
             'restrictions_line' => 'Démo uniquement. Aucun retrait. Non compté comme un challenge.',
             'email' => 'Email',
@@ -574,8 +605,11 @@ return array_replace_recursive($en, [
             'description' => 'Suivez l’état actuel de votre compte d’essai avant de passer à une évaluation payante.',
             'banner_title' => 'Ceci est un compte d’essai.',
             'banner_copy' => 'Ce compte est entièrement démo et n’affecte ni les payouts ni l’éligibilité aux challenges financés.',
+            'passed_title' => 'Vous avez réussi le modèle free trial.',
+            'passed_copy' => 'Très bon travail. Vous avez atteint l’objectif du trial dans le cadre des règles affichées. La prochaine étape est de passer sur un Simulation Account avec une évaluation structurée.',
+            'passed_button' => 'Voir les plans de simulation',
             'ended_title' => 'Votre essai est terminé.',
-            'ended_copy' => 'Ce compte démo n’est plus actif. Démarrez un nouvel essai pour continuer à pratiquer.',
+            'ended_copy' => 'Ce compte démo n’est plus actif car les règles affichées du trial ont été enfreintes. Lancez un nouvel essai pour continuer à pratiquer.',
             'retry_button' => 'Relancer l’essai',
             'restrictions_title' => 'Restrictions de l’essai',
             'restrictions' => [
@@ -588,7 +622,9 @@ return array_replace_recursive($en, [
             'rule_labels' => [
                 'starting_balance' => 'Solde de départ',
                 'daily_limit' => 'Limite de drawdown journalier',
+                'take_profit' => 'Take Profit',
                 'max_limit' => 'Limite de drawdown max',
+                'minimum_days' => 'Jours de trading minimum',
                 'status' => 'Statut actuel',
             ],
             'metrics' => [
@@ -601,6 +637,7 @@ return array_replace_recursive($en, [
         ],
         'statuses' => [
             'active' => 'Actif',
+            'passed' => 'Réussi',
             'ended' => 'Terminé',
         ],
     ],

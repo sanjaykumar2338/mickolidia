@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Mail\TrialBreachedMail;
+use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
@@ -415,6 +417,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Advanced risk control')
             ->assertSee('Real-time monitoring')
             ->assertSee('ISO/IEC 27001 aligned')
+            ->assertSee('View Security')
+            ->assertSee('Market Pulse')
+            ->assertSee('Real-time insights to help you trade smarter and react faster.')
+            ->assertSee('Open live market news')
+            ->assertSee('View full calendar')
+            ->assertSee('Economic News Calendar')
             ->assertSee('Talk to Your AI Assistant')
             ->assertSee('Start Chat')
             ->assertSee('Can I trade during news?')
@@ -441,7 +449,6 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Get Discount')
             ->assertSee('Ignore')
             ->assertSee('$49')
-            ->assertSee('Secure checkout')
             ->assertSee('Payout Policy')
             ->assertSee('Dismiss notice')
             ->assertSee('Login')
@@ -449,12 +456,14 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('About')
             ->assertSee('Contact Us')
             ->assertSee('Search the site')
-            ->assertSee('Pay with card through Stripe using the same protected order and fulfillment flow.')
             ->assertSee('Security aligned with ISO/IEC 27001 standards (in progress)')
             ->assertSee('Wolforix does not provide brokerage services, investment advice, or portfolio management.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
             ->assertSee(asset('branding/mt5-logo.svg'), false)
+            ->assertDontSee('Milestone 1 scope')
+            ->assertDontSee('What this foundation already covers')
+            ->assertDontSee('Secure checkout')
             ->assertDontSee('Dashboard Preview')
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
@@ -1502,12 +1511,15 @@ class WolforixPlatformTest extends TestCase
         $this->assertNotNull($trialAccount);
         $this->assertSame('trial', $trialAccount->account_type);
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
+        $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.dashboard'))
             ->assertOk()
             ->assertSee('This is a Trial Account.')
+            ->assertSee('Take Profit')
+            ->assertSee('Minimum Trading Days')
             ->assertSee('No withdrawals')
             ->assertSee('XAU/USD');
     }
@@ -1587,6 +1599,8 @@ class WolforixPlatformTest extends TestCase
 
     public function test_authenticated_user_with_ended_trial_is_sent_to_the_trial_dashboard(): void
     {
+        Mail::fake();
+
         $user = User::factory()->create([
             'email' => 'ended-trial-user@example.com',
             'password' => 'password123',
@@ -1630,6 +1644,116 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Your trial has ended.');
 
         $this->assertCount(1, TradingAccount::query()->where('user_id', $user->id)->where('is_trial', true)->get());
+    }
+
+    public function test_trial_pass_sends_a_completion_email_and_marks_the_trial_as_passed(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'trial-pass@example.com',
+            'password' => 'password123',
+        ]);
+
+        $trialAccount = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-TRIAL-PASS01',
+            'platform' => 'cTrader Demo',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Active',
+            'account_status' => 'active',
+            'account_type' => 'trial',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 10800,
+            'equity' => 10800,
+            'daily_drawdown' => 0,
+            'max_drawdown' => 0,
+            'profit_loss' => 800,
+            'total_profit' => 800,
+            'today_profit' => 100,
+            'drawdown_percent' => 0,
+            'profit_target_percent' => 8,
+            'profit_target_amount' => 800,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 3,
+            'allowed_symbols' => ['XAU/USD', 'EUR/USD', 'USD/JPY'],
+            'trial_status' => 'active',
+            'trial_started_at' => now()->subDays(4),
+            'last_activity_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.dashboard'))
+            ->assertOk()
+            ->assertSee('You completed the free trial model.');
+
+        $trialAccount->refresh();
+
+        $this->assertSame('passed', $trialAccount->trial_status);
+        $this->assertSame('Passed', $trialAccount->status);
+        $this->assertNotNull($trialAccount->passed_at);
+        $this->assertNotNull($trialAccount->ended_at);
+
+        Mail::assertSent(TrialPassedMail::class, function (TrialPassedMail $mail) use ($user): bool {
+            return $mail->hasTo($user->email);
+        });
+    }
+
+    public function test_trial_breach_sends_a_failure_email_when_rules_are_breached(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'trial-breach@example.com',
+            'password' => 'password123',
+        ]);
+
+        $trialAccount = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-TRIAL-BREACH1',
+            'platform' => 'cTrader Demo',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Active',
+            'account_status' => 'active',
+            'account_type' => 'trial',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 9800,
+            'equity' => 9800,
+            'daily_drawdown' => 500,
+            'max_drawdown' => 300,
+            'profit_loss' => -200,
+            'total_profit' => -200,
+            'today_profit' => -200,
+            'drawdown_percent' => 3,
+            'profit_target_percent' => 8,
+            'profit_target_amount' => 800,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 1,
+            'allowed_symbols' => ['XAU/USD', 'EUR/USD', 'USD/JPY'],
+            'trial_status' => 'active',
+            'trial_started_at' => now()->subDays(1),
+            'last_activity_at' => now()->subHour(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.dashboard'))
+            ->assertOk()
+            ->assertSee('Your trial has ended.');
+
+        $trialAccount->refresh();
+
+        $this->assertSame('ended', $trialAccount->trial_status);
+        $this->assertSame('Ended', $trialAccount->status);
+        $this->assertNotNull($trialAccount->failed_at);
+        $this->assertNotNull($trialAccount->ended_at);
+
+        Mail::assertSent(TrialBreachedMail::class, function (TrialBreachedMail $mail) use ($user): bool {
+            return $mail->hasTo($user->email);
+        });
     }
 
     public function test_trial_retry_archives_previous_trial_and_creates_a_new_one(): void

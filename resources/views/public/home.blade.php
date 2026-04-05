@@ -92,6 +92,11 @@
         </svg>
         SVG,
     ];
+    $marketPulseImpactStyles = [
+        'high' => 'border border-rose-400/24 bg-rose-500/12 text-rose-200',
+        'medium' => 'border border-amber-300/24 bg-amber-400/12 text-amber-100',
+        'low' => 'border border-emerald-400/24 bg-emerald-500/12 text-emerald-200',
+    ];
     $challengeUi = [
         'unlimited' => __('site.home.challenge_selector.unlimited'),
         'discount_badge' => __('site.home.challenge_selector.discount_badge'),
@@ -225,60 +230,6 @@
                     <p class="mt-5 max-w-xs text-xl font-semibold leading-8 text-white">{{ $card }}</p>
                 </article>
             @endforeach
-        </div>
-    </section>
-
-    @php
-        $trustItems = trans('site.home.trust.items');
-        $primaryTrustItems = array_slice(is_array($trustItems) ? $trustItems : [], 0, 4);
-        $secondaryTrustItems = trans('site.home.trust.support_items');
-        $secondaryTrustItems = is_array($secondaryTrustItems) ? $secondaryTrustItems : [];
-    @endphp
-
-    <section class="px-6 pt-6 lg:px-8 lg:pt-8">
-        <div class="mx-auto max-w-7xl">
-            <div class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.72fr)] xl:items-start">
-                    <div class="max-w-3xl">
-                        <span class="section-label">{{ __('site.home.trust.eyebrow') }}</span>
-                        <h2 class="mt-4 text-2xl font-semibold text-white sm:text-[2rem]">{{ __('site.home.trust.title') }}</h2>
-                        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{{ __('site.home.trust.description') }}</p>
-
-                        <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                            @foreach ($primaryTrustItems as $item)
-                                <article class="rounded-[1.45rem] border border-white/8 bg-white/3 p-4">
-                                    <div class="flex items-start gap-3">
-                                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/18 bg-emerald-500/10 text-emerald-100">
-                                            {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
-                                        </span>
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-semibold leading-6 text-white">{{ $item['title'] }}</p>
-                                            <p class="mt-1 text-xs leading-5 text-slate-400">{{ $item['description'] }}</p>
-                                        </div>
-                                    </div>
-                                </article>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5 xl:max-w-sm xl:justify-self-end">
-                        <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                            {{ __('site.home.trust.cta') }}
-                        </a>
-
-                        @if ($secondaryTrustItems !== [])
-                            <ul class="mt-4 space-y-3">
-                                @foreach ($secondaryTrustItems as $item)
-                                    <li class="flex items-start gap-3 text-xs leading-5 text-slate-400">
-                                        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"></span>
-                                        <span>{{ $item }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -488,19 +439,6 @@
                                     </dl>
                                 </section>
                             </div>
-
-                            <div class="mt-8 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 p-5">
-                                <p data-plan-note-title class="text-sm font-semibold text-amber-50">{{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.note_title') }}</p>
-                                <p data-plan-note-body class="mt-3 text-sm leading-7 text-slate-200">{{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.note_body') }}</p>
-                                <div class="mt-4 flex flex-wrap gap-3">
-                                    <a href="{{ route('payout-policy') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                                        {{ __('site.home.challenge_selector.review_policy') }}
-                                    </a>
-                                    <a href="{{ route('faq') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                                        {{ __('site.home.challenge_selector.faq_link') }}
-                                    </a>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -508,118 +446,149 @@
         </div>
     </section>
 
-    <section class="px-6 pt-20 lg:px-8">
-        <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-            <div>
-                <span class="section-label">{{ __('site.home.foundation.eyebrow') }}</span>
-                <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.foundation.title') }}</h2>
-                <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.home.foundation.description') }}</p>
-            </div>
+    @php
+        $trustItems = trans('site.home.trust.items');
+        $primaryTrustItems = array_slice(is_array($trustItems) ? $trustItems : [], 0, 4);
+        $secondaryTrustItems = trans('site.home.trust.support_items');
+        $secondaryTrustItems = is_array($secondaryTrustItems) ? $secondaryTrustItems : [];
+    @endphp
 
-            <div class="grid gap-5 md:grid-cols-3">
-                @foreach (trans('site.home.foundation.cards') as $card)
-                    <div class="surface-card rounded-[2rem] p-6">
-                        <p class="text-lg font-semibold text-white">{{ $card['title'] }}</p>
-                        <p class="mt-3 text-sm leading-7 text-slate-400">{{ $card['description'] }}</p>
+    <section class="px-6 pt-20 lg:px-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="surface-panel rounded-[2rem] p-5 sm:p-6">
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.72fr)] xl:items-start">
+                    <div class="max-w-3xl">
+                        <span class="section-label">{{ __('site.home.trust.eyebrow') }}</span>
+                        <h2 class="mt-4 text-2xl font-semibold text-white sm:text-[2rem]">{{ __('site.home.trust.title') }}</h2>
+                        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{{ __('site.home.trust.description') }}</p>
+
+                        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                            @foreach ($primaryTrustItems as $item)
+                                <article class="rounded-[1.45rem] border border-white/8 bg-white/3 p-4">
+                                    <div class="flex items-start gap-3">
+                                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/18 bg-emerald-500/10 text-emerald-100">
+                                            {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold leading-6 text-white">{{ $item['title'] }}</p>
+                                            <p class="mt-1 text-xs leading-5 text-slate-400">{{ $item['description'] }}</p>
+                                        </div>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
                     </div>
-                @endforeach
+
+                    <div class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5 xl:max-w-sm xl:justify-self-end">
+                        <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.home.trust.cta') }}
+                        </a>
+
+                        @if ($secondaryTrustItems !== [])
+                            <ul class="mt-4 space-y-3">
+                                @foreach ($secondaryTrustItems as $item)
+                                    <li class="flex items-start gap-3 text-xs leading-5 text-slate-400">
+                                        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"></span>
+                                        <span>{{ $item }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <section class="px-6 pt-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
-            <span class="section-label">{{ __('site.home.workflow.eyebrow') }}</span>
-            <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.workflow.title') }}</h2>
-            <div class="mt-10 grid gap-5 lg:grid-cols-3">
-                @foreach (trans('site.home.workflow.items') as $index => $item)
-                    <div class="surface-panel rounded-[2rem] p-6">
-                        <div class="flex items-center gap-4">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 text-sm font-semibold text-amber-100">
-                                {{ $index + 1 }}
-                            </span>
-                            <h3 class="text-xl font-semibold text-white">{{ $item['title'] }}</h3>
-                        </div>
-                        <p class="mt-5 text-sm leading-7 text-slate-300">{{ $item['description'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </section>
+            <div class="grid gap-8 xl:grid-cols-[0.94fr_1.06fr]">
+                <div>
+                    <span class="section-label">{{ __('site.home.market_pulse.eyebrow') }}</span>
+                    <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.home.market_pulse.title') }}</h2>
+                    <p class="mt-4 max-w-2xl text-base leading-8 text-slate-300">{{ __('site.home.market_pulse.description') }}</p>
 
-    <section class="px-6 pt-20 lg:px-8">
-        <div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-            <div>
-                <span class="section-label">{{ __('site.checkout.eyebrow') }}</span>
-                <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.checkout.title') }}</h2>
-                <p class="mt-4 text-base leading-8 text-slate-300">{{ __('site.checkout.description') }}</p>
-
-                <div class="mt-8 surface-card rounded-[2rem] p-6">
-                    <h3 class="text-lg font-semibold text-white">{{ __('site.checkout.supporting_title') }}</h3>
-                    <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.checkout.supporting_copy') }}</p>
-                    <div class="mt-4 rounded-[1.6rem] border border-amber-400/18 bg-amber-400/10 px-4 py-4 text-sm leading-7 text-amber-50">
-                        {{ __('site.checkout.kyc_notice') }}
-                    </div>
-                    <ul class="mt-5 space-y-3 text-sm text-slate-300">
-                        @foreach (trans('site.checkout.helper_points') as $point)
-                            <li class="rounded-2xl border border-white/6 bg-white/3 px-4 py-3">{{ $point }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-
-            <div class="surface-panel rounded-[2rem] p-6 sm:p-8">
-                <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
-                    <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.current_selection') }}</p>
-                    <h3 data-checkout-plan-title class="mt-4 text-2xl font-semibold text-white">
-                        {{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.label') }} / {{ (int) ($initialPlan['account_size'] / 1000) }}K
-                    </h3>
-                    <div class="mt-4 flex flex-wrap items-center gap-3">
-                        <span data-checkout-plan-price class="text-3xl font-semibold text-white">{{ $initialPrice }}</span>
-                        <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
-                            <span data-checkout-plan-currency-flag class="mr-2 text-sm">{{ $defaultCurrencyMeta['flag'] ?? '' }}</span>
-                            <span data-checkout-plan-currency>{{ $defaultCurrency }}</span>
+                    <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <a href="{{ route('news') }}" class="primary-cta rounded-full px-6 py-3 text-sm font-semibold">
+                            {{ __('site.home.market_pulse.cta') }}
+                        </a>
+                        <span class="gold-pill rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em]">
+                            {{ $marketPulseIsDemoMode ? __('site.news.mode_demo') : __('site.news.mode_live') }}
                         </span>
                     </div>
-                    <p class="mt-4 text-sm leading-7 text-slate-400">{{ __('site.checkout.redirect_note') }}</p>
+
+                    <p class="mt-4 max-w-xl text-sm leading-7 text-slate-400">
+                        {{ __('site.home.market_pulse.source_caption', [
+                            'source' => $marketPulseSourceLabel,
+                            'timezone' => $marketPulseDisplayTimezone,
+                            'abbr' => $marketPulseTimezoneAbbreviation,
+                        ]) }}
+                    </p>
+
+                    <div class="mt-8 grid gap-4 md:grid-cols-3">
+                        @foreach (trans('site.home.market_pulse.cards') as $card)
+                            <article class="surface-card rounded-[1.8rem] p-5">
+                                <p class="text-lg font-semibold text-white">{{ $card['title'] }}</p>
+                                <p class="mt-3 text-sm leading-7 text-slate-400">{{ $card['description'] }}</p>
+                            </article>
+                        @endforeach
+                    </div>
                 </div>
 
-                <div class="mt-5 grid gap-4 md:grid-cols-2">
-                    <div class="surface-card rounded-[1.8rem] p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.checkout.client_data_title') }}</p>
-                        <ul class="mt-4 space-y-3 text-sm text-slate-300">
-                            <li>{{ __('site.checkout.full_name') }}</li>
-                            <li>{{ __('site.checkout.email') }}</li>
-                            <li>{{ __('site.checkout.street_address') }}</li>
-                            <li>{{ __('site.checkout.city') }} / {{ __('site.checkout.postal_code') }}</li>
-                            <li>{{ __('site.checkout.country') }}</li>
-                        </ul>
-                    </div>
-
-                    <div class="surface-card rounded-[1.8rem] p-5">
-                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('site.checkout.payment_methods_title') }}</p>
-                        <div class="mt-4 space-y-3 text-sm">
-                            @foreach ($paymentProviders as $providerKey => $provider)
-                                <div class="rounded-2xl border px-4 py-3 {{ $provider['enabled'] ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100' : 'border-white/8 bg-white/4 text-slate-400' }}">
-                                    {{ __('site.checkout.buttons.'.$providerKey) }}
-                                </div>
-                            @endforeach
+                <div class="surface-panel rounded-[2rem] p-6 sm:p-7">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.home.market_pulse.preview_label') }}</p>
+                            <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('site.news.title') }}</h3>
+                            <p class="mt-2 text-sm leading-7 text-slate-400">{{ __('site.home.market_pulse.preview_copy') }}</p>
                         </div>
+
+                        <a href="{{ route('news') }}" class="inline-flex rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.home.market_pulse.view_all') }}
+                        </a>
+                    </div>
+
+                    <div class="mt-6 space-y-4">
+                        @forelse ($marketPulseEvents as $event)
+                            <article class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="inline-flex rounded-full border border-white/10 bg-white/4 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-100">{{ $event['currency'] }}</span>
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] {{ $marketPulseImpactStyles[$event['impact']] ?? $marketPulseImpactStyles['low'] }}">
+                                                {{ __('site.news.impact.'.$event['impact']) }}
+                                            </span>
+                                        </div>
+                                        <p class="mt-3 text-lg font-semibold text-white">{{ $event['event_name'] }}</p>
+                                        @if (! empty($event['country']))
+                                            <p class="mt-1 text-sm text-slate-400">{{ $event['country'] }}</p>
+                                        @endif
+                                    </div>
+
+                                    <div class="shrink-0 text-right">
+                                        <p class="text-sm font-semibold text-white">{{ $event['display_time'] }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ $event['display_date'] }}</p>
+                                    </div>
+                                </div>
+
+                                <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+                                    <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('site.news.table.forecast') }}</dt>
+                                        <dd class="mt-2 text-sm font-semibold text-white">{{ $event['forecast'] }}</dd>
+                                    </div>
+                                    <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('site.news.table.previous') }}</dt>
+                                        <dd class="mt-2 text-sm font-semibold text-white">{{ $event['previous'] }}</dd>
+                                    </div>
+                                </dl>
+                            </article>
+                        @empty
+                            <div class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5 text-sm leading-7 text-slate-400">
+                                {{ __('site.home.market_pulse.empty') }}
+                            </div>
+                        @endforelse
                     </div>
                 </div>
-
-                <div class="mt-5 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 px-4 py-4 text-sm leading-7 text-amber-50">
-                    {{ __('site.checkout.agreement') }}
-                </div>
-
-                <a
-                    href="{{ $defaultCheckoutUrl }}"
-                    data-checkout-cta
-                    data-checkout-base="{{ route('checkout.show') }}"
-                    class="primary-cta mt-6 inline-flex rounded-full px-8 py-4 text-base font-semibold"
-                >
-                    {{ __('site.home.challenge_selector.start_button') }}
-                </a>
             </div>
         </div>
     </section>

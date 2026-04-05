@@ -233,6 +233,31 @@ return [
             'first_payout' => 'First withdrawal',
             'minimum_days' => 'Minimum trading days',
         ],
+        'market_pulse' => [
+            'eyebrow' => 'Platform direction',
+            'title' => 'Market Pulse',
+            'description' => 'Real-time insights to help you trade smarter and react faster.',
+            'cta' => 'Open live market news',
+            'view_all' => 'View full calendar',
+            'preview_label' => 'Live news access',
+            'preview_copy' => 'See upcoming macro events, forecast changes, and impact levels before you place the next trade.',
+            'source_caption' => 'Source: :source. Times shown in :timezone (:abbr).',
+            'empty' => 'Market Pulse is preparing the next live updates. Open the full calendar to refresh the latest events.',
+            'cards' => [
+                [
+                    'title' => 'High-impact events',
+                    'description' => 'Track the releases most likely to move volatility, spreads, and short-term risk conditions.',
+                ],
+                [
+                    'title' => 'Multi-currency focus',
+                    'description' => 'Follow USD, EUR, GBP, JPY, and other key currencies from one live macro feed.',
+                ],
+                [
+                    'title' => 'Fast event filtering',
+                    'description' => 'Jump into the full calendar to sort by impact, currency, and timeframe in seconds.',
+                ],
+            ],
+        ],
         'foundation' => [
             'eyebrow' => 'Platform direction',
             'title' => 'Built for trust, rule visibility, and future automation.',
@@ -490,6 +515,8 @@ return [
             'description' => 'Register with your email and password to access a demo-only Wolforix trial account with the same displayed execution logic and rule visibility as the main challenge environment.',
             'what_you_get_title' => 'Included instantly',
             'balance_line' => 'Demo balance: :amount',
+            'take_profit_line' => 'Take profit target: :percent%',
+            'minimum_days_line' => 'Minimum trading days: :days',
             'markets_line' => 'Available markets: :markets',
             'restrictions_line' => 'Demo only. No withdrawals. Not counted as a challenge.',
             'email' => 'Email',
@@ -504,8 +531,11 @@ return [
             'description' => 'Monitor the current state of your free demo account before moving into a paid evaluation.',
             'banner_title' => 'This is a Trial Account.',
             'banner_copy' => 'The account uses demo-only conditions and is separated from paid challenges, payouts, and funded-account eligibility.',
+            'passed_title' => 'You completed the free trial model.',
+            'passed_copy' => 'Great work. You reached the trial target within the displayed rules. Your next step is moving into a Simulation Account to continue under a structured evaluation model.',
+            'passed_button' => 'View Simulation Plans',
             'ended_title' => 'Your trial has ended.',
-            'ended_copy' => 'This demo account is no longer active. Start a fresh trial to continue practicing under the same displayed rule logic.',
+            'ended_copy' => 'This demo account is no longer active because the displayed trial rules were breached. Start a fresh trial to continue practicing under the same rule logic.',
             'retry_button' => 'Retry Trial',
             'restrictions_title' => 'Trial Restrictions',
             'restrictions' => [
@@ -518,7 +548,9 @@ return [
             'rule_labels' => [
                 'starting_balance' => 'Starting Balance',
                 'daily_limit' => 'Daily Drawdown Limit',
+                'take_profit' => 'Take Profit',
                 'max_limit' => 'Max Drawdown Limit',
+                'minimum_days' => 'Minimum Trading Days',
                 'status' => 'Current Status',
             ],
             'metrics' => [
@@ -539,6 +571,7 @@ return [
         ],
         'statuses' => [
             'active' => 'Active',
+            'passed' => 'Passed',
             'ended' => 'Ended',
         ],
     ],
@@ -892,6 +925,9 @@ return [
         'voice_play_button' => 'Play answer',
         'voice_stop_play_button' => 'Stop audio',
         'voice_play_requires_answer' => 'Get an answer first, then use Play answer.',
+        'voice_generating_audio' => 'Preparing Wolfi\'s voice...',
+        'voice_external_fallback' => 'Premium voice is unavailable right now. Using your browser voice instead.',
+        'voice_audio_unavailable' => 'Voice playback is unavailable right now. Please try again shortly.',
         'voice_speaking' => 'Wolfi is speaking... tap Stop audio to mute immediately.',
         'voice_stop_button' => 'Stop',
         'voice_stopped' => 'Microphone stopped.',
@@ -902,6 +938,7 @@ return [
         'voice_secure_context' => 'Voice input requires a secure browser context such as HTTPS or localhost.',
         'voice_answer_title' => 'Wolfi\'s answer',
         'voice_empty' => 'Ask about payouts, rules, scaling, support, or account eligibility.',
+        'voice_ai_notice' => 'Voice replies are AI-generated.',
         'voice_open_faq' => 'Open full FAQ',
     ],
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendTrialEncouragementEmail;
+use App\Mail\TrialBreachedMail;
+use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -10,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -30,6 +33,7 @@ class TrialController extends Controller
         return view('trial.register', [
             'startingBalance' => (float) config('wolforix.trial.starting_balance', 10000),
             'allowedSymbols' => config('wolforix.trial.allowed_symbols', []),
+            'displayRules' => config('wolforix.trial.display_rules', []),
         ]);
     }
 
@@ -103,10 +107,12 @@ class TrialController extends Controller
 
         $this->markLastActivity($trialAccount);
         $trialAccount->refresh();
-        $trialEnded = $this->ensureTrialState($trialAccount);
-        $milestoneMessage = $trialEnded ? null : $this->resolveMilestoneMessage($trialAccount);
+        $trialStatus = $this->ensureTrialState($trialAccount, $user);
+        $trialPassed = $trialStatus === 'passed';
+        $trialEnded = $trialStatus === 'ended';
+        $milestoneMessage = ($trialPassed || $trialEnded) ? null : $this->resolveMilestoneMessage($trialAccount);
 
-        if (! $trialEnded) {
+        if (! $trialPassed && ! $trialEnded) {
             $this->triggerEncouragementIfDue($trialAccount, $user);
         }
 
@@ -114,7 +120,9 @@ class TrialController extends Controller
 
         return view('trial.dashboard', [
             'trialAccount' => $trialAccount,
-            'trialEnded' => $this->isTrialEnded($trialAccount),
+            'trialPassed' => $trialPassed,
+            'trialEnded' => $trialEnded,
+            'trialStatus' => $trialStatus,
             'milestoneMessage' => $milestoneMessage,
             'allowedSymbols' => $trialAccount->allowed_symbols ?? config('wolforix.trial.allowed_symbols', []),
             'displayRules' => config('wolforix.trial.display_rules', []),
@@ -187,6 +195,9 @@ class TrialController extends Controller
     {
         $startingBalance = (float) config('wolforix.trial.starting_balance', 10000);
         $displayRules = config('wolforix.trial.display_rules', []);
+        $profitTargetPercent = (float) ($displayRules['profit_target'] ?? 8);
+        $dailyDrawdownLimitPercent = (float) ($displayRules['daily_drawdown_limit'] ?? 5);
+        $maxDrawdownLimitPercent = (float) ($displayRules['max_drawdown_limit'] ?? 10);
 
         return TradingAccount::query()->create([
             'user_id' => $user->id,
@@ -195,6 +206,7 @@ class TrialController extends Controller
             'platform' => 'cTrader Demo',
             'stage' => config('wolforix.trial.account_type', 'Trial (Demo)'),
             'status' => 'Active',
+            'account_status' => 'active',
             'account_type' => 'trial',
             'is_trial' => true,
             'starting_balance' => $startingBalance,
@@ -206,6 +218,13 @@ class TrialController extends Controller
             'total_profit' => 0,
             'today_profit' => 0,
             'drawdown_percent' => 0,
+            'profit_target_percent' => $profitTargetPercent,
+            'profit_target_amount' => round($startingBalance * ($profitTargetPercent / 100), 2),
+            'profit_target_progress_percent' => 0,
+            'daily_drawdown_limit_percent' => $dailyDrawdownLimitPercent,
+            'daily_drawdown_limit_amount' => round($startingBalance * ($dailyDrawdownLimitPercent / 100), 2),
+            'max_drawdown_limit_percent' => $maxDrawdownLimitPercent,
+            'max_drawdown_limit_amount' => round($startingBalance * ($maxDrawdownLimitPercent / 100), 2),
             'consistency_limit_percent' => 40,
             'minimum_trading_days' => (int) ($displayRules['minimum_trading_days'] ?? 3),
             'trading_days_completed' => 0,
@@ -228,33 +247,62 @@ class TrialController extends Controller
         ])->save();
     }
 
-    private function ensureTrialState(TradingAccount $trialAccount): bool
+    private function ensureTrialState(TradingAccount $trialAccount, User $user): string
     {
-        if ($this->isTrialEnded($trialAccount)) {
-            if ($trialAccount->trial_status !== 'ended' || $trialAccount->ended_at === null || $trialAccount->status !== 'Ended') {
+        $outcome = $this->resolveTrialOutcome($trialAccount);
+
+        if ($outcome === 'passed') {
+            $stateChanged = $trialAccount->trial_status !== 'passed'
+                || $trialAccount->passed_at === null
+                || $trialAccount->ended_at === null
+                || $trialAccount->status !== 'Passed'
+                || $trialAccount->account_status !== 'passed';
+
+            if ($stateChanged) {
+                $trialAccount->forceFill([
+                    'trial_status' => 'passed',
+                    'status' => 'Passed',
+                    'account_status' => 'passed',
+                    'passed_at' => $trialAccount->passed_at ?? now(),
+                    'ended_at' => $trialAccount->ended_at ?? now(),
+                ])->save();
+
+                $trialAccount->refresh();
+                $this->sendTrialPassedEmail($trialAccount, $user);
+            }
+
+            return 'passed';
+        }
+
+        if ($outcome === 'ended') {
+            $stateChanged = $trialAccount->trial_status !== 'ended'
+                || $trialAccount->failed_at === null
+                || $trialAccount->ended_at === null
+                || $trialAccount->status !== 'Ended'
+                || $trialAccount->account_status !== 'failed';
+
+            if ($stateChanged) {
                 $trialAccount->forceFill([
                     'trial_status' => 'ended',
                     'status' => 'Ended',
+                    'account_status' => 'failed',
+                    'failed_at' => $trialAccount->failed_at ?? now(),
                     'ended_at' => $trialAccount->ended_at ?? now(),
                 ])->save();
+
+                $trialAccount->refresh();
+                $this->sendTrialBreachedEmail($trialAccount, $user, $this->resolveTrialBreachReason($trialAccount));
             }
 
-            return true;
+            return 'ended';
         }
 
-        return false;
+        return 'active';
     }
 
     private function isTrialEnded(TradingAccount $trialAccount): bool
     {
-        $maxLossLimit = (float) config('wolforix.trial.display_rules.max_drawdown_limit', 10);
-        $maxLossAmount = ((float) $trialAccount->starting_balance * $maxLossLimit) / 100;
-
-        return $trialAccount->trial_status === 'ended'
-            || $trialAccount->ended_at !== null
-            || (float) $trialAccount->balance <= 0
-            || (float) $trialAccount->equity <= 0
-            || (float) $trialAccount->max_drawdown >= $maxLossAmount;
+        return $this->resolveTrialOutcome($trialAccount) === 'ended';
     }
 
     private function resolveMilestoneMessage(TradingAccount $trialAccount): ?string
@@ -301,5 +349,131 @@ class TrialController extends Controller
         ])->save();
 
         SendTrialEncouragementEmail::dispatchSync($trialAccount->id, $user->email);
+    }
+
+    private function resolveTrialOutcome(TradingAccount $trialAccount): string
+    {
+        if ($trialAccount->trial_status === 'passed' || $trialAccount->passed_at !== null || $trialAccount->status === 'Passed') {
+            return 'passed';
+        }
+
+        if ($trialAccount->trial_status === 'ended' || ($trialAccount->ended_at !== null && $trialAccount->status === 'Ended')) {
+            return 'ended';
+        }
+
+        if ($this->trialRulesBreached($trialAccount)) {
+            return 'ended';
+        }
+
+        if ($this->trialProfitTargetMet($trialAccount) && $this->trialMinimumDaysMet($trialAccount)) {
+            return 'passed';
+        }
+
+        return 'active';
+    }
+
+    private function trialRulesBreached(TradingAccount $trialAccount): bool
+    {
+        return (float) $trialAccount->balance <= 0
+            || (float) $trialAccount->equity <= 0
+            || (float) $trialAccount->daily_drawdown >= $this->trialDailyLossAmount($trialAccount)
+            || (float) $trialAccount->max_drawdown >= $this->trialMaxLossAmount($trialAccount);
+    }
+
+    private function trialProfitTargetMet(TradingAccount $trialAccount): bool
+    {
+        return $this->trialCurrentProfit($trialAccount) >= $this->trialProfitTargetAmount($trialAccount);
+    }
+
+    private function trialMinimumDaysMet(TradingAccount $trialAccount): bool
+    {
+        return (int) $trialAccount->trading_days_completed >= (int) config('wolforix.trial.display_rules.minimum_trading_days', 3);
+    }
+
+    private function trialCurrentProfit(TradingAccount $trialAccount): float
+    {
+        $totalProfit = (float) $trialAccount->total_profit;
+
+        return $totalProfit !== 0.0 ? $totalProfit : (float) $trialAccount->profit_loss;
+    }
+
+    private function trialProfitTargetAmount(TradingAccount $trialAccount): float
+    {
+        return round(((float) $trialAccount->starting_balance * $this->trialProfitTargetPercent()) / 100, 2);
+    }
+
+    private function trialProfitTargetPercent(): float
+    {
+        return (float) config('wolforix.trial.display_rules.profit_target', 8);
+    }
+
+    private function trialDailyLossAmount(TradingAccount $trialAccount): float
+    {
+        return round(((float) $trialAccount->starting_balance * (float) config('wolforix.trial.display_rules.daily_drawdown_limit', 5)) / 100, 2);
+    }
+
+    private function trialMaxLossAmount(TradingAccount $trialAccount): float
+    {
+        return round(((float) $trialAccount->starting_balance * (float) config('wolforix.trial.display_rules.max_drawdown_limit', 10)) / 100, 2);
+    }
+
+    private function resolveTrialBreachReason(TradingAccount $trialAccount): string
+    {
+        if ((float) $trialAccount->daily_drawdown >= $this->trialDailyLossAmount($trialAccount)) {
+            return 'Daily drawdown limit breached.';
+        }
+
+        if ((float) $trialAccount->max_drawdown >= $this->trialMaxLossAmount($trialAccount)) {
+            return 'Maximum drawdown limit breached.';
+        }
+
+        if ((float) $trialAccount->equity <= 0 || (float) $trialAccount->balance <= 0) {
+            return 'Account equity fell below the allowed threshold.';
+        }
+
+        return 'Trial rules were breached.';
+    }
+
+    private function sendTrialPassedEmail(TradingAccount $trialAccount, User $user): void
+    {
+        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+
+        if (! empty($meta['trial_completion_email_sent_at'])) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email)->send(new TrialPassedMail($user, $trialAccount));
+
+            $trialAccount->forceFill([
+                'meta' => array_merge($meta, [
+                    'trial_completion_email_sent_at' => now()->toIso8601String(),
+                ]),
+            ])->save();
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    private function sendTrialBreachedEmail(TradingAccount $trialAccount, User $user, string $reason): void
+    {
+        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+
+        if (! empty($meta['trial_breach_email_sent_at'])) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email)->send(new TrialBreachedMail($user, $trialAccount, $reason));
+
+            $trialAccount->forceFill([
+                'meta' => array_merge($meta, [
+                    'trial_breach_email_sent_at' => now()->toIso8601String(),
+                    'trial_breach_reason' => $reason,
+                ]),
+            ])->save();
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 }

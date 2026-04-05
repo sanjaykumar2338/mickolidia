@@ -233,6 +233,31 @@ return [
             'first_payout' => 'Primer retiro',
             'minimum_days' => 'Días mínimos de trading',
         ],
+        'market_pulse' => [
+            'eyebrow' => 'Dirección de la plataforma',
+            'title' => 'Market Pulse',
+            'description' => 'Información en tiempo real para ayudarte a operar con más criterio y reaccionar más rápido.',
+            'cta' => 'Abrir noticias de mercado',
+            'view_all' => 'Ver calendario completo',
+            'preview_label' => 'Acceso a noticias en vivo',
+            'preview_copy' => 'Consulta próximos eventos macro, cambios en previsiones y niveles de impacto antes de abrir la siguiente operación.',
+            'source_caption' => 'Fuente: :source. Horarios mostrados en :timezone (:abbr).',
+            'empty' => 'Market Pulse está preparando la próxima actualización en vivo. Abre el calendario completo para cargar los últimos eventos.',
+            'cards' => [
+                [
+                    'title' => 'Eventos de alto impacto',
+                    'description' => 'Sigue las publicaciones con mayor probabilidad de mover la volatilidad, los spreads y el riesgo intradía.',
+                ],
+                [
+                    'title' => 'Enfoque multimoneda',
+                    'description' => 'Supervisa USD, EUR, GBP, JPY y otras divisas clave desde un único feed macro en vivo.',
+                ],
+                [
+                    'title' => 'Filtros rápidos',
+                    'description' => 'Entra al calendario completo y ordena por impacto, divisa y rango temporal en segundos.',
+                ],
+            ],
+        ],
         'foundation' => [
             'eyebrow' => 'Dirección de la plataforma',
             'title' => 'Construida para confianza, visibilidad de reglas y automatización futura.',
@@ -490,6 +515,8 @@ return [
             'description' => 'Regístrate con tu email y contraseña para acceder a una cuenta demo de prueba separada de los challenges de pago.',
             'what_you_get_title' => 'Incluido al instante',
             'balance_line' => 'Balance demo: :amount',
+            'take_profit_line' => 'Objetivo de take profit: :percent%',
+            'minimum_days_line' => 'Días mínimos de trading: :days',
             'markets_line' => 'Mercados disponibles: :markets',
             'restrictions_line' => 'Solo demo. Sin retiros. No cuenta como challenge.',
             'email' => 'Email',
@@ -504,8 +531,11 @@ return [
             'description' => 'Sigue el estado actual de tu cuenta demo gratuita antes de pasar a una evaluación de pago.',
             'banner_title' => 'Esta es una Cuenta de Prueba.',
             'banner_copy' => 'La cuenta es solo demo y está separada de challenges de pago, payouts y elegibilidad funded.',
+            'passed_title' => 'Has completado correctamente el modelo de free trial.',
+            'passed_copy' => 'Buen trabajo. Alcanzaste el objetivo del trial dentro de las reglas mostradas. El siguiente paso es pasar a una Simulation Account con una evaluación estructurada.',
+            'passed_button' => 'Ver planes de simulación',
             'ended_title' => 'Tu prueba ha terminado.',
-            'ended_copy' => 'Esta cuenta demo ya no está activa. Inicia una nueva prueba para seguir practicando con la misma lógica de reglas mostrada.',
+            'ended_copy' => 'Esta cuenta demo ya no está activa porque se incumplieron las reglas mostradas del trial. Inicia una nueva prueba para seguir practicando con la misma lógica.',
             'retry_button' => 'Reintentar Prueba',
             'restrictions_title' => 'Restricciones de la Prueba',
             'restrictions' => [
@@ -518,7 +548,9 @@ return [
             'rule_labels' => [
                 'starting_balance' => 'Balance Inicial',
                 'daily_limit' => 'Límite de drawdown diario',
+                'take_profit' => 'Take Profit',
                 'max_limit' => 'Límite de drawdown máximo',
+                'minimum_days' => 'Días mínimos de trading',
                 'status' => 'Estado actual',
             ],
             'metrics' => [
@@ -539,6 +571,7 @@ return [
         ],
         'statuses' => [
             'active' => 'Activo',
+            'passed' => 'Aprobado',
             'ended' => 'Finalizado',
         ],
     ],
@@ -892,6 +925,9 @@ return [
         'voice_play_button' => 'Reproducir respuesta',
         'voice_stop_play_button' => 'Detener audio',
         'voice_play_requires_answer' => 'Obtén primero una respuesta y luego usa Reproducir respuesta.',
+        'voice_generating_audio' => 'Preparando la voz de Wolfi...',
+        'voice_external_fallback' => 'La voz premium no está disponible ahora mismo. Se usará la voz del navegador.',
+        'voice_audio_unavailable' => 'La reproducción de voz no está disponible ahora mismo. Inténtalo de nuevo en breve.',
         'voice_speaking' => 'Wolfi está hablando... toca Detener audio para silenciarlo al instante.',
         'voice_stop_button' => 'Detener',
         'voice_stopped' => 'Micrófono detenido.',
@@ -902,6 +938,7 @@ return [
         'voice_secure_context' => 'La entrada por voz requiere un contexto seguro del navegador, como HTTPS o localhost.',
         'voice_answer_title' => 'Respuesta de Wolfi',
         'voice_empty' => 'Pregunta por payouts, reglas, escalado, soporte o elegibilidad de cuenta.',
+        'voice_ai_notice' => 'Las respuestas por voz están generadas por IA.',
         'voice_open_faq' => 'Abrir FAQ completa',
     ],
 
