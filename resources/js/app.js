@@ -3318,4 +3318,73 @@ document.addEventListener('DOMContentLoaded', () => {
             flash.classList.add('opacity-0', 'translate-y-2');
         }, 3600);
     });
+
+    const counterElements = [...document.querySelectorAll('[data-counter]')];
+
+    if (counterElements.length > 0) {
+        const prefersReducedMotion = typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const animateCounter = (element) => {
+            if (!(element instanceof HTMLElement) || element.dataset.counterAnimated === 'true') {
+                return;
+            }
+
+            const valueNode = element.querySelector('[data-counter-value]');
+            const target = Number.parseInt(element.dataset.counterTarget ?? '', 10);
+
+            if (!(valueNode instanceof HTMLElement) || !Number.isFinite(target)) {
+                return;
+            }
+
+            element.dataset.counterAnimated = 'true';
+
+            if (prefersReducedMotion) {
+                valueNode.textContent = String(target);
+                return;
+            }
+
+            const duration = 1400;
+            const startTime = performance.now();
+            valueNode.textContent = '0';
+
+            const step = (timestamp) => {
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const eased = 1 - ((1 - progress) ** 3);
+                valueNode.textContent = String(Math.round(target * eased));
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                    return;
+                }
+
+                valueNode.textContent = String(target);
+            };
+
+            window.requestAnimationFrame(step);
+        };
+
+        if (typeof window.IntersectionObserver !== 'function' || prefersReducedMotion) {
+            counterElements.forEach((element) => {
+                animateCounter(element);
+            });
+        } else {
+            const counterObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) {
+                        return;
+                    }
+
+                    animateCounter(entry.target);
+                    counterObserver.unobserve(entry.target);
+                });
+            }, {
+                threshold: 0.4,
+            });
+
+            counterElements.forEach((element) => {
+                counterObserver.observe(element);
+            });
+        }
+    }
 });

@@ -455,6 +455,74 @@
 
     <section class="px-6 pt-20 lg:px-8">
         <div class="mx-auto max-w-7xl">
+            <div class="global-reach-panel surface-panel overflow-hidden rounded-[2rem] p-6 sm:p-7">
+                <div class="grid gap-8 xl:grid-cols-[0.9fr_1.1fr] xl:items-center">
+                    <div class="max-w-2xl">
+                        <span class="section-label">{{ __('site.home.global_reach.eyebrow') }}</span>
+                        <h2 class="mt-5 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+                            {{ __('site.home.global_reach.title_prefix') }}
+                            <span
+                                class="inline-flex items-baseline gap-1 text-amber-200"
+                                data-counter
+                                data-counter-target="50"
+                                data-counter-suffix="+"
+                            >
+                                <span data-counter-value>50</span><span>+</span>
+                            </span>
+                            {{ __('site.home.global_reach.title_suffix') }}
+                        </h2>
+                        <p class="mt-4 max-w-xl text-base leading-8 text-slate-300">{{ __('site.home.global_reach.description') }}</p>
+
+                        <div class="mt-7 grid gap-3 sm:grid-cols-3">
+                            @foreach (trans('site.home.global_reach.highlights') as $highlight)
+                                <article class="rounded-[1.4rem] border border-white/8 bg-white/4 px-4 py-4">
+                                    <p class="text-sm font-semibold leading-6 text-white">{{ $highlight['title'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-slate-400">{{ $highlight['description'] }}</p>
+                                </article>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="global-reach-visual-shell relative">
+                        <div class="global-reach-glow global-reach-glow-primary"></div>
+                        <div class="global-reach-glow global-reach-glow-secondary"></div>
+                        <div class="global-reach-visual rounded-[1.8rem] border border-white/8 bg-slate-950/55 p-3 sm:p-4">
+                            <div class="global-reach-image-wrap relative overflow-hidden rounded-[1.45rem] border border-white/6">
+                                <img
+                                    src="{{ asset('IMG_8844.jpeg') }}"
+                                    alt="{{ __('site.home.global_reach.image_alt') }}"
+                                    class="global-reach-image h-[20rem] w-full object-cover sm:h-[24rem]"
+                                    loading="lazy"
+                                    decoding="async"
+                                >
+                                <div class="global-reach-image-overlay"></div>
+
+                                <div class="absolute inset-x-4 top-4 flex items-center justify-between gap-4">
+                                    <span class="rounded-full border border-white/10 bg-slate-950/65 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-slate-100">
+                                        {{ __('site.home.global_reach.visual_label') }}
+                                    </span>
+                                    <span class="rounded-full border border-emerald-400/18 bg-emerald-500/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-emerald-100">
+                                        {{ __('site.home.global_reach.visual_status') }}
+                                    </span>
+                                </div>
+
+                                <div class="absolute bottom-4 left-4 right-4">
+                                    <div class="rounded-[1.4rem] border border-white/10 bg-slate-950/72 px-4 py-4 backdrop-blur-sm">
+                                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{{ __('site.home.global_reach.visual_card_label') }}</p>
+                                        <p class="mt-2 text-lg font-semibold text-white">{{ __('site.home.global_reach.visual_card_title') }}</p>
+                                        <p class="mt-2 text-sm leading-6 text-slate-300">{{ __('site.home.global_reach.visual_card_copy') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6 pt-20 lg:px-8">
+        <div class="mx-auto max-w-7xl">
             <div class="surface-panel rounded-[2rem] p-5 sm:p-6">
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.72fr)] xl:items-start">
                     <div class="max-w-3xl">

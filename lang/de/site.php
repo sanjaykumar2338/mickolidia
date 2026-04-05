@@ -93,9 +93,10 @@ return [
         'secondary_cta' => 'Dashboard öffnen',
         'days' => 'Tage',
         'badges' => [
-            'EN / DE / ES / FR bereit',
-            'Launch-Preise aktiv',
-            'Erste Auszahlung nach 21 Tagen',
+            'Sichere Infrastruktur',
+            'Trading-Rewards in 24 h',
+            'Market Pulse (Live-News)',
+            'KI-Assistent Wolfi',
         ],
         'hero_panel' => [
             'title' => 'Zentrale Regelstruktur',
@@ -232,6 +233,32 @@ return [
             'profit_share' => 'Gewinnbeteiligung',
             'first_payout' => 'Erste Auszahlung',
             'minimum_days' => 'Mindesthandelstage',
+        ],
+        'global_reach' => [
+            'eyebrow' => 'Globale Reichweite',
+            'title_prefix' => 'Wir unterstützen Trader in über',
+            'title_suffix' => 'Ländern',
+            'description' => 'Eine wachsende Wolforix-Community handelt aus mehreren Regionen mit denselben hohen Standards, schnellem Zugang und einer plattformzentrierten Erfahrung.',
+            'image_alt' => 'Visual des globalen Wolforix-Trader-Netzwerks',
+            'visual_label' => 'Globale Abdeckung',
+            'visual_status' => 'Live-Erweiterung',
+            'visual_card_label' => 'Vernetzter Flow',
+            'visual_card_title' => 'Eine Plattform, eine weltweite Trading-Community.',
+            'visual_card_copy' => 'Konzipiert für Trader, die sich zwischen Sessions, Regionen und Marktzyklen bewegen, ohne Tempo, Klarheit oder Fokus bei der Ausführung zu verlieren.',
+            'highlights' => [
+                [
+                    'title' => 'Zugang über mehrere Regionen',
+                    'description' => 'Von Europa bis Lateinamerika, Asien und den Nahen Osten.',
+                ],
+                [
+                    'title' => 'Einheitliche Erfahrung',
+                    'description' => 'Derselbe Challenge-Ablauf, dieselbe Auszahlungsstruktur und dieselbe Support-Richtung überall.',
+                ],
+                [
+                    'title' => 'Für Wachstum gebaut',
+                    'description' => 'Für eine breitere Trading-Zielgruppe entwickelt, ohne den Premium-Charakter zu verlieren.',
+                ],
+            ],
         ],
         'market_pulse' => [
             'eyebrow' => 'Plattform-Richtung',

@@ -93,9 +93,10 @@ return [
         'secondary_cta' => 'Abrir dashboard',
         'days' => 'días',
         'badges' => [
-            'EN / DE / ES / FR listo',
-            'Precios de lanzamiento activos',
-            'Primer retiro después de 21 días',
+            'Infraestructura segura',
+            'Recompensas de trading en 24 h',
+            'Market Pulse (Noticias en vivo)',
+            'Asistente IA Wolfi',
         ],
         'hero_panel' => [
             'title' => 'Conjunto principal de reglas',
@@ -232,6 +233,32 @@ return [
             'profit_share' => 'Participación en beneficios',
             'first_payout' => 'Primer retiro',
             'minimum_days' => 'Días mínimos de trading',
+        ],
+        'global_reach' => [
+            'eyebrow' => 'Alcance global',
+            'title_prefix' => 'Impulsando traders en más de',
+            'title_suffix' => 'países',
+            'description' => 'Una comunidad Wolforix en crecimiento operando desde distintas regiones con el mismo estándar, acceso rápido y experiencia centrada en la plataforma.',
+            'image_alt' => 'Visual global de la red de traders de Wolforix',
+            'visual_label' => 'Cobertura global',
+            'visual_status' => 'Expansión activa',
+            'visual_card_label' => 'Flujo conectado',
+            'visual_card_title' => 'Una plataforma, una comunidad global de trading.',
+            'visual_card_copy' => 'Pensado para traders que se mueven entre sesiones, regiones y ciclos de mercado sin perder velocidad, claridad ni foco de ejecución.',
+            'highlights' => [
+                [
+                    'title' => 'Acceso multirregional',
+                    'description' => 'Desde Europa hasta Latinoamérica, Asia y Oriente Medio.',
+                ],
+                [
+                    'title' => 'Experiencia unificada',
+                    'description' => 'El mismo flujo de challenge, estructura de payouts y orientación de soporte en todas partes.',
+                ],
+                [
+                    'title' => 'Preparado para escalar',
+                    'description' => 'Diseñado para una audiencia global sin perder un aspecto premium.',
+                ],
+            ],
         ],
         'market_pulse' => [
             'eyebrow' => 'Dirección de la plataforma',

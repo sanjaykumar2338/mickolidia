@@ -88,9 +88,10 @@ return array_replace_recursive($en, [
         'secondary_cta' => 'Ouvrir le dashboard',
         'days' => 'jours',
         'badges' => [
-            'EN / DE / ES / FR prêt',
-            'Tarifs de lancement actifs',
-            'Premier retrait après 21 jours',
+            'Infrastructure sécurisée',
+            'Trading rewards en 24 h',
+            'Market Pulse (News live)',
+            'Assistant IA Wolfi',
         ],
         'feature_cards' => [
             'Accès instantané au funding',
@@ -140,6 +141,32 @@ return array_replace_recursive($en, [
             'platform_label' => 'Plateforme',
             'platform_value' => 'MT5',
             'badge' => 'Modèles prêts pour le lancement',
+        ],
+        'global_reach' => [
+            'eyebrow' => 'Présence mondiale',
+            'title_prefix' => 'Wolforix accompagne des traders dans plus de',
+            'title_suffix' => 'pays',
+            'description' => 'Une communauté Wolforix en croissance qui trade depuis plusieurs régions avec les mêmes standards exigeants, un accès rapide et une expérience centrée sur la plateforme.',
+            'image_alt' => 'Visuel du réseau mondial de traders Wolforix',
+            'visual_label' => 'Couverture mondiale',
+            'visual_status' => 'Expansion active',
+            'visual_card_label' => 'Flux connecté',
+            'visual_card_title' => 'Une plateforme, une communauté de trading mondiale.',
+            'visual_card_copy' => 'Pensé pour les traders qui évoluent entre sessions, régions et cycles de marché sans perdre en vitesse, en clarté ni en qualité d’exécution.',
+            'highlights' => [
+                [
+                    'title' => 'Accès multi-régions',
+                    'description' => 'De l’Europe à l’Amérique latine, à l’Asie et au Moyen-Orient.',
+                ],
+                [
+                    'title' => 'Expérience unifiée',
+                    'description' => 'Le même flow de challenge, la même structure de payouts et la même direction support partout.',
+                ],
+                [
+                    'title' => 'Pensé pour évoluer',
+                    'description' => 'Conçu pour une audience plus large sans perdre une sensation premium.',
+                ],
+            ],
         ],
         'market_pulse' => [
             'eyebrow' => 'Direction de la plateforme',

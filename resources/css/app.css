@@ -61,6 +61,98 @@ h6 {
     box-shadow: 0 22px 60px rgba(2, 6, 23, 0.34);
 }
 
+.global-reach-panel {
+    position: relative;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(244, 183, 74, 0.09), transparent 26%),
+        radial-gradient(circle at 82% 22%, rgba(59, 130, 246, 0.12), transparent 30%),
+        linear-gradient(180deg, rgba(9, 16, 28, 0.97) 0%, rgba(5, 10, 18, 0.94) 100%);
+}
+
+.global-reach-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 100%);
+    pointer-events: none;
+}
+
+.global-reach-visual-shell {
+    min-height: 20rem;
+}
+
+.global-reach-glow {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(70px);
+    opacity: 0.46;
+    pointer-events: none;
+    animation: global-reach-glow-drift 7.5s ease-in-out infinite;
+}
+
+.global-reach-glow-primary {
+    top: 12%;
+    right: 10%;
+    height: 9rem;
+    width: 9rem;
+    background: rgba(244, 183, 74, 0.18);
+}
+
+.global-reach-glow-secondary {
+    bottom: 8%;
+    left: 8%;
+    height: 8rem;
+    width: 8rem;
+    background: rgba(59, 130, 246, 0.18);
+    animation-delay: -3.2s;
+}
+
+.global-reach-visual {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 30px 70px rgba(2, 6, 23, 0.4);
+}
+
+.global-reach-image-wrap {
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.12), transparent 26%),
+        #060c16;
+}
+
+.global-reach-image {
+    filter: brightness(0.82) contrast(1.04) saturate(0.94);
+    transform: scale(1.02);
+}
+
+.global-reach-image-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(5, 10, 18, 0.04) 0%, rgba(5, 10, 18, 0.12) 44%, rgba(5, 10, 18, 0.66) 100%),
+        radial-gradient(circle at 62% 38%, rgba(255, 255, 255, 0.08), transparent 26%);
+    pointer-events: none;
+}
+
+@keyframes global-reach-glow-drift {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(0, -10px, 0) scale(1.05);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .global-reach-glow {
+        animation: none;
+    }
+}
+
 .hero-shell {
     position: relative;
     overflow: hidden;

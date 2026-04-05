@@ -93,9 +93,10 @@ return [
         'secondary_cta' => 'Open Dashboard',
         'days' => 'days',
         'badges' => [
-            'EN / DE / ES / FR ready',
-            'Launch pricing active',
-            'First withdrawal after 21 days',
+            'Secure Infrastructure',
+            '24H Trading Rewards',
+            'Market Pulse (Live News)',
+            'AI Assistant Wolfi',
         ],
         'hero_panel' => [
             'title' => 'Core rule stack',
@@ -232,6 +233,32 @@ return [
             'profit_share' => 'Profit share',
             'first_payout' => 'First withdrawal',
             'minimum_days' => 'Minimum trading days',
+        ],
+        'global_reach' => [
+            'eyebrow' => 'Global reach',
+            'title_prefix' => 'Powering traders across',
+            'title_suffix' => 'countries',
+            'description' => 'A growing Wolforix community trading from multiple regions with the same sharp standards, fast access, and platform-first experience.',
+            'image_alt' => 'Wolforix global trader network visual',
+            'visual_label' => 'Global coverage',
+            'visual_status' => 'Live expansion',
+            'visual_card_label' => 'Connected flow',
+            'visual_card_title' => 'One platform, a worldwide trading community.',
+            'visual_card_copy' => 'Built for traders moving across sessions, regions, and market cycles without losing speed, clarity, or execution focus.',
+            'highlights' => [
+                [
+                    'title' => 'Multi-region access',
+                    'description' => 'From Europe to Latin America, Asia, and the Middle East.',
+                ],
+                [
+                    'title' => 'Unified experience',
+                    'description' => 'The same challenge flow, payout structure, and support direction everywhere.',
+                ],
+                [
+                    'title' => 'Built to scale',
+                    'description' => 'Designed for a wider trading audience without losing a premium feel.',
+                ],
+            ],
         ],
         'market_pulse' => [
             'eyebrow' => 'Platform direction',
