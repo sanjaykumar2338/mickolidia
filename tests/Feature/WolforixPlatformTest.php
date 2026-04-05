@@ -1527,6 +1527,12 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('This is a Trial Account.')
             ->assertSee('Take Profit')
+            ->assertSeeInOrder([
+                'Starting Balance',
+                'Take Profit',
+                'Daily Drawdown Limit',
+                'Max Drawdown Limit',
+            ])
             ->assertSee('Minimum Trading Days')
             ->assertSee('No withdrawals')
             ->assertSee('XAU/USD');

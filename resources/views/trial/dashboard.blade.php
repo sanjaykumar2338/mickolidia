@@ -96,12 +96,12 @@
                                     <dd class="font-semibold text-white">${{ number_format($startingBalance, 0) }}</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                    <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.daily_limit') }}</dt>
-                                    <dd class="font-semibold text-white">{{ $displayRules['daily_drawdown_limit'] ?? 0 }}%</dd>
-                                </div>
-                                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                     <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.take_profit') }}</dt>
                                     <dd class="font-semibold text-white">{{ $displayRules['profit_target'] ?? 8 }}%</dd>
+                                </div>
+                                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                    <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.daily_limit') }}</dt>
+                                    <dd class="font-semibold text-white">{{ $displayRules['daily_drawdown_limit'] ?? 0 }}%</dd>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                     <dt class="text-slate-400">{{ __('site.trial.dashboard.rule_labels.max_limit') }}</dt>
