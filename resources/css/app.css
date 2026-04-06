@@ -2152,10 +2152,13 @@ h6 {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 255, 255, 0.04));
 }
 
-.community-card {
+.community-icon-card {
     position: relative;
     overflow: hidden;
-    display: block;
+    display: flex;
+    min-height: 8.5rem;
+    align-items: center;
+    justify-content: center;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.03)),
@@ -2168,7 +2171,7 @@ h6 {
         background 180ms ease;
 }
 
-.community-card::before {
+.community-icon-card::before {
     content: "";
     position: absolute;
     inset: auto -10% -65% auto;
@@ -2180,59 +2183,79 @@ h6 {
     transition: opacity 180ms ease;
 }
 
-.community-card:hover,
-.community-card:focus-visible {
+.community-icon-card:hover,
+.community-icon-card:focus-visible {
     transform: translateY(-3px);
     border-color: rgba(255, 255, 255, 0.14);
     box-shadow: 0 24px 54px rgba(2, 6, 23, 0.32);
 }
 
-.community-card:hover::before,
-.community-card:focus-visible::before {
+.community-icon-card:hover::before,
+.community-icon-card:focus-visible::before {
     opacity: 0.38;
 }
 
 .community-card-icon {
     display: inline-flex;
-    height: 3rem;
-    width: 3rem;
+    height: 4rem;
+    width: 4rem;
     align-items: center;
     justify-content: center;
-    border-radius: 1rem;
+    border-radius: 1.2rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
     color: white;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        border-color 180ms ease;
 }
 
-.community-card--youtube .community-card-icon {
+.community-icon-card:hover .community-card-icon,
+.community-icon-card:focus-visible .community-card-icon {
+    transform: scale(1.06);
+    box-shadow: 0 20px 34px rgba(2, 6, 23, 0.18);
+}
+
+.community-icon-card--youtube .community-card-icon {
     color: #fecaca;
     border-color: rgba(239, 68, 68, 0.25);
     background: rgba(239, 68, 68, 0.12);
 }
 
-.community-card--youtube::before {
+.community-icon-card--youtube::before {
     background: rgba(239, 68, 68, 0.35);
 }
 
-.community-card--instagram .community-card-icon {
+.community-icon-card--instagram .community-card-icon {
     color: #fbcfe8;
     border-color: rgba(217, 70, 239, 0.24);
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(124, 58, 237, 0.14));
 }
 
-.community-card--instagram::before {
+.community-icon-card--instagram::before {
     background: rgba(217, 70, 239, 0.3);
 }
 
-.community-card--telegram .community-card-icon {
+.community-icon-card--telegram .community-card-icon {
     color: #bae6fd;
     border-color: rgba(56, 189, 248, 0.24);
     background: rgba(56, 189, 248, 0.12);
 }
 
-.community-card--telegram::before {
+.community-icon-card--telegram::before {
     background: rgba(56, 189, 248, 0.32);
+}
+
+.community-icon-card--whatsapp .community-card-icon {
+    color: #bbf7d0;
+    border-color: rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.12);
+}
+
+.community-icon-card--whatsapp::before {
+    background: rgba(34, 197, 94, 0.32);
 }
 
 @keyframes payment-rail-scroll {
@@ -2251,7 +2274,7 @@ h6 {
         transform: none !important;
     }
 
-    .community-card {
+    .community-icon-card {
         transition-duration: 0.01ms !important;
         transform: none !important;
     }

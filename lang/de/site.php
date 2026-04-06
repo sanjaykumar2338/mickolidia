@@ -237,8 +237,8 @@ return [
         'global_reach' => [
             'eyebrow' => 'Globale Reichweite',
             'title_prefix' => 'Wir unterstützen Trader in über',
-            'title_suffix' => 'Ländern',
-            'description' => 'Eine wachsende Wolforix-Community handelt aus mehreren Regionen mit denselben hohen Standards, schnellem Zugang und einer plattformzentrierten Erfahrung.',
+            'title_suffix' => 'Ländern. Ein Standard.',
+            'description' => 'Wolforix verbindet Trader weltweit über eine einheitliche Infrastruktur: schnell, präzise und auf Performance ausgelegt.',
             'image_alt' => 'Visual des globalen Wolforix-Trader-Netzwerks',
             'visual_label' => 'Globale Abdeckung',
             'visual_status' => 'Live-Erweiterung',

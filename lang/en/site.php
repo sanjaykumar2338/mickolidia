@@ -237,8 +237,8 @@ return [
         'global_reach' => [
             'eyebrow' => 'Global reach',
             'title_prefix' => 'Powering traders across',
-            'title_suffix' => 'countries',
-            'description' => 'A growing Wolforix community trading from multiple regions with the same sharp standards, fast access, and platform-first experience.',
+            'title_suffix' => 'countries. One standard.',
+            'description' => 'Wolforix connects traders worldwide under one unified infrastructure: fast, precise, and built for performance.',
             'image_alt' => 'Wolforix global trader network visual',
             'visual_label' => 'Global coverage',
             'visual_status' => 'Live expansion',

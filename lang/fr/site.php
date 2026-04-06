@@ -145,8 +145,8 @@ return array_replace_recursive($en, [
         'global_reach' => [
             'eyebrow' => 'Présence mondiale',
             'title_prefix' => 'Wolforix accompagne des traders dans plus de',
-            'title_suffix' => 'pays',
-            'description' => 'Une communauté Wolforix en croissance qui trade depuis plusieurs régions avec les mêmes standards exigeants, un accès rapide et une expérience centrée sur la plateforme.',
+            'title_suffix' => 'pays. Un seul standard.',
+            'description' => 'Wolforix connecte des traders du monde entier sous une infrastructure unifiée : rapide, précise et pensée pour la performance.',
             'image_alt' => 'Visuel du réseau mondial de traders Wolforix',
             'visual_label' => 'Couverture mondiale',
             'visual_status' => 'Expansion active',

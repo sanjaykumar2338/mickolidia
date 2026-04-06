@@ -462,7 +462,7 @@
                         <h2 class="mt-5 text-3xl font-semibold leading-tight text-white sm:text-4xl">
                             {{ __('site.home.global_reach.title_prefix') }}
                             <span
-                                class="inline-flex items-baseline gap-1 text-amber-200"
+                                class="inline-flex items-baseline text-amber-200"
                                 data-counter
                                 data-counter-target="50"
                                 data-counter-suffix="+"
@@ -472,15 +472,6 @@
                             {{ __('site.home.global_reach.title_suffix') }}
                         </h2>
                         <p class="mt-4 max-w-xl text-base leading-8 text-slate-300">{{ __('site.home.global_reach.description') }}</p>
-
-                        <div class="mt-7 grid gap-3 sm:grid-cols-3">
-                            @foreach (trans('site.home.global_reach.highlights') as $highlight)
-                                <article class="rounded-[1.4rem] border border-white/8 bg-white/4 px-4 py-4">
-                                    <p class="text-sm font-semibold leading-6 text-white">{{ $highlight['title'] }}</p>
-                                    <p class="mt-1 text-xs leading-5 text-slate-400">{{ $highlight['description'] }}</p>
-                                </article>
-                            @endforeach
-                        </div>
                     </div>
 
                     <div class="global-reach-visual-shell relative">
