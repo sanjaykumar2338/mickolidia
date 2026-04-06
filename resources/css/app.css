@@ -1992,7 +1992,270 @@ h6 {
     bottom: calc(14.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+.prefooter-showcase .surface-panel {
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.12), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(10, 18, 31, 0.96) 0%, rgba(5, 10, 18, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 28px 70px rgba(2, 6, 23, 0.34);
+}
+
+.prefooter-orb {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(56px);
+    opacity: 0.7;
+}
+
+.prefooter-orb-left {
+    left: -5rem;
+    top: -4rem;
+    height: 11rem;
+    width: 11rem;
+    background: rgba(244, 183, 74, 0.16);
+}
+
+.prefooter-orb-right {
+    right: -4rem;
+    top: 18%;
+    height: 10rem;
+    width: 10rem;
+    background: rgba(59, 130, 246, 0.14);
+}
+
+.prefooter-orb-bottom {
+    bottom: -4.5rem;
+    right: 12%;
+    height: 10rem;
+    width: 10rem;
+    background: rgba(168, 85, 247, 0.12);
+}
+
+.payment-rail-shell {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.8rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.payment-rail-mask {
+    position: relative;
+    overflow: hidden;
+    padding: 1rem 0;
+}
+
+.payment-rail-mask::before,
+.payment-rail-mask::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: clamp(2.5rem, 8vw, 5rem);
+}
+
+.payment-rail-mask::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(7, 12, 20, 0.96), rgba(7, 12, 20, 0));
+}
+
+.payment-rail-mask::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(7, 12, 20, 0.96), rgba(7, 12, 20, 0));
+}
+
+.payment-rail-track {
+    display: flex;
+    width: max-content;
+    gap: 0.95rem;
+    padding-inline: 1rem;
+    animation: payment-rail-scroll 28s linear infinite;
+    will-change: transform;
+}
+
+.payment-rail-shell:hover .payment-rail-track {
+    animation-play-state: paused;
+}
+
+.payment-chip {
+    display: inline-flex;
+    min-width: 11.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    border-radius: 1.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.95rem 1.25rem;
+    color: rgb(241 245 249);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.payment-chip--stripe {
+    border-color: rgba(140, 134, 255, 0.24);
+    background: linear-gradient(135deg, rgba(99, 91, 255, 0.16), rgba(16, 24, 40, 0.72));
+}
+
+.payment-chip--paypal {
+    border-color: rgba(56, 189, 248, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(16, 24, 40, 0.7));
+}
+
+.payment-chip--visa {
+    color: #dbeafe;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+}
+
+.payment-chip--mastercard {
+    gap: 0.85rem;
+}
+
+.payment-mastercard-mark {
+    position: relative;
+    display: inline-flex;
+    width: 1.7rem;
+    height: 1rem;
+}
+
+.payment-mastercard-circle {
+    position: absolute;
+    top: 0;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+}
+
+.payment-mastercard-circle--left {
+    left: 0;
+    background: rgba(239, 68, 68, 0.92);
+}
+
+.payment-mastercard-circle--right {
+    right: 0;
+    background: rgba(245, 158, 11, 0.92);
+    mix-blend-mode: screen;
+}
+
+.payment-chip--cards,
+.payment-chip--protected {
+    color: rgb(251 191 36);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.community-card {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.03)),
+        rgba(7, 12, 20, 0.9);
+    box-shadow: 0 20px 44px rgba(2, 6, 23, 0.26);
+    transition:
+        transform 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease;
+}
+
+.community-card::before {
+    content: "";
+    position: absolute;
+    inset: auto -10% -65% auto;
+    height: 10rem;
+    width: 10rem;
+    border-radius: 999px;
+    opacity: 0.24;
+    filter: blur(36px);
+    transition: opacity 180ms ease;
+}
+
+.community-card:hover,
+.community-card:focus-visible {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 24px 54px rgba(2, 6, 23, 0.32);
+}
+
+.community-card:hover::before,
+.community-card:focus-visible::before {
+    opacity: 0.38;
+}
+
+.community-card-icon {
+    display: inline-flex;
+    height: 3rem;
+    width: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.community-card--youtube .community-card-icon {
+    color: #fecaca;
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.community-card--youtube::before {
+    background: rgba(239, 68, 68, 0.35);
+}
+
+.community-card--instagram .community-card-icon {
+    color: #fbcfe8;
+    border-color: rgba(217, 70, 239, 0.24);
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(124, 58, 237, 0.14));
+}
+
+.community-card--instagram::before {
+    background: rgba(217, 70, 239, 0.3);
+}
+
+.community-card--telegram .community-card-icon {
+    color: #bae6fd;
+    border-color: rgba(56, 189, 248, 0.24);
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.community-card--telegram::before {
+    background: rgba(56, 189, 248, 0.32);
+}
+
+@keyframes payment-rail-scroll {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(calc(-50% - 0.475rem));
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
+    .payment-rail-track {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .community-card {
+        transition-duration: 0.01ms !important;
+        transform: none !important;
+    }
+
     .assistant-fab-button,
     .assistant-fab-shimmer,
     .assistant-fab-halo,
@@ -2028,6 +2291,10 @@ h6 {
 }
 
 @media (min-width: 768px) {
+    .payment-chip {
+        min-width: 12rem;
+    }
+
     .challenge-currency-strip {
         display: grid;
         grid-template-columns: repeat(3, minmax(6.5rem, 1fr));

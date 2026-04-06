@@ -582,11 +582,43 @@ return array_replace_recursive($en, [
             'Wolforix Ltd. exerce comme société d’évaluation et d’éducation au trading propriétaire. Toutes les activités de trading sont réalisées dans un environnement simulé utilisant des fonds virtuels et ne représentent pas une participation réelle au marché.',
             'Wolforix ne fournit pas de services de brokerage, de conseil en investissement ou de gestion de portefeuille. La société n’accepte pas de dépôts, ne détient pas de fonds clients et n’exécute pas d’ordres pour le compte des utilisateurs.',
         ],
+        'legal_title' => 'Juridique & Politiques',
         'security_title' => 'Confiance & Sécurité',
         'security_line' => 'Sécurité alignée sur les standards ISO/IEC 27001 (en cours)',
         'security_link' => 'Voir la sécurité',
+        'operations_title' => 'Opérations',
+        'operations_copy' => 'Le support est géré par email puis, plus tard, via des tickets dans le dashboard. Les retraits manuels restent vérifiés par l’admin et l’approbation dépend du respect des règles.',
         'contact_title' => 'Contact & Support',
         'contact_copy' => 'Besoin d’aide directe avant d’acheter ? Contactez le support ou ouvrez Wolfi pour obtenir rapidement des réponses sur les règles et la plateforme.',
+        'payments' => [
+            'eyebrow' => 'Checkout de confiance',
+            'title' => 'Des moyens de paiement qui rassurent',
+            'description' => 'Des rails de paiement reconnus et des marques familières rendent la dernière étape plus rapide, plus sûre et plus premium.',
+            'cards_label' => 'Cartes principales',
+            'protected_label' => 'Flux de commande protégé',
+        ],
+        'community' => [
+            'eyebrow' => 'Accès communauté',
+            'title' => 'Restez proche de la communauté Wolforix',
+            'description' => 'Suivez les canaux où Wolforix partage mises à jour, contenu marché et éducation pour traders.',
+            'channels' => [
+                'youtube' => [
+                    'description' => 'Regardez les mises à jour plateforme, le contenu éducatif et les vidéos pensées pour les traders.',
+                    'cta' => 'Ouvrir YouTube',
+                ],
+                'instagram' => [
+                    'description' => 'Suivez les updates visuelles, les highlights et le contenu court de la communauté.',
+                    'cta' => 'Ouvrir Instagram',
+                ],
+                'telegram' => [
+                    'description' => 'Rejoignez le canal direct pour les annonces, notes de marché et nouvelles de la communauté.',
+                    'cta' => 'Ouvrir Telegram',
+                ],
+            ],
+        ],
+        'simulated_notice' => 'Tout funded account affiché dans cette interface fait partie d’un programme d’évaluation simulé. Aucun capital réel n’est tradé sur les marchés financiers en direct.',
+        'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
+        'copyright' => 'Tous droits réservés.',
     ],
     'cookie' => [
         'title' => 'Avis cookies',

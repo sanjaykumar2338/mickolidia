@@ -1279,6 +1279,32 @@ return [
         'operations_copy' => 'El soporte se gestiona por correo y, más adelante, por tickets dentro del dashboard. Los retiros manuales siguen revisados por administración y la aprobación depende del cumplimiento de reglas.',
         'contact_title' => 'Contacto y soporte',
         'contact_copy' => '¿Necesitas ayuda directa antes de comprar? Contacta con el soporte o abre Wolfi para obtener guía rápida sobre reglas y plataforma.',
+        'payments' => [
+            'eyebrow' => 'Checkout de confianza',
+            'title' => 'Metodos de pago pensados para dar confianza',
+            'description' => 'Pasarelas reconocidas y marcas de pago familiares ayudan a que el ultimo paso se sienta mas rapido, seguro y premium.',
+            'cards_label' => 'Tarjetas principales',
+            'protected_label' => 'Flujo de pedido protegido',
+        ],
+        'community' => [
+            'eyebrow' => 'Acceso a la comunidad',
+            'title' => 'Mantente cerca de la comunidad Wolforix',
+            'description' => 'Sigue los canales donde Wolforix comparte actualizaciones, contenido de mercado y educacion para traders.',
+            'channels' => [
+                'youtube' => [
+                    'description' => 'Mira actualizaciones de la plataforma, contenido educativo y videos pensados para traders.',
+                    'cta' => 'Abrir YouTube',
+                ],
+                'instagram' => [
+                    'description' => 'Sigue actualizaciones visuales, destacados y contenido corto de la comunidad.',
+                    'cta' => 'Abrir Instagram',
+                ],
+                'telegram' => [
+                    'description' => 'Unete al canal directo para anuncios, notas de mercado y novedades de la comunidad.',
+                    'cta' => 'Abrir Telegram',
+                ],
+            ],
+        ],
         'simulated_notice' => 'Cualquier funded account mostrado en esta interfaz forma parte de un programa de evaluación simulado. No se opera capital real en mercados financieros en vivo.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Todos los derechos reservados.',

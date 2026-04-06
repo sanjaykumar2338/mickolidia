@@ -1279,6 +1279,32 @@ return [
         'operations_copy' => 'Support wird per E-Mail und später über Dashboard-Tickets abgewickelt. Manuelle Auszahlungen bleiben administrativ geprüft, und die Genehmigung hängt von der Einhaltung der Regeln ab.',
         'contact_title' => 'Kontakt & Support',
         'contact_copy' => 'Du brauchst direkte Hilfe vor dem Kauf? Kontaktiere das Support-Team oder öffne Wolfi für schnelle Regel- und Plattform-Hilfe.',
+        'payments' => [
+            'eyebrow' => 'Vertrauter Checkout',
+            'title' => 'Zahlungsmethoden, die Vertrauen aufbauen',
+            'description' => 'Bekannte Checkout-Wege und vertraute Zahlungsmarken lassen den letzten Schritt schneller, sicherer und hochwertiger wirken.',
+            'cards_label' => 'Wichtige Karten',
+            'protected_label' => 'Geschuetzter Bestellfluss',
+        ],
+        'community' => [
+            'eyebrow' => 'Community-Zugang',
+            'title' => 'Bleib nah an der Wolforix-Community',
+            'description' => 'Folge den Kanaelen, auf denen Wolforix Updates, Marktinhalte und Education fuer Trader teilt.',
+            'channels' => [
+                'youtube' => [
+                    'description' => 'Sieh dir Plattform-Updates, Lerninhalte und traderfokussierte Videos an.',
+                    'cta' => 'YouTube oeffnen',
+                ],
+                'instagram' => [
+                    'description' => 'Verfolge visuelle Updates, Highlights und kurze Community-Inhalte.',
+                    'cta' => 'Instagram oeffnen',
+                ],
+                'telegram' => [
+                    'description' => 'Tritt dem direkten Kanal fuer Ankuendigungen, Marktnotizen und Community-Updates bei.',
+                    'cta' => 'Telegram oeffnen',
+                ],
+            ],
+        ],
         'simulated_notice' => 'Jedes in dieser Oberfläche angezeigte Funded Account ist Teil eines simulierten Evaluationsprogramms. Es wird kein echtes Kapital an Live-Finanzmärkten gehandelt.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Alle Rechte vorbehalten.',

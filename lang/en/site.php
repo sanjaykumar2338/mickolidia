@@ -1279,6 +1279,32 @@ return [
         'operations_copy' => 'Support is handled through email and later dashboard ticketing. Manual withdrawals remain admin-reviewed, and payout approval depends on rule compliance.',
         'contact_title' => 'Contact & Support',
         'contact_copy' => 'Need direct help before you purchase? Reach the support team or open Wolfi for fast rule and platform guidance.',
+        'payments' => [
+            'eyebrow' => 'Trusted checkout',
+            'title' => 'Payment methods built for confidence',
+            'description' => 'Recognized checkout rails and familiar payment brands help the final step feel faster, safer, and more premium.',
+            'cards_label' => 'Major cards',
+            'protected_label' => 'Protected order flow',
+        ],
+        'community' => [
+            'eyebrow' => 'Community access',
+            'title' => 'Stay close to the Wolforix community',
+            'description' => 'Follow the channels where Wolforix shares updates, market content, and trader-facing education.',
+            'channels' => [
+                'youtube' => [
+                    'description' => 'Watch platform updates, educational content, and trader-focused video drops.',
+                    'cta' => 'Open YouTube',
+                ],
+                'instagram' => [
+                    'description' => 'Follow visual updates, highlights, and short-form community content.',
+                    'cta' => 'Open Instagram',
+                ],
+                'telegram' => [
+                    'description' => 'Join the direct channel for announcements, market notes, and community updates.',
+                    'cta' => 'Open Telegram',
+                ],
+            ],
+        ],
         'simulated_notice' => 'Any funded account shown in this interface is part of a simulated evaluation program. No real capital is traded in live financial markets.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'All rights reserved.',

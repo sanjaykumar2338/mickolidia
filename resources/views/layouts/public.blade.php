@@ -43,6 +43,10 @@
         @include('partials.ai-assistant-promo')
     @endunless
 
+    @unless (request()->routeIs('checkout.*', 'login', 'password.*'))
+        @include('partials.public-payment-community')
+    @endunless
+
     @include('partials.public-footer')
     @include('partials.floating-ai-assistant')
     @include('partials.fixed-disclaimer')
