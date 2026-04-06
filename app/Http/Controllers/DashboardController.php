@@ -126,9 +126,13 @@ class DashboardController extends Controller
         return [
             'reference' => $account->account_reference ?? 'N/A',
             'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
+            'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
+            'challenge_phase' => $this->phaseLabel($account),
+            'account_size' => $this->formatMoney((float) $account->account_size),
             'platform' => $account->platform,
             'stage' => $account->stage,
             'status' => $account->status,
+            'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status)),
             'account_status' => $this->humanizeStatus((string) $account->account_status),
             'platform_account_id' => $account->platform_account_id ?: 'Link pending',
             'platform_login' => $account->platform_login ?: 'Link pending',
@@ -136,13 +140,19 @@ class DashboardController extends Controller
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
+            'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
             'balance' => $this->formatMoney((float) $account->balance),
             'starting_balance' => $this->formatMoney((float) $account->starting_balance),
             'equity' => $this->formatMoney((float) $account->equity),
             'total_profit' => $this->formatMoney((float) $account->total_profit),
+            'phase_profit' => $this->formatMoney((float) $account->total_profit),
             'today_profit' => $this->formatMoney((float) $account->today_profit),
             'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
             'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
+            'daily_loss_used' => $this->formatMoney((float) $account->daily_loss_used),
+            'daily_loss_remaining' => $this->formatMoney(max((float) $account->daily_drawdown_limit_amount - (float) $account->daily_loss_used, 0)),
+            'max_drawdown_used' => $this->formatMoney((float) $account->max_drawdown_used),
+            'max_drawdown_remaining' => $this->formatMoney(max((float) $account->max_drawdown_limit_amount - (float) $account->max_drawdown_used, 0)),
             'drawdown_percent' => number_format((float) $account->drawdown_percent, 1).'%',
             'profit_target_percent' => number_format((float) $account->profit_target_percent, 1).'%',
             'daily_drawdown_limit_percent' => number_format((float) $account->daily_drawdown_limit_percent, 1).'%',
@@ -155,6 +165,8 @@ class DashboardController extends Controller
             'payout_eligible_at' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
+            'sync_source' => $account->sync_source ? $this->humanizeStatus((string) $account->sync_source) : 'Not available',
+            'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'payout_cycle_days' => $fundedTiming['payout_cycle_days'],
             'first_payout_days' => $fundedTiming['first_payout_days'],
             'leverage' => $plan['phases'][0]['leverage'] ?? null,
@@ -289,7 +301,11 @@ class DashboardController extends Controller
             'id' => $account->id,
             'reference' => $account->account_reference ?? 'N/A',
             'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
+            'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
+            'challenge_phase' => $this->phaseLabel($account),
+            'account_size' => $this->formatMoney((float) $account->account_size),
             'status' => $this->humanizeStatus((string) ($account->account_status ?: $account->status ?: 'active')),
+            'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
             'stage' => $account->stage,
             'balance' => $this->formatMoney((float) $account->balance),
             'equity' => $this->formatMoney((float) $account->equity),
@@ -297,12 +313,19 @@ class DashboardController extends Controller
             'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
+            'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
             'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
             'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
+            'daily_loss_used' => $this->formatMoney((float) $account->daily_loss_used),
+            'daily_loss_remaining' => $this->formatMoney(max((float) $account->daily_drawdown_limit_amount - (float) $account->daily_loss_used, 0)),
+            'max_drawdown_used' => $this->formatMoney((float) $account->max_drawdown_used),
+            'max_drawdown_remaining' => $this->formatMoney(max((float) $account->max_drawdown_limit_amount - (float) $account->max_drawdown_used, 0)),
             'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
             'platform_environment' => strtoupper((string) ($account->platform_environment ?: 'pending')),
             'platform_account_id' => $account->platform_account_id ?: 'Link pending',
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'sync_source' => $account->sync_source ? $this->humanizeStatus((string) $account->sync_source) : 'Not available',
+            'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
         ];
     }
@@ -432,6 +455,15 @@ class DashboardController extends Controller
             'wolforix.challenge_catalog.'.$challengeType.'.label',
             $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
         );
+    }
+
+    private function phaseLabel(TradingAccount $account): string
+    {
+        return match (true) {
+            $account->challenge_type === 'one_step' => 'Single Phase',
+            (int) $account->phase_index > 1 => 'Phase 2',
+            default => 'Phase 1',
+        };
     }
 
     private function humanizeStatus(string $status): string

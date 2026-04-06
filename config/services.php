@@ -75,6 +75,10 @@ return [
         ],
     ],
 
+    'mt5_ingestion' => [
+        'token' => env('MT5_INGESTION_TOKEN'),
+    ],
+
     'ctrader' => [
         'broker_name' => env('CTRADER_BROKER_NAME', 'IC Markets'),
         'auth_url' => env('CTRADER_AUTH_URL', 'https://id.ctrader.com/my/settings/openapi/grantingaccess/'),

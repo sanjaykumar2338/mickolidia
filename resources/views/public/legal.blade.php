@@ -1,5 +1,9 @@
 @extends('layouts.public')
 
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 @section('title', $page['title'].' | '.__('site.meta.brand'))
 
 @section('content')
@@ -32,7 +36,7 @@
 
                 <div class="mt-10 space-y-8">
                     @foreach ($page['sections'] as $section)
-                        <section class="rounded-[1.8rem] border border-white/8 bg-white/3 p-6">
+                        <section id="{{ Str::slug($section['title']) }}" class="scroll-mt-28 rounded-[1.8rem] border border-white/8 bg-white/3 p-6">
                             <h2 class="text-2xl font-semibold text-white">{{ $section['title'] }}</h2>
 
                             @if (! empty($section['paragraphs']))

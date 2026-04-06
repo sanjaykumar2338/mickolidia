@@ -17,7 +17,9 @@ class TradingMetricsCalculator
         $equity = (float) ($snapshot['equity'] ?? $account->equity ?? $balance);
         $profitLoss = array_key_exists('profit_loss', $snapshot)
             ? (float) $snapshot['profit_loss']
-            : round($balance - $startingBalance, 2);
+            : (array_key_exists('open_profit', $snapshot)
+                ? (float) $snapshot['open_profit']
+                : round($equity - $balance, 2));
         $totalProfit = array_key_exists('total_profit', $snapshot)
             ? (float) $snapshot['total_profit']
             : $profitLoss;

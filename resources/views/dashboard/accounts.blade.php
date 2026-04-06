@@ -137,11 +137,20 @@
                             <div>
                                 <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $account['plan'] }}</p>
                                 <h2 class="mt-2 text-2xl font-semibold text-white">{{ $account['reference'] }}</h2>
+                                <p class="mt-2 text-sm text-slate-400">{{ $account['challenge_type'] }} • {{ $account['challenge_phase'] }}</p>
                             </div>
                             <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-sm text-slate-200">{{ $account['status'] }}</span>
                         </div>
 
                         <dl class="mt-6 grid gap-4 sm:grid-cols-2">
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Challenge status</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['challenge_status'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Account size</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['account_size'] }}</dd>
+                            </div>
                             <div class="surface-card rounded-3xl p-5">
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.labels.stage') }}</dt>
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['stage'] }}</dd>
@@ -159,12 +168,24 @@
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['last_synced_at'] }}</dd>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Last evaluated</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['last_evaluated_at'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Daily drawdown</dt>
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['daily_drawdown'] }}</dd>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Daily loss used / remaining</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['daily_loss_used'] }} / {{ $account['daily_loss_remaining'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Total drawdown</dt>
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['max_drawdown'] }}</dd>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Max drawdown used / remaining</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['max_drawdown_used'] }} / {{ $account['max_drawdown_remaining'] }}</dd>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Trading days</dt>
@@ -178,6 +199,10 @@
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Connection state</dt>
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['platform_status'] }}</dd>
                             </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Sync source</dt>
+                                <dd class="mt-3 text-lg font-semibold text-white">{{ $account['sync_source'] }}</dd>
+                            </div>
                             <div class="surface-card rounded-3xl p-5 sm:col-span-2">
                                 <div class="flex flex-wrap items-center justify-between gap-3">
                                     <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Profit target progress</dt>
@@ -188,6 +213,12 @@
                                     <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-sky-400" style="width: {{ $account['progress_value'] }}%"></div>
                                 </div>
                             </div>
+                            @if ($account['failure_reason'])
+                                <div class="surface-card rounded-3xl border border-rose-400/20 bg-rose-500/10 p-5 sm:col-span-2">
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-rose-100">Failure reason</dt>
+                                    <dd class="mt-3 text-lg font-semibold text-white">{{ $account['failure_reason'] }}</dd>
+                                </div>
+                            @endif
                             <div class="surface-card rounded-3xl p-5 sm:col-span-2">
                                 <dt class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Platform account</dt>
                                 <dd class="mt-3 text-lg font-semibold text-white">{{ $account['platform_account_id'] }}</dd>

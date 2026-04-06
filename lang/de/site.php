@@ -942,7 +942,7 @@ return [
         'voice_rules_fallback' => 'Beim 1-Step gelten 10 % Gewinnziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust. Beim 2-Step gelten 10 % und 5 % Gewinnziel, 5 % maximaler Tagesverlust, 10 % maximaler Gesamtverlust und mindestens 3 Handelstage pro Phase.',
         'voice_checkout_fallback' => 'Klicke im gewählten Challenge-Modell auf Plan sichern und melde dich danach an oder erstelle ein Konto, bevor du zum Checkout gehst. Wolforix führt dich anschließend wieder zurück zum richtigen Plan.',
         'voice_discount_fallback' => 'Öffne das Launch-Popup und klicke auf Rabatt sichern, um das 20-%-Angebot für die aktuelle Sitzung zu aktivieren. Wenn du es ignorierst, bleibt der reguläre Preis bestehen.',
-        'voice_general_fallback' => 'Ich bin am stärksten bei Wolforix-Modellen, Demo-Zugang, Auszahlungen, Regeln, Login, Checkout und cTrader-Hinweisen. Wenn deine Frage breiter ist, helfe ich dir kurz so gut ich kann oder verweise dich auf die passende Wolforix-Seite.',
+        'voice_general_fallback' => 'Ich bin am stärksten bei Wolforix-Modellen, Demo-Zugang, Auszahlungen, Regeln, Kontozugang, Checkout und cTrader-Hinweisen. Wenn deine Frage breiter ist, helfe ich dir kurz so gut ich kann oder verweise dich auf die passende Wolforix-Seite.',
         'voice_input_label' => 'Frage stellen',
         'voice_input_placeholder' => 'Beispiel: Wann kann ich meine erste Auszahlung anfordern?',
         'voice_suggestions_label' => 'Vorgeschlagene Fragen',

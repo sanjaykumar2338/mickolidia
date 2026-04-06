@@ -590,7 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const title = item.title ?? '';
                     const description = item.description ?? '';
                     const keywords = item.keywords ?? '';
-                    const haystack = normalizeText(`${title} ${description} ${keywords}`);
+                    const searchText = item.search_text ?? '';
+                    const haystack = normalizeText(`${title} ${description} ${keywords} ${searchText}`);
                     let score = 0;
 
                     if (query === '') {

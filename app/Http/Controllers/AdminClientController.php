@@ -88,6 +88,16 @@ class AdminClientController extends Controller
                     'value' => $this->resolveAccountStatus($user),
                 ],
                 [
+                    'label' => 'Challenge Phase',
+                    'value' => $latestAccount !== null ? $this->phaseLabel($latestAccount) : 'N/A',
+                ],
+                [
+                    'label' => 'Failure Reason',
+                    'value' => $latestAccount?->failure_reason
+                        ? $this->humanizeStatus((string) $latestAccount->failure_reason)
+                        : 'None',
+                ],
+                [
                     'label' => 'Sync Status',
                     'value' => $latestAccount?->sync_status
                         ? $this->humanizeStatus((string) $latestAccount->sync_status)
@@ -117,6 +127,8 @@ class AdminClientController extends Controller
                 'platform_login' => $latestAccount?->platform_login ?? 'Link pending',
                 'platform_environment' => $latestAccount?->platform_environment ?? 'N/A',
                 'last_synced_at' => $this->formatDateTime($latestAccount?->last_synced_at),
+                'last_evaluated_at' => $this->formatDateTime($latestAccount?->last_evaluated_at),
+                'sync_source' => $latestAccount?->sync_source ? $this->humanizeStatus((string) $latestAccount->sync_source) : 'N/A',
                 'sync_error' => $latestAccount?->sync_error ?? 'None',
                 'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
                 'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
@@ -255,6 +267,15 @@ class AdminClientController extends Controller
             'wolforix.challenge_catalog.'.$challengeType.'.label',
             $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
         );
+    }
+
+    private function phaseLabel(TradingAccount $account): string
+    {
+        return match (true) {
+            $account->challenge_type === 'one_step' => 'Single Phase',
+            (int) $account->phase_index > 1 => 'Phase 2',
+            default => 'Phase 1',
+        };
     }
 
     private function countryName(string $countryCode): string

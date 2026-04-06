@@ -1,6 +1,5 @@
 @php
     use Illuminate\Support\Facades\Lang;
-    use Illuminate\Support\Str;
 
     $assistantId = $assistantId ?? 'voice-assistant';
     $assistantQuestion = trim((string) ($assistantQuestion ?? request('assistant_question', '')));
@@ -21,56 +20,10 @@
     $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
     $voiceTtsAvailable = (bool) config('services.openai.tts.enabled', true)
         && filled(config('services.openai.api_key'));
-    $faqVoiceIndex = [];
+
+    $faqVoiceIndex = app(\App\Support\PublicContentIndex::class)->voiceAssistantIndex($voiceLocales, $voiceLocaleMap);
 
     foreach ($voiceLocales as $voiceLocale) {
-        $localizedFaqSections = Lang::get('site.faq.sections', [], $voiceLocale);
-
-        if (! is_array($localizedFaqSections)) {
-            continue;
-        }
-
-        foreach ($localizedFaqSections as $section) {
-            foreach ($section['items'] ?? [] as $item) {
-                if (! isset($item['question'])) {
-                    continue;
-                }
-
-                $answerSegments = [
-                    $item['answer'] ?? '',
-                ];
-
-                foreach ($item['answer_paragraphs'] ?? [] as $paragraph) {
-                    $answerSegments[] = $paragraph;
-                }
-
-                foreach ($item['answer_sections'] ?? [] as $answerSection) {
-                    $answerSegments[] = $answerSection['title'] ?? '';
-
-                    foreach ($answerSection['paragraphs'] ?? [] as $paragraph) {
-                        $answerSegments[] = $paragraph;
-                    }
-
-                    foreach ($answerSection['bullets'] ?? [] as $bullet) {
-                        $answerSegments[] = $bullet;
-                    }
-                }
-
-                $faqVoiceIndex[] = [
-                    'locale' => $voiceLocale,
-                    'speech_locale' => $voiceLocaleMap[$voiceLocale] ?? strtoupper($voiceLocale),
-                    'section' => $section['title'] ?? '',
-                    'question' => $item['question'],
-                    'answer' => Str::limit(trim(implode(' ', array_filter($answerSegments))), 420),
-                    'url' => route('faq'),
-                    'search_text' => trim(implode(' ', array_filter([
-                        $item['question'],
-                        ...$answerSegments,
-                    ]))),
-                ];
-            }
-        }
-
         $faqVoiceIndex = [
             ...$faqVoiceIndex,
             [

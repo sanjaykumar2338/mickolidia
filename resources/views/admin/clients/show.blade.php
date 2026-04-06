@@ -97,6 +97,18 @@
                             <dd class="mt-2 font-semibold text-white">{{ $latestAccount->stage }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Challenge Type</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->challenge_type === 'one_step' ? '1-Step Instant' : '2-Step Pro' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Current Phase</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->challenge_type === 'one_step' ? 'Single Phase' : ((int) $latestAccount->phase_index > 1 ? 'Phase 2' : 'Phase 1') }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Challenge Status</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ str($latestAccount->challenge_status ?: $latestAccount->account_status)->replace('_', ' ')->title() }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.balance') }}</dt>
                             <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->balance, 2) }}</dd>
                         </div>
@@ -125,12 +137,32 @@
                             <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->daily_drawdown, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Daily Loss Used / Remaining</dt>
+                            <dd class="mt-2 font-semibold text-white">
+                                ${{ number_format((float) $latestAccount->daily_loss_used, 2) }}
+                                /
+                                ${{ number_format(max((float) $latestAccount->daily_drawdown_limit_amount - (float) $latestAccount->daily_loss_used, 0), 2) }}
+                            </dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Total Drawdown</dt>
                             <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->max_drawdown, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Max Drawdown Used / Remaining</dt>
+                            <dd class="mt-2 font-semibold text-white">
+                                ${{ number_format((float) $latestAccount->max_drawdown_used, 2) }}
+                                /
+                                ${{ number_format(max((float) $latestAccount->max_drawdown_limit_amount - (float) $latestAccount->max_drawdown_used, 0), 2) }}
+                            </dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Profit Target Progress</dt>
                             <dd class="mt-2 font-semibold text-white">{{ number_format((float) $latestAccount->profit_target_progress_percent, 1) }}%</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Failure Reason</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->failure_reason ? str($latestAccount->failure_reason)->replace('_', ' ')->title() : 'None' }}</dd>
                         </div>
                     </dl>
 
@@ -205,6 +237,14 @@
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                     <dt class="text-slate-400">Last Synced</dt>
                     <dd class="font-semibold text-white">{{ $providerReferences['last_synced_at'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Last Evaluated</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['last_evaluated_at'] }}</dd>
+                </div>
+                <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                    <dt class="text-slate-400">Sync Source</dt>
+                    <dd class="font-semibold text-white">{{ $providerReferences['sync_source'] }}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                     <dt class="text-slate-400">Authorized Accounts</dt>
