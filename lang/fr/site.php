@@ -619,6 +619,7 @@ return array_replace_recursive($en, [
         'simulated_notice' => 'Tout funded account affiché dans cette interface fait partie d’un programme d’évaluation simulé. Aucun capital réel n’est tradé sur les marchés financiers en direct.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Tous droits réservés.',
+        'back_to_top' => 'Retour en haut',
     ],
     'cookie' => [
         'title' => 'Avis cookies',

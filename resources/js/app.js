@@ -3320,6 +3320,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3600);
     });
 
+    const backToTopButton = document.querySelector('[data-back-to-top]');
+
+    if (backToTopButton instanceof HTMLButtonElement) {
+        const prefersReducedMotion = typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const syncBackToTopState = () => {
+            backToTopButton.classList.toggle('is-visible', window.scrollY > 720);
+        };
+
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: prefersReducedMotion ? 'auto' : 'smooth',
+            });
+        });
+
+        syncBackToTopState();
+        window.addEventListener('scroll', syncBackToTopState, { passive: true });
+    }
+
     const counterElements = [...document.querySelectorAll('[data-counter]')];
 
     if (counterElements.length > 0) {

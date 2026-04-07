@@ -48,6 +48,7 @@
     @endunless
 
     @include('partials.public-footer')
+    @include('partials.back-to-top')
     @include('partials.floating-ai-assistant')
     @include('partials.fixed-disclaimer')
 </body>

@@ -17,7 +17,7 @@
         [
             'key' => 'visa',
             'label' => 'Visa',
-            'type' => 'wordmark',
+            'type' => 'visa',
         ],
         [
             'key' => 'mastercard',
@@ -25,14 +25,14 @@
             'type' => 'mastercard',
         ],
         [
-            'key' => 'cards',
-            'label' => __('site.footer.payments.cards_label'),
-            'type' => 'supporting',
+            'key' => 'apple-pay',
+            'label' => 'Apple Pay',
+            'type' => 'apple_pay',
         ],
         [
-            'key' => 'protected',
-            'label' => __('site.footer.payments.protected_label'),
-            'type' => 'supporting',
+            'key' => 'google-pay',
+            'label' => 'Google Pay',
+            'type' => 'google_pay',
         ],
     ];
 
@@ -87,30 +87,40 @@
 <section class="px-6 pb-8 pt-6 lg:px-8 lg:pb-10">
     <div class="mx-auto max-w-7xl">
         <div class="prefooter-showcase space-y-6">
-            <div class="surface-panel relative overflow-hidden rounded-[2.4rem] p-6 sm:p-8">
+            <div class="payment-rail-floating relative overflow-hidden px-1 py-4">
                 <div class="prefooter-orb prefooter-orb-left" aria-hidden="true"></div>
                 <div class="prefooter-orb prefooter-orb-right" aria-hidden="true"></div>
 
                 <div class="relative z-10">
-                    <div class="payment-rail-shell mt-8">
-                        <div class="payment-rail-mask">
-                            <div class="payment-rail-track" aria-label="{{ __('site.footer.payments.title') }}">
-                                @foreach ($paymentRail as $paymentMethod)
-                                    <div class="payment-chip payment-chip--{{ $paymentMethod['key'] }}">
-                                        @if (($paymentMethod['type'] ?? '') === 'image')
-                                            <img src="{{ $paymentMethod['src'] }}" alt="{{ $paymentMethod['alt'] ?? $paymentMethod['label'] }}" class="block h-5 w-auto object-contain">
-                                        @elseif (($paymentMethod['type'] ?? '') === 'mastercard')
-                                            <span class="payment-mastercard-mark" aria-hidden="true">
-                                                <span class="payment-mastercard-circle payment-mastercard-circle--left"></span>
-                                                <span class="payment-mastercard-circle payment-mastercard-circle--right"></span>
-                                            </span>
-                                            <span>{{ $paymentMethod['label'] }}</span>
-                                        @else
-                                            <span>{{ $paymentMethod['label'] }}</span>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
+                    <div class="payment-rail-mask">
+                        <div class="payment-rail-track" aria-label="{{ __('site.footer.payments.title') }}">
+                            @foreach ($paymentRail as $paymentMethod)
+                                <div class="payment-mark payment-mark--{{ $paymentMethod['key'] }}">
+                                    @if (($paymentMethod['type'] ?? '') === 'image')
+                                        <img src="{{ $paymentMethod['src'] }}" alt="{{ $paymentMethod['alt'] ?? $paymentMethod['label'] }}" class="block h-5 w-auto object-contain sm:h-6">
+                                    @elseif (($paymentMethod['type'] ?? '') === 'mastercard')
+                                        <span class="payment-mastercard-mark" aria-hidden="true">
+                                            <span class="payment-mastercard-circle payment-mastercard-circle--left"></span>
+                                            <span class="payment-mastercard-circle payment-mastercard-circle--right"></span>
+                                        </span>
+                                        <span class="payment-wordmark payment-wordmark--mastercard">{{ $paymentMethod['label'] }}</span>
+                                    @elseif (($paymentMethod['type'] ?? '') === 'apple_pay')
+                                        <span class="payment-apple-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M16.86 12.54c.03 3.1 2.72 4.13 2.75 4.14-.02.07-.43 1.49-1.41 2.95-.85 1.26-1.73 2.51-3.12 2.53-1.36.03-1.8-.81-3.36-.81-1.56 0-2.05.79-3.34.84-1.34.05-2.37-1.34-3.22-2.59C3.43 17.91 2.1 14.93 3.86 11.9c.87-1.5 2.42-2.45 4.11-2.47 1.29-.03 2.5.87 3.36.87.86 0 2.47-1.07 4.16-.91.71.03 2.7.29 3.98 2.16-.1.06-2.38 1.39-2.35 4.13Zm-2.81-5.16c.71-.86 1.19-2.05 1.06-3.24-1.03.04-2.29.69-3.03 1.55-.66.76-1.24 1.97-1.09 3.14 1.15.09 2.35-.58 3.06-1.45Z"/>
+                                            </svg>
+                                        </span>
+                                        <span class="payment-wordmark payment-wordmark--apple">{{ $paymentMethod['label'] }}</span>
+                                    @elseif (($paymentMethod['type'] ?? '') === 'google_pay')
+                                        <span class="payment-google-g" aria-hidden="true">G</span>
+                                        <span class="payment-wordmark payment-wordmark--google">{{ $paymentMethod['label'] }}</span>
+                                    @elseif (($paymentMethod['type'] ?? '') === 'visa')
+                                        <span class="payment-wordmark payment-wordmark--visa">{{ $paymentMethod['label'] }}</span>
+                                    @else
+                                        <span class="payment-wordmark">{{ $paymentMethod['label'] }}</span>
+                                    @endif
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
