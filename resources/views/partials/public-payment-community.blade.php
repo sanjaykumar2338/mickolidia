@@ -17,7 +17,9 @@
         [
             'key' => 'visa',
             'label' => 'Visa',
-            'type' => 'visa',
+            'type' => 'image',
+            'src' => asset('mickolidia-attachments/IMG_8996.jpeg'),
+            'alt' => 'Visa',
         ],
         [
             'key' => 'mastercard',
@@ -114,8 +116,6 @@
                                     @elseif (($paymentMethod['type'] ?? '') === 'google_pay')
                                         <span class="payment-google-g" aria-hidden="true">G</span>
                                         <span class="payment-wordmark payment-wordmark--google">{{ $paymentMethod['label'] }}</span>
-                                    @elseif (($paymentMethod['type'] ?? '') === 'visa')
-                                        <span class="payment-wordmark payment-wordmark--visa">{{ $paymentMethod['label'] }}</span>
                                     @else
                                         <span class="payment-wordmark">{{ $paymentMethod['label'] }}</span>
                                     @endif

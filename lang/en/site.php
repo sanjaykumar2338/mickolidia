@@ -1268,8 +1268,16 @@ return [
     'footer' => [
         'disclaimer_title' => 'Simulated environment',
         'legal_copy' => [
-            'Wolforix Ltd. operates as a proprietary trading evaluation and education company. All trading activities are conducted in a simulated environment using virtual funds and do not represent real market participation.',
-            'Wolforix does not provide brokerage services, investment advice, or portfolio management. The company does not accept deposits, hold client funds, or execute trades on behalf of users.',
+            'Wolforix Ltd. is a company registered in the United Kingdom (Company Number: 17111904), with its registered office at Suite RA01, 195-197 Wood Street, London, E17 3NU. Wolforix operates as a proprietary trading evaluation and education platform.',
+            'All services provided by Wolforix are conducted exclusively in a simulated trading environment using virtual funds. These funds have no real value, are not withdrawable, and do not represent real capital. Wolforix is not a broker, financial institution, and does not provide investment services, financial advice, or asset management.',
+            'Nothing on this platform constitutes investment advice or an offer to buy or sell financial instruments. Results achieved in simulated environments do not guarantee future results in real markets and may differ significantly from actual trading outcomes.',
+            'Any performance shown, including payouts, is purely illustrative and subject to the specific conditions of the program. All payouts are subject to verification, including internal security checks, fraud prevention measures, and identity verification procedures.',
+            'Wolforix reserves the right to request additional documentation, review accounts, adjust results, deny payouts, cancel profits, or suspend and/or terminate accounts in case of breach of its terms or detection of irregular activity.',
+            'Our services are not available in jurisdictions where their use would violate applicable laws or regulations. It is the user\'s responsibility to ensure compliance with local laws.',
+            'We may share information with third-party providers strictly necessary for the operation of the platform (including payment services, infrastructure providers, or verification services), in accordance with applicable data protection laws.',
+            'Wolforix does not guarantee continuous or uninterrupted availability of its services and provides no express or implied warranties. Wolforix shall not be liable for any direct, indirect, or consequential losses arising from the use of the platform.',
+            'Wolforix reserves the right to modify these terms and policies at any time.',
+            'By using this website, you agree to our Terms and Conditions, Privacy Policy, Payout Policy, Refund Policy, and all related legal documents.',
         ],
         'legal_title' => 'Legal & Policies',
         'security_title' => 'Trust & Security',

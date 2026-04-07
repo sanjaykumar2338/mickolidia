@@ -245,7 +245,7 @@
                         {{ __('site.home.plans.platform_label') }}:
                     </span>
                     <img
-                        src="{{ asset('branding/mt5-logo.svg') }}"
+                        src="{{ asset('mickolidia-attachments/IMG_8995.webp') }}"
                         alt="{{ __('site.home.plans.platform_value') }}"
                         class="h-8 w-auto sm:h-9"
                         loading="lazy"

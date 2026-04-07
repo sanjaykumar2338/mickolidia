@@ -29,26 +29,6 @@
 
 <footer class="border-t border-white/5 bg-slate-950/80">
     <div class="mx-auto grid max-w-7xl gap-6 px-6 py-12 md:gap-8 lg:grid-cols-2 lg:items-start lg:px-8 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.72fr)_minmax(0,0.9fr)]">
-        <div class="surface-panel rounded-3xl p-6 lg:col-span-2 lg:self-start xl:col-span-1 xl:p-7">
-            <div class="flex items-center gap-4">
-                <div class="flex h-14 w-14 items-center justify-center">
-                    <img src="{{ asset('newfolder/IMG_8542.png') }}" alt="Wolforix" class="h-full w-full object-contain">
-                </div>
-                <div>
-                    <p class="inline-flex items-start text-sm font-semibold tracking-[0.24em] text-slate-200">
-                        <span>WOLFORIX</span>
-                        <span class="ml-1 text-[0.58em] leading-none tracking-normal text-slate-400">®</span>
-                    </p>
-                    <p class="mt-2 text-[13px] leading-6 text-slate-500">{{ __('site.public_layout.simulated_notice') }}</p>
-                </div>
-            </div>
-            <p class="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.operations_title') }}</p>
-            <div class="mt-4 space-y-3 text-[13px] leading-6 text-slate-400">
-                <p>{{ __('site.footer.operations_copy') }}</p>
-                <p class="text-slate-500">{{ __('site.footer.simulated_notice') }}</p>
-            </div>
-        </div>
-
         <div class="surface-card rounded-3xl p-6 lg:self-start xl:p-7">
             <h3 class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.security_title') }}</h3>
             <p class="mt-4 text-[13px] leading-6 text-slate-300">{{ __('site.footer.security_line') }}</p>
@@ -109,21 +89,9 @@
 
                     <div data-footer-panel-content class="hidden pt-5">
                         <div class="rounded-[1.55rem] border border-white/8 bg-white/[0.03] p-5 sm:p-6">
-                            <div class="space-y-4 text-[15px] leading-8 text-slate-300 sm:text-base">
+                            <div class="space-y-4 text-base leading-8 text-slate-300 sm:text-[1.05rem] sm:leading-9">
                                 @foreach (trans('site.footer.legal_copy') as $paragraph)
                                     <p>{{ $paragraph }}</p>
-                                @endforeach
-                                <p class="text-slate-400">{{ __('site.footer.simulated_notice') }}</p>
-                            </div>
-
-                            <div class="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                @foreach (config('wolforix.legal_pages') as $page)
-                                    <a
-                                        href="{{ route($page['route_name']) }}"
-                                        class="rounded-[1.1rem] border border-white/6 bg-white/3 px-4 py-3 text-sm text-slate-300 transition hover:border-white/12 hover:bg-white/5 hover:text-white"
-                                    >
-                                        {{ __('site.legal.link_labels.'.$page['content_key']) }}
-                                    </a>
                                 @endforeach
                             </div>
                         </div>
