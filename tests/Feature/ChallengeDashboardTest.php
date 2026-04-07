@@ -85,6 +85,68 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('active', $account->challenge_status);
     }
 
+    public function test_metrics_endpoint_accepts_mt5_dotted_server_time_format(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_size' => 5000,
+            'starting_balance' => 5000,
+            'phase_starting_balance' => 5000,
+            'phase_reference_balance' => 5000,
+            'balance' => 5000,
+            'equity' => 5000,
+            'highest_equity_today' => 5000,
+            'profit_target_amount' => 500,
+            'daily_drawdown_limit_amount' => 200,
+            'max_drawdown_limit_amount' => 400,
+            'account_reference' => 'WFX-CT-00001-DOTTED',
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer integration-secret',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 5000,
+            'equity' => 5000,
+            'open_profit' => 0,
+            'trading_days' => 1,
+            'phase' => 'single_phase',
+            'server_time' => '2026.04.07 22:11:54',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_reference', 'WFX-CT-00001-DOTTED')
+            ->assertJsonPath('challenge_status', 'active')
+            ->assertJsonPath('trading_days_completed', 1);
+
+        $account->refresh();
+
+        $this->assertSame('2026-04-07', optional($account->server_day)->toDateString());
+        $this->assertSame('active', $account->challenge_status);
+    }
+
+    public function test_metrics_endpoint_returns_422_for_invalid_server_time_format(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer integration-secret',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 10000,
+            'equity' => 10000,
+            'server_time' => '07/04/2026 22:11:54 invalid',
+        ])
+            ->assertStatus(422)
+            ->assertJson([
+                'status' => 'error',
+                'message' => 'Invalid server_time format',
+            ]);
+    }
+
     public function test_one_step_target_does_not_pass_before_minimum_trading_days(): void
     {
         $account = $this->createChallengeAccount('one_step');

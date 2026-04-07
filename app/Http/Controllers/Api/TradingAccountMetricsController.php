@@ -9,6 +9,7 @@ use App\Services\TradingAccounts\TradingAccountSnapshotApplyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -21,7 +22,14 @@ class TradingAccountMetricsController extends Controller
     ): JsonResponse {
         $this->authorizeIngestion($request);
 
-        $normalizedPayload = $this->normalizePayload($request->all());
+        try {
+            $normalizedPayload = $this->normalizePayload($request->all(), $accountIdentifier);
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
 
         $validated = Validator::make($normalizedPayload, [
             'balance' => ['required', 'numeric'],
@@ -148,21 +156,22 @@ class TradingAccountMetricsController extends Controller
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
-    private function normalizePayload(array $payload): array
+    private function normalizePayload(array $payload, string $accountIdentifier): array
     {
         $timestamp = $payload['timestamp'] ?? $payload['server_time'] ?? null;
         $accountPhase = $payload['account_phase'] ?? $payload['phase'] ?? null;
 
-        if (($payload['timestamp'] ?? null) === null && $timestamp !== null) {
-            $payload['timestamp'] = $timestamp;
-        }
+        if ($timestamp !== null) {
+            $sourceField = array_key_exists('timestamp', $payload) ? 'timestamp' : 'server_time';
+            $parsedTimestamp = $this->parseServerTime($timestamp, $sourceField, $accountIdentifier);
 
-        if (
-            ($payload['server_day'] ?? null) === null
-            && is_string($timestamp)
-            && $timestamp !== ''
-        ) {
-            $payload['server_day'] = Carbon::parse($timestamp)->toDateString();
+            if ($parsedTimestamp instanceof Carbon) {
+                $payload['timestamp'] = $parsedTimestamp->toDateTimeString();
+
+                if (($payload['server_day'] ?? null) === null) {
+                    $payload['server_day'] = $parsedTimestamp->toDateString();
+                }
+            }
         }
 
         if (($payload['trading_days_completed'] ?? null) === null && array_key_exists('trading_days', $payload)) {
@@ -182,6 +191,68 @@ class TradingAccountMetricsController extends Controller
         }
 
         return $payload;
+    }
+
+    private function parseServerTime(mixed $value, string $sourceField, string $accountIdentifier): ?Carbon
+    {
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value);
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $rawValue = trim($value);
+        $formats = [
+            'Y.m.d H:i:s',
+            'Y-m-d H:i:s',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $parsed = Carbon::createFromFormat($format, $rawValue);
+
+                if ($parsed instanceof Carbon) {
+                    Log::info('MT5 metrics timestamp normalized.', [
+                        'account_identifier' => $accountIdentifier,
+                        'source_field' => $sourceField,
+                        'raw_value' => $rawValue,
+                        'matched_format' => $format,
+                    ]);
+
+                    return $parsed;
+                }
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        try {
+            $parsed = Carbon::parse($rawValue);
+
+            Log::info('MT5 metrics timestamp normalized.', [
+                'account_identifier' => $accountIdentifier,
+                'source_field' => $sourceField,
+                'raw_value' => $rawValue,
+                'matched_format' => 'carbon_parse',
+            ]);
+
+            return $parsed;
+        } catch (\Throwable $exception) {
+            Log::warning('MT5 metrics timestamp normalization failed.', [
+                'account_identifier' => $accountIdentifier,
+                'source_field' => $sourceField,
+                'raw_value' => $rawValue,
+                'reason' => $exception->getMessage(),
+            ]);
+
+            throw new \InvalidArgumentException("Invalid {$sourceField} format");
+        }
     }
 
     private function phaseIndexFromAlias(mixed $phase): ?int
