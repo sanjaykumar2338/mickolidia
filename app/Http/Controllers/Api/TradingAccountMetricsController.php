@@ -8,6 +8,7 @@ use App\Models\TradingAccountSyncLog;
 use App\Services\TradingAccounts\TradingAccountSnapshotApplyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -20,19 +21,34 @@ class TradingAccountMetricsController extends Controller
     ): JsonResponse {
         $this->authorizeIngestion($request);
 
-        $validated = Validator::make($request->all(), [
+        $normalizedPayload = $this->normalizePayload($request->all());
+
+        $validated = Validator::make($normalizedPayload, [
             'balance' => ['required', 'numeric'],
             'equity' => ['required', 'numeric'],
             'open_profit' => ['nullable', 'numeric'],
+            'profit_loss' => ['nullable', 'numeric'],
+            'total_profit' => ['nullable', 'numeric'],
+            'today_profit' => ['nullable', 'numeric'],
+            'daily_drawdown' => ['nullable', 'numeric'],
+            'max_drawdown' => ['nullable', 'numeric'],
+            'highest_equity_today' => ['nullable', 'numeric'],
+            'daily_loss_used' => ['nullable', 'numeric'],
+            'max_drawdown_used' => ['nullable', 'numeric'],
             'timestamp' => ['required', 'date'],
             'server_day' => ['nullable', 'date'],
             'platform_status' => ['nullable', 'string', 'max:255'],
             'platform_environment' => ['nullable', 'string', 'max:255'],
+            'platform_account_id' => ['nullable', 'string', 'max:255'],
+            'platform_login' => ['nullable', 'string', 'max:255'],
             'trade_count' => ['nullable', 'integer', 'min:0'],
             'activity_count' => ['nullable', 'integer', 'min:0'],
             'has_activity' => ['nullable', 'boolean'],
             'volume' => ['nullable', 'numeric', 'min:0'],
             'phase_index' => ['nullable', 'integer', 'min:1'],
+            'account_phase' => ['nullable', 'string', 'max:255'],
+            'trading_days_completed' => ['nullable', 'integer', 'min:0'],
+            'is_funded' => ['nullable', 'boolean'],
             'raw' => ['nullable', 'array'],
         ])->validate();
 
@@ -126,5 +142,62 @@ class TradingAccountMetricsController extends Controller
         }
 
         return $account;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function normalizePayload(array $payload): array
+    {
+        $timestamp = $payload['timestamp'] ?? $payload['server_time'] ?? null;
+        $accountPhase = $payload['account_phase'] ?? $payload['phase'] ?? null;
+
+        if (($payload['timestamp'] ?? null) === null && $timestamp !== null) {
+            $payload['timestamp'] = $timestamp;
+        }
+
+        if (
+            ($payload['server_day'] ?? null) === null
+            && is_string($timestamp)
+            && $timestamp !== ''
+        ) {
+            $payload['server_day'] = Carbon::parse($timestamp)->toDateString();
+        }
+
+        if (($payload['trading_days_completed'] ?? null) === null && array_key_exists('trading_days', $payload)) {
+            $payload['trading_days_completed'] = $payload['trading_days'];
+        }
+
+        if (($payload['account_phase'] ?? null) === null && is_string($accountPhase) && $accountPhase !== '') {
+            $payload['account_phase'] = $accountPhase;
+        }
+
+        if (($payload['phase_index'] ?? null) === null) {
+            $phaseIndex = $this->phaseIndexFromAlias($accountPhase);
+
+            if ($phaseIndex !== null) {
+                $payload['phase_index'] = $phaseIndex;
+            }
+        }
+
+        return $payload;
+    }
+
+    private function phaseIndexFromAlias(mixed $phase): ?int
+    {
+        if (is_numeric($phase)) {
+            return max((int) $phase, 1);
+        }
+
+        if (! is_string($phase) || $phase === '') {
+            return null;
+        }
+
+        return match (strtolower(trim($phase))) {
+            'single_phase', 'phase_1', 'phase1', 'phase 1', 'challenge_step_1', 'challenge step 1' => 1,
+            'phase_2', 'phase2', 'phase 2', 'challenge_step_2', 'challenge step 2' => 2,
+            default => null,
+        };
     }
 }

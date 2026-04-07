@@ -156,8 +156,17 @@ class TradingAccountSnapshotApplyService
             'platform_login' => $snapshot['platform_login'] ?? null,
             'platform_environment' => $snapshot['platform_environment'] ?? null,
             'platform_status' => $snapshot['platform_status'] ?? null,
+            'account_phase' => $snapshot['account_phase'] ?? null,
+            'phase_index' => $snapshot['phase_index'] ?? null,
             'is_funded' => $snapshot['is_funded'] ?? null,
+            'highest_equity_today' => $snapshot['highest_equity_today'] ?? null,
+            'daily_drawdown' => $snapshot['daily_drawdown'] ?? null,
+            'daily_loss_used' => $snapshot['daily_loss_used'] ?? null,
+            'max_drawdown' => $snapshot['max_drawdown'] ?? null,
+            'max_drawdown_used' => $snapshot['max_drawdown_used'] ?? null,
             'profit_loss' => $profitLoss,
+            'total_profit' => $snapshot['total_profit'] ?? null,
+            'today_profit' => $snapshot['today_profit'] ?? null,
         ], static fn ($value) => $value !== null);
     }
 

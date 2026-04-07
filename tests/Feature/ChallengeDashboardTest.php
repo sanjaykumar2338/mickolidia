@@ -38,6 +38,53 @@ class ChallengeDashboardTest extends TestCase
         $this->assertNull($account->failure_reason);
     }
 
+    public function test_metrics_endpoint_accepts_mt5_alias_fields_like_server_time_and_trading_days(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_size' => 5000,
+            'starting_balance' => 5000,
+            'phase_starting_balance' => 5000,
+            'phase_reference_balance' => 5000,
+            'balance' => 5000,
+            'equity' => 5000,
+            'highest_equity_today' => 5000,
+            'profit_target_amount' => 500,
+            'daily_drawdown_limit_amount' => 200,
+            'max_drawdown_limit_amount' => 400,
+            'account_reference' => 'WFX-CT-00001-CERT',
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer integration-secret',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 5000,
+            'equity' => 5000,
+            'open_profit' => 0,
+            'highest_equity_today' => 5000,
+            'daily_loss_used' => 0,
+            'max_drawdown_used' => 0,
+            'trading_days' => 1,
+            'phase' => 'single_phase',
+            'challenge_status' => 'active',
+            'server_time' => '2026-04-07 23:40:00',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_reference', 'WFX-CT-00001-CERT')
+            ->assertJsonPath('challenge_status', 'active')
+            ->assertJsonPath('phase_index', 1)
+            ->assertJsonPath('trading_days_completed', 1);
+
+        $account->refresh();
+
+        $this->assertSame('2026-04-07', optional($account->server_day)->toDateString());
+        $this->assertSame(1, (int) $account->trading_days_completed);
+        $this->assertSame('active', $account->challenge_status);
+    }
+
     public function test_one_step_target_does_not_pass_before_minimum_trading_days(): void
     {
         $account = $this->createChallengeAccount('one_step');
