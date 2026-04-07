@@ -564,6 +564,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const floatingFooterNav = document.querySelector('[data-floating-footer-nav]');
+
+    if (floatingFooterNav instanceof HTMLElement) {
+        const toggle = floatingFooterNav.querySelector('[data-floating-footer-nav-toggle]');
+        const panel = floatingFooterNav.querySelector('[data-floating-footer-nav-panel]');
+        const openIcon = floatingFooterNav.querySelector('[data-floating-footer-nav-open-icon]');
+        const closeIcon = floatingFooterNav.querySelector('[data-floating-footer-nav-close-icon]');
+        const closeTriggers = floatingFooterNav.querySelectorAll('[data-floating-footer-nav-close]');
+
+        if (toggle instanceof HTMLButtonElement && panel instanceof HTMLElement) {
+            const syncFloatingFooterNavState = (open) => {
+                panel.classList.toggle('hidden', !open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+                if (open) {
+                    floatingFooterNav.classList.add('is-open');
+                } else {
+                    floatingFooterNav.classList.remove('is-open');
+                }
+
+                if (toggle.dataset.openLabel && toggle.dataset.closeLabel) {
+                    toggle.setAttribute('aria-label', open ? toggle.dataset.closeLabel : toggle.dataset.openLabel);
+                }
+
+                if (openIcon instanceof SVGElement) {
+                    openIcon.classList.toggle('hidden', open);
+                }
+
+                if (closeIcon instanceof SVGElement) {
+                    closeIcon.classList.toggle('hidden', !open);
+                }
+            };
+
+            const closeFloatingFooterNav = () => {
+                syncFloatingFooterNavState(false);
+            };
+
+            toggle.addEventListener('click', () => {
+                const shouldOpen = panel.classList.contains('hidden');
+                syncFloatingFooterNavState(shouldOpen);
+            });
+
+            closeTriggers.forEach((trigger) => {
+                trigger.addEventListener('click', () => {
+                    closeFloatingFooterNav();
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!floatingFooterNav.contains(event.target)) {
+                    closeFloatingFooterNav();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeFloatingFooterNav();
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    closeFloatingFooterNav();
+                }
+            });
+
+            syncFloatingFooterNavState(false);
+        }
+    }
+
     const footerPanels = [...document.querySelectorAll('[data-footer-panel]')];
 
     if (footerPanels.length > 0) {

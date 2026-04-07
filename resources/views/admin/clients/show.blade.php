@@ -4,9 +4,10 @@
 
 @section('content')
     @php
-        $statusClass = match (strtolower($client['account_status'])) {
-            'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
-            'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
+        $statusClass = match (strtolower($client['account_status_key'])) {
+            'active', 'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
+            'passed' => 'border-sky-400/25 bg-sky-500/12 text-sky-100',
+            'failed', 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
             default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
         };
     @endphp
@@ -17,9 +18,19 @@
             <h1 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ $client['full_name'] }}</h1>
             <p class="mt-4 max-w-3xl text-base leading-8 text-slate-300">{{ __('site.admin.client_show.description') }}</p>
         </div>
-        <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-            {{ __('site.admin.client_show.back') }}
-        </a>
+        <div class="flex flex-wrap gap-3">
+            @if ($client['can_activate'])
+                <form method="POST" action="{{ route('admin.clients.activate', $client['id']) }}">
+                    @csrf
+                    <button type="submit" class="rounded-full border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/18">
+                        {{ __('site.admin.table.activate_account') }}
+                    </button>
+                </form>
+            @endif
+            <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                {{ __('site.admin.client_show.back') }}
+            </a>
+        </div>
     </div>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">

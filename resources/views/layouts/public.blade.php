@@ -35,7 +35,7 @@
         </div>
     @endif
 
-    <main class="relative z-0 pb-40 md:pb-32">
+    <main class="relative z-0 pb-32 md:pb-28">
         @yield('content')
     </main>
 
@@ -49,6 +49,9 @@
 
     @include('partials.public-footer')
     @include('partials.back-to-top')
+    @unless (request()->routeIs('checkout.*', 'login', 'password.*'))
+        @include('partials.floating-footer-nav')
+    @endunless
     @include('partials.floating-ai-assistant')
     @include('partials.fixed-disclaimer')
 </body>

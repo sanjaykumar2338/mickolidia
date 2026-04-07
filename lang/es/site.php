@@ -173,7 +173,7 @@ return [
             ],
             'currencies' => [
                 'USD' => 'USD',
-                'EUR' => 'Euro',
+                'EUR' => 'EUR',
                 'GBP' => 'GBP',
             ],
             'phase_titles' => [
@@ -489,11 +489,24 @@ return [
         'eyebrow' => 'Admin interno',
         'header_label' => 'Area de gestion de clientes',
         'back_to_site' => 'Volver al sitio',
+        'logout' => 'Cerrar sesión',
+        'login' => [
+            'eyebrow' => 'Acceso protegido',
+            'title' => 'Login de Admin',
+            'description' => 'Usa las credenciales internas configuradas para acceder a los registros de clientes, pagos y metricas de challenge desde el panel de administración de Wolforix.',
+            'username' => 'Usuario',
+            'password' => 'Contraseña',
+            'submit' => 'Abrir panel admin',
+            'invalid' => 'Las credenciales de admin no son válidas.',
+            'logged_out' => 'Has cerrado sesión en el panel admin.',
+        ],
         'clients' => [
             'title' => 'Clientes',
             'description' => 'Haz seguimiento de usuarios registrados, pedidos pagados, datos de facturacion, proveedores de pago y progreso actual de activacion desde una sola tabla interna.',
             'status_hint' => ':count clientes cargados',
             'empty' => 'Todavia no hay clientes registrados.',
+            'activation_success' => ':name ya está activo y listo para métricas MT5 como :reference.',
+            'activation_error' => 'No se pudo completar la activación: :message',
         ],
         'table' => [
             'full_name' => 'Nombre Completo',
@@ -507,6 +520,9 @@ return [
             'account_status' => 'Estado de la Cuenta',
             'metrics' => 'Metricas',
             'view_metrics' => 'Ver Metricas',
+            'actions' => 'Acciones',
+            'activate_account' => 'Activar Cuenta',
+            'no_action' => 'Sin acción',
         ],
         'client_show' => [
             'title' => 'Metricas del Cliente',

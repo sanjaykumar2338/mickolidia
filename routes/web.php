@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminClientController;
 use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\CheckoutController;
@@ -81,7 +82,14 @@ Route::middleware('trial.session')->prefix('trial')->group(function (): void {
     Route::post('/retry', [TrialController::class, 'retry'])->name('trial.retry');
 });
 
-Route::middleware('admin.basic')->prefix('admin')->group(function (): void {
-    Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
-    Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
+Route::prefix('admin')->group(function (): void {
+    Route::get('/login', [AdminAuthController::class, 'create'])->name('admin.login');
+    Route::post('/login', [AdminAuthController::class, 'store'])->name('admin.login.store');
+
+    Route::middleware('admin.basic')->group(function (): void {
+        Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('admin.logout');
+        Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
+        Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
+        Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
+    });
 });

@@ -29,14 +29,16 @@
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.order_date') }}</th>
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.account_status') }}</th>
                         <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.metrics') }}</th>
+                        <th class="px-6 py-4 font-semibold">{{ __('site.admin.table.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/6">
                     @forelse ($clients as $client)
                         @php
-                            $statusClass = match (strtolower($client['account_status'])) {
-                                'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
-                                'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
+                            $statusClass = match (strtolower($client['account_status_key'])) {
+                                'active', 'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
+                                'passed' => 'border-sky-400/25 bg-sky-500/12 text-sky-100',
+                                'failed', 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
                                 default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
                             };
                         @endphp
@@ -52,19 +54,40 @@
                             <td class="px-6 py-5">{{ $client['payment_status'] }}</td>
                             <td class="px-6 py-5">{{ $client['order_date'] }}</td>
                             <td class="px-6 py-5">
-                                <span class="{{ $statusClass }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-                                    {{ $client['account_status'] }}
-                                </span>
+                                <div class="flex flex-col gap-2">
+                                    <span class="{{ $statusClass }} inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                                        {{ $client['account_status'] }}
+                                    </span>
+                                    @if ($client['account_reference'])
+                                        <span class="text-xs font-medium tracking-[0.08em] text-slate-400">
+                                            {{ __('site.admin.account.reference') }}: {{ $client['account_reference'] }}
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-6 py-5">
                                 <a href="{{ route('admin.clients.show', $client['id']) }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                                     {{ __('site.admin.table.view_metrics') }}
                                 </a>
                             </td>
+                            <td class="px-6 py-5">
+                                @if ($client['can_activate'])
+                                    <form method="POST" action="{{ route('admin.clients.activate', $client['id']) }}">
+                                        @csrf
+                                        <button type="submit" class="rounded-full border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/18">
+                                            {{ __('site.admin.table.activate_account') }}
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        {{ __('site.admin.table.no_action') }}
+                                    </span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-10 text-center text-slate-400">
+                            <td colspan="11" class="px-6 py-10 text-center text-slate-400">
                                 {{ __('site.admin.clients.empty') }}
                             </td>
                         </tr>

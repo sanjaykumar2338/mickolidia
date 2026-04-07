@@ -3,13 +3,13 @@
     $supportEmail = config('wolforix.support.email');
 @endphp
 
-<section id="site-ai-assistant" class="px-6 pb-14 pt-6 lg:px-8 lg:pb-18">
+<section id="site-ai-assistant" class="px-6 pb-8 pt-4 lg:px-8 lg:pb-10">
     <div class="mx-auto max-w-7xl">
-        <div class="assistant-promo-panel relative overflow-hidden rounded-[2.6rem] px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+        <div class="assistant-promo-panel relative overflow-hidden rounded-[2.6rem] px-6 py-7 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
             <div class="assistant-promo-orb assistant-promo-orb-left" aria-hidden="true"></div>
             <div class="assistant-promo-orb assistant-promo-orb-right" aria-hidden="true"></div>
 
-            <div class="relative z-10 grid gap-8 xl:grid-cols-[1fr_0.94fr] xl:items-center">
+            <div class="relative z-10 grid gap-6 xl:grid-cols-[1fr_0.94fr] xl:items-center">
                 <div class="max-w-3xl">
                     <span class="section-label">{{ __('site.ai_assistant.eyebrow') }}</span>
                     <h2 class="mt-5 max-w-3xl text-3xl font-semibold text-white sm:text-4xl lg:text-[3.1rem] lg:leading-[1.02]">
@@ -23,7 +23,7 @@
                         {{ __('site.ai_assistant.multi_language') }}
                     </div>
 
-                    <div class="mt-8 grid gap-3 sm:grid-cols-2">
+                    <div class="mt-6 grid gap-3 sm:grid-cols-2">
                         @foreach (trans('site.ai_assistant.features') as $feature)
                             <div class="flex items-start gap-3 rounded-[1.4rem] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
                                 <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/12 text-amber-200">
@@ -36,7 +36,7 @@
                         @endforeach
                     </div>
 
-                    <div class="mt-8 flex flex-wrap items-center gap-4">
+                    <div class="mt-6 flex flex-wrap items-center gap-4">
                         <button type="button" data-wolfi-launch class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.ai_assistant.start_chat') }}
                         </button>
@@ -78,7 +78,7 @@
                 </div>
             </div>
 
-            <div class="assistant-support-strip relative z-10 mt-8 border-t border-white/8 pt-8 sm:mt-10 sm:pt-10">
+            <div class="assistant-support-strip relative z-10 mt-6 border-t border-white/8 pt-6 sm:mt-8 sm:pt-8">
                 <div class="max-w-3xl">
                     <span class="section-label">{{ __('site.footer.contact_title') }}</span>
                     <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
@@ -86,7 +86,7 @@
                     </p>
                 </div>
 
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <div class="mt-5 grid gap-4 md:grid-cols-2">
                     <a href="mailto:{{ $supportEmail }}" class="assistant-support-card group rounded-[1.6rem] px-5 py-5 sm:px-6">
                         <div class="flex items-start gap-4">
                             <span class="assistant-support-icon inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-200">

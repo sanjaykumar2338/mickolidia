@@ -464,13 +464,18 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('About')
             ->assertSee('Contact Us')
             ->assertSee('Search the site')
-            ->assertSee('Security aligned with ISO/IEC 27001 standards (in progress)')
+            ->assertSee('View Security')
             ->assertSee('Visa')
             ->assertSee('Apple Pay')
             ->assertSee('Google Pay')
             ->assertSee('Stay close to the Wolforix community')
+            ->assertSeeInOrder([
+                'Stay close to the Wolforix community',
+                'Trust / Security',
+                'Legal & Policies',
+            ])
             ->assertSee('View full legal information')
-            ->assertSee('Open main navigation')
+            ->assertDontSee('Open main navigation')
             ->assertSee('https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3', false)
             ->assertSee('https://www.instagram.com/wolforix', false)
             ->assertSee('https://t.me/wolforix', false)
@@ -639,9 +644,22 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Prueba Gratis')
             ->assertSee('Moneda')
             ->assertSee('$ · USD')
+            ->assertSee('€ · EUR')
             ->assertSee('£ · GBP')
             ->assertDontSee('Dólar estadounidense')
             ->assertDontSee('Libra esterlina');
+    }
+
+    public function test_supported_locales_use_standardized_currency_codes_on_the_homepage(): void
+    {
+        foreach (['en', 'de', 'fr'] as $locale) {
+            $this->withSession(['locale' => $locale])
+                ->get(route('home'))
+                ->assertOk()
+                ->assertSee('$ · USD')
+                ->assertSee('€ · EUR')
+                ->assertSee('£ · GBP');
+        }
     }
 
     public function test_security_page_contains_key_trust_sections(): void
@@ -1419,13 +1437,13 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('It is prohibited to open or close trades 5 minutes before and 5 minutes after a high-impact news event.');
     }
 
-    public function test_admin_clients_requires_basic_auth(): void
+    public function test_admin_clients_redirects_to_the_admin_login_form(): void
     {
         $this->get(route('admin.clients.index'))
-            ->assertUnauthorized();
+            ->assertRedirect(route('admin.login'));
     }
 
-    public function test_admin_can_view_client_list_and_metrics(): void
+    public function test_admin_can_log_in_via_form_and_view_client_list_and_metrics(): void
     {
         config()->set('wolforix.admin_auth.username', 'admin');
         config()->set('wolforix.admin_auth.password', 'secret');
@@ -1516,8 +1534,12 @@ class WolforixPlatformTest extends TestCase
             'account_status' => 'active',
         ]);
 
-        $this->withBasicAuth('admin', 'secret')
-            ->get(route('admin.clients.index'))
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->get(route('admin.clients.index'))
             ->assertOk()
             ->assertSee('Admin Review Trader')
             ->assertSee('Spain')
@@ -1527,8 +1549,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Paid')
             ->assertSee('View Metrics');
 
-        $this->withBasicAuth('admin', 'secret')
-            ->get(route('admin.clients.show', $user))
+        $this->get(route('admin.clients.show', $user))
             ->assertOk()
             ->assertSee('Admin Review Trader')
             ->assertSee('Billing Summary')
@@ -1536,6 +1557,358 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('$3,350.00')
             ->assertSee('Current Status')
             ->assertSee('Active');
+    }
+
+    public function test_admin_login_form_rejects_invalid_credentials(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        $this->from(route('admin.login'))
+            ->post(route('admin.login.store'), [
+                'username' => 'admin',
+                'password' => 'wrong-secret',
+            ])
+            ->assertRedirect(route('admin.login'))
+            ->assertSessionHasErrors('username');
+    }
+
+    public function test_admin_can_activate_a_pending_client_account_and_receive_mt5_metrics(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+        config()->set('services.mt5_ingestion.token', 'mt5-secret');
+
+        $user = User::factory()->create([
+            'name' => 'Pending Activation Trader',
+            'email' => 'pending-activation@example.com',
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'one-step-25000',
+            'name' => '1-Step 25K',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'entry_fee' => 159,
+            'profit_target' => 10,
+            'daily_loss_limit' => 4,
+            'max_loss_limit' => 8,
+            'steps' => 1,
+            'profit_share' => 80,
+            'first_payout_days' => 21,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'email' => $user->email,
+            'full_name' => $user->name,
+            'street_address' => 'Activation Street 25',
+            'city' => 'Madrid',
+            'postal_code' => '28001',
+            'country' => 'ES',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 199,
+            'discount_percent' => 20,
+            'discount_amount' => 40.00,
+            'final_price' => 159.00,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+            'external_checkout_id' => 'cs_pending_25000',
+            'external_payment_id' => 'pi_pending_25000',
+        ]);
+
+        $purchase = ChallengePurchase::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'account_status' => 'pending_activation',
+        ]);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'order_id' => $order->id,
+            'challenge_purchase_id' => $purchase->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'account_reference' => 'WFX-CT-25000-PEND',
+            'platform' => 'cTrader',
+            'platform_slug' => 'ctrader',
+            'platform_environment' => 'demo',
+            'platform_status' => 'pending_link',
+            'stage' => 'Challenge Step 1',
+            'status' => 'Pending Activation',
+            'account_type' => 'challenge',
+            'account_phase' => 'challenge',
+            'phase_index' => 1,
+            'account_status' => 'pending_activation',
+            'challenge_status' => 'pending_activation',
+            'starting_balance' => 25000,
+            'phase_starting_balance' => 25000,
+            'phase_reference_balance' => 25000,
+            'balance' => 25000,
+            'equity' => 25000,
+            'highest_equity_today' => 25000,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 2500,
+            'daily_drawdown_limit_percent' => 4,
+            'daily_drawdown_limit_amount' => 1000,
+            'max_drawdown_limit_percent' => 8,
+            'max_drawdown_limit_amount' => 2000,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 0,
+            'sync_status' => 'pending',
+        ]);
+
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->get(route('admin.clients.index'))
+            ->assertOk()
+            ->assertSee('Pending Activation Trader')
+            ->assertSee('Activate Account');
+
+        $this->post(route('admin.clients.activate', $user))
+            ->assertRedirect(route('admin.clients.index'))
+            ->assertSessionHas('status');
+
+        $account->refresh();
+        $purchase->refresh();
+
+        $this->assertSame('active', $account->account_status);
+        $this->assertSame('active', $account->challenge_status);
+        $this->assertSame('MT5', $account->platform);
+        $this->assertSame('mt5', $account->platform_slug);
+        $this->assertSame('awaiting_metrics', $account->platform_status);
+        $this->assertSame('single_phase', $account->account_phase);
+        $this->assertSame('Active', $account->status);
+        $this->assertNotNull($account->activated_at);
+        $this->assertNotEmpty($account->account_reference);
+        $this->assertSame('active', $purchase->account_status);
+
+        $this->assertDatabaseHas('trading_account_status_histories', [
+            'trading_account_id' => $account->id,
+            'new_status' => 'active',
+            'source' => 'admin_activation',
+        ]);
+
+        $this->postJson(
+            route('api.integrations.mt5.metrics', ['accountIdentifier' => $account->account_reference]),
+            [
+                'balance' => 25220,
+                'equity' => 25240,
+                'open_profit' => 20,
+                'timestamp' => now()->toIso8601String(),
+                'server_day' => now()->toDateString(),
+                'trade_count' => 1,
+                'has_activity' => true,
+            ],
+            [
+                'Authorization' => 'Bearer mt5-secret',
+            ],
+        )
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_reference', $account->account_reference)
+            ->assertJsonPath('challenge_status', 'active');
+    }
+
+    public function test_admin_activation_creates_a_challenge_account_when_one_does_not_exist(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        $user = User::factory()->create([
+            'name' => 'No Account Yet',
+            'email' => 'no-account-yet@example.com',
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'two-step-10000',
+            'name' => '2-Step 10K',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'entry_fee' => 109,
+            'profit_target' => 10,
+            'daily_loss_limit' => 5,
+            'max_loss_limit' => 10,
+            'steps' => 2,
+            'profit_share' => 80,
+            'first_payout_days' => 21,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'email' => $user->email,
+            'full_name' => $user->name,
+            'street_address' => '2 Step Street 10',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'paypal',
+            'base_price' => 129,
+            'discount_percent' => 15,
+            'discount_amount' => 20.00,
+            'final_price' => 109.00,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+            'external_checkout_id' => 'pp_two_step_10000',
+            'external_payment_id' => 'pp_txn_two_step_10000',
+        ]);
+
+        $purchase = ChallengePurchase::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'account_status' => 'pending_activation',
+        ]);
+
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->post(route('admin.clients.activate', $user))
+            ->assertRedirect(route('admin.clients.index'))
+            ->assertSessionHas('status');
+
+        $account = TradingAccount::query()
+            ->where('challenge_purchase_id', $purchase->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($account);
+        $this->assertSame('active', $account->account_status);
+        $this->assertSame('phase_1', $account->account_phase);
+        $this->assertSame(1, (int) $account->phase_index);
+        $this->assertSame(10000.0, (float) $account->starting_balance);
+        $this->assertSame(10000.0, (float) $account->balance);
+        $this->assertSame(10000.0, (float) $account->equity);
+        $this->assertSame(0, (int) $account->trading_days_completed);
+        $this->assertSame('admin_activation', $account->sync_source);
+        $this->assertNotEmpty($account->account_reference);
+    }
+
+    public function test_admin_activation_does_not_create_a_duplicate_active_account(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        $user = User::factory()->create([
+            'name' => 'Already Active Trader',
+            'email' => 'already-active@example.com',
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'one-step-5000',
+            'name' => '1-Step 5K',
+            'account_size' => 5000,
+            'currency' => 'USD',
+            'entry_fee' => 59,
+            'profit_target' => 10,
+            'daily_loss_limit' => 4,
+            'max_loss_limit' => 8,
+            'steps' => 1,
+            'profit_share' => 80,
+            'first_payout_days' => 21,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'email' => $user->email,
+            'full_name' => $user->name,
+            'street_address' => '1 Active Street',
+            'city' => 'Paris',
+            'postal_code' => '75001',
+            'country' => 'FR',
+            'challenge_type' => 'one_step',
+            'account_size' => 5000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 59,
+            'discount_percent' => 0,
+            'discount_amount' => 0,
+            'final_price' => 59,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+        ]);
+
+        $purchase = ChallengePurchase::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 5000,
+            'currency' => 'USD',
+            'account_status' => 'active',
+        ]);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'order_id' => $order->id,
+            'challenge_purchase_id' => $purchase->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 5000,
+            'account_reference' => 'WFX-MT5-5000-ACT',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'demo',
+            'platform_status' => 'awaiting_metrics',
+            'stage' => 'Single Phase',
+            'status' => 'Active',
+            'account_type' => 'challenge',
+            'account_phase' => 'single_phase',
+            'phase_index' => 1,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'starting_balance' => 5000,
+            'phase_starting_balance' => 5000,
+            'phase_reference_balance' => 5000,
+            'balance' => 5000,
+            'equity' => 5000,
+            'highest_equity_today' => 5000,
+            'minimum_trading_days' => 3,
+            'activated_at' => now(),
+        ]);
+
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->post(route('admin.clients.activate', $user))
+            ->assertRedirect(route('admin.clients.index'))
+            ->assertSessionHas('error');
+
+        $this->assertSame(1, TradingAccount::query()->where('challenge_purchase_id', $purchase->id)->count());
+        $this->assertSame('active', $account->fresh()->account_status);
     }
 
     public function test_trial_registration_creates_a_trial_account_and_dashboard(): void

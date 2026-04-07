@@ -8,18 +8,26 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminBasicAuth
 {
-    public function handle(Request $request, Closure $next): Response
+    public const SESSION_KEY = 'admin.authenticated';
+
+    public const USERNAME_KEY = 'admin.username';
+
+    public static function isAuthenticated(Request $request): bool
     {
         $username = (string) config('wolforix.admin_auth.username', 'admin');
-        $password = (string) config('wolforix.admin_auth.password', 'wolforix-admin');
-        $realm = (string) config('wolforix.admin_auth.realm', 'Wolforix Admin');
 
-        if ($request->getUser() === $username && $request->getPassword() === $password) {
+        return $request->session()->get(self::SESSION_KEY) === true
+            && $request->session()->get(self::USERNAME_KEY) === $username;
+    }
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (self::isAuthenticated($request)) {
             return $next($request);
         }
 
-        return response('Authentication required.', 401, [
-            'WWW-Authenticate' => sprintf('Basic realm="%s"', addslashes($realm)),
-        ]);
+        $request->session()->put('admin.intended', $request->fullUrl());
+
+        return redirect()->route('admin.login');
     }
 }

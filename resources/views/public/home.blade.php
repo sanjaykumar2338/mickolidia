@@ -63,35 +63,6 @@
         SVG,
     ];
     $mobileFeatureIcons = $featureIcons;
-    $trustIcons = [
-        <<<'SVG'
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75c-1.94 1.24-4.47 1.88-7.5 1.88v5.25c0 4.96 3.11 8.1 7.5 9.37 4.39-1.27 7.5-4.41 7.5-9.37V5.63c-3.03 0-5.56-.64-7.5-1.88Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 11.25 1.5 1.5 3-3.75" />
-        </svg>
-        SVG,
-        <<<'SVG'
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 12A4.5 4.5 0 0 1 12 7.5h7.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 4.5 19.5 7.5 16.5 10.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12A4.5 4.5 0 0 1 12 16.5H4.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 19.5 4.5 16.5 7.5 13.5" />
-        </svg>
-        SVG,
-        <<<'SVG'
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v16.5" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h9v9h-9z" />
-        </svg>
-        SVG,
-        <<<'SVG'
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z" />
-        </svg>
-        SVG,
-    ];
     $marketPulseImpactStyles = [
         'high' => 'border border-rose-400/24 bg-rose-500/12 text-rose-200',
         'medium' => 'border border-amber-300/24 bg-amber-400/12 text-amber-100',
@@ -221,7 +192,7 @@
             </div>
         </div>
 
-        <div class="mx-auto mt-10 hidden max-w-7xl gap-4 lg:grid lg:grid-cols-4">
+        <div class="mx-auto mt-8 hidden max-w-7xl gap-4 lg:grid lg:grid-cols-4">
             @foreach (trans('site.home.feature_cards') as $card)
                 <article class="surface-panel rounded-[2rem] p-6">
                     <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-400/20 bg-amber-400/10 text-amber-200 shadow-[0_18px_40px_rgba(244,183,74,0.12)]">
@@ -233,7 +204,7 @@
         </div>
     </section>
 
-    <section id="plans" class="px-6 pt-20 lg:px-8">
+    <section id="plans" class="px-6 pt-12 lg:px-8 lg:pt-14">
         <div class="mx-auto max-w-7xl">
             <span class="section-label">{{ __('site.home.plans.eyebrow') }}</span>
             <div class="mt-5 max-w-4xl">
@@ -262,7 +233,7 @@
                     data-default-size="{{ $defaultChallengeSize }}"
                     data-unlimited-label="{{ __('site.home.challenge_selector.unlimited') }}"
                     data-days-label="{{ __('site.home.days') }}"
-                    class="mt-10"
+                    class="mt-8"
                 >
                     <script type="application/json" data-challenge-catalog>@json($challengeCatalog)</script>
                     <script type="application/json" data-challenge-currencies>@json($currencies)</script>
@@ -446,14 +417,7 @@
         </div>
     </section>
 
-    @php
-        $trustItems = trans('site.home.trust.items');
-        $primaryTrustItems = array_slice(is_array($trustItems) ? $trustItems : [], 0, 4);
-        $secondaryTrustItems = trans('site.home.trust.support_items');
-        $secondaryTrustItems = is_array($secondaryTrustItems) ? $secondaryTrustItems : [];
-    @endphp
-
-    <section class="px-6 pt-20 lg:px-8">
+    <section class="px-6 pt-12 lg:px-8 lg:pt-14">
         <div class="mx-auto max-w-7xl">
             <div class="global-reach-panel surface-panel overflow-hidden rounded-[2rem] p-6 sm:p-7">
                 <div class="grid gap-8 xl:grid-cols-[0.9fr_1.1fr] xl:items-center">
@@ -512,54 +476,7 @@
         </div>
     </section>
 
-    <section class="px-6 pt-20 lg:px-8">
-        <div class="mx-auto max-w-7xl">
-            <div class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(17rem,0.72fr)] xl:items-start">
-                    <div class="max-w-3xl">
-                        <span class="section-label">{{ __('site.home.trust.eyebrow') }}</span>
-                        <h2 class="mt-4 text-2xl font-semibold text-white sm:text-[2rem]">{{ __('site.home.trust.title') }}</h2>
-                        <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">{{ __('site.home.trust.description') }}</p>
-
-                        <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                            @foreach ($primaryTrustItems as $item)
-                                <article class="rounded-[1.45rem] border border-white/8 bg-white/3 p-4">
-                                    <div class="flex items-start gap-3">
-                                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/18 bg-emerald-500/10 text-emerald-100">
-                                            {!! $trustIcons[$loop->index] ?? $trustIcons[0] !!}
-                                        </span>
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-semibold leading-6 text-white">{{ $item['title'] }}</p>
-                                            <p class="mt-1 text-xs leading-5 text-slate-400">{{ $item['description'] }}</p>
-                                        </div>
-                                    </div>
-                                </article>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="rounded-[1.6rem] border border-white/8 bg-white/3 p-5 xl:max-w-sm xl:justify-self-end">
-                        <a href="{{ route('security') }}" class="inline-flex rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                            {{ __('site.home.trust.cta') }}
-                        </a>
-
-                        @if ($secondaryTrustItems !== [])
-                            <ul class="mt-4 space-y-3">
-                                @foreach ($secondaryTrustItems as $item)
-                                    <li class="flex items-start gap-3 text-xs leading-5 text-slate-400">
-                                        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"></span>
-                                        <span>{{ $item }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="px-6 pt-20 lg:px-8">
+    <section class="px-6 pt-12 lg:px-8 lg:pt-14">
         <div class="mx-auto max-w-7xl">
             <div class="grid gap-8 xl:grid-cols-[0.94fr_1.06fr]">
                 <div>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\Admin\AdminChallengeActivationService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class AdminClientController extends Controller
@@ -55,6 +57,8 @@ class AdminClientController extends Controller
                 'payment_status' => $this->resolvePaymentStatus($user),
                 'order_date' => $this->resolveOrderDate($user),
                 'account_status' => $this->resolveAccountStatus($user),
+                'account_status_key' => $this->resolveAccountStatusKey($user),
+                'can_activate' => $this->canActivate($user),
             ],
             'metrics' => [
                 [
@@ -136,8 +140,32 @@ class AdminClientController extends Controller
         ]);
     }
 
+    public function activate(User $user, AdminChallengeActivationService $activationService): RedirectResponse
+    {
+        try {
+            $account = $activationService->activate($user);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('admin.clients.index')
+                ->with('error', __('site.admin.clients.activation_error', [
+                    'message' => $exception->getMessage(),
+                ]));
+        }
+
+        return redirect()
+            ->route('admin.clients.index')
+            ->with('status', __('site.admin.clients.activation_success', [
+                'name' => $user->name,
+                'reference' => $account->account_reference,
+            ]));
+    }
+
     private function clientTableRow(User $user): array
     {
+        $currentAccount = $this->currentTradingAccount($user);
+
         return [
             'id' => $user->id,
             'full_name' => $user->name,
@@ -149,6 +177,9 @@ class AdminClientController extends Controller
             'payment_status' => $this->resolvePaymentStatus($user),
             'order_date' => $this->resolveOrderDate($user),
             'account_status' => $this->resolveAccountStatus($user),
+            'account_status_key' => $this->resolveAccountStatusKey($user),
+            'account_reference' => $currentAccount?->account_reference,
+            'can_activate' => $this->canActivate($user),
         ];
     }
 
@@ -221,15 +252,25 @@ class AdminClientController extends Controller
 
     private function resolveAccountStatus(User $user): string
     {
+        return $this->humanizeStatus($this->resolveAccountStatusKey($user));
+    }
+
+    private function resolveAccountStatusKey(User $user): string
+    {
         $account = $this->currentTradingAccount($user);
         $purchaseStatus = $user->latestChallengePurchase?->account_status;
+        $challengeStatus = (string) ($account?->challenge_status ?? '');
+
+        if (in_array($challengeStatus, ['passed', 'failed'], true)) {
+            return $challengeStatus;
+        }
 
         if ($account?->account_status !== null && ($account->account_status !== 'pending_activation' || $purchaseStatus === null)) {
-            return $this->humanizeStatus((string) $account->account_status);
+            return (string) $account->account_status;
         }
 
         if ($purchaseStatus !== null) {
-            return $this->humanizeStatus((string) $purchaseStatus);
+            return (string) $purchaseStatus;
         }
 
         $status = $user->status;
@@ -240,7 +281,12 @@ class AdminClientController extends Controller
 
         $status ??= 'active';
 
-        return ucfirst(strtolower((string) $status));
+        return strtolower((string) $status);
+    }
+
+    private function canActivate(User $user): bool
+    {
+        return $this->resolveAccountStatusKey($user) === 'pending_activation';
     }
 
     private function resolveCountry(User $user): string

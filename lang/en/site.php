@@ -172,9 +172,9 @@ return [
                 'Unlimited evaluation duration',
             ],
             'currencies' => [
-                'USD' => 'US Dollar',
-                'EUR' => 'Euro',
-                'GBP' => 'British Pound',
+                'USD' => 'USD',
+                'EUR' => 'EUR',
+                'GBP' => 'GBP',
             ],
             'phase_titles' => [
                 'single_phase' => 'Single Phase',
@@ -489,11 +489,24 @@ return [
         'eyebrow' => 'Internal admin',
         'header_label' => 'Client management area',
         'back_to_site' => 'Back to site',
+        'logout' => 'Log out',
+        'login' => [
+            'eyebrow' => 'Protected access',
+            'title' => 'Admin Login',
+            'description' => 'Use the configured internal admin credentials to access client records, payment details, and challenge metrics from the Wolforix admin workspace.',
+            'username' => 'Username',
+            'password' => 'Password',
+            'submit' => 'Open admin panel',
+            'invalid' => 'The admin credentials are invalid.',
+            'logged_out' => 'You have been logged out of the admin panel.',
+        ],
         'clients' => [
             'title' => 'Clients',
             'description' => 'Track registered users, paid orders, billing details, payment providers, and account activation progress from one internal admin table.',
             'status_hint' => ':count clients loaded',
             'empty' => 'No registered clients found yet.',
+            'activation_success' => ':name is now active and ready for MT5 metrics as :reference.',
+            'activation_error' => 'Activation could not be completed: :message',
         ],
         'table' => [
             'full_name' => 'Full Name',
@@ -507,6 +520,9 @@ return [
             'account_status' => 'Account Status',
             'metrics' => 'Metrics',
             'view_metrics' => 'View Metrics',
+            'actions' => 'Actions',
+            'activate_account' => 'Activate Account',
+            'no_action' => 'No Action',
         ],
         'client_show' => [
             'title' => 'Client Metrics',

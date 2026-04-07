@@ -172,9 +172,9 @@ return [
                 'Unbegrenzte Evaluationsdauer',
             ],
             'currencies' => [
-                'USD' => 'US-Dollar',
-                'EUR' => 'Euro',
-                'GBP' => 'Britisches Pfund',
+                'USD' => 'USD',
+                'EUR' => 'EUR',
+                'GBP' => 'GBP',
             ],
             'phase_titles' => [
                 'single_phase' => 'Einzelphase',
@@ -489,11 +489,24 @@ return [
         'eyebrow' => 'Interner Adminbereich',
         'header_label' => 'Bereich fuer Kundenverwaltung',
         'back_to_site' => 'Zur Website',
+        'logout' => 'Abmelden',
+        'login' => [
+            'eyebrow' => 'Geschützter Zugang',
+            'title' => 'Admin-Login',
+            'description' => 'Nutze die hinterlegten internen Admin-Zugangsdaten, um im Wolforix-Adminbereich auf Kundendaten, Zahlungen und Challenge-Metriken zuzugreifen.',
+            'username' => 'Benutzername',
+            'password' => 'Passwort',
+            'submit' => 'Adminbereich öffnen',
+            'invalid' => 'Die Admin-Zugangsdaten sind ungültig.',
+            'logged_out' => 'Du wurdest aus dem Adminbereich abgemeldet.',
+        ],
         'clients' => [
             'title' => 'Kunden',
             'description' => 'Verfolge registrierte Nutzer, bezahlte Bestellungen, Rechnungsdaten, Zahlungsanbieter und den aktuellen Aktivierungsstatus in einer internen Admin-Tabelle.',
             'status_hint' => ':count Kunden geladen',
             'empty' => 'Noch keine registrierten Kunden gefunden.',
+            'activation_success' => ':name ist jetzt aktiv und als :reference fuer MT5-Metriken bereit.',
+            'activation_error' => 'Die Aktivierung konnte nicht abgeschlossen werden: :message',
         ],
         'table' => [
             'full_name' => 'Vollstaendiger Name',
@@ -507,6 +520,9 @@ return [
             'account_status' => 'Kontostatus',
             'metrics' => 'Metriken',
             'view_metrics' => 'Metriken ansehen',
+            'actions' => 'Aktionen',
+            'activate_account' => 'Konto aktivieren',
+            'no_action' => 'Keine Aktion',
         ],
         'client_show' => [
             'title' => 'Kundenmetriken',

@@ -10,6 +10,10 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="selection:bg-amber-400/30 selection:text-white">
+    @php
+        $adminAuthenticated = session(\App\Http\Middleware\AdminBasicAuth::SESSION_KEY, false) === true;
+    @endphp
+
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div class="absolute inset-0 grid-pattern opacity-25"></div>
         <div class="absolute left-[8%] top-[-8rem] h-[24rem] w-[24rem] rounded-full bg-sky-500/10 blur-3xl"></div>
@@ -32,9 +36,17 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-                    {{ __('site.admin.clients.title') }}
-                </a>
+                @if ($adminAuthenticated)
+                    <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                        {{ __('site.admin.clients.title') }}
+                    </a>
+                    <form method="POST" action="{{ route('admin.logout') }}">
+                        @csrf
+                        <button type="submit" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.admin.logout') }}
+                        </button>
+                    </form>
+                @endif
                 <a href="{{ route('home') }}" class="rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/16">
                     {{ __('site.admin.back_to_site') }}
                 </a>
@@ -44,6 +56,18 @@
 
     <main class="px-6 py-10 lg:px-8">
         <div class="mx-auto max-w-7xl">
+            @if (session('status'))
+                <div class="mb-6 rounded-[1.6rem] border border-emerald-400/20 bg-emerald-500/10 px-5 py-4 text-sm font-medium text-emerald-100">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-6 rounded-[1.6rem] border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm font-medium text-rose-100">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @yield('content')
         </div>
     </main>
