@@ -469,6 +469,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Apple Pay')
             ->assertSee('Google Pay')
             ->assertSee('Stay close to the Wolforix community')
+            ->assertSee('View full legal information')
+            ->assertSee('Open main navigation')
             ->assertSee('https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3', false)
             ->assertSee('https://www.instagram.com/wolforix', false)
             ->assertSee('https://t.me/wolforix', false)

@@ -1309,6 +1309,10 @@ return [
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Todos los derechos reservados.',
         'back_to_top' => 'Volver arriba',
+        'view_full_legal_information' => 'Ver información legal completa',
+        'quick_navigation_eyebrow' => 'Navegación rápida',
+        'quick_navigation' => 'Abrir navegación principal',
+        'contact_short' => 'Contacto',
     ],
 
     'cookie' => [

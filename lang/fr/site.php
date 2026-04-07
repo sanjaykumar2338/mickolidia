@@ -620,6 +620,10 @@ return array_replace_recursive($en, [
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Tous droits réservés.',
         'back_to_top' => 'Retour en haut',
+        'view_full_legal_information' => 'Voir toutes les informations légales',
+        'quick_navigation_eyebrow' => 'Navigation rapide',
+        'quick_navigation' => 'Ouvrir la navigation principale',
+        'contact_short' => 'Contact',
     ],
     'cookie' => [
         'title' => 'Avis cookies',
