@@ -126,6 +126,42 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('active', $account->challenge_status);
     }
 
+    public function test_metrics_endpoint_accepts_numeric_string_payloads_and_keeps_realized_profit_separate(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_reference' => 'WFX-CT-00001-STRINGY',
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer integration-secret',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => '10000.50',
+            'equity' => '10125.75',
+            'open_profit' => '125.25',
+            'trading_days' => '1',
+            'positions_count' => '2',
+            'has_activity' => 'true',
+            'phase' => 'single_phase',
+            'sync_trigger' => 'floating_pnl_change',
+            'server_time' => '2026-04-07 23:40:00',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('challenge_status', 'active')
+            ->assertJsonPath('trading_days_completed', 1);
+
+        $account->refresh();
+
+        $this->assertSame('10000.50', (string) $account->balance);
+        $this->assertSame('10125.75', (string) $account->equity);
+        $this->assertSame('125.25', (string) $account->profit_loss);
+        $this->assertSame('0.50', (string) $account->total_profit);
+        $this->assertSame('success', $account->sync_status);
+    }
+
     public function test_metrics_endpoint_returns_422_for_invalid_server_time_format(): void
     {
         $account = $this->createChallengeAccount('one_step');
@@ -266,11 +302,13 @@ class ChallengeDashboardTest extends TestCase
             'challenge_status' => 'failed',
             'account_status' => 'failed',
             'failure_reason' => 'daily_loss_breached',
+            'profit_loss' => -150,
             'daily_loss_used' => 500,
             'daily_drawdown_limit_amount' => 400,
             'max_drawdown_used' => 500,
             'max_drawdown_limit_amount' => 800,
             'trading_days_completed' => 2,
+            'last_synced_at' => now(),
             'last_evaluated_at' => now(),
             'sync_source' => 'mt5_ea',
         ]);
@@ -278,11 +316,14 @@ class ChallengeDashboardTest extends TestCase
         $this->actingAs($account->user)
             ->get(route('dashboard.accounts'))
             ->assertOk()
-            ->assertSee('Challenge status')
+            ->assertSee('MT5 live sync')
+            ->assertSee('Floating P&amp;L', false)
+            ->assertSee('Sync freshness')
+            ->assertSee('Challenge progress')
             ->assertSee('Failure reason')
             ->assertSee('Daily Loss Breached')
             ->assertSee('Single Phase')
-            ->assertSee('Sync source');
+            ->assertSee('MT5 EA');
     }
 
     public function test_dashboard_accounts_page_shows_empty_state_without_accounts(): void

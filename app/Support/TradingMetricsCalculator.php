@@ -22,7 +22,7 @@ class TradingMetricsCalculator
                 : round($equity - $balance, 2));
         $totalProfit = array_key_exists('total_profit', $snapshot)
             ? (float) $snapshot['total_profit']
-            : $profitLoss;
+            : round($balance - $startingBalance, 2);
         $todayProfit = (float) ($snapshot['today_profit'] ?? $account->today_profit ?? 0);
         $maxDrawdown = array_key_exists('max_drawdown', $snapshot)
             ? (float) $snapshot['max_drawdown']

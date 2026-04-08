@@ -15,6 +15,51 @@ use Illuminate\Validation\ValidationException;
 
 class TradingAccountMetricsController extends Controller
 {
+    private const DECIMAL_FIELDS = [
+        'balance',
+        'equity',
+        'open_profit',
+        'profit_loss',
+        'total_profit',
+        'today_profit',
+        'daily_drawdown',
+        'max_drawdown',
+        'highest_equity_today',
+        'daily_loss_used',
+        'daily_loss_limit',
+        'max_drawdown_used',
+        'max_drawdown_limit',
+        'volume',
+    ];
+
+    private const INTEGER_FIELDS = [
+        'trade_count',
+        'activity_count',
+        'trading_days',
+        'trading_days_completed',
+        'phase_index',
+        'positions_count',
+    ];
+
+    private const BOOLEAN_FIELDS = [
+        'has_activity',
+        'is_funded',
+    ];
+
+    private const TRIMMED_STRING_FIELDS = [
+        'platform_status',
+        'platform_environment',
+        'platform_account_id',
+        'platform_login',
+        'account_phase',
+        'phase',
+        'phase_label',
+        'challenge_id',
+        'challenge_status',
+        'sync_trigger',
+        'server_day',
+    ];
+
     public function __invoke(
         Request $request,
         string $accountIdentifier,
@@ -53,8 +98,10 @@ class TradingAccountMetricsController extends Controller
             'activity_count' => ['nullable', 'integer', 'min:0'],
             'has_activity' => ['nullable', 'boolean'],
             'volume' => ['nullable', 'numeric', 'min:0'],
+            'positions_count' => ['nullable', 'integer', 'min:0'],
             'phase_index' => ['nullable', 'integer', 'min:1'],
             'account_phase' => ['nullable', 'string', 'max:255'],
+            'sync_trigger' => ['nullable', 'string', 'max:255'],
             'trading_days_completed' => ['nullable', 'integer', 'min:0'],
             'is_funded' => ['nullable', 'boolean'],
             'raw' => ['nullable', 'array'],
@@ -62,12 +109,24 @@ class TradingAccountMetricsController extends Controller
 
         $account = $this->resolveAccount($accountIdentifier);
         $startedAt = now();
+        $syncTrigger = (string) ($validated['sync_trigger'] ?? 'timer');
+
+        Log::info('MT5 metrics update received.', [
+            'account_identifier' => $accountIdentifier,
+            'sync_trigger' => $syncTrigger,
+            'balance' => $validated['balance'],
+            'equity' => $validated['equity'],
+            'open_profit' => $validated['open_profit'] ?? null,
+            'positions_count' => $validated['positions_count'] ?? null,
+            'has_activity' => $validated['has_activity'] ?? null,
+            'timestamp' => $validated['timestamp'],
+        ]);
 
         $log = TradingAccountSyncLog::query()->create([
             'trading_account_id' => $account->id,
             'platform' => $account->platform_slug ?: 'mt5',
             'status' => 'started',
-            'message' => 'MT5 metrics update received.',
+            'message' => "MT5 metrics update received ({$syncTrigger}).",
             'started_at' => $startedAt,
             'payload' => $request->all(),
         ]);
@@ -83,9 +142,19 @@ class TradingAccountMetricsController extends Controller
 
             $log->forceFill([
                 'status' => 'success',
-                'message' => 'MT5 metrics applied successfully.',
+                'message' => "MT5 metrics applied successfully ({$syncTrigger}).",
                 'completed_at' => now(),
             ])->save();
+
+            Log::info('MT5 metrics update applied.', [
+                'account_identifier' => $accountIdentifier,
+                'account_reference' => $updatedAccount->account_reference,
+                'sync_trigger' => $syncTrigger,
+                'challenge_status' => $updatedAccount->challenge_status,
+                'phase_index' => (int) $updatedAccount->phase_index,
+                'trading_days_completed' => (int) $updatedAccount->trading_days_completed,
+                'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
+            ]);
 
             return response()->json([
                 'status' => 'ok',
@@ -102,7 +171,7 @@ class TradingAccountMetricsController extends Controller
 
             $log->forceFill([
                 'status' => 'error',
-                'message' => 'MT5 metrics update failed.',
+                'message' => "MT5 metrics update failed ({$syncTrigger}).",
                 'error_message' => $exception->getMessage(),
                 'completed_at' => now(),
             ])->save();
@@ -116,7 +185,16 @@ class TradingAccountMetricsController extends Controller
                 'last_sync_completed_at' => now(),
             ]);
 
-            throw $exception;
+            Log::error('MT5 metrics update failed.', [
+                'account_identifier' => $accountIdentifier,
+                'sync_trigger' => $syncTrigger,
+                'reason' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'MT5 metrics update failed.',
+            ], 500);
         }
     }
 
@@ -158,8 +236,10 @@ class TradingAccountMetricsController extends Controller
      */
     private function normalizePayload(array $payload, string $accountIdentifier): array
     {
+        $payload = $this->normalizeScalarFields($payload);
         $timestamp = $payload['timestamp'] ?? $payload['server_time'] ?? null;
         $accountPhase = $payload['account_phase'] ?? $payload['phase'] ?? null;
+        $serverDay = $payload['server_day'] ?? null;
 
         if ($timestamp !== null) {
             $sourceField = array_key_exists('timestamp', $payload) ? 'timestamp' : 'server_time';
@@ -171,6 +251,14 @@ class TradingAccountMetricsController extends Controller
                 if (($payload['server_day'] ?? null) === null) {
                     $payload['server_day'] = $parsedTimestamp->toDateString();
                 }
+            }
+        }
+
+        if ($serverDay !== null) {
+            $parsedServerDay = $this->parseDateValue($serverDay, 'server_day', $accountIdentifier);
+
+            if ($parsedServerDay instanceof Carbon) {
+                $payload['server_day'] = $parsedServerDay->toDateString();
             }
         }
 
@@ -193,8 +281,114 @@ class TradingAccountMetricsController extends Controller
         return $payload;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function normalizeScalarFields(array $payload): array
+    {
+        foreach (self::DECIMAL_FIELDS as $field) {
+            if (array_key_exists($field, $payload)) {
+                $payload[$field] = $this->normalizeDecimal($payload[$field]);
+            }
+        }
+
+        foreach (self::INTEGER_FIELDS as $field) {
+            if (array_key_exists($field, $payload)) {
+                $payload[$field] = $this->normalizeInteger($payload[$field]);
+            }
+        }
+
+        foreach (self::BOOLEAN_FIELDS as $field) {
+            if (array_key_exists($field, $payload)) {
+                $payload[$field] = $this->normalizeBoolean($payload[$field]);
+            }
+        }
+
+        foreach (self::TRIMMED_STRING_FIELDS as $field) {
+            if (array_key_exists($field, $payload)) {
+                $payload[$field] = $this->normalizeString($payload[$field]);
+            }
+        }
+
+        return $payload;
+    }
+
+    private function normalizeDecimal(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return null;
+            }
+
+            if (is_numeric($value)) {
+                return (float) $value;
+            }
+        }
+
+        return $value;
+    }
+
+    private function normalizeInteger(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return null;
+            }
+
+            if (is_numeric($value)) {
+                return (int) $value;
+            }
+        }
+
+        return $value;
+    }
+
+    private function normalizeBoolean(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $normalized = filter_var(trim($value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        return $value;
+    }
+
+    private function normalizeString(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
     private function parseServerTime(mixed $value, string $sourceField, string $accountIdentifier): ?Carbon
     {
+        return $this->parseDateValue($value, $sourceField, $accountIdentifier, [
+            'Y.m.d H:i:s',
+            'Y-m-d H:i:s',
+        ]);
+    }
+
+    /**
+     * @param  list<string>  $formats
+     */
+    private function parseDateValue(
+        mixed $value,
+        string $sourceField,
+        string $accountIdentifier,
+        array $formats = ['Y.m.d', 'Y-m-d'],
+    ): ?Carbon {
         if ($value instanceof Carbon) {
             return $value;
         }
@@ -208,10 +402,6 @@ class TradingAccountMetricsController extends Controller
         }
 
         $rawValue = trim($value);
-        $formats = [
-            'Y.m.d H:i:s',
-            'Y-m-d H:i:s',
-        ];
 
         foreach ($formats as $format) {
             try {

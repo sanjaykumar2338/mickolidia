@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Pricing\ChallengePricingService;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -122,6 +123,8 @@ class DashboardController extends Controller
     {
         $plan = $this->planDefinitionForAccount($account);
         $fundedTiming = $this->fundedTiming($account, $plan);
+        $syncFreshness = $this->syncFreshness($account->last_synced_at);
+        $phaseProfit = round((float) $account->balance - (float) ($account->phase_reference_balance ?: $account->starting_balance ?: 0), 2);
 
         return [
             'reference' => $account->account_reference ?? 'N/A',
@@ -130,6 +133,7 @@ class DashboardController extends Controller
             'challenge_phase' => $this->phaseLabel($account),
             'account_size' => $this->formatMoney((float) $account->account_size),
             'platform' => $account->platform,
+            'platform_slug' => $account->platform_slug,
             'stage' => $account->stage,
             'status' => $account->status,
             'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status)),
@@ -141,11 +145,16 @@ class DashboardController extends Controller
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
+            'sync_freshness' => $syncFreshness['label'],
+            'sync_freshness_hint' => $syncFreshness['hint'],
+            'sync_freshness_tone' => $syncFreshness['tone'],
             'balance' => $this->formatMoney((float) $account->balance),
             'starting_balance' => $this->formatMoney((float) $account->starting_balance),
             'equity' => $this->formatMoney((float) $account->equity),
+            'floating_pnl' => $this->formatMoney((float) $account->profit_loss),
+            'floating_pnl_tone' => $this->metricTone((float) $account->profit_loss),
             'total_profit' => $this->formatMoney((float) $account->total_profit),
-            'phase_profit' => $this->formatMoney((float) $account->total_profit),
+            'phase_profit' => $this->formatMoney($phaseProfit),
             'today_profit' => $this->formatMoney((float) $account->today_profit),
             'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
             'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
@@ -165,7 +174,7 @@ class DashboardController extends Controller
             'payout_eligible_at' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
-            'sync_source' => $account->sync_source ? $this->humanizeStatus((string) $account->sync_source) : 'Not available',
+            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'Not available',
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'payout_cycle_days' => $fundedTiming['payout_cycle_days'],
             'first_payout_days' => $fundedTiming['first_payout_days'],
@@ -204,22 +213,24 @@ class DashboardController extends Controller
                     'hint' => 'No challenge account linked yet.',
                 ],
                 [
-                    'label' => __('site.dashboard.cards.total_profit'),
+                    'label' => 'Equity',
                     'value' => $this->formatMoney(0),
-                    'hint' => 'Profit metrics will appear after the first sync.',
+                    'hint' => 'Equity appears after the first MT5 snapshot.',
                 ],
                 [
-                    'label' => __('site.dashboard.cards.today_profit'),
+                    'label' => 'Floating P&L',
                     'value' => $this->formatMoney(0),
-                    'hint' => 'Today\'s result is unavailable until the account starts syncing.',
+                    'hint' => 'Open-position profit appears after the first live update.',
                 ],
                 [
-                    'label' => __('site.dashboard.cards.drawdown'),
-                    'value' => '0.0%',
-                    'hint' => 'Risk tracking activates after account provisioning.',
+                    'label' => 'Sync freshness',
+                    'value' => 'Awaiting sync',
+                    'hint' => 'The first successful MT5 update will mark this account as live.',
                 ],
             ];
         }
+
+        $syncFreshness = $this->syncFreshness($account->last_synced_at);
 
         return [
             [
@@ -228,19 +239,19 @@ class DashboardController extends Controller
                 'hint' => 'Latest synced account balance.',
             ],
             [
-                'label' => __('site.dashboard.cards.total_profit'),
-                'value' => $this->formatMoney((float) $account->total_profit),
-                'hint' => 'Total realized account performance versus the starting balance.',
+                'label' => 'Equity',
+                'value' => $this->formatMoney((float) $account->equity),
+                'hint' => 'Current MT5 equity including open trade exposure.',
             ],
             [
-                'label' => __('site.dashboard.cards.today_profit'),
-                'value' => $this->formatMoney((float) $account->today_profit),
-                'hint' => 'Today\'s tracked result from the most recent sync.',
+                'label' => 'Floating P&L',
+                'value' => $this->formatMoney((float) $account->profit_loss),
+                'hint' => 'Open-position floating profit or loss from the latest sync.',
             ],
             [
-                'label' => __('site.dashboard.cards.drawdown'),
-                'value' => number_format((float) $account->drawdown_percent, 1).'%',
-                'hint' => 'Maximum tracked drawdown against the account start balance.',
+                'label' => 'Sync freshness',
+                'value' => $syncFreshness['label'],
+                'hint' => $syncFreshness['hint'],
             ],
         ];
     }
@@ -260,6 +271,20 @@ class DashboardController extends Controller
                     'Paid challenges: '.$purchaseCount,
                     'Platform: cTrader',
                     'Sync status: waiting for account link',
+                ],
+            ];
+        }
+
+        if ($account->platform_slug === 'mt5') {
+            $syncFreshness = $this->syncFreshness($account->last_synced_at);
+
+            return [
+                'title' => 'MT5 live sync',
+                'message' => 'Balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.',
+                'meta' => [
+                    'Sync freshness: '.$syncFreshness['label'],
+                    'Last sync: '.$this->formatDateTime($account->last_synced_at),
+                    'Data source: '.$this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea')),
                 ],
             ];
         }
@@ -297,34 +322,44 @@ class DashboardController extends Controller
      */
     private function accountCardPayload(TradingAccount $account): array
     {
+        $syncFreshness = $this->syncFreshness($account->last_synced_at);
+
         return [
             'id' => $account->id,
             'reference' => $account->account_reference ?? 'N/A',
             'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
             'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
             'challenge_phase' => $this->phaseLabel($account),
+            'platform_slug' => $account->platform_slug,
             'account_size' => $this->formatMoney((float) $account->account_size),
             'status' => $this->humanizeStatus((string) ($account->account_status ?: $account->status ?: 'active')),
             'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
             'stage' => $account->stage,
             'balance' => $this->formatMoney((float) $account->balance),
             'equity' => $this->formatMoney((float) $account->equity),
+            'floating_pnl' => $this->formatMoney((float) $account->profit_loss),
+            'floating_pnl_tone' => $this->metricTone((float) $account->profit_loss),
             'progress' => number_format((float) $account->profit_target_progress_percent, 0).'%',
             'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
+            'sync_freshness' => $syncFreshness['label'],
+            'sync_freshness_hint' => $syncFreshness['hint'],
+            'sync_freshness_tone' => $syncFreshness['tone'],
             'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
             'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
             'daily_loss_used' => $this->formatMoney((float) $account->daily_loss_used),
+            'daily_loss_limit' => $this->formatMoney((float) $account->daily_drawdown_limit_amount),
             'daily_loss_remaining' => $this->formatMoney(max((float) $account->daily_drawdown_limit_amount - (float) $account->daily_loss_used, 0)),
             'max_drawdown_used' => $this->formatMoney((float) $account->max_drawdown_used),
+            'max_drawdown_limit' => $this->formatMoney((float) $account->max_drawdown_limit_amount),
             'max_drawdown_remaining' => $this->formatMoney(max((float) $account->max_drawdown_limit_amount - (float) $account->max_drawdown_used, 0)),
             'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
             'platform_environment' => strtoupper((string) ($account->platform_environment ?: 'pending')),
             'platform_account_id' => $account->platform_account_id ?: 'Link pending',
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
-            'sync_source' => $account->sync_source ? $this->humanizeStatus((string) $account->sync_source) : 'Not available',
+            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'Not available',
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
         ];
@@ -469,6 +504,79 @@ class DashboardController extends Controller
     private function humanizeStatus(string $status): string
     {
         return str($status)->replace('_', ' ')->title()->toString();
+    }
+
+    /**
+     * @return array{label:string,hint:string,tone:string}
+     */
+    private function syncFreshness(mixed $value): array
+    {
+        if (! $value instanceof \DateTimeInterface) {
+            return [
+                'label' => 'Awaiting first sync',
+                'hint' => 'No MT5 snapshot has been received yet.',
+                'tone' => 'slate',
+            ];
+        }
+
+        $timestamp = Carbon::instance($value);
+        $seconds = now()->diffInSeconds($timestamp);
+        $liveSeconds = max((int) config('trading.platforms.mt5.freshness.live_seconds', 15), 1);
+        $recentSeconds = max((int) config('trading.platforms.mt5.freshness.recent_seconds', 60), $liveSeconds);
+        $relative = $this->formatRelativeAge($timestamp);
+
+        if ($seconds <= $liveSeconds) {
+            return [
+                'label' => 'Live now',
+                'hint' => "Updated {$relative}.",
+                'tone' => 'emerald',
+            ];
+        }
+
+        if ($seconds <= $recentSeconds) {
+            return [
+                'label' => 'Synced recently',
+                'hint' => "Updated {$relative}.",
+                'tone' => 'amber',
+            ];
+        }
+
+        return [
+            'label' => 'Sync delayed',
+            'hint' => "Updated {$relative}.",
+            'tone' => 'rose',
+        ];
+    }
+
+    private function formatRelativeAge(\DateTimeInterface $value): string
+    {
+        $seconds = max(now()->diffInSeconds($value), 0);
+
+        return match (true) {
+            $seconds < 60 => $seconds.'s ago',
+            $seconds < 3600 => floor($seconds / 60).'m ago',
+            $seconds < 86400 => floor($seconds / 3600).'h ago',
+            default => floor($seconds / 86400).'d ago',
+        };
+    }
+
+    private function metricTone(float $value): string
+    {
+        return match (true) {
+            $value > 0.009 => 'emerald',
+            $value < -0.009 => 'rose',
+            default => 'slate',
+        };
+    }
+
+    private function sourceLabel(string $source): string
+    {
+        return match ($source) {
+            'mt5_ea' => 'MT5 EA',
+            'ctrader_api' => 'cTrader API',
+            'platform_sync' => 'Platform Sync',
+            default => $this->humanizeStatus($source),
+        };
     }
 
     private function formatDateTime(mixed $value): string
