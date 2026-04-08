@@ -220,8 +220,8 @@ return [
         ],
         'plans' => [
             'eyebrow' => 'Planes de challenge',
-            'title' => 'Obtén funding y empieza a generar beneficios desde tu primer payout.',
-            'description' => 'Elige tu modelo, supera la evaluación y accede a capital real con reglas claras y payouts rápidos.',
+            'title' => 'Opera más de 1.000 instrumentos en MT5',
+            'description' => 'Todos los instrumentos disponibles en tu cuenta MT5 son totalmente compatibles y se supervisan automáticamente.',
             'platform_label' => 'Plataforma',
             'platform_value' => 'MT5',
             'badge' => 'Modelos finales listos para lanzamiento',

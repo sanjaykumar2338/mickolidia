@@ -208,7 +208,10 @@
         <div class="mx-auto max-w-7xl">
             <span class="section-label">{{ __('site.home.plans.eyebrow') }}</span>
             <div class="mt-5 max-w-4xl">
-                <p class="text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.5rem]">
+                <h2 class="text-4xl font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl lg:text-[3.5rem]">
+                    {{ __('site.home.plans.title') }}
+                </h2>
+                <p class="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
                     {{ __('site.home.plans.description') }}
                 </p>
                 <div class="mt-6 inline-flex items-center gap-4 rounded-[1.4rem] border border-white/8 bg-white/4 px-4 py-3 sm:px-5">

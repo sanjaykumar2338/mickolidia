@@ -136,8 +136,8 @@ return array_replace_recursive($en, [
         ],
         'plans' => [
             'eyebrow' => 'Plans Challenge',
-            'title' => 'Obtenez un compte funded et commencez à gagner dès votre tout premier payout.',
-            'description' => 'Choisissez votre modèle, réussissez l’évaluation et accédez à un capital réel avec des règles claires et des payouts rapides.',
+            'title' => 'Tradez plus de 1 000 instruments sur MT5',
+            'description' => 'Tous les instruments disponibles sur votre compte MT5 sont entièrement pris en charge et automatiquement suivis.',
             'platform_label' => 'Plateforme',
             'platform_value' => 'MT5',
             'badge' => 'Modèles prêts pour le lancement',
