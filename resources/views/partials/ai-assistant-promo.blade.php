@@ -23,19 +23,6 @@
                         {{ __('site.ai_assistant.multi_language') }}
                     </div>
 
-                    <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                        @foreach (trans('site.ai_assistant.features') as $feature)
-                            <div class="flex items-start gap-3 rounded-[1.4rem] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
-                                <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/12 text-amber-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" />
-                                    </svg>
-                                </span>
-                                <span>{{ $feature }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-
                     <div class="mt-6 flex flex-wrap items-center gap-4">
                         <button type="button" data-wolfi-launch class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.ai_assistant.start_chat') }}
@@ -65,7 +52,7 @@
                                     data-wolfi-question="{{ $question }}"
                                     class="assistant-question-link flex items-center justify-between gap-4 rounded-[1.4rem] px-4 py-3 text-left"
                                 >
-                                    <span class="text-sm font-medium text-slate-100">{{ $question }}</span>
+                                    <span class="min-w-0 text-sm font-medium text-slate-100">{{ $question }}</span>
                                     <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-400/22 bg-amber-400/10 text-amber-200">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />

@@ -40,13 +40,6 @@ return [
         'preview_title' => 'Pregunta antes de comprar',
         'preview_badge' => '24/7',
         'preview_copy' => 'Abre el asistente para obtener claridad inmediata sobre reglas, trading en noticias, límites de drawdown, tiempos de payout y el challenge que mejor encaja contigo.',
-        'features' => [
-            'Soporte instantáneo 24/7',
-            'Capacidad multilenguaje',
-            'Explicación instantánea de las reglas del challenge',
-            'Guía de trading y riesgo',
-            'Asistencia personalizada',
-        ],
         'example_questions' => [
             '¿Puedo operar durante noticias?',
             '¿Qué pasa si llego al drawdown máximo?',
@@ -1284,8 +1277,16 @@ return [
     'footer' => [
         'disclaimer_title' => 'Entorno simulado',
         'legal_copy' => [
-            'Wolforix Ltd. opera como una empresa de evaluación y educación en trading propietario. Todas las actividades de trading se realizan en un entorno simulado con fondos virtuales y no representan participación real en el mercado.',
-            'Wolforix no ofrece servicios de broker, asesoramiento de inversión ni gestión de carteras. La empresa no acepta depósitos, no mantiene fondos de clientes y no ejecuta operaciones en nombre de los usuarios.',
+            'Wolforix Ltd. es una empresa registrada en el Reino Unido (Company Number: 17111904), con domicilio social en Suite RA01, 195-197 Wood Street, London, E17 3NU. Wolforix opera como plataforma de evaluacion y educacion en trading propietario.',
+            'Todos los servicios prestados por Wolforix se realizan exclusivamente en un entorno de trading simulado utilizando fondos virtuales. Estos fondos no tienen valor real, no son retirables y no representan capital real. Wolforix no es un broker ni una institucion financiera, y no proporciona servicios de inversion, asesoramiento financiero ni gestion de activos.',
+            'Nada de lo mostrado en esta plataforma constituye asesoramiento de inversion ni una oferta para comprar o vender instrumentos financieros. Los resultados obtenidos en entornos simulados no garantizan resultados futuros en mercados reales y pueden diferir de forma significativa de los resultados reales de trading.',
+            'Cualquier rendimiento mostrado, incluidos los payouts, es puramente ilustrativo y esta sujeto a las condiciones especificas del programa. Todos los payouts estan sujetos a verificacion, incluidos controles internos de seguridad, medidas antifraude y procedimientos de verificacion de identidad.',
+            'Wolforix se reserva el derecho de solicitar documentacion adicional, revisar cuentas, ajustar resultados, denegar payouts, cancelar beneficios o suspender y/o cerrar cuentas en caso de incumplimiento de sus terminos o deteccion de actividad irregular.',
+            'Nuestros servicios no estan disponibles en jurisdicciones donde su uso infrinja leyes o normativas aplicables. Es responsabilidad del usuario asegurarse de cumplir con las leyes locales.',
+            'Podemos compartir informacion con terceros proveedores estrictamente necesarios para el funcionamiento de la plataforma, incluidos servicios de pago, proveedores de infraestructura o servicios de verificacion, de acuerdo con la normativa aplicable de proteccion de datos.',
+            'Wolforix no garantiza la disponibilidad continua o ininterrumpida de sus servicios y no ofrece garantias expresas ni implicitas. Wolforix no sera responsable de ningun dano directo, indirecto o consecuente derivado del uso de la plataforma.',
+            'Wolforix se reserva el derecho de modificar estos terminos y politicas en cualquier momento.',
+            'Al utilizar este sitio web, aceptas nuestros Terminos y Condiciones, Politica de Privacidad, Politica de Payout, Politica de Reembolso y todos los documentos legales relacionados.',
         ],
         'legal_title' => 'Legal y políticas',
         'security_title' => 'Confianza y Seguridad',

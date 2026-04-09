@@ -49,9 +49,6 @@
 
     @include('partials.public-footer')
     @include('partials.back-to-top')
-    @unless (request()->routeIs('checkout.*', 'login', 'password.*'))
-        @include('partials.floating-footer-nav')
-    @endunless
     @include('partials.floating-ai-assistant')
     @include('partials.fixed-disclaimer')
 </body>

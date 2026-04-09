@@ -28,10 +28,10 @@ return [
     'ai_assistant' => [
         'name' => 'Wolfi',
         'eyebrow' => 'AI Assistant',
-        'title' => 'Talk to Your AI Assistant',
-        'description' => 'Get instant answers, platform guidance, and trading support in seconds.',
+        'title' => 'Talk with Wolfi — Your Wolforix Assistant',
+        'description' => 'Real-time trading guidance, rules clarity and account insights — instantly.',
         'multi_language' => 'Automatic language-aware support',
-        'start_chat' => 'Start Chat',
+        'start_chat' => 'Open Wolfi Assistant',
         'floating_label' => 'Open Wolfi',
         'floating_cta' => 'Ask Wolfi',
         'floating_aria' => 'Open Wolfi, the AI assistant',
@@ -40,13 +40,6 @@ return [
         'preview_title' => 'Ask before you buy',
         'preview_badge' => '24/7',
         'preview_copy' => 'Open the assistant for instant clarity on rules, news trading, drawdown limits, payout timing, and which challenge fits your profile.',
-        'features' => [
-            '24/7 instant support',
-            'Multi-language capability',
-            'Instant explanation of challenge rules',
-            'Trading and risk guidance',
-            'Personalized assistance',
-        ],
         'example_questions' => [
             'Can I trade during news?',
             'What happens if I hit max drawdown?',

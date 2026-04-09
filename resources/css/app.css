@@ -795,6 +795,7 @@ h6 {
 }
 
 .launch-popup-card {
+    width: min(100%, 34rem);
     animation: popupRise 0.35s ease-out both;
 }
 
@@ -1098,6 +1099,7 @@ h6 {
 
 .assistant-question-link {
     position: relative;
+    min-width: 0;
     overflow: hidden;
     isolation: isolate;
     border: 1px solid rgba(148, 163, 184, 0.12);
@@ -1108,6 +1110,11 @@ h6 {
         box-shadow 0.24s ease,
         background-color 0.24s ease,
         filter 0.24s ease;
+}
+
+.assistant-question-link > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .assistant-question-link::after {
@@ -1465,6 +1472,11 @@ h6 {
         box-shadow 0.32s ease,
         border-color 0.32s ease;
     will-change: transform, opacity;
+}
+
+.wolfi-modal-card h2,
+.wolfi-modal-card p {
+    overflow-wrap: anywhere;
 }
 
 .wolfi-modal-card::before,
@@ -1895,6 +1907,7 @@ h6 {
 }
 
 .wolfi-answer-question {
+    overflow-wrap: anywhere;
     transition:
         opacity 0.24s ease,
         transform 0.24s ease;
@@ -1907,6 +1920,11 @@ h6 {
 
 .wolfi-answer-text {
     min-height: 4.5rem;
+    overflow-wrap: anywhere;
+}
+
+.wolfi-status {
+    overflow-wrap: anywhere;
 }
 
 .wolfi-answer-text.is-revealing {

@@ -37,7 +37,7 @@
 
     <div class="wolfi-modal-card" data-wolfi-card>
         <div class="flex items-start justify-between gap-4">
-            <div class="flex items-start gap-4">
+            <div class="flex min-w-0 items-start gap-4">
                 <div class="wolfi-avatar-shell shrink-0" data-wolfi-stage="avatar">
                     <video
                         data-wolfi-avatar-video
@@ -54,7 +54,7 @@
                     </video>
                 </div>
 
-                <div class="max-w-xl" data-wolfi-stage="intro">
+                <div class="min-w-0 max-w-xl" data-wolfi-stage="intro">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.ai_assistant.name') }}</p>
                     <h2 id="wolfi-modal-title" class="mt-3 text-2xl font-semibold text-white sm:text-[2.1rem]">{{ __('site.contact.voice_title') }}</h2>
                     <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-300 sm:text-[15px]">{{ __('site.contact.voice_copy') }}</p>

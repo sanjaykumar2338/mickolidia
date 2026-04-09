@@ -212,7 +212,7 @@
 
     <div data-voice-answer class="wolfi-answer-card mt-5 rounded-[1.6rem] border border-white/8 bg-slate-950/80 p-5" data-voice-stage="answer">
         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.contact.voice_answer_title') }}</p>
-        <p data-voice-answer-question class="wolfi-answer-question mt-3 text-lg font-semibold text-white">{{ __('site.contact.voice_empty') }}</p>
+        <p data-voice-answer-question class="wolfi-answer-question mt-3 text-lg font-semibold text-white break-words">{{ __('site.contact.voice_empty') }}</p>
         <p data-voice-answer-text class="wolfi-answer-text mt-3 text-sm leading-7 text-slate-300" aria-live="polite" aria-atomic="true"></p>
     </div>
 
@@ -237,7 +237,7 @@
                         class="assistant-question-link wolfi-suggestion-chip flex items-center justify-between gap-4 rounded-[1.4rem] px-4 py-3 text-left"
                         style="--wolfi-delay: {{ $loop->index * 70 }}ms;"
                     >
-                        <span class="text-sm font-medium text-slate-100">{{ $question }}</span>
+                        <span class="min-w-0 text-sm font-medium text-slate-100">{{ $question }}</span>
                         <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber-400/22 bg-amber-400/10 text-amber-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6" />

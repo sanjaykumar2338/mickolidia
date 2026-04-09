@@ -419,9 +419,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const launchPopup = document.querySelector('[data-launch-popup]');
 
-    if (launchPopup instanceof HTMLElement && !launchPopup.classList.contains('hidden')) {
+    if (launchPopup instanceof HTMLElement) {
         const ignoreForm = document.getElementById('launch-offer-ignore-form');
         const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
+        const popupDelay = Number.parseInt(launchPopup.dataset.launchPopupDelay ?? '10000', 10);
+        const resolvedPopupDelay = Number.isFinite(popupDelay) && popupDelay >= 0 ? popupDelay : 10000;
+        const showLaunchPopup = () => {
+            launchPopup.style.display = 'flex';
+            launchPopup.setAttribute('aria-hidden', 'false');
+        };
+        const isLaunchPopupVisible = () => launchPopup.style.display !== 'none';
+        const launchPopupTimer = window.setTimeout(showLaunchPopup, resolvedPopupDelay);
+
+        window.addEventListener('pagehide', () => {
+            window.clearTimeout(launchPopupTimer);
+        }, { once: true });
 
         closeButtons.forEach((button) => {
             if (!(button instanceof HTMLButtonElement)) {
@@ -439,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && ignoreForm instanceof HTMLFormElement) {
+            if (event.key === 'Escape' && isLaunchPopupVisible() && ignoreForm instanceof HTMLFormElement) {
                 ignoreForm.requestSubmit();
             }
         });

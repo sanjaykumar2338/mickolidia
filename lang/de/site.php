@@ -40,13 +40,6 @@ return [
         'preview_title' => 'Fragen klären, bevor du kaufst',
         'preview_badge' => '24/7',
         'preview_copy' => 'Öffne den Assistenten für schnelle Antworten zu Regeln, News-Trading, Drawdown-Limits, Auszahlungszeiten und dem passenden Challenge-Modell.',
-        'features' => [
-            'Sofort-Hilfe rund um die Uhr',
-            'Mehrsprachige Unterstützung',
-            'Klare Erklärungen zu den Challenge-Regeln',
-            'Hinweise zu Trading und Risiko',
-            'Personalisierte Unterstützung',
-        ],
         'example_questions' => [
             'Kann ich während News traden?',
             'Was passiert, wenn ich den maximalen Drawdown erreiche?',
@@ -1284,8 +1277,16 @@ return [
     'footer' => [
         'disclaimer_title' => 'Simulierte Umgebung',
         'legal_copy' => [
-            'Wolforix Ltd. arbeitet als Unternehmen für proprietäre Trading-Evaluation und Ausbildung. Alle Handelsaktivitäten werden in einer simulierten Umgebung mit virtuellen Geldern durchgeführt und stellen keine echte Marktteilnahme dar.',
-            'Wolforix bietet keine Brokerage-Dienstleistungen, Anlageberatung oder Portfolioverwaltung an. Das Unternehmen nimmt keine Einlagen an, hält keine Kundengelder und führt keine Trades im Namen von Nutzern aus.',
+            'Wolforix Ltd. ist ein im Vereinigten Koenigreich eingetragenes Unternehmen (Company Number: 17111904) mit Sitz in Suite RA01, 195-197 Wood Street, London, E17 3NU. Wolforix arbeitet als Plattform fuer proprietaere Trading-Evaluation und Ausbildung.',
+            'Alle von Wolforix angebotenen Leistungen werden ausschliesslich in einer simulierten Trading-Umgebung mit virtuellen Geldern erbracht. Diese Gelder haben keinen realen Wert, sind nicht auszahlbar und stellen kein echtes Kapital dar. Wolforix ist weder Broker noch Finanzinstitut und bietet keine Investmentdienstleistungen, Finanzberatung oder Vermoegensverwaltung an.',
+            'Nichts auf dieser Plattform stellt eine Anlageberatung oder ein Angebot zum Kauf oder Verkauf von Finanzinstrumenten dar. Ergebnisse aus simulierten Umgebungen garantieren keine zukuenftigen Ergebnisse an realen Maerkten und koennen erheblich von echten Trading-Ergebnissen abweichen.',
+            'Jede dargestellte Performance, einschliesslich Payouts, dient ausschliesslich der Veranschaulichung und unterliegt den spezifischen Bedingungen des Programms. Alle Payouts unterliegen einer Pruefung, einschliesslich interner Sicherheitskontrollen, Betrugspraevention und Verfahren zur Identitaetspruefung.',
+            'Wolforix behaelt sich das Recht vor, zusaetzliche Unterlagen anzufordern, Konten zu pruefen, Ergebnisse anzupassen, Payouts abzulehnen, Gewinne zu stornieren oder Konten bei Verstoss gegen die Bedingungen oder bei Feststellung unregelmaessiger Aktivitaeten auszusetzen und/oder zu beenden.',
+            'Unsere Leistungen sind in Rechtsgebieten nicht verfuegbar, in denen ihre Nutzung gegen geltende Gesetze oder Vorschriften verstossen wuerde. Es liegt in der Verantwortung des Nutzers, die Einhaltung lokaler Gesetze sicherzustellen.',
+            'Wir koennen Informationen mit Drittanbietern teilen, soweit dies fuer den Betrieb der Plattform unbedingt erforderlich ist, einschliesslich Zahlungsdiensten, Infrastruktur-Anbietern oder Verifizierungsdiensten, im Einklang mit den geltenden Datenschutzgesetzen.',
+            'Wolforix garantiert keine fortlaufende oder unterbrechungsfreie Verfuegbarkeit seiner Leistungen und uebernimmt keine ausdruecklichen oder stillschweigenden Garantien. Wolforix haftet nicht fuer direkte, indirekte oder Folgeschaeden, die aus der Nutzung der Plattform entstehen.',
+            'Wolforix behaelt sich das Recht vor, diese Bedingungen und Richtlinien jederzeit zu aendern.',
+            'Mit der Nutzung dieser Website stimmst du unseren Allgemeinen Geschaeftsbedingungen, unserer Datenschutzrichtlinie, unserer Payout-Richtlinie, unserer Rueckerstattungsrichtlinie und allen damit verbundenen rechtlichen Dokumenten zu.',
         ],
         'legal_title' => 'Rechtliches & Richtlinien',
         'security_title' => 'Vertrauen & Sicherheit',

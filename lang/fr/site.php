@@ -37,13 +37,6 @@ return array_replace_recursive($en, [
         'preview_title' => 'Posez vos questions avant d’acheter',
         'preview_badge' => '24/7',
         'preview_copy' => 'Ouvrez l’assistant pour obtenir rapidement des réponses sur les règles, le news trading, les limites de drawdown, le payout et le challenge qui vous convient.',
-        'features' => [
-            'Support instantané 24/7',
-            'Capacité multilingue',
-            'Explication immédiate des règles du challenge',
-            'Guidance trading et risque',
-            'Assistance personnalisée',
-        ],
         'example_questions' => [
             'Puis-je trader pendant les news ?',
             'Que se passe-t-il si j’atteins le drawdown maximal ?',
@@ -645,8 +638,16 @@ return array_replace_recursive($en, [
     'footer' => [
         'disclaimer_title' => 'Environnement simulé',
         'legal_copy' => [
-            'Wolforix Ltd. exerce comme société d’évaluation et d’éducation au trading propriétaire. Toutes les activités de trading sont réalisées dans un environnement simulé utilisant des fonds virtuels et ne représentent pas une participation réelle au marché.',
-            'Wolforix ne fournit pas de services de brokerage, de conseil en investissement ou de gestion de portefeuille. La société n’accepte pas de dépôts, ne détient pas de fonds clients et n’exécute pas d’ordres pour le compte des utilisateurs.',
+            'Wolforix Ltd. est une société enregistrée au Royaume-Uni (Company Number: 17111904), avec son siège social à Suite RA01, 195-197 Wood Street, London, E17 3NU. Wolforix exerce comme plateforme d’évaluation et d’éducation au trading propriétaire.',
+            'Tous les services fournis par Wolforix sont proposés exclusivement dans un environnement de trading simulé utilisant des fonds virtuels. Ces fonds n’ont aucune valeur réelle, ne sont pas retirables et ne représentent pas un capital réel. Wolforix n’est ni un broker ni une institution financière et ne fournit pas de services d’investissement, de conseil financier ou de gestion d’actifs.',
+            'Rien sur cette plateforme ne constitue un conseil en investissement ni une offre d’achat ou de vente d’instruments financiers. Les résultats obtenus dans des environnements simulés ne garantissent pas les résultats futurs sur les marchés réels et peuvent différer sensiblement des résultats de trading réels.',
+            'Toute performance affichée, y compris les payouts, est purement illustrative et soumise aux conditions spécifiques du programme. Tous les payouts sont soumis à vérification, y compris des contrôles internes de sécurité, des mesures de prévention de la fraude et des procédures de vérification d’identité.',
+            'Wolforix se réserve le droit de demander des documents complémentaires, de revoir des comptes, d’ajuster des résultats, de refuser des payouts, d’annuler des profits ou de suspendre et/ou résilier des comptes en cas de violation de ses conditions ou de détection d’une activité irrégulière.',
+            'Nos services ne sont pas disponibles dans les juridictions où leur utilisation violerait les lois ou réglementations applicables. Il appartient à l’utilisateur de s’assurer du respect des lois locales.',
+            'Nous pouvons partager des informations avec des prestataires tiers strictement nécessaires au fonctionnement de la plateforme, notamment des services de paiement, des fournisseurs d’infrastructure ou des services de vérification, conformément aux lois applicables en matière de protection des données.',
+            'Wolforix ne garantit pas une disponibilité continue ou ininterrompue de ses services et ne fournit aucune garantie expresse ou implicite. Wolforix ne pourra être tenue responsable d’aucune perte directe, indirecte ou consécutive résultant de l’utilisation de la plateforme.',
+            'Wolforix se réserve le droit de modifier à tout moment ces conditions et politiques.',
+            'En utilisant ce site web, vous acceptez nos Conditions Générales, notre Politique de Confidentialité, notre Politique de Payout, notre Politique de Remboursement et tous les documents juridiques associés.',
         ],
         'legal_title' => 'Juridique & Politiques',
         'security_title' => 'Confiance & Sécurité',
