@@ -61,6 +61,38 @@ h6 {
     box-shadow: 0 22px 60px rgba(2, 6, 23, 0.34);
 }
 
+.dashboard-hero {
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.1), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.1), transparent 32%),
+        linear-gradient(180deg, rgba(11, 18, 30, 0.98) 0%, rgba(6, 11, 20, 0.94) 100%);
+}
+
+.dashboard-chart-grid {
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 100% 25%, 20% 100%;
+}
+
+.dashboard-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.24) transparent;
+}
+
+.dashboard-table-wrap::-webkit-scrollbar {
+    height: 8px;
+}
+
+.dashboard-table-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.dashboard-table-wrap::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.24);
+}
+
 .global-reach-panel {
     position: relative;
     background:

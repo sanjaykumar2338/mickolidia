@@ -20,13 +20,13 @@
         <div class="absolute right-[-4rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-amber-400/8 blur-3xl"></div>
     </div>
 
-    <div class="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div class="min-h-screen lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
         @include('partials.dashboard-sidebar')
 
         <div class="relative min-w-0">
             @include('partials.dashboard-topbar')
 
-            <main class="px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+            <main class="px-4 pb-12 pt-4 sm:px-6 lg:px-8">
                 @yield('content')
             </main>
         </div>

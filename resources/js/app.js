@@ -368,6 +368,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle(className, enabled);
         document.documentElement.classList.toggle(className, enabled);
     };
+    const parseJsonAttribute = (value, fallback = null) => {
+        if (typeof value !== 'string' || value.trim() === '') {
+            return fallback;
+        }
+
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return fallback;
+        }
+    };
 
     const fixedDisclaimer = document.querySelector('[data-fixed-disclaimer]');
 
@@ -602,6 +613,258 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         syncMobileNavState(false);
+    });
+
+    document.querySelectorAll('[data-dashboard-chart]').forEach((chartRoot) => {
+        if (!(chartRoot instanceof HTMLElement)) {
+            return;
+        }
+
+        const payload = parseJsonAttribute(chartRoot.dataset.dashboardChartPayload, null);
+
+        if (!payload || typeof payload !== 'object') {
+            return;
+        }
+
+        const ranges = payload.ranges ?? {};
+        const buttons = [...chartRoot.querySelectorAll('[data-dashboard-chart-range]')].filter((button) => button instanceof HTMLButtonElement);
+        const areaPath = chartRoot.querySelector('[data-dashboard-chart-area]');
+        const balancePath = chartRoot.querySelector('[data-dashboard-chart-balance]');
+        const equityPath = chartRoot.querySelector('[data-dashboard-chart-equity]');
+        const emptyState = chartRoot.querySelector('[data-dashboard-chart-empty]');
+        const startLabel = chartRoot.querySelector('[data-dashboard-chart-label-start]');
+        const midLabel = chartRoot.querySelector('[data-dashboard-chart-label-mid]');
+        const endLabel = chartRoot.querySelector('[data-dashboard-chart-label-end]');
+        const changeLabel = chartRoot.querySelector('[data-dashboard-chart-change]');
+        const rangeHint = chartRoot.querySelector('[data-dashboard-chart-range-hint]');
+        const balanceValue = chartRoot.querySelector('[data-dashboard-chart-balance-value]');
+        const equityValue = chartRoot.querySelector('[data-dashboard-chart-equity-value]');
+        const highValue = chartRoot.querySelector('[data-dashboard-chart-high]');
+        const lowValue = chartRoot.querySelector('[data-dashboard-chart-low]');
+        const toneClasses = ['text-amber-100', 'text-emerald-100', 'text-rose-100', 'text-sky-100', 'text-white'];
+        const toneClassMap = {
+            amber: 'text-amber-100',
+            emerald: 'text-emerald-100',
+            rose: 'text-rose-100',
+            sky: 'text-sky-100',
+            slate: 'text-white',
+        };
+
+        if (!(areaPath instanceof SVGPathElement) || !(balancePath instanceof SVGPathElement) || !(equityPath instanceof SVGPathElement)) {
+            return;
+        }
+
+        const availableRangeKeys = Object.keys(ranges).filter((key) => ranges[key]?.is_available);
+        const fallbackRangeKey = availableRangeKeys[0] ?? null;
+
+        if (!fallbackRangeKey) {
+            return;
+        }
+
+        const setActiveButton = (activeKey) => {
+            buttons.forEach((button) => {
+                const isActive = button.dataset.dashboardChartRange === activeKey;
+
+                button.classList.toggle('border-amber-400/25', isActive);
+                button.classList.toggle('bg-amber-400/15', isActive);
+                button.classList.toggle('text-white', isActive);
+                button.classList.toggle('border-white/10', !isActive);
+                button.classList.toggle('bg-white/5', !isActive);
+                button.classList.toggle('text-slate-300', !isActive);
+            });
+        };
+
+        const buildCoordinates = (points, key, min, max) => {
+            const paddingX = 5;
+            const paddingY = 8;
+            const width = 100 - (paddingX * 2);
+            const height = 100 - (paddingY * 2);
+            const span = max - min || 1;
+
+            return points.map((point, index) => {
+                const divisor = Math.max(points.length - 1, 1);
+                const x = paddingX + ((width * index) / divisor);
+                const numericValue = Number.parseFloat(point[key] ?? 0);
+                const y = 100 - paddingY - (((numericValue - min) / span) * height);
+
+                return { x, y };
+            });
+        };
+
+        const buildLinePath = (coords) => coords
+            .map((coord, index) => `${index === 0 ? 'M' : 'L'} ${coord.x.toFixed(2)} ${coord.y.toFixed(2)}`)
+            .join(' ');
+
+        const buildAreaPath = (coords) => {
+            if (coords.length === 0) {
+                return '';
+            }
+
+            const first = coords[0];
+            const last = coords[coords.length - 1];
+            const line = buildLinePath(coords);
+
+            return `${line} L ${last.x.toFixed(2)} 92 L ${first.x.toFixed(2)} 92 Z`;
+        };
+
+        const setChartLabels = (points) => {
+            const midIndex = Math.floor(Math.max(points.length - 1, 0) / 2);
+
+            if (startLabel instanceof HTMLElement) {
+                startLabel.textContent = points[0]?.label ?? '—';
+            }
+
+            if (midLabel instanceof HTMLElement) {
+                midLabel.textContent = points[midIndex]?.label ?? '—';
+            }
+
+            if (endLabel instanceof HTMLElement) {
+                endLabel.textContent = points[points.length - 1]?.label ?? '—';
+            }
+        };
+
+        const setChangeTone = (tone = 'slate') => {
+            if (!(changeLabel instanceof HTMLElement)) {
+                return;
+            }
+
+            changeLabel.classList.remove(...toneClasses);
+            changeLabel.classList.add(toneClassMap[tone] ?? toneClassMap.slate);
+        };
+
+        const renderRange = (requestedKey) => {
+            const activeKey = ranges[requestedKey]?.is_available ? requestedKey : fallbackRangeKey;
+            const activeRange = ranges[activeKey];
+            const points = Array.isArray(activeRange?.points) ? activeRange.points : [];
+            const summary = activeRange?.summary ?? {};
+
+            setActiveButton(activeKey);
+
+            if (points.length === 0) {
+                if (emptyState instanceof HTMLElement) {
+                    emptyState.classList.remove('hidden');
+                }
+
+                areaPath.setAttribute('d', '');
+                balancePath.setAttribute('d', '');
+                equityPath.setAttribute('d', '');
+
+                return;
+            }
+
+            if (emptyState instanceof HTMLElement) {
+                emptyState.classList.add('hidden');
+            }
+
+            const values = points.flatMap((point) => [
+                Number.parseFloat(point.balance ?? 0),
+                Number.parseFloat(point.equity ?? 0),
+            ]).filter((value) => Number.isFinite(value));
+            let min = Math.min(...values);
+            let max = Math.max(...values);
+
+            if (min === max) {
+                min -= 1;
+                max += 1;
+            }
+
+            const balanceCoords = buildCoordinates(points, 'balance', min, max);
+            const equityCoords = buildCoordinates(points, 'equity', min, max);
+
+            areaPath.setAttribute('d', buildAreaPath(balanceCoords));
+            balancePath.setAttribute('d', buildLinePath(balanceCoords));
+            equityPath.setAttribute('d', buildLinePath(equityCoords));
+
+            setChartLabels(points);
+
+            if (changeLabel instanceof HTMLElement) {
+                changeLabel.textContent = summary.change ?? '$0.00';
+            }
+
+            setChangeTone(summary.change_tone ?? 'slate');
+
+            if (rangeHint instanceof HTMLElement) {
+                rangeHint.textContent = summary.range_hint ?? 'No synced data yet';
+            }
+
+            if (balanceValue instanceof HTMLElement) {
+                balanceValue.textContent = summary.last_balance ?? '$0.00';
+            }
+
+            if (equityValue instanceof HTMLElement) {
+                equityValue.textContent = summary.last_equity ?? '$0.00';
+            }
+
+            if (highValue instanceof HTMLElement) {
+                highValue.textContent = summary.high ?? '$0.00';
+            }
+
+            if (lowValue instanceof HTMLElement) {
+                lowValue.textContent = summary.low ?? '$0.00';
+            }
+        };
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => {
+                renderRange(button.dataset.dashboardChartRange ?? fallbackRangeKey);
+            });
+        });
+
+        renderRange(payload.default_range ?? fallbackRangeKey);
+    });
+
+    document.querySelectorAll('[data-dashboard-trades]').forEach((tradesRoot) => {
+        if (!(tradesRoot instanceof HTMLElement)) {
+            return;
+        }
+
+        const rows = [...tradesRoot.querySelectorAll('[data-dashboard-trades-row]')].filter((row) => row instanceof HTMLElement);
+        const buttons = [...tradesRoot.querySelectorAll('[data-dashboard-trades-filter]')].filter((button) => button instanceof HTMLButtonElement);
+        const countLabel = tradesRoot.querySelector('[data-dashboard-trades-count]');
+        const emptyState = tradesRoot.querySelector('[data-dashboard-trades-empty]');
+        const summary = parseJsonAttribute(tradesRoot.dataset.dashboardTradesSummary, { both: 0, open: 0, closed: 0 });
+
+        if (rows.length === 0 || buttons.length === 0) {
+            return;
+        }
+
+        const setActiveButton = (activeKey) => {
+            buttons.forEach((button) => {
+                const isActive = button.dataset.dashboardTradesFilter === activeKey;
+
+                button.classList.toggle('border-amber-400/25', isActive);
+                button.classList.toggle('bg-amber-400/15', isActive);
+                button.classList.toggle('text-white', isActive);
+                button.classList.toggle('border-white/10', !isActive);
+                button.classList.toggle('bg-white/5', !isActive);
+                button.classList.toggle('text-slate-300', !isActive);
+            });
+        };
+
+        const renderFilter = (filterKey) => {
+            rows.forEach((row) => {
+                const matches = filterKey === 'both' || row.dataset.tradeFilter === filterKey;
+                row.classList.toggle('hidden', !matches);
+            });
+
+            if (countLabel instanceof HTMLElement) {
+                countLabel.textContent = String(summary[filterKey] ?? 0);
+            }
+
+            if (emptyState instanceof HTMLElement) {
+                emptyState.classList.toggle('hidden', (summary[filterKey] ?? 0) !== 0);
+            }
+
+            setActiveButton(filterKey);
+        };
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => {
+                renderFilter(button.dataset.dashboardTradesFilter ?? 'both');
+            });
+        });
+
+        renderFilter('both');
     });
 
     const floatingFooterNav = document.querySelector('[data-floating-footer-nav]');
