@@ -515,66 +515,70 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', closeMenu);
     });
 
-    const mobileNav = document.querySelector('[data-mobile-nav]');
+    document.querySelectorAll('[data-mobile-nav]').forEach((mobileNav) => {
+        if (!(mobileNav instanceof HTMLElement)) {
+            return;
+        }
 
-    if (mobileNav instanceof HTMLElement) {
         const toggle = mobileNav.querySelector('[data-mobile-nav-toggle]');
         const panel = mobileNav.querySelector('[data-mobile-nav-panel]');
         const openIcon = mobileNav.querySelector('[data-mobile-nav-open-icon]');
         const closeIcon = mobileNav.querySelector('[data-mobile-nav-close-icon]');
         const closeTriggers = mobileNav.querySelectorAll('[data-mobile-nav-close]');
 
-        if (toggle instanceof HTMLButtonElement && panel instanceof HTMLElement) {
-            const syncMobileNavState = (open) => {
-                panel.classList.toggle('hidden', !open);
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                toggle.setAttribute('aria-label', open ? (toggle.dataset.closeLabel ?? '') : (toggle.dataset.openLabel ?? ''));
-
-                if (openIcon instanceof SVGElement) {
-                    openIcon.classList.toggle('hidden', open);
-                }
-
-                if (closeIcon instanceof SVGElement) {
-                    closeIcon.classList.toggle('hidden', !open);
-                }
-            };
-
-            const closeMobileNav = () => {
-                syncMobileNavState(false);
-            };
-
-            toggle.addEventListener('click', () => {
-                const shouldOpen = panel.classList.contains('hidden');
-                syncMobileNavState(shouldOpen);
-            });
-
-            closeTriggers.forEach((trigger) => {
-                trigger.addEventListener('click', () => {
-                    closeMobileNav();
-                });
-            });
-
-            document.addEventListener('click', (event) => {
-                if (!mobileNav.contains(event.target)) {
-                    closeMobileNav();
-                }
-            });
-
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    closeMobileNav();
-                }
-            });
-
-            window.addEventListener('resize', () => {
-                if (window.innerWidth >= 1024) {
-                    closeMobileNav();
-                }
-            });
-
-            syncMobileNavState(false);
+        if (!(toggle instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) {
+            return;
         }
-    }
+
+        const syncMobileNavState = (open) => {
+            panel.classList.toggle('hidden', !open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.setAttribute('aria-label', open ? (toggle.dataset.closeLabel ?? '') : (toggle.dataset.openLabel ?? ''));
+
+            if (openIcon instanceof SVGElement) {
+                openIcon.classList.toggle('hidden', open);
+            }
+
+            if (closeIcon instanceof SVGElement) {
+                closeIcon.classList.toggle('hidden', !open);
+            }
+        };
+
+        const closeMobileNav = () => {
+            syncMobileNavState(false);
+        };
+
+        toggle.addEventListener('click', () => {
+            const shouldOpen = panel.classList.contains('hidden');
+            syncMobileNavState(shouldOpen);
+        });
+
+        closeTriggers.forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                closeMobileNav();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!mobileNav.contains(event.target)) {
+                closeMobileNav();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeMobileNav();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 1024) {
+                closeMobileNav();
+            }
+        });
+
+        syncMobileNavState(false);
+    });
 
     const floatingFooterNav = document.querySelector('[data-floating-footer-nav]');
 

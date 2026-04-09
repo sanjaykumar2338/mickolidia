@@ -84,35 +84,30 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="mt-4 border-t border-white/5 pt-4">
-                <div class="lg:hidden" data-mobile-nav>
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="min-w-0 space-y-3 text-xs text-slate-500">
-                            <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
-                            <p>{{ __('site.footer.company_location') }}</p>
+                <div class="surface-card rounded-[1.9rem] p-4 sm:p-5 lg:hidden" data-mobile-nav>
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.quick_navigation_eyebrow') }}</p>
+                            <p class="mt-2 text-sm font-semibold text-white">{{ __('site.footer.quick_navigation') }}</p>
                         </div>
 
-                        <div class="shrink-0">
-                            <p class="mb-2 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.quick_navigation_eyebrow') }}</p>
-                            <button
-                                type="button"
-                                data-mobile-nav-toggle
-                                data-open-label="{{ __('site.nav.menu_open') }}"
-                                data-close-label="{{ __('site.nav.menu_close') }}"
-                                aria-expanded="false"
-                                aria-label="{{ __('site.nav.menu_open') }}"
-                                class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/4 text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
-                            >
-                                <svg data-mobile-nav-open-icon xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-                                    <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
-                                </svg>
-                                <svg data-mobile-nav-close-icon xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-                                    <path stroke-linecap="round" d="M6 6 18 18M18 6 6 18" />
-                                </svg>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            data-mobile-nav-toggle
+                            data-open-label="{{ __('site.nav.menu_open') }}"
+                            data-close-label="{{ __('site.nav.menu_close') }}"
+                            aria-expanded="false"
+                            aria-label="{{ __('site.nav.menu_open') }}"
+                            class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/4 text-slate-200 transition hover:border-white/20 hover:bg-white/8 hover:text-white"
+                        >
+                            <svg data-mobile-nav-open-icon xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+                            </svg>
+                            <svg data-mobile-nav-close-icon xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                                <path stroke-linecap="round" d="M6 6 18 18M18 6 6 18" />
+                            </svg>
+                        </button>
                     </div>
 
                     <div data-mobile-nav-panel class="hidden pt-4">
@@ -173,8 +168,10 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="hidden flex-col gap-3 text-xs text-slate-500 lg:flex lg:flex-row lg:items-center lg:justify-between">
+            <div class="mt-4 border-t border-white/5 pt-4">
+                <div class="flex flex-col gap-3 text-xs text-slate-500 lg:flex-row lg:items-center lg:justify-between">
                     <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
                     <p>{{ __('site.footer.company_location') }}</p>
                 </div>
