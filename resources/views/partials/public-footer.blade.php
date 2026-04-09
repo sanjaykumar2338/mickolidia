@@ -85,11 +85,14 @@
                     </div>
                 </div>
 
-                <div class="surface-card rounded-[1.9rem] p-4 sm:p-5 lg:hidden" data-mobile-nav>
-                    <div class="flex items-center justify-between gap-4">
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{{ __('site.footer.quick_navigation_eyebrow') }}</p>
-                            <p class="mt-2 text-sm font-semibold text-white">{{ __('site.footer.quick_navigation') }}</p>
+            </div>
+
+            <div class="mt-4 border-t border-white/5 pt-4">
+                <div class="lg:hidden" data-mobile-nav>
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0 space-y-3 text-xs text-slate-500">
+                            <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
+                            <p>{{ __('site.footer.company_location') }}</p>
                         </div>
 
                         <button
@@ -168,10 +171,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="mt-4 border-t border-white/5 pt-4">
-                <div class="flex flex-col gap-3 text-xs text-slate-500 lg:flex-row lg:items-center lg:justify-between">
+                <div class="hidden flex-col gap-3 text-xs text-slate-500 lg:flex lg:flex-row lg:items-center lg:justify-between">
                     <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
                     <p>{{ __('site.footer.company_location') }}</p>
                 </div>
