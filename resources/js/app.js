@@ -525,6 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const openIcon = mobileNav.querySelector('[data-mobile-nav-open-icon]');
         const closeIcon = mobileNav.querySelector('[data-mobile-nav-close-icon]');
         const closeTriggers = mobileNav.querySelectorAll('[data-mobile-nav-close]');
+        const shouldAutoScroll = mobileNav.hasAttribute('data-mobile-nav-autoscroll');
 
         if (!(toggle instanceof HTMLButtonElement) || !(panel instanceof HTMLElement)) {
             return;
@@ -548,9 +549,32 @@ document.addEventListener('DOMContentLoaded', () => {
             syncMobileNavState(false);
         };
 
+        const revealMobileNavPanel = () => {
+            if (!shouldAutoScroll) {
+                return;
+            }
+
+            window.requestAnimationFrame(() => {
+                const panelBounds = panel.getBoundingClientRect();
+                const viewportPadding = 24;
+                const overflow = panelBounds.bottom - (window.innerHeight - viewportPadding);
+
+                if (overflow > 0) {
+                    window.scrollBy({
+                        top: overflow,
+                        behavior: 'smooth',
+                    });
+                }
+            });
+        };
+
         toggle.addEventListener('click', () => {
             const shouldOpen = panel.classList.contains('hidden');
             syncMobileNavState(shouldOpen);
+
+            if (shouldOpen) {
+                revealMobileNavPanel();
+            }
         });
 
         closeTriggers.forEach((trigger) => {

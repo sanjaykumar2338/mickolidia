@@ -88,7 +88,7 @@
             </div>
 
             <div class="mt-4 border-t border-white/5 pt-4">
-                <div class="lg:hidden" data-mobile-nav>
+                <div class="lg:hidden" data-mobile-nav data-mobile-nav-autoscroll>
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0 space-y-3 text-xs text-slate-500">
                             <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
