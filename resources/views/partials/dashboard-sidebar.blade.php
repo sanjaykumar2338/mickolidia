@@ -37,17 +37,17 @@
         </div>
     @endif
 
-    <nav class="mt-6 flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-2">
-        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
+    <nav class="mt-6 flex gap-2 overflow-x-auto pb-1 lg:block lg:overflow-visible lg:pb-0 lg:space-y-2">
+        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} block shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
             {{ __('site.dashboard.nav.overview') }}
         </a>
-        <a href="{{ route('dashboard.accounts') }}" class="{{ request()->routeIs('dashboard.accounts') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
+        <a href="{{ route('dashboard.accounts') }}" class="{{ request()->routeIs('dashboard.accounts') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} block shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
             {{ __('site.dashboard.nav.accounts') }}
         </a>
-        <a href="{{ route('dashboard.payouts') }}" class="{{ request()->routeIs('dashboard.payouts') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
+        <a href="{{ route('dashboard.payouts') }}" class="{{ request()->routeIs('dashboard.payouts') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} block shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
             {{ __('site.dashboard.nav.payouts') }}
         </a>
-        <a href="{{ route('dashboard.settings') }}" class="{{ request()->routeIs('dashboard.settings') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
+        <a href="{{ route('dashboard.settings') }}" class="{{ request()->routeIs('dashboard.settings') ? 'border-amber-400/30 bg-amber-400/12 text-white' : 'border-white/6 bg-white/2 text-slate-300 hover:bg-white/5 hover:text-white' }} block shrink-0 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition">
             {{ __('site.dashboard.nav.settings') }}
         </a>
     </nav>
