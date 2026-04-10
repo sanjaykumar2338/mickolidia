@@ -10,6 +10,9 @@
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+@php
+    $hasPostMainSections = ! request()->routeIs('checkout.*', 'login', 'password.*');
+@endphp
 <body
     class="selection:bg-amber-400/30 selection:text-white"
     data-launch-promo-code="{{ session('launch_offer.applied') ? config('wolforix.launch_discount.code') : '' }}"
@@ -35,7 +38,7 @@
         </div>
     @endif
 
-    <main class="relative z-0 pb-32 md:pb-28">
+    <main class="relative z-0 {{ $hasPostMainSections ? 'pb-0' : 'pb-32 md:pb-28' }}">
         @yield('content')
     </main>
 

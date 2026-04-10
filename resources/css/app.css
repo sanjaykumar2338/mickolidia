@@ -1053,6 +1053,180 @@ h6 {
     position: relative;
 }
 
+.assistant-mascot-card {
+    position: relative;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.16), transparent 34%),
+        radial-gradient(circle at right center, rgba(69, 121, 199, 0.16), transparent 38%),
+        linear-gradient(155deg, rgba(12, 20, 34, 0.98) 0%, rgba(7, 11, 20, 0.95) 100%);
+    box-shadow:
+        0 28px 64px rgba(2, 6, 23, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.assistant-mascot-card::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0));
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.assistant-mascot-stage {
+    position: relative;
+    display: flex;
+    min-height: 18.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0 0.5rem;
+}
+
+.assistant-mascot-stage::before {
+    content: '';
+    position: absolute;
+    inset: 16% 10% 8% 38%;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 72%);
+    filter: blur(34px);
+    opacity: 0.88;
+}
+
+.assistant-mascot-visual {
+    position: relative;
+    width: min(100%, 34rem);
+    isolation: isolate;
+    --wolfi-core-x: 65.8%;
+    --wolfi-core-y: 45.3%;
+}
+
+.assistant-mascot-image {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-height: 21rem;
+    aspect-ratio: 16 / 10;
+    object-fit: contain;
+    object-position: center;
+    filter:
+        drop-shadow(0 28px 56px rgba(2, 6, 23, 0.34))
+        drop-shadow(0 0 38px rgba(244, 183, 74, 0.14));
+}
+
+.assistant-core-breath {
+    position: absolute;
+    left: var(--wolfi-core-x);
+    top: var(--wolfi-core-y);
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    pointer-events: none;
+    mix-blend-mode: screen;
+}
+
+.assistant-core-breath-back {
+    z-index: 1;
+    width: 6.2rem;
+    height: 6.2rem;
+    background: radial-gradient(
+        circle,
+        rgba(255, 248, 224, 0.82) 0%,
+        rgba(255, 220, 134, 0.56) 18%,
+        rgba(244, 183, 74, 0.28) 42%,
+        rgba(244, 183, 74, 0) 74%
+    );
+    filter: blur(15px);
+    opacity: 0.7;
+    animation: wolfiCoreBreath 4.8s ease-in-out infinite;
+}
+
+.assistant-core-breath-front {
+    z-index: 3;
+    width: 1.85rem;
+    height: 1.85rem;
+    background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.96) 0%,
+        rgba(255, 241, 190, 0.95) 30%,
+        rgba(255, 213, 112, 0.82) 48%,
+        rgba(244, 183, 74, 0.18) 70%,
+        rgba(244, 183, 74, 0) 76%
+    );
+    box-shadow:
+        0 0 18px rgba(255, 230, 160, 0.48),
+        0 0 38px rgba(244, 183, 74, 0.3);
+    opacity: 0.9;
+    animation: wolfiCorePulse 4.8s ease-in-out infinite;
+}
+
+.assistant-promo-stat {
+    position: absolute;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(244, 183, 74, 0.18);
+    background:
+        linear-gradient(180deg, rgba(18, 27, 43, 0.92) 0%, rgba(7, 12, 20, 0.9) 100%);
+    padding: 0.55rem 0.95rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(255, 243, 214, 0.96);
+    box-shadow:
+        0 18px 34px rgba(2, 6, 23, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(18px);
+}
+
+.assistant-promo-stat-top {
+    top: 1.35rem;
+    right: 0.35rem;
+}
+
+.assistant-promo-stat-bottom {
+    bottom: 0.35rem;
+    left: 0.35rem;
+}
+
+@keyframes wolfiCoreBreath {
+    0%,
+    100% {
+        opacity: 0.54;
+        transform: translate(-50%, -50%) scale(0.9);
+        filter: blur(12px);
+    }
+
+    50% {
+        opacity: 0.98;
+        transform: translate(-50%, -50%) scale(1.14);
+        filter: blur(18px);
+    }
+}
+
+@keyframes wolfiCorePulse {
+    0%,
+    100% {
+        opacity: 0.74;
+        transform: translate(-50%, -50%) scale(0.9);
+        box-shadow:
+            0 0 14px rgba(255, 230, 160, 0.34),
+            0 0 28px rgba(244, 183, 74, 0.22);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.18);
+        box-shadow:
+            0 0 24px rgba(255, 236, 175, 0.62),
+            0 0 48px rgba(244, 183, 74, 0.4);
+    }
+}
+
 .assistant-preview-shell::after {
     content: '';
     position: absolute;
@@ -2523,6 +2697,8 @@ h6 {
     .assistant-fab-halo,
     .assistant-fab-orbit,
     .assistant-fab-ping,
+    .assistant-core-breath-back,
+    .assistant-core-breath-front,
     .wolfi-avatar-shell,
     .wolfi-avatar-shell::before,
     .wolfi-avatar-shell::after,
@@ -2664,6 +2840,26 @@ h6 {
     .assistant-fab-button {
         height: 3.85rem;
         width: 3.85rem;
+    }
+
+    .assistant-mascot-stage {
+        min-height: 14.5rem;
+        padding-top: 0.75rem;
+    }
+
+    .assistant-promo-stat {
+        letter-spacing: 0.18em;
+        padding-inline: 0.8rem;
+    }
+
+    .assistant-core-breath-back {
+        width: 4.9rem;
+        height: 4.9rem;
+    }
+
+    .assistant-core-breath-front {
+        width: 1.45rem;
+        height: 1.45rem;
     }
 
     .assistant-fab-avatar-wrap {

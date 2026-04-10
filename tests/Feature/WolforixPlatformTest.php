@@ -106,6 +106,30 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Starte mit einer kurzen Frage, und Wolfi führt dich von dort aus weiter.');
     }
 
+    public function test_french_home_page_uses_wolfi_branding_in_the_assistant_promo(): void
+    {
+        $this->withSession([
+            'locale' => 'fr',
+        ])->get(route('home'))
+            ->assertOk()
+            ->assertSee('Assistant Wolfi')
+            ->assertSee('Parlez avec Wolfi')
+            ->assertSee('Posez vos questions à Wolfi avant d’acheter')
+            ->assertDontSee('Parlez à votre Assistant IA');
+    }
+
+    public function test_spanish_home_page_uses_wolfi_branding_in_the_assistant_promo(): void
+    {
+        $this->withSession([
+            'locale' => 'es',
+        ])->get(route('home'))
+            ->assertOk()
+            ->assertSee('Asistente Wolfi')
+            ->assertSee('Habla con Wolfi')
+            ->assertSee('Pregunta a Wolfi antes de comprar')
+            ->assertDontSee('Habla con tu Asistente IA');
+    }
+
     public function test_news_page_renders_demo_calendar_filters_and_events(): void
     {
         $this->get(route('news'))
@@ -400,6 +424,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('24H Trading Rewards')
             ->assertSee('Market Pulse (Live News)')
             ->assertSee('AI Assistant Wolfi')
+            ->assertSee('Wolfi Assistant')
+            ->assertSee('Talk with Wolfi')
             ->assertSee('1-Step Instant')
             ->assertSee('2-Step Pro')
             ->assertSee('Pass in one step. Get funded faster. No delays. No second phase.')
@@ -431,10 +457,11 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Open live market news')
             ->assertSee('View full calendar')
             ->assertSee('Economic News Calendar')
-            ->assertSee('Talk to Your AI Assistant')
-            ->assertSee('Start Chat')
+            ->assertSee('Talk with Wolfi')
+            ->assertSee('Open Wolfi')
+            ->assertSee('Ask Wolfi before you buy')
             ->assertSee('Can I trade during news?')
-            ->assertSee('AI Assistant')
+            ->assertSee('Wolfi Assistant')
             ->assertSee('Contact & Support')
             ->assertSee(config('wolforix.support.email'))
             ->assertSee('Email support')

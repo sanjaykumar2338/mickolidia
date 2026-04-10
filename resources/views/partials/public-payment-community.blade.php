@@ -120,7 +120,7 @@
     ];
 @endphp
 
-<section class="px-6 pb-6 pt-4 lg:px-8 lg:pb-8">
+<section class="px-6 pb-6 pt-0 lg:px-8 lg:pb-8 lg:pt-4">
     <div class="mx-auto max-w-7xl">
         <div class="prefooter-showcase space-y-4">
             <div class="payment-rail-floating relative overflow-hidden px-1 py-4">
