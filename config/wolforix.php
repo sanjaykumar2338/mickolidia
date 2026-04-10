@@ -29,6 +29,21 @@ $supportedLocales = [
         'flag' => '🇫🇷',
         'flag_asset' => 'flags/fr.svg',
     ],
+    'hi' => [
+        'native' => 'हिंदी',
+        'short' => 'HI',
+        'flag' => '🇮🇳',
+    ],
+    'it' => [
+        'native' => 'Italiano',
+        'short' => 'IT',
+        'flag' => '🇮🇹',
+    ],
+    'pt' => [
+        'native' => 'Português',
+        'short' => 'PT',
+        'flag' => '🇵🇹',
+    ],
 ];
 
 $launchDiscount = [
@@ -275,23 +290,7 @@ return [
 
     'supported_locales' => $supportedLocales,
 
-    'future_locales' => [
-        [
-            'native' => 'हिंदी',
-            'short' => 'HI',
-            'flag' => '🇮🇳',
-        ],
-        [
-            'native' => 'Italiano',
-            'short' => 'IT',
-            'flag' => '🇮🇹',
-        ],
-        [
-            'native' => 'Português',
-            'short' => 'PT',
-            'flag' => '🇵🇹',
-        ],
-    ],
+    'future_locales' => [],
 
     'checkout_countries' => [
         'AT' => 'Austria',

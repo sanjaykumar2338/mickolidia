@@ -11,6 +11,9 @@
         'de' => 'de-DE',
         'es' => 'es-ES',
         'fr' => 'fr-FR',
+        'hi' => 'hi-IN',
+        'it' => 'it-IT',
+        'pt' => 'pt-PT',
     ];
     $voicePlanSizes = collect(config('wolforix.challenge_models.one_step.pricing', []))
         ->keys()

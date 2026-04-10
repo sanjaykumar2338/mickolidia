@@ -12,6 +12,9 @@ return array_replace_recursive($en, [
         'de' => 'Allemand',
         'es' => 'Espagnol',
         'fr' => 'Français',
+        'hi' => 'Hindi',
+        'it' => 'Italien',
+        'pt' => 'Portugais',
     ],
     'locale' => [
         'current_label' => 'Langue',
@@ -26,9 +29,9 @@ return array_replace_recursive($en, [
         'name' => 'Wolfi',
         'eyebrow' => 'Assistant Wolfi',
         'title' => 'Parlez avec Wolfi',
-        'description' => 'Wolfi vous donne instantanément des réponses sur les règles, les conditions de trading et la plateforme.',
-        'multi_language' => 'Support avec détection automatique de la langue',
-        'start_chat' => 'Ouvrir Wolfi',
+        'description' => 'Obtenez des réponses instantanées sur les règles de drawdown, le profit split et les exigences du challenge.',
+        'multi_language' => 'Parle votre langue instantanément',
+        'start_chat' => 'Essayer Wolfi maintenant',
         'floating_label' => 'Ouvrir Wolfi',
         'floating_cta' => 'Demandez à Wolfi',
         'floating_aria' => 'Ouvrir Wolfi, l’assistant IA',
@@ -37,8 +40,12 @@ return array_replace_recursive($en, [
         'preview_title' => 'Posez vos questions à Wolfi avant d’acheter',
         'preview_badge' => '24/7',
         'preview_copy' => 'Ouvrez l’assistant pour obtenir rapidement des réponses sur les règles, le news trading, les limites de drawdown, le payout et le challenge qui vous convient.',
-        'visual_title' => 'Wolfi reste visible pendant votre navigation',
-        'visual_copy' => 'Une aide bien visible pour les règles, les payouts, la plateforme et le bon challenge.',
+        'visual_title' => 'Toujours actif. Toujours prêt.',
+        'visual_copy' => 'Accédez aux règles, aux payouts et au guide de trading sans quitter votre écran.',
+        'visual_response_label' => 'Réponse en direct',
+        'visual_response_preview' => 'Votre drawdown maximal est de 5 % sur ce compte.',
+        'visual_response_hint' => 'Règles et guidage compte en temps réel.',
+        'visual_cta_hint' => 'Demandez à Wolfi avant votre prochain trade.',
         'visual_alt' => 'Illustration lumineuse de la mascotte Wolfi',
         'example_questions' => [
             'Puis-je trader pendant les news ?',
@@ -267,7 +274,7 @@ return array_replace_recursive($en, [
                 ],
                 [
                     'title' => 'Multilingue dès le départ',
-                    'description' => 'L’anglais reste la langue par défaut, tandis que l’allemand, l’espagnol et le français sont prêts pour que d’autres langues puissent être ajoutées proprement ensuite.',
+                    'description' => 'L anglais reste la langue par defaut, tandis que la plateforme est structuree pour ajouter proprement d autres langues sans casser l experience principale.',
                 ],
             ],
         ],
@@ -833,6 +840,11 @@ return array_replace_recursive($en, [
                 'token' => 'Ce lien de réinitialisation est invalide ou expiré.',
                 'reset' => 'Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.',
             ],
+        ],
+    ],
+    'dashboard' => [
+        'settings' => [
+            'preferences_copy' => 'Le dashboard est deja adapte aux locales afin que le changement de langue reste coherent a mesure que de nouvelles langues prises en charge sont ajoutees.',
         ],
     ],
 ]);

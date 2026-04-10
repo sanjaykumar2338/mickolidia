@@ -436,6 +436,8 @@ class PayPalGateway implements PaymentGatewayInterface
             'de' => 'de-DE',
             'es' => 'es-ES',
             'fr' => 'fr-FR',
+            'it' => 'it-IT',
+            'pt' => 'pt-PT',
             default => 'en-US',
         };
     }

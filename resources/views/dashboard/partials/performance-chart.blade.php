@@ -19,10 +19,10 @@
 >
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Performance curve</p>
-            <h3 class="mt-3 text-2xl font-semibold text-white">Balance and equity trend</h3>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Performance curve') }}</p>
+            <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Balance and equity trend') }}</h3>
             <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-                The chart reads from the real synced account snapshots already stored for this dashboard.
+                {{ __('The chart reads from the real synced account snapshots already stored for this dashboard.') }}
             </p>
         </div>
 
@@ -68,11 +68,11 @@
                 <div class="mt-4 flex items-center gap-5 text-xs text-slate-400">
                     <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-full bg-amber-300"></span>
-                        <span>Balance</span>
+                        <span>{{ __('Balance') }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-full bg-sky-300"></span>
-                        <span>Equity</span>
+                        <span>{{ __('Equity') }}</span>
                     </div>
                 </div>
 
@@ -86,36 +86,36 @@
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Range change</p>
+                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Range change') }}</p>
                 <p
                     class="mt-3 text-2xl font-semibold {{ $changeToneClasses[$defaultRange['summary']['change_tone'] ?? 'slate'] ?? $changeToneClasses['slate'] }}"
                     data-dashboard-chart-change
                 >
                     {{ $defaultRange['summary']['change'] ?? '$0.00' }}
                 </p>
-                <p class="mt-2 text-xs text-slate-400" data-dashboard-chart-range-hint>{{ $defaultRange['summary']['range_hint'] ?? 'No synced data yet' }}</p>
+                <p class="mt-2 text-xs text-slate-400" data-dashboard-chart-range-hint>{{ $defaultRange['summary']['range_hint'] ?? __('No synced data yet') }}</p>
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Current balance</p>
+                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Current balance') }}</p>
                 <p class="mt-3 text-2xl font-semibold text-white" data-dashboard-chart-balance-value>{{ $defaultRange['summary']['last_balance'] ?? '$0.00' }}</p>
-                <p class="mt-2 text-xs text-slate-400">Latest synced balance point</p>
+                <p class="mt-2 text-xs text-slate-400">{{ __('Latest synced balance point') }}</p>
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Current equity</p>
+                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Current equity') }}</p>
                 <p class="mt-3 text-2xl font-semibold text-white" data-dashboard-chart-equity-value>{{ $defaultRange['summary']['last_equity'] ?? '$0.00' }}</p>
-                <p class="mt-2 text-xs text-slate-400">Latest synced equity point</p>
+                <p class="mt-2 text-xs text-slate-400">{{ __('Latest synced equity point') }}</p>
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
                 <div class="flex items-center justify-between gap-3 text-sm">
                     <div>
-                        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Range high</p>
+                        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Range high') }}</p>
                         <p class="mt-3 text-xl font-semibold text-white" data-dashboard-chart-high>{{ $defaultRange['summary']['high'] ?? '$0.00' }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">Range low</p>
+                        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Range low') }}</p>
                         <p class="mt-3 text-xl font-semibold text-white" data-dashboard-chart-low>{{ $defaultRange['summary']['low'] ?? '$0.00' }}</p>
                     </div>
                 </div>

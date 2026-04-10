@@ -29,8 +29,8 @@
                     <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Risk & milestones</p>
-                                <h3 class="mt-3 text-2xl font-semibold text-white">Progress toward the rules</h3>
+                                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Risk & milestones') }}</p>
+                                <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Progress toward the rules') }}</h3>
                             </div>
                             <span class="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
                                 {{ $primaryAccount['challenge_phase'] }}
@@ -64,9 +64,9 @@
                     </section>
 
                     <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">History snapshot</p>
-                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ $analyticsSummary['title'] ?? 'History & analytics' }}</h3>
-                        <p class="mt-3 text-sm leading-7 text-slate-400">{{ $analyticsSummary['message'] ?? 'Trading analytics become available once synced.' }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('History snapshot') }}</p>
+                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ $analyticsSummary['title'] ?? __('History & analytics') }}</h3>
+                        <p class="mt-3 text-sm leading-7 text-slate-400">{{ $analyticsSummary['message'] ?? __('Trading analytics become available once synced.') }}</p>
 
                         @if (($analyticsSummary['is_available'] ?? false) && filled($analyticsSummary['cards'] ?? []))
                             <div class="mt-6 grid gap-3 sm:grid-cols-2">
@@ -79,14 +79,14 @@
                             </div>
                         @else
                             <div class="mt-6 rounded-[1.55rem] border border-dashed border-white/12 bg-white/3 px-4 py-5 text-sm leading-7 text-slate-400">
-                                Metrics like gross profit, expectancy, and win rate are shown only when the synced snapshot includes detailed closed-trade rows.
+                                {{ __('Metrics like gross profit, expectancy, and win rate are shown only when the synced snapshot includes detailed closed-trade rows.') }}
                             </div>
                         @endif
                     </section>
 
                     <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
                         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('site.dashboard.overview.payout_title') }}</p>
-                        <h3 class="mt-3 text-2xl font-semibold text-white">Payout readiness</h3>
+                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Payout readiness') }}</h3>
                         <div class="mt-6 grid gap-3 sm:grid-cols-2">
                             <article class="rounded-[1.45rem] border border-white/8 bg-black/18 p-4">
                                 <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.dashboard.payouts.next_window') }}</p>
@@ -98,7 +98,7 @@
                             </article>
                         </div>
                         <div class="mt-3 rounded-[1.45rem] border border-white/8 bg-black/18 p-4 text-sm leading-7 text-slate-300">
-                            <p><span class="font-semibold text-white">Status:</span> {{ $payoutSummary['status'] }}</p>
+                            <p><span class="font-semibold text-white">{{ __('Status') }}:</span> {{ $payoutSummary['status'] }}</p>
                             <p class="mt-2 text-slate-400">{{ $payoutSummary['cycle_note'] }}</p>
                         </div>
                     </section>
@@ -108,11 +108,11 @@
             <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Performance summary</p>
-                        <h3 class="mt-3 text-2xl font-semibold text-white">Key account metrics</h3>
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Performance summary') }}</p>
+                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Key account metrics') }}</h3>
                     </div>
                     <p class="max-w-xl text-sm leading-7 text-slate-400">
-                        Only metrics that are already available from the synced account or the latest trade payload are shown here.
+                        {{ __('Only metrics that are already available from the synced account or the latest trade payload are shown here.') }}
                     </p>
                 </div>
 
@@ -141,8 +141,8 @@
                 <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Linked accounts</p>
-                            <h3 class="mt-3 text-2xl font-semibold text-white">Other synced challenges</h3>
+                            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Linked accounts') }}</p>
+                            <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Other synced challenges') }}</h3>
                         </div>
                         <a href="{{ route('dashboard.accounts') }}" class="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                             {{ __('site.dashboard.nav.accounts') }}
@@ -164,15 +164,15 @@
 
                                 <div class="mt-5 grid gap-3 sm:grid-cols-3">
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">
-                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Balance</p>
+                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Balance') }}</p>
                                         <p class="mt-2 text-lg font-semibold text-white">{{ $account['balance'] }}</p>
                                     </div>
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">
-                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Equity</p>
+                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Equity') }}</p>
                                         <p class="mt-2 text-lg font-semibold text-white">{{ $account['equity'] }}</p>
                                     </div>
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">
-                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Floating P&L</p>
+                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Floating P&L') }}</p>
                                         <p class="mt-2 text-lg font-semibold {{ match ($account['floating_pnl_tone']) {
                                             'emerald' => 'text-emerald-100',
                                             'rose' => 'text-rose-100',
@@ -183,7 +183,7 @@
 
                                 <div class="mt-5">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <span class="text-slate-400">Target progress</span>
+                                        <span class="text-slate-400">{{ __('Target progress') }}</span>
                                         <span class="font-semibold text-white">{{ $account['progress'] }}</span>
                                     </div>
                                     <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-white/8">

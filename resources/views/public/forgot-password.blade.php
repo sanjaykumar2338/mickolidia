@@ -36,7 +36,7 @@
                             name="email"
                             value="{{ old('email') }}"
                             class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                            placeholder="trader@example.com"
+                            placeholder="{{ __('trader@example.com') }}"
                         >
                     </label>
 

@@ -89,6 +89,9 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('"locale":"de"', false)
             ->assertSee('"locale":"es"', false)
             ->assertSee('"locale":"fr"', false)
+            ->assertSee('"locale":"hi"', false)
+            ->assertSee('"locale":"it"', false)
+            ->assertSee('"locale":"pt"', false)
             ->assertSee(route('faq'), false);
     }
 
@@ -128,6 +131,108 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Habla con Wolfi')
             ->assertSee('Pregunta a Wolfi antes de comprar')
             ->assertDontSee('Habla con tu Asistente IA');
+    }
+
+    public function test_hindi_italian_and_portuguese_locales_render_core_homepage_copy(): void
+    {
+        foreach ([
+            'hi' => ['मुफ़्त ट्रायल', 'मुद्रा', 'वुल्फी से बात करें'],
+            'it' => ['Prova Gratuita', 'Valuta', 'Parla con Wolfi'],
+            'pt' => ['Teste Gratuito', 'Moeda', 'Fale com Wolfi'],
+        ] as $locale => $expectations) {
+            $response = $this->withSession(['locale' => $locale])
+                ->get(route('home'));
+
+            $response->assertOk();
+
+            foreach ($expectations as $expectation) {
+                $response->assertSee($expectation);
+            }
+        }
+    }
+
+    public function test_hindi_italian_and_portuguese_login_pages_use_localized_email_placeholders(): void
+    {
+        foreach ([
+            'hi' => 'trader@example.in',
+            'it' => 'trader@esempio.it',
+            'pt' => 'trader@exemplo.pt',
+        ] as $locale => $placeholder) {
+            $this->withSession(['locale' => $locale])
+                ->get(route('login'))
+                ->assertOk()
+                ->assertSee($placeholder);
+        }
+    }
+
+    public function test_hindi_italian_and_portuguese_dashboard_accounts_pages_render_localized_labels(): void
+    {
+        $translator = app('translator');
+
+        foreach (['hi', 'it', 'pt'] as $locale) {
+            $user = User::factory()->create([
+                'email' => "dashboard-{$locale}@example.com",
+            ]);
+
+            UserProfile::query()->create([
+                'user_id' => $user->id,
+                'preferred_language' => $locale,
+                'timezone' => 'Europe/Berlin',
+            ]);
+
+            TradingAccount::query()->create([
+                'user_id' => $user->id,
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'account_reference' => "WFX-{$locale}-50099",
+                'platform' => 'MT5',
+                'platform_slug' => 'mt5',
+                'platform_account_id' => "mt5-{$locale}-50099",
+                'platform_login' => "500{$locale}",
+                'platform_environment' => 'demo',
+                'platform_status' => 'connected',
+                'stage' => 'Challenge Step 1',
+                'status' => 'Active',
+                'account_type' => 'challenge',
+                'account_phase' => 'challenge',
+                'phase_index' => 1,
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'starting_balance' => 50000,
+                'balance' => 52340,
+                'equity' => 52010,
+                'profit_loss' => 2340,
+                'total_profit' => 2340,
+                'today_profit' => 440,
+                'daily_drawdown' => 210,
+                'max_drawdown' => 580,
+                'drawdown_percent' => 1.16,
+                'profit_target_percent' => 10,
+                'profit_target_amount' => 5000,
+                'profit_target_progress_percent' => 46.8,
+                'daily_drawdown_limit_percent' => 5,
+                'daily_drawdown_limit_amount' => 2500,
+                'max_drawdown_limit_percent' => 10,
+                'max_drawdown_limit_amount' => 5000,
+                'profit_split' => 80,
+                'minimum_trading_days' => 3,
+                'trading_days_completed' => 2,
+                'sync_status' => 'success',
+                'last_synced_at' => now(),
+                'synced_at' => now(),
+            ]);
+
+            $response = $this->withSession(['locale' => $locale])
+                ->actingAs($user)
+                ->get(route('dashboard.accounts'));
+
+            $response->assertOk()
+                ->assertSee($translator->get('site.dashboard.accounts_page.title', [], $locale))
+                ->assertSee($translator->get('Challenge progress', [], $locale))
+                ->assertSee($translator->get('Sync details', [], $locale))
+                ->assertDontSee('Challenge progress')
+                ->assertDontSee('Sync details');
+        }
     }
 
     public function test_news_page_renders_demo_calendar_filters_and_events(): void
@@ -680,7 +785,7 @@ class WolforixPlatformTest extends TestCase
 
     public function test_supported_locales_use_standardized_currency_codes_on_the_homepage(): void
     {
-        foreach (['en', 'de', 'fr'] as $locale) {
+        foreach (['en', 'de', 'es', 'fr', 'hi', 'it', 'pt'] as $locale) {
             $this->withSession(['locale' => $locale])
                 ->get(route('home'))
                 ->assertOk()

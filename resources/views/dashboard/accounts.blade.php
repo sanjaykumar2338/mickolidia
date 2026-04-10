@@ -30,10 +30,10 @@
             <div class="surface-panel rounded-[2rem] p-6">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">MT5 live sync</p>
-                        <h2 class="mt-3 text-2xl font-semibold text-white">Near real-time challenge metrics</h2>
+                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('MT5 live sync') }}</p>
+                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('Near real-time challenge metrics') }}</h2>
                         <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-                            Open trades, floating P&amp;L, balance changes, and challenge rule usage refresh from MT5 trade events with a timer fallback if an event-triggered update is missed.
+                            {{ __('Open trades, floating P&L, balance changes, and challenge rule usage refresh from MT5 trade events with a timer fallback if an event-triggered update is missed.') }}
                         </p>
                     </div>
                     <span class="rounded-full border px-4 py-2 text-sm font-semibold {{ $primarySyncToneClasses }}">
@@ -43,20 +43,20 @@
 
                 <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Sync status</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync status') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_status'] }}</dd>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Last synced</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Last synced') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['last_synced_at'] }}</dd>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Sync freshness</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync freshness') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_freshness'] }}</dd>
                         <p class="mt-2 text-sm leading-6 text-slate-400">{{ $primaryAccount['sync_freshness_hint'] }}</p>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Data source</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Data source') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_source'] }}</dd>
                     </div>
                 </dl>
@@ -71,36 +71,36 @@
             <div class="surface-panel rounded-[2rem] p-6">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">cTrader connection</p>
+                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('cTrader connection') }}</p>
                         <h2 class="mt-3 text-2xl font-semibold text-white">
-                            {{ $ctraderConnection['is_connected'] ? 'Connected and ready to sync' : 'Connect your cTrader account' }}
+                            {{ $ctraderConnection['is_connected'] ? __('Connected and ready to sync') : __('Connect your cTrader account') }}
                         </h2>
                         <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
                             {{ $ctraderConnection['is_connected']
-                                ? 'Wolforix can now read the authorized '.$ctraderConnection['broker_name'].' cTrader accounts linked to your cTID and sync challenge metrics into the dashboard.'
-                                : 'Authorize Wolforix with '.$ctraderConnection['broker_name'].' cTrader to link your challenge account, fetch live balance/equity data, and keep rule monitoring up to date.' }}
+                                ? __('Wolforix can now read the authorized :broker cTrader accounts linked to your cTID and sync challenge metrics into the dashboard.', ['broker' => $ctraderConnection['broker_name']])
+                                : __('Authorize Wolforix with :broker cTrader to link your challenge account, fetch live balance/equity data, and keep rule monitoring up to date.', ['broker' => $ctraderConnection['broker_name']]) }}
                         </p>
                     </div>
                     <a href="{{ $ctraderConnection['connect_url'] }}" class="rounded-full border border-amber-400/30 bg-amber-400/12 px-5 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-300/40 hover:bg-amber-400/18">
-                        {{ $ctraderConnection['is_connected'] ? 'Reconnect cTrader' : 'Connect cTrader' }}
+                        {{ $ctraderConnection['is_connected'] ? __('Reconnect cTrader') : __('Connect cTrader') }}
                     </a>
                 </div>
 
                 <dl class="mt-6 grid gap-4 md:grid-cols-3">
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Broker</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Broker') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['broker_name'] }}</dd>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Authorized accounts</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Authorized accounts') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['authorized_accounts_count'] }}</dd>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5 md:col-span-2">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Last authorized</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Last authorized') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['last_authorized_at'] }}</dd>
                     </div>
                     <div class="surface-card rounded-[1.6rem] p-5 md:col-span-3">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Account list sync</dt>
+                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Account list sync') }}</dt>
                         <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['last_synced_accounts_at'] }}</dd>
                     </div>
                 </dl>
@@ -113,7 +113,7 @@
 
                 @if (! empty($ctraderConnection['authorized_accounts']))
                     <div class="mt-4 rounded-[1.5rem] border border-white/8 bg-black/15 px-4 py-4 text-sm text-slate-300">
-                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Authorized cTrader accounts</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Authorized cTrader accounts') }}</p>
                         <div class="mt-3 flex flex-wrap gap-2">
                             @foreach ($ctraderConnection['authorized_accounts'] as $authorizedAccount)
                                 <span class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs font-semibold text-white">
@@ -166,11 +166,11 @@
                                     <dd class="mt-2 font-semibold text-white">{{ $purchase['created_at'] }}</dd>
                                 </div>
                                 <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Trading account</dt>
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Trading account') }}</dt>
                                     <dd class="mt-2 font-semibold text-white">{{ $purchase['account_reference'] }}</dd>
                                 </div>
                                 <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Sync status</dt>
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Sync status') }}</dt>
                                     <dd class="mt-2 font-semibold text-white">{{ $purchase['sync_status'] }}</dd>
                                 </div>
                             </dl>
@@ -213,23 +213,23 @@
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['balance'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Equity</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Equity') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['equity'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Floating P&amp;L</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Floating P&L') }}</p>
                                 <p class="mt-3 text-2xl font-semibold {{ $floatingToneClasses }}">{{ $account['floating_pnl'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Challenge phase</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Challenge phase') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['challenge_phase'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Trading days</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Trading days') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['trading_days'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Max drawdown used</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Max drawdown used') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['max_drawdown_used'] }}</p>
                             </div>
                         </div>
@@ -238,7 +238,7 @@
                             <div class="surface-card rounded-3xl p-5">
                                 <div class="flex flex-wrap items-center justify-between gap-3">
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Challenge progress</p>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Challenge progress') }}</p>
                                         <p class="mt-2 text-lg font-semibold text-white">{{ $account['challenge_status'] }}</p>
                                     </div>
                                     <span class="rounded-full border px-3 py-1.5 text-xs font-semibold {{ $syncToneClasses }}">
@@ -248,7 +248,7 @@
 
                                 <div class="mt-5">
                                     <div class="flex items-center justify-between gap-3 text-sm text-slate-300">
-                                        <span>Profit target progress</span>
+                                        <span>{{ __('Profit target progress') }}</span>
                                         <span class="font-semibold text-white">{{ $account['progress'] }}</span>
                                     </div>
                                     <div class="mt-3 h-2 rounded-full bg-white/6">
@@ -258,58 +258,58 @@
 
                                 <dl class="mt-5 space-y-3 text-sm">
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Daily loss used</dt>
+                                        <dt class="text-slate-400">{{ __('Daily loss used') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['daily_loss_used'] }} / {{ $account['daily_loss_limit'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Daily loss remaining</dt>
+                                        <dt class="text-slate-400">{{ __('Daily loss remaining') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['daily_loss_remaining'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Max drawdown used</dt>
+                                        <dt class="text-slate-400">{{ __('Max drawdown used') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['max_drawdown_used'] }} / {{ $account['max_drawdown_limit'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Max drawdown remaining</dt>
+                                        <dt class="text-slate-400">{{ __('Max drawdown remaining') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['max_drawdown_remaining'] }}</dd>
                                     </div>
                                 </dl>
                             </div>
 
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Sync details</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Sync details') }}</p>
                                 <dl class="mt-5 space-y-3 text-sm">
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Sync status</dt>
+                                        <dt class="text-slate-400">{{ __('Sync status') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['sync_status'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Last synced</dt>
+                                        <dt class="text-slate-400">{{ __('Last synced') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['last_synced_at'] }}</dd>
                                     </div>
                                     <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Sync freshness</dt>
+                                        <dt class="text-slate-400">{{ __('Sync freshness') }}</dt>
                                         <dd class="mt-2 font-semibold text-white">{{ $account['sync_freshness'] }}</dd>
                                         <p class="mt-2 leading-6 text-slate-400">{{ $account['sync_freshness_hint'] }}</p>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Source</dt>
+                                        <dt class="text-slate-400">{{ __('Source') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['sync_source'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Platform account</dt>
+                                        <dt class="text-slate-400">{{ __('Platform account') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['platform_account_id'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Environment</dt>
+                                        <dt class="text-slate-400">{{ __('Environment') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['platform_environment'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Connection</dt>
+                                        <dt class="text-slate-400">{{ __('Connection') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['platform_status'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">Last evaluated</dt>
+                                        <dt class="text-slate-400">{{ __('Last evaluated') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['last_evaluated_at'] }}</dd>
                                     </div>
                                 </dl>
@@ -318,14 +318,14 @@
 
                         @if ($account['failure_reason'])
                             <div class="mt-4 surface-card rounded-3xl border border-rose-400/20 bg-rose-500/10 p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-rose-100">Failure reason</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-rose-100">{{ __('Failure reason') }}</p>
                                 <p class="mt-3 text-lg font-semibold text-white">{{ $account['failure_reason'] }}</p>
                             </div>
                         @endif
 
                         @if ($account['needs_linking'] && ! empty($ctraderConnection['authorized_accounts']))
                             <div class="mt-4 surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Link authorized cTrader account</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Link authorized cTrader account') }}</p>
                                 <div class="mt-4">
                                     <form method="POST" action="{{ $ctraderConnection['link_url'] }}" class="flex flex-col gap-3 sm:flex-row">
                                         @csrf
@@ -338,7 +338,7 @@
                                             @endforeach
                                         </select>
                                         <button type="submit" class="rounded-full border border-amber-400/30 bg-amber-400/12 px-5 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-300/40 hover:bg-amber-400/18">
-                                            Link account
+                                            {{ __('Link account') }}
                                         </button>
                                     </form>
                                 </div>
@@ -367,7 +367,7 @@
                         };
                     @endphp
                     <div class="rounded-3xl border border-white/8 bg-white/3 p-5">
-                        <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ $plan['name'] }}</p>
+                        <p class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.types.'.$plan['challenge_type'].'.label') }} / {{ (int) ($plan['account_size'] / 1000) }}K</p>
                         <p class="mt-3 text-3xl font-semibold text-white">{{ $currencyPrefix }}{{ number_format($plan['account_size']) }}</p>
                         <div class="mt-4 flex flex-wrap items-center gap-2">
                             @if ($plan['discount']['enabled'])

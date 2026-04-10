@@ -54,7 +54,7 @@ class OpenAiTextToSpeechService
     {
         $normalized = Str::of((string) $locale)->lower()->replace('_', '-')->before('-')->value();
 
-        return in_array($normalized, ['de', 'es', 'fr'], true) ? $normalized : 'en';
+        return in_array($normalized, ['de', 'es', 'fr', 'hi', 'it', 'pt'], true) ? $normalized : 'en';
     }
 
     private function speechLocale(string $localeBase): string
@@ -63,6 +63,9 @@ class OpenAiTextToSpeechService
             'de' => 'de-DE',
             'es' => 'es-ES',
             'fr' => 'fr-FR',
+            'hi' => 'hi-IN',
+            'it' => 'it-IT',
+            'pt' => 'pt-PT',
             default => 'en-US',
         };
     }
@@ -73,6 +76,9 @@ class OpenAiTextToSpeechService
             'de' => 'German',
             'es' => 'Spanish',
             'fr' => 'French',
+            'hi' => 'Hindi',
+            'it' => 'Italian',
+            'pt' => 'Portuguese',
             default => 'English',
         };
 

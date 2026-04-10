@@ -34,7 +34,7 @@
             </div>
 
             <div class="max-w-4xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.32em] text-amber-300">Primary account</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.32em] text-amber-300">{{ __('Primary account') }}</p>
                 <h2 class="mt-3 text-3xl font-semibold text-white sm:text-4xl">{{ $hero['title'] }}</h2>
                 <p class="mt-3 break-words text-sm leading-7 text-slate-400">{{ $hero['subtitle'] }}</p>
             </div>
@@ -54,11 +54,11 @@
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <article class="surface-card rounded-[1.85rem] p-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Target progress</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Target progress') }}</p>
                 <div class="mt-4 flex items-end justify-between gap-4">
                     <div>
                         <p class="text-4xl font-semibold text-white">{{ $primaryAccount['progress_label'] }}</p>
-                        <p class="mt-2 text-sm text-slate-400">toward the current phase target</p>
+                        <p class="mt-2 text-sm text-slate-400">{{ __('toward the current phase target') }}</p>
                     </div>
                     <span class="{{ $syncToneClass }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold">
                         {{ $hero['sync_freshness']['label'] }}
@@ -68,26 +68,26 @@
             </article>
 
             <article class="surface-card rounded-[1.85rem] p-5 sm:col-span-2 xl:col-span-1">
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Account details</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Account details') }}</p>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">Platform</dt>
+                        <dt class="text-slate-400">{{ __('Platform') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['platform'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">Start date</dt>
+                        <dt class="text-slate-400">{{ __('Start date') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['start_date'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">Phase</dt>
+                        <dt class="text-slate-400">{{ __('Phase') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['challenge_phase'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">Status</dt>
+                        <dt class="text-slate-400">{{ __('Status') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['challenge_status'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">Sync status</dt>
+                        <dt class="text-slate-400">{{ __('Sync status') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['sync_status'] }}</dd>
                     </div>
                 </dl>

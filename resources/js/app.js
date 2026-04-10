@@ -58,23 +58,38 @@ document.addEventListener('DOMContentLoaded', () => {
             regex: /[äöüß]|\b(hallo|wann|wie|kann|auszahlung|regel|challenge|konto|support|login|rabatt|checkout)\b/i,
             tokens: ['hallo', 'wann', 'wie', 'kann', 'auszahlung', 'regel', 'challenge', 'konto', 'support', 'login', 'rabatt', 'checkout', 'plan', 'drawdown', 'nachrichten', 'test', 'demo'],
         },
+        hi: {
+            regex: /[\u0900-\u097F]|\b(namaste|kab|kaise|madad|niyam|challenge|khata|account|support|login|discount|payout)\b/i,
+            tokens: ['namaste', 'kab', 'kaise', 'madad', 'niyam', 'challenge', 'khata', 'account', 'support', 'login', 'discount', 'payout', 'plan', 'drawdown', 'news', 'trial', 'demo'],
+        },
+        it: {
+            regex: /[àèéìíîòóù]|\b(ciao|quando|come|posso|pagamento|prelievo|regola|sfida|challenge|conto|supporto|accesso|sconto|checkout)\b/i,
+            tokens: ['ciao', 'quando', 'come', 'posso', 'pagamento', 'prelievo', 'regola', 'sfida', 'challenge', 'conto', 'supporto', 'accesso', 'sconto', 'checkout', 'piano', 'drawdown', 'notizie', 'prova', 'demo'],
+        },
+        pt: {
+            regex: /[ãõáàâéêíóôúç]|\b(ola|olá|quando|como|posso|pagamento|saque|regra|desafio|challenge|conta|suporte|login|desconto|checkout)\b/i,
+            tokens: ['ola', 'olá', 'quando', 'como', 'posso', 'pagamento', 'saque', 'regra', 'desafio', 'challenge', 'conta', 'suporte', 'login', 'desconto', 'checkout', 'plano', 'drawdown', 'noticias', 'notícias', 'teste', 'demo'],
+        },
     };
     const assistantIntentProfiles = {
-        greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo'],
-        support: ['support', 'help', 'contact', 'email', 'live chat', 'ticket', 'customer service', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing', 'refund'],
-        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'sign up', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse', 'connexion'],
-        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'trial access', 'demo login', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto'],
-        payout: ['payout', 'get paid', 'paid', 'cash out', 'withdraw', 'withdrawal', 'withdraw money', 'profit split', 'payment', 'processing time', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal'],
-        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'max daily loss', 'max total loss', 'consistency', 'news', 'news trading', 'stop loss', 'trading days', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss'],
-        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'which challenge', 'which plan', 'best plan', 'difference', 'compare', 'single phase', 'funded account', 'one step', 'two step', '1-step', '2-step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2'],
-        checkout: ['checkout', 'buy', 'purchase', 'order', 'pay', 'payment method', 'stripe', 'paypal', 'plan kaufen', 'comprar', 'pedido', 'commande'],
-        discount: ['discount', 'promo', 'promo code', 'launch code', 'launch offer', 'coupon', 'rabatt', 'descuento', 'remise'],
+        greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo', 'namaste', 'ciao', 'ola', 'olá'],
+        support: ['support', 'help', 'contact', 'email', 'live chat', 'ticket', 'customer service', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing', 'refund', 'madad', 'supporto', 'suporte', 'contatto', 'contato'],
+        login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'sign up', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse', 'connexion', 'accedi', 'acceso', 'cadastro', 'senha', 'khata'],
+        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'trial access', 'demo login', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto', 'prova gratuita', 'teste gratis', 'teste grátis', 'muft trial', 'free test'],
+        payout: ['payout', 'get paid', 'paid', 'cash out', 'withdraw', 'withdrawal', 'withdraw money', 'profit split', 'payment', 'processing time', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal', 'saque', 'pagamento', 'prelievo', 'pagamento del profitto'],
+        rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'max daily loss', 'max total loss', 'consistency', 'news', 'news trading', 'stop loss', 'trading days', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss', 'niyam', 'regola', 'regole', 'regra', 'regras'],
+        plans: ['plan', 'challenge', 'account size', 'size', 'model', 'which challenge', 'which plan', 'best plan', 'difference', 'compare', 'single phase', 'funded account', 'one step', 'two step', '1-step', '2-step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2', 'piano', 'sfida', 'plano', 'khata size'],
+        checkout: ['checkout', 'buy', 'purchase', 'order', 'pay', 'payment method', 'stripe', 'paypal', 'plan kaufen', 'comprar', 'pedido', 'commande', 'acquista', 'ordine', 'pagare', 'comprar agora', 'pagamento online'],
+        discount: ['discount', 'promo', 'promo code', 'launch code', 'launch offer', 'coupon', 'rabatt', 'descuento', 'remise', 'sconto', 'desconto', 'codice promo', 'coupon code'],
     };
     const assistantNoiseWords = new Set([
         'a', 'an', 'and', 'are', 'as', 'at', 'be', 'can', 'do', 'for', 'from', 'help', 'how', 'i', 'if', 'in', 'is', 'it', 'me', 'my', 'of', 'on', 'or', 'please', 'the', 'this', 'to', 'we', 'what', 'when', 'where', 'which', 'who', 'why', 'with', 'you', 'your',
         'al', 'algo', 'como', 'con', 'cual', 'cuales', 'de', 'del', 'donde', 'el', 'en', 'es', 'esta', 'estoy', 'hola', 'la', 'las', 'lo', 'los', 'me', 'mi', 'para', 'por', 'puedo', 'que', 'se', 'si', 'tu', 'una', 'uno', 'y',
         'aber', 'auch', 'bei', 'bin', 'bitte', 'das', 'dass', 'dein', 'dem', 'den', 'der', 'die', 'du', 'ein', 'eine', 'einer', 'eines', 'es', 'fuer', 'für', 'ich', 'im', 'ist', 'mit', 'oder', 'und', 'was', 'wenn', 'wie', 'wo', 'zu',
         'alors', 'avec', 'bonjour', 'comment', 'dans', 'de', 'des', 'du', 'est', 'et', 'je', 'la', 'le', 'les', 'mon', 'ou', 'pour', 'pouvez', 'puis', 'que', 'quoi', 'si', 'sur', 'une', 'vous',
+        'aur', 'bhi', 'hai', 'ho', 'ka', 'ke', 'ki', 'ko', 'kya', 'main', 'mera', 'meri', 'mujhe', 'par', 'se', 'ye', 'आप', 'और', 'का', 'के', 'की', 'को', 'क्या', 'मुझे', 'में', 'यह', 'से', 'है',
+        'anche', 'che', 'chi', 'come', 'con', 'cosa', 'dei', 'del', 'della', 'delle', 'dello', 'di', 'e', 'gli', 'il', 'in', 'io', 'la', 'le', 'mi', 'per', 'puoi', 'puo', 'può', 'se', 'su', 'un', 'una',
+        'a', 'as', 'com', 'como', 'da', 'das', 'de', 'do', 'dos', 'e', 'em', 'esse', 'esta', 'eu', 'me', 'minha', 'no', 'nos', 'nós', 'o', 'os', 'para', 'por', 'posso', 'que', 'se', 'um', 'uma', 'voces', 'vocês',
     ].map(normalizeText));
     const assistantFollowupMarkers = [
         'also',
@@ -100,6 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
         'et',
         'et pour',
         'et si',
+        'aur',
+        'aur agar',
+        'bhi',
+        'और',
+        'और अगर',
+        'anche',
+        'e',
+        'e per',
+        'e se',
+        'tambem',
+        'também',
+        'e',
+        'e para',
+        'e se',
     ].map(normalizeText);
     const assistantConversationProfiles = {
         en: {
@@ -154,6 +183,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 discount: 'Si vous voulez, je peux vous dire exactement ou appliquer le code.',
             },
         },
+        hi: {
+            followups: {
+                intro: 'मुझसे पेआउट, नियमों या आपके अकाउंट के अगले सही कदम के बारे में पूछिए।',
+                default: 'अगर आप चाहें, तो मैं इसे चरण दर चरण समझा सकता हूँ।',
+                support: 'अगर आप चाहें, तो मैं आपको सबसे तेज़ सपोर्ट विकल्प तक पहुँचा सकता हूँ।',
+                trial: 'अगर आप चाहें, तो मैं आपको मुफ्त डेमो फ्लो में ले चल सकता हूँ।',
+                plans: 'अगर आप चाहें, तो मैं आपके लिए 1-Step और 2-Step मॉडल की तुलना कर सकता हूँ।',
+                payout: 'अगर आप चाहें, तो मैं समय-सीमा और अनुरोध भेजने के बाद क्या होता है, यह भी समझा सकता हूँ।',
+                rules: 'अगर आप चाहें, तो मैं नियमों को एक छोटी चेकलिस्ट में बदल सकता हूँ।',
+                checkout: 'अगर आप चाहें, तो मैं आपको चेकआउट प्रक्रिया चरण दर चरण समझा सकता हूँ।',
+                discount: 'अगर आप चाहें, तो मैं आपको ठीक बता सकता हूँ कि कोड कहाँ लागू करना है।',
+            },
+        },
+        it: {
+            followups: {
+                intro: 'Chiedimi di payout, regole o del miglior prossimo passo per il tuo account.',
+                default: 'Se vuoi, posso anche spiegartelo passo dopo passo.',
+                support: 'Se vuoi, posso indicarti l’opzione di supporto più rapida.',
+                trial: 'Se vuoi, posso guidarti nel flusso demo gratuito.',
+                plans: 'Se vuoi, posso confrontare per te i modelli 1-Step e 2-Step.',
+                payout: 'Se vuoi, posso spiegarti anche le tempistiche e cosa succede dopo aver inviato la richiesta.',
+                rules: 'Se vuoi, posso trasformare le regole in una checklist rapida.',
+                checkout: 'Se vuoi, posso guidarti nel checkout passo dopo passo.',
+                discount: 'Se vuoi, posso dirti esattamente dove applicare il codice.',
+            },
+        },
+        pt: {
+            followups: {
+                intro: 'Pergunte-me sobre payouts, regras ou qual é o melhor próximo passo para a sua conta.',
+                default: 'Se quiser, também posso explicar isso passo a passo.',
+                support: 'Se quiser, posso indicar a opção de suporte mais rápida.',
+                trial: 'Se quiser, posso guiá-lo no fluxo de demo gratuito.',
+                plans: 'Se quiser, posso comparar os modelos 1-Step e 2-Step para si.',
+                payout: 'Se quiser, também posso explicar os prazos e o que acontece depois de enviar o pedido.',
+                rules: 'Se quiser, posso transformar as regras numa checklist rápida.',
+                checkout: 'Se quiser, posso guiá-lo pelo checkout passo a passo.',
+                discount: 'Se quiser, posso mostrar exatamente onde aplicar o código.',
+            },
+        },
     };
     const assistantSpeechProfiles = {
         en: {
@@ -190,6 +258,30 @@ document.addEventListener('DOMContentLoaded', () => {
             femaleVoices: ['female', 'amelie', 'aurelie', 'virginie', 'marie', 'julie'],
             preferredVoices: ['thomas', 'alexandre', 'antoine', 'nicolas', 'henri'],
         },
+        hi: {
+            rate: 0.92,
+            pitch: 0.82,
+            volume: 1,
+            maleVoices: ['male', 'aditya', 'arjun', 'rahul', 'rohan', 'aman', 'vivek', 'karan', 'raj', 'amit'],
+            femaleVoices: ['female', 'ananya', 'priya', 'neha', 'kavya', 'isha'],
+            preferredVoices: ['arjun', 'rahul', 'vivek', 'rohan', 'aditya'],
+        },
+        it: {
+            rate: 0.95,
+            pitch: 0.82,
+            volume: 1,
+            maleVoices: ['male', 'luca', 'marco', 'matteo', 'andrea', 'alessandro', 'davide', 'riccardo', 'simone', 'paolo'],
+            femaleVoices: ['female', 'giulia', 'sofia', 'chiara', 'martina', 'sara'],
+            preferredVoices: ['luca', 'marco', 'matteo', 'alessandro', 'davide'],
+        },
+        pt: {
+            rate: 0.95,
+            pitch: 0.82,
+            volume: 1,
+            maleVoices: ['male', 'joao', 'joão', 'miguel', 'tiago', 'andre', 'andré', 'rafael', 'diogo', 'pedro', 'bruno'],
+            femaleVoices: ['female', 'ana', 'ines', 'inês', 'beatriz', 'maria', 'sofia'],
+            preferredVoices: ['miguel', 'tiago', 'joao', 'joão', 'andré'],
+        },
     };
     const assistantSpeechCleanupProfiles = {
         en: {
@@ -225,6 +317,33 @@ document.addEventListener('DOMContentLoaded', () => {
             aroundClock: 'vingt quatre sur sept',
             oneStep: 'un step',
             twoStep: 'deux step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        hi: {
+            andWord: 'और',
+            percentWord: 'प्रतिशत',
+            aroundClock: 'चौबीस सात',
+            oneStep: 'वन स्टेप',
+            twoStep: 'टू स्टेप',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        it: {
+            andWord: 'e',
+            percentWord: 'percento',
+            aroundClock: 'ventiquattro su sette',
+            oneStep: 'uno step',
+            twoStep: 'due step',
+            cTrader: 'C Trader',
+            isoLabel: 'I S O I E C 27001',
+        },
+        pt: {
+            andWord: 'e',
+            percentWord: 'por cento',
+            aroundClock: 'vinte e quatro sete',
+            oneStep: 'um step',
+            twoStep: 'dois step',
             cTrader: 'C Trader',
             isoLabel: 'I S O I E C 27001',
         },
@@ -1809,6 +1928,9 @@ document.addEventListener('DOMContentLoaded', () => {
             de: 'de-DE',
             es: 'es-ES',
             fr: 'fr-FR',
+            hi: 'hi-IN',
+            it: 'it-IT',
+            pt: 'pt-PT',
         };
         const ttsEndpoint = typeof assistantConfig.tts_endpoint === 'string'
             ? assistantConfig.tts_endpoint

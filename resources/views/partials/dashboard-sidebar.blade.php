@@ -55,21 +55,21 @@
     @if (! empty($primaryAccount))
         <div class="mt-6 hidden space-y-6 lg:block">
             <div class="surface-card rounded-3xl p-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Primary account</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Primary account') }}</p>
                 <p class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['reference'] }}</p>
                 <p class="mt-2 text-sm text-slate-400">{{ $primaryAccount['platform_account_id'] }}</p>
 
                 <dl class="mt-5 space-y-3 text-sm">
                     <div class="flex items-center justify-between gap-4">
-                        <dt class="text-slate-400">Balance</dt>
+                        <dt class="text-slate-400">{{ __('Balance') }}</dt>
                         <dd class="font-semibold text-white">{{ $primaryAccount['balance'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4">
-                        <dt class="text-slate-400">Equity</dt>
+                        <dt class="text-slate-400">{{ __('Equity') }}</dt>
                         <dd class="font-semibold text-white">{{ $primaryAccount['equity'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4">
-                        <dt class="text-slate-400">Floating P&L</dt>
+                        <dt class="text-slate-400">{{ __('Floating P&L') }}</dt>
                         <dd class="font-semibold {{ $primaryAccount['floating_pnl_tone'] === 'rose' ? 'text-rose-100' : ($primaryAccount['floating_pnl_tone'] === 'emerald' ? 'text-emerald-100' : 'text-white') }}">
                             {{ $primaryAccount['floating_pnl'] }}
                         </dd>

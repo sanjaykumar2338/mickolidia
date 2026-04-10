@@ -13,8 +13,8 @@
 <section class="surface-panel rounded-[2rem] p-5 sm:p-6" data-dashboard-trades data-dashboard-trades-summary='@json($tradesPanel['summary'])'>
     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">Trade history</p>
-            <h3 class="mt-3 text-2xl font-semibold text-white">Open and closed trades</h3>
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Trade history') }}</p>
+            <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Open and closed trades') }}</h3>
             <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
                 {{ $tradesPanel['message'] }}
             </p>
@@ -39,12 +39,12 @@
     @if ($tradesPanel['is_available'])
         <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[1.6rem] border border-white/8 bg-black/18 px-4 py-3 text-sm text-slate-300">
             <p>
-                Showing
+                {{ __('Showing') }}
                 <span class="font-semibold text-white" data-dashboard-trades-count>{{ $tradesPanel['summary']['both'] }}</span>
-                synced trade rows
+                {{ __('synced trade rows') }}
             </p>
             <p class="text-xs uppercase tracking-[0.24em] text-slate-400">
-                Source: {{ $tradesPanel['source'] }}
+                {{ __('Source') }}: {{ $tradesPanel['source'] }}
             </p>
         </div>
 
@@ -66,19 +66,19 @@
                     </div>
                     <dl class="mt-4 grid gap-3 sm:grid-cols-2">
                         <div>
-                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Open</dt>
+                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Open') }}</dt>
                             <dd class="mt-1 text-sm text-white">{{ $row['open_date'] }}</dd>
                         </div>
                         <div>
-                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Close</dt>
+                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Close') }}</dt>
                             <dd class="mt-1 text-sm text-white">{{ $row['close_date'] }}</dd>
                         </div>
                         <div>
-                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Volume</dt>
+                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Volume') }}</dt>
                             <dd class="mt-1 text-sm text-white">{{ $row['volume'] }}</dd>
                         </div>
                         <div>
-                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">P&L</dt>
+                            <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('P&L') }}</dt>
                             <dd class="mt-1 text-sm font-semibold {{ $profitToneClasses[$row['profit_tone']] ?? $profitToneClasses['slate'] }}">{{ $row['profit'] }}</dd>
                         </div>
                     </dl>
@@ -91,14 +91,14 @@
                 <table class="min-w-full divide-y divide-white/8 text-left text-sm">
                     <thead class="bg-white/4 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
                         <tr>
-                            <th class="px-4 py-4">Ticket</th>
-                            <th class="px-4 py-4">Symbol</th>
-                            <th class="px-4 py-4">Side</th>
-                            <th class="px-4 py-4">Open date</th>
-                            <th class="px-4 py-4">Close date</th>
-                            <th class="px-4 py-4">Volume</th>
-                            <th class="px-4 py-4 text-right">P&L</th>
-                            <th class="px-4 py-4">Status</th>
+                            <th class="px-4 py-4">{{ __('Ticket') }}</th>
+                            <th class="px-4 py-4">{{ __('Symbol') }}</th>
+                            <th class="px-4 py-4">{{ __('Side') }}</th>
+                            <th class="px-4 py-4">{{ __('Open date') }}</th>
+                            <th class="px-4 py-4">{{ __('Close date') }}</th>
+                            <th class="px-4 py-4">{{ __('Volume') }}</th>
+                            <th class="px-4 py-4 text-right">{{ __('P&L') }}</th>
+                            <th class="px-4 py-4">{{ __('Status') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/6">
@@ -124,7 +124,7 @@
         </div>
 
         <div class="mt-5 hidden rounded-[1.55rem] border border-dashed border-white/12 bg-white/3 px-4 py-5 text-center text-sm leading-7 text-slate-400" data-dashboard-trades-empty>
-            No trades match the selected filter right now.
+            {{ __('No trades match the selected filter right now.') }}
         </div>
     @else
         <div class="mt-6 rounded-[1.7rem] border border-dashed border-white/12 bg-white/3 px-5 py-6 text-sm leading-7 text-slate-400">

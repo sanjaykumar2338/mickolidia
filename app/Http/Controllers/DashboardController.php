@@ -90,8 +90,8 @@ class DashboardController extends Controller
             'hasTradingAccounts' => $accounts->isNotEmpty(),
             'availablePlans' => $availablePlans,
             'emptyState' => [
-                'title' => 'No challenge accounts linked yet',
-                'message' => 'Paid challenges stay visible below. A trading account card appears here once the purchase is provisioned and linked for sync.',
+                'title' => __('No challenge accounts linked yet'),
+                'message' => __('Paid challenges stay visible below. A trading account card appears here once the purchase is provisioned and linked for sync.'),
             ],
         ];
     }
@@ -126,8 +126,8 @@ class DashboardController extends Controller
             'hasTradingAccounts' => false,
             'availablePlans' => $availablePlans,
             'emptyState' => [
-                'title' => 'No challenge accounts linked yet',
-                'message' => 'Your dashboard will populate here after a paid challenge is provisioned.',
+                'title' => __('No challenge accounts linked yet'),
+                'message' => __('Your dashboard will populate here after a paid challenge is provisioned.'),
             ],
         ];
     }
@@ -143,8 +143,8 @@ class DashboardController extends Controller
         $phaseProfit = round((float) $account->balance - (float) ($account->phase_reference_balance ?: $account->starting_balance ?: 0), 2);
 
         return [
-            'reference' => $account->account_reference ?? 'N/A',
-            'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
+            'reference' => $account->account_reference ?? __('N/A'),
+            'plan' => $this->planLabel((string) $account->challenge_type, (int) $account->account_size),
             'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
             'challenge_phase' => $this->phaseLabel($account),
             'account_size' => $this->formatMoney((float) $account->account_size),
@@ -155,9 +155,9 @@ class DashboardController extends Controller
             'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status)),
             'account_status' => $this->humanizeStatus((string) $account->account_status),
             'start_date' => $this->formatDate($account->phase_started_at ?? $account->activated_at ?? $account->created_at),
-            'platform_account_id' => $account->platform_account_id ?: 'Link pending',
-            'platform_login' => $account->platform_login ?: 'Link pending',
-            'platform_environment' => $account->platform_environment ?: 'Pending',
+            'platform_account_id' => $account->platform_account_id ?: __('Link pending'),
+            'platform_login' => $account->platform_login ?: __('Link pending'),
+            'platform_environment' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')),
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->last_synced_at),
@@ -191,7 +191,7 @@ class DashboardController extends Controller
             'payout_eligible_at' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
-            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'Not available',
+            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'payout_cycle_days' => $fundedTiming['payout_cycle_days'],
             'first_payout_days' => $fundedTiming['first_payout_days'],
@@ -209,18 +209,18 @@ class DashboardController extends Controller
         }
 
         $targetAmount = $this->profitTargetAmount($account);
-        $reference = $account->account_reference ?? 'N/A';
-        $platformAccountId = $account->platform_account_id ?: 'Link pending';
+        $reference = $account->account_reference ?? __('N/A');
+        $platformAccountId = $account->platform_account_id ?: __('Link pending');
 
         return [
-            'title' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
+            'title' => $this->planLabel((string) $account->challenge_type, (int) $account->account_size),
             'subtitle' => implode(' • ', array_filter([
                 $reference,
                 $platformAccountId,
                 $account->platform,
             ])),
             'reference' => $reference,
-            'platform' => $account->platform ?: 'Not linked',
+            'platform' => $account->platform ?: __('Not linked'),
             'platform_account_id' => $platformAccountId,
             'start_date' => $this->formatDate($account->phase_started_at ?? $account->activated_at ?? $account->created_at),
             'challenge_phase' => $this->phaseLabel($account),
@@ -230,37 +230,37 @@ class DashboardController extends Controller
             'badges' => $this->dashboardBadges($account),
             'metrics' => [
                 [
-                    'label' => 'Starting balance',
+                    'label' => __('Starting balance'),
                     'value' => $this->formatMoney((float) $account->starting_balance),
-                    'hint' => 'Phase baseline',
+                    'hint' => __('Phase baseline'),
                     'tone' => 'slate',
                 ],
                 [
-                    'label' => 'Current balance',
+                    'label' => __('Current balance'),
                     'value' => $this->formatMoney((float) $account->balance),
-                    'hint' => 'Closed balance',
+                    'hint' => __('Closed balance'),
                     'tone' => 'amber',
                 ],
                 [
-                    'label' => 'Equity',
+                    'label' => __('Equity'),
                     'value' => $this->formatMoney((float) $account->equity),
-                    'hint' => 'Live equity',
+                    'hint' => __('Live equity'),
                     'tone' => 'sky',
                 ],
                 [
-                    'label' => 'Floating P&L',
+                    'label' => __('Floating P&L'),
                     'value' => $this->formatMoney((float) $account->profit_loss),
-                    'hint' => 'Open positions',
+                    'hint' => __('Open positions'),
                     'tone' => $this->metricTone((float) $account->profit_loss),
                 ],
                 [
-                    'label' => 'Recognized profit',
+                    'label' => __('Recognized profit'),
                     'value' => $this->formatMoney((float) $account->total_profit),
-                    'hint' => 'Closed performance',
+                    'hint' => __('Closed performance'),
                     'tone' => $this->metricTone((float) $account->total_profit),
                 ],
                 [
-                    'label' => 'Profit target',
+                    'label' => __('Profit target'),
                     'value' => $this->formatMoney($targetAmount),
                     'hint' => number_format((float) $account->profit_target_percent, 1).'%',
                     'tone' => 'emerald',
@@ -279,20 +279,20 @@ class DashboardController extends Controller
         }
 
         $state = $account->is_funded
-            ? 'Funded'
+            ? 'funded'
             : match ((string) $account->challenge_status) {
-                'passed' => 'Passed',
-                'failed' => 'Failed',
-                default => 'Evaluation',
+                'passed' => 'passed',
+                'failed' => 'failed',
+                default => 'evaluation',
             };
 
         $badges = [
             ['label' => $this->challengeTypeLabel((string) $account->challenge_type), 'tone' => 'amber'],
-            ['label' => $state, 'tone' => $this->statusTone($state)],
+            ['label' => $this->humanizeStatus($state), 'tone' => $this->statusTone($state)],
             ['label' => $this->humanizeStatus((string) ($account->account_status ?: $account->status ?: 'active')), 'tone' => $this->statusTone((string) ($account->account_status ?: $account->status ?: 'active'))],
             ['label' => $this->phaseLabel($account), 'tone' => 'slate'],
             ['label' => strtoupper((string) ($account->platform ?: 'N/A')), 'tone' => 'sky'],
-            ['label' => strtoupper((string) ($account->platform_environment ?: 'pending')), 'tone' => 'slate'],
+            ['label' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')), 'tone' => 'slate'],
         ];
 
         return collect($badges)
@@ -319,39 +319,41 @@ class DashboardController extends Controller
 
         return [
             [
-                'label' => 'Profit target progress',
+                'label' => __('Profit target progress'),
                 'value' => max(min($targetProgress, 100), 0),
                 'value_label' => number_format($targetProgress, 1).'%',
                 'current' => $this->formatMoney((float) $account->total_profit),
                 'target' => $this->formatMoney($targetAmount),
-                'meta' => 'Remaining '.$this->formatMoney(max($targetAmount - (float) $account->total_profit, 0)),
+                'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($targetAmount - (float) $account->total_profit, 0))]),
                 'tone' => 'amber',
             ],
             [
-                'label' => 'Daily loss usage',
+                'label' => __('Daily loss usage'),
                 'value' => $this->safePercentage((float) $account->daily_loss_used, $dailyLossLimit),
                 'value_label' => number_format($this->safePercentage((float) $account->daily_loss_used, $dailyLossLimit), 1).'%',
                 'current' => $this->formatMoney((float) $account->daily_loss_used),
                 'target' => $this->formatMoney($dailyLossLimit),
-                'meta' => 'Remaining '.$this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0)),
+                'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
                 'tone' => ((float) $account->daily_loss_used) >= ($dailyLossLimit * 0.8) && $dailyLossLimit > 0 ? 'rose' : 'sky',
             ],
             [
-                'label' => 'Max drawdown usage',
+                'label' => __('Max drawdown usage'),
                 'value' => $this->safePercentage((float) $account->max_drawdown_used, $maxDrawdownLimit),
                 'value_label' => number_format($this->safePercentage((float) $account->max_drawdown_used, $maxDrawdownLimit), 1).'%',
                 'current' => $this->formatMoney((float) $account->max_drawdown_used),
                 'target' => $this->formatMoney($maxDrawdownLimit),
-                'meta' => 'Remaining '.$this->formatMoney(max($maxDrawdownLimit - (float) $account->max_drawdown_used, 0)),
+                'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($maxDrawdownLimit - (float) $account->max_drawdown_used, 0))]),
                 'tone' => ((float) $account->max_drawdown_used) >= ($maxDrawdownLimit * 0.8) && $maxDrawdownLimit > 0 ? 'rose' : 'slate',
             ],
             [
-                'label' => 'Trading days completed',
+                'label' => __('Trading days completed'),
                 'value' => $this->safePercentage((float) $tradingDaysCompleted, (float) $minimumTradingDays),
                 'value_label' => sprintf('%d / %d', $tradingDaysCompleted, (int) $account->minimum_trading_days),
                 'current' => (string) $tradingDaysCompleted,
                 'target' => (string) $account->minimum_trading_days,
-                'meta' => $tradingDaysCompleted >= (int) $account->minimum_trading_days ? 'Minimum requirement met' : 'Keep trading to unlock progression',
+                'meta' => $tradingDaysCompleted >= (int) $account->minimum_trading_days
+                    ? __('Minimum requirement met')
+                    : __('Keep trading to unlock progression'),
                 'tone' => $tradingDaysCompleted >= (int) $account->minimum_trading_days ? 'emerald' : 'amber',
             ],
         ];
@@ -366,7 +368,7 @@ class DashboardController extends Controller
             'is_available' => false,
             'default_range' => 'all',
             'ranges' => [],
-            'empty_message' => 'The equity curve will appear after the first synced balance snapshot.',
+            'empty_message' => __('The equity curve will appear after the first synced balance snapshot.'),
         ];
 
         if (! $account instanceof TradingAccount) {
@@ -380,10 +382,10 @@ class DashboardController extends Controller
         }
 
         $rangeDefinitions = [
-            'all' => ['label' => 'All', 'days' => null],
-            'weekly' => ['label' => 'Weekly', 'days' => 7],
-            'monthly' => ['label' => 'Monthly', 'days' => 30],
-            'yearly' => ['label' => 'Yearly', 'days' => 365],
+            'all' => ['label' => __('All'), 'days' => null],
+            'weekly' => ['label' => __('Weekly'), 'days' => 7],
+            'monthly' => ['label' => __('Monthly'), 'days' => 30],
+            'yearly' => ['label' => __('Yearly'), 'days' => 365],
         ];
 
         $ranges = collect($rangeDefinitions)
@@ -400,7 +402,7 @@ class DashboardController extends Controller
                         'summary' => [
                             'change' => $this->formatMoney(0),
                             'change_tone' => 'slate',
-                            'range_hint' => 'No synced data yet',
+                            'range_hint' => __('No synced data yet'),
                             'high' => $this->formatMoney(0),
                             'low' => $this->formatMoney(0),
                             'last_balance' => $this->formatMoney(0),
@@ -423,7 +425,7 @@ class DashboardController extends Controller
                     'summary' => [
                         'change' => $this->formatMoney($change),
                         'change_tone' => $this->metricTone($change),
-                        'range_hint' => sprintf('%s to %s', $firstPoint['label'], $lastPoint['label']),
+                        'range_hint' => __(':from to :to', ['from' => $firstPoint['label'], 'to' => $lastPoint['label']]),
                         'high' => $this->formatMoney((float) $high),
                         'low' => $this->formatMoney((float) $low),
                         'last_balance' => $this->formatMoney((float) $lastPoint['balance']),
@@ -454,51 +456,51 @@ class DashboardController extends Controller
         $phaseProfit = round((float) $account->balance - (float) ($account->phase_reference_balance ?: $account->starting_balance ?: 0), 2);
         $cards = collect([
             [
-                'label' => 'Daily profit',
+                'label' => __('Daily profit'),
                 'value' => $this->formatMoney((float) $account->today_profit),
-                'hint' => 'Latest server-day result',
+                'hint' => __('Latest server-day result'),
                 'tone' => $this->metricTone((float) $account->today_profit),
             ],
             [
-                'label' => 'Unrealized profit',
+                'label' => __('Unrealized profit'),
                 'value' => $this->formatMoney((float) $account->profit_loss),
-                'hint' => 'Open-position exposure',
+                'hint' => __('Open-position exposure'),
                 'tone' => $this->metricTone((float) $account->profit_loss),
             ],
             [
-                'label' => 'Weekly profit',
+                'label' => __('Weekly profit'),
                 'value' => $weeklyProfit === null ? null : $this->formatMoney($weeklyProfit),
-                'hint' => '7-day change in synced total profit',
+                'hint' => __('7-day change in synced total profit'),
                 'tone' => $weeklyProfit === null ? 'slate' : $this->metricTone($weeklyProfit),
             ],
             [
-                'label' => 'Net profit',
+                'label' => __('Net profit'),
                 'value' => $this->formatMoney((float) $account->total_profit),
-                'hint' => 'Closed account performance',
+                'hint' => __('Closed account performance'),
                 'tone' => $this->metricTone((float) $account->total_profit),
             ],
             [
-                'label' => 'Phase profit',
+                'label' => __('Phase profit'),
                 'value' => $this->formatMoney($phaseProfit),
-                'hint' => 'Current phase performance',
+                'hint' => __('Current phase performance'),
                 'tone' => $this->metricTone($phaseProfit),
             ],
             [
-                'label' => 'Trading days completed',
+                'label' => __('Trading days completed'),
                 'value' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
-                'hint' => 'Progress toward the minimum rule',
+                'hint' => __('Progress toward the minimum rule'),
                 'tone' => (int) $account->trading_days_completed >= (int) $account->minimum_trading_days ? 'emerald' : 'amber',
             ],
             [
-                'label' => 'Daily loss used',
+                'label' => __('Daily loss used'),
                 'value' => $this->formatMoney((float) $account->daily_loss_used),
-                'hint' => 'Consumed daily loss room',
+                'hint' => __('Consumed daily loss room'),
                 'tone' => 'slate',
             ],
             [
-                'label' => 'Max drawdown used',
+                'label' => __('Max drawdown used'),
                 'value' => $this->formatMoney((float) $account->max_drawdown_used),
-                'hint' => 'Consumed max loss room',
+                'hint' => __('Consumed max loss room'),
                 'tone' => 'slate',
             ],
         ])->filter(fn (array $card): bool => filled($card['value']));
@@ -508,51 +510,51 @@ class DashboardController extends Controller
         if ($tradeAnalytics !== null) {
             $cards = $cards->concat(array_filter([
                 [
-                    'label' => 'Gross profit',
+                    'label' => __('Gross profit'),
                     'value' => $this->formatMoney((float) $tradeAnalytics['gross_profit']),
-                    'hint' => 'Closed winning trades',
+                    'hint' => __('Closed winning trades'),
                     'tone' => 'emerald',
                 ],
                 [
-                    'label' => 'Gross loss',
+                    'label' => __('Gross loss'),
                     'value' => $this->formatMoney(-(float) $tradeAnalytics['gross_loss']),
-                    'hint' => 'Closed losing trades',
+                    'hint' => __('Closed losing trades'),
                     'tone' => 'rose',
                 ],
                 [
-                    'label' => 'Profit factor',
+                    'label' => __('Profit factor'),
                     'value' => $tradeAnalytics['profit_factor'] !== null ? number_format((float) $tradeAnalytics['profit_factor'], 2) : null,
-                    'hint' => 'Gross profit divided by gross loss',
+                    'hint' => __('Gross profit divided by gross loss'),
                     'tone' => 'sky',
                 ],
                 [
-                    'label' => 'Best profit',
+                    'label' => __('Best profit'),
                     'value' => $this->formatMoney((float) $tradeAnalytics['best_profit']),
-                    'hint' => 'Best closed trade',
+                    'hint' => __('Best closed trade'),
                     'tone' => 'emerald',
                 ],
                 [
-                    'label' => 'Biggest loss',
+                    'label' => __('Biggest loss'),
                     'value' => $this->formatMoney((float) $tradeAnalytics['biggest_loss']),
-                    'hint' => 'Largest closed-trade loss',
+                    'hint' => __('Largest closed-trade loss'),
                     'tone' => 'rose',
                 ],
                 [
-                    'label' => 'Expectancy',
+                    'label' => __('Expectancy'),
                     'value' => $tradeAnalytics['expectancy'] !== null ? $this->formatMoney((float) $tradeAnalytics['expectancy']) : null,
-                    'hint' => 'Average P&L per closed trade',
+                    'hint' => __('Average P&L per closed trade'),
                     'tone' => $tradeAnalytics['expectancy'] !== null ? $this->metricTone((float) $tradeAnalytics['expectancy']) : 'slate',
                 ],
                 [
-                    'label' => 'Average trade size',
+                    'label' => __('Average trade size'),
                     'value' => $tradeAnalytics['average_trade_size'] !== null ? $this->formatNumeric((float) $tradeAnalytics['average_trade_size']) : null,
-                    'hint' => 'Mean closed-trade volume',
+                    'hint' => __('Mean closed-trade volume'),
                     'tone' => 'slate',
                 ],
                 [
-                    'label' => 'Win rate',
+                    'label' => __('Win rate'),
                     'value' => number_format((float) $tradeAnalytics['win_rate'], 1).'%',
-                    'hint' => 'Winning closed trades',
+                    'hint' => __('Winning closed trades'),
                     'tone' => (float) $tradeAnalytics['win_rate'] >= 50 ? 'emerald' : 'amber',
                 ],
             ], static fn (array $card): bool => filled($card['value'])));
@@ -575,31 +577,31 @@ class DashboardController extends Controller
         if ($tradeAnalytics === null) {
             return [
                 'is_available' => false,
-                'title' => 'History & analytics',
-                'message' => 'Per-trade analytics will appear once detailed trade rows are available inside the synced account snapshot.',
+                'title' => __('History & analytics'),
+                'message' => __('Per-trade analytics will appear once detailed trade rows are available inside the synced account snapshot.'),
                 'cards' => [],
             ];
         }
 
         return [
             'is_available' => true,
-            'title' => 'History & analytics',
-            'message' => 'The summary below is calculated from the latest synced trade-history rows attached to this account.',
+            'title' => __('History & analytics'),
+            'message' => __('The summary below is calculated from the latest synced trade-history rows attached to this account.'),
             'cards' => [
                 [
-                    'label' => 'Total trades',
+                    'label' => __('Total trades'),
                     'value' => (string) $tradeAnalytics['closed_trades'],
                 ],
                 [
-                    'label' => 'Fees',
+                    'label' => __('Fees'),
                     'value' => $this->formatMoney(-(float) $tradeAnalytics['fees']),
                 ],
                 [
-                    'label' => 'Win rate',
+                    'label' => __('Win rate'),
                     'value' => number_format((float) $tradeAnalytics['win_rate'], 1).'%',
                 ],
                 [
-                    'label' => 'Total P&L',
+                    'label' => __('Total P&L'),
                     'value' => $this->formatMoney((float) $tradeAnalytics['total_pnl']),
                 ],
             ],
@@ -615,17 +617,17 @@ class DashboardController extends Controller
             'is_available' => false,
             'rows' => [],
             'filters' => [
-                ['key' => 'both', 'label' => 'Both'],
-                ['key' => 'open', 'label' => 'Open'],
-                ['key' => 'closed', 'label' => 'Closed'],
+                ['key' => 'both', 'label' => __('Both')],
+                ['key' => 'open', 'label' => __('Open')],
+                ['key' => 'closed', 'label' => __('Closed')],
             ],
             'summary' => [
                 'open' => 0,
                 'closed' => 0,
                 'both' => 0,
             ],
-            'message' => 'Detailed trade rows are not available in the current synced snapshot for this account yet.',
-            'source' => 'Snapshot payload',
+            'message' => __('Detailed trade rows are not available in the current synced snapshot for this account yet.'),
+            'source' => __('Snapshot payload'),
         ];
 
         if (! $account instanceof TradingAccount) {
@@ -641,15 +643,15 @@ class DashboardController extends Controller
 
             return [
                 'filter' => 'open',
-                'id' => (string) (Arr::get($row, 'position_id') ?: '—'),
+                'id' => (string) (Arr::get($row, 'position_id') ?: __('—')),
                 'symbol' => $this->tradeSymbolLabel($row),
                 'side' => $this->tradeSideLabel(Arr::get($row, 'trade_side')),
                 'open_date' => $this->formatTradeDate(Arr::get($row, 'open_timestamp')),
-                'close_date' => 'Live',
+                'close_date' => __('Live'),
                 'volume' => $this->formatNumeric((float) Arr::get($row, 'volume', 0)),
                 'profit' => $this->formatMoney($profit),
                 'profit_tone' => $this->metricTone($profit),
-                'status' => 'Open',
+                'status' => __('Open'),
                 'sort_timestamp' => $this->sortableTradeTimestamp(Arr::get($row, 'open_timestamp')),
             ];
         });
@@ -659,15 +661,15 @@ class DashboardController extends Controller
 
             return [
                 'filter' => 'closed',
-                'id' => (string) (Arr::get($row, 'deal_id') ?: Arr::get($row, 'position_id') ?: '—'),
+                'id' => (string) (Arr::get($row, 'deal_id') ?: Arr::get($row, 'position_id') ?: __('—')),
                 'symbol' => $this->tradeSymbolLabel($row),
                 'side' => $this->tradeSideLabel(Arr::get($row, 'trade_side')),
-                'open_date' => 'Not available',
+                'open_date' => __('Not available'),
                 'close_date' => $this->formatTradeDate(Arr::get($row, 'execution_timestamp')),
                 'volume' => $this->formatNumeric((float) Arr::get($row, 'volume', 0)),
                 'profit' => $this->formatMoney($profit),
                 'profit_tone' => $this->metricTone($profit),
-                'status' => 'Closed',
+                'status' => __('Closed'),
                 'sort_timestamp' => $this->sortableTradeTimestamp(Arr::get($row, 'execution_timestamp')),
             ];
         });
@@ -694,8 +696,8 @@ class DashboardController extends Controller
                 'closed' => $closedRows->count(),
                 'both' => count($rows),
             ],
-            'message' => 'The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.',
-            'source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'Snapshot payload',
+            'message' => __('The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.'),
+            'source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Snapshot payload'),
         ];
     }
 
@@ -727,22 +729,22 @@ class DashboardController extends Controller
                 [
                     'label' => __('site.dashboard.cards.balance'),
                     'value' => $this->formatMoney(0),
-                    'hint' => 'No challenge account linked yet.',
+                    'hint' => __('No challenge account linked yet.'),
                 ],
                 [
-                    'label' => 'Equity',
+                    'label' => __('Equity'),
                     'value' => $this->formatMoney(0),
-                    'hint' => 'Equity appears after the first MT5 snapshot.',
+                    'hint' => __('Equity appears after the first MT5 snapshot.'),
                 ],
                 [
-                    'label' => 'Floating P&L',
+                    'label' => __('Floating P&L'),
                     'value' => $this->formatMoney(0),
-                    'hint' => 'Open-position profit appears after the first live update.',
+                    'hint' => __('Open-position profit appears after the first live update.'),
                 ],
                 [
-                    'label' => 'Sync freshness',
-                    'value' => 'Awaiting sync',
-                    'hint' => 'The first successful MT5 update will mark this account as live.',
+                    'label' => __('Sync freshness'),
+                    'value' => __('Awaiting sync'),
+                    'hint' => __('The first successful MT5 update will mark this account as live.'),
                 ],
             ];
         }
@@ -753,20 +755,20 @@ class DashboardController extends Controller
             [
                 'label' => __('site.dashboard.cards.balance'),
                 'value' => $this->formatMoney((float) $account->balance),
-                'hint' => 'Latest synced account balance.',
+                'hint' => __('Latest synced account balance.'),
             ],
             [
-                'label' => 'Equity',
+                'label' => __('Equity'),
                 'value' => $this->formatMoney((float) $account->equity),
-                'hint' => 'Current MT5 equity including open trade exposure.',
+                'hint' => __('Current MT5 equity including open trade exposure.'),
             ],
             [
-                'label' => 'Floating P&L',
+                'label' => __('Floating P&L'),
                 'value' => $this->formatMoney((float) $account->profit_loss),
-                'hint' => 'Open-position floating profit or loss from the latest sync.',
+                'hint' => __('Open-position floating profit or loss from the latest sync.'),
             ],
             [
-                'label' => 'Sync freshness',
+                'label' => __('Sync freshness'),
                 'value' => $syncFreshness['label'],
                 'hint' => $syncFreshness['hint'],
             ],
@@ -780,14 +782,14 @@ class DashboardController extends Controller
     {
         if (! $account instanceof TradingAccount) {
             return [
-                'title' => 'Account provisioning',
+                'title' => __('Account provisioning'),
                 'message' => $purchaseCount > 0
-                    ? 'Your paid challenge records are saved. Account metrics appear here once the platform account is linked and synced.'
-                    : 'Purchase a challenge to create your first tracked trading account.',
+                    ? __('Your paid challenge records are saved. Account metrics appear here once the platform account is linked and synced.')
+                    : __('Purchase a challenge to create your first tracked trading account.'),
                 'meta' => [
-                    'Paid challenges: '.$purchaseCount,
-                    'Platform: cTrader',
-                    'Sync status: waiting for account link',
+                    __('Paid challenges: :count', ['count' => $purchaseCount]),
+                    __('Platform: :value', ['value' => 'cTrader']),
+                    __('Sync status: waiting for account link'),
                 ],
             ];
         }
@@ -796,12 +798,12 @@ class DashboardController extends Controller
             $syncFreshness = $this->syncFreshness($account->last_synced_at);
 
             return [
-                'title' => 'MT5 live sync',
-                'message' => 'Balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.',
+                'title' => __('MT5 live sync'),
+                'message' => __('Balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
                 'meta' => [
-                    'Sync freshness: '.$syncFreshness['label'],
-                    'Last sync: '.$this->formatDateTime($account->last_synced_at),
-                    'Data source: '.$this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea')),
+                    __('Sync freshness: :value', ['value' => $syncFreshness['label']]),
+                    __('Last sync: :value', ['value' => $this->formatDateTime($account->last_synced_at)]),
+                    __('Data source: :value', ['value' => $this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea'))]),
                 ],
             ];
         }
@@ -824,12 +826,12 @@ class DashboardController extends Controller
         }
 
         return [
-            'title' => 'Sync health',
-            'message' => 'This dashboard now reads from the latest local account snapshot and rule evaluation state instead of preview-only demo data.',
+            'title' => __('Sync health'),
+            'message' => __('This dashboard now reads from the latest local account snapshot and rule evaluation state instead of preview-only demo data.'),
             'meta' => [
-                'Last sync: '.$this->formatDateTime($account->last_synced_at),
-                'Platform status: '.$this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
-                'Trading days: '.sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
+                __('Last sync: :value', ['value' => $this->formatDateTime($account->last_synced_at)]),
+                __('Platform status: :value', ['value' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'))]),
+                __('Trading days: :value', ['value' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days)]),
             ],
         ];
     }
@@ -843,8 +845,8 @@ class DashboardController extends Controller
 
         return [
             'id' => $account->id,
-            'reference' => $account->account_reference ?? 'N/A',
-            'plan' => $account->challengePlan?->name ?? $this->challengeTypeLabel((string) $account->challenge_type).' / '.((int) ($account->account_size / 1000)).'K',
+            'reference' => $account->account_reference ?? __('N/A'),
+            'plan' => $this->planLabel((string) $account->challenge_type, (int) $account->account_size),
             'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
             'challenge_phase' => $this->phaseLabel($account),
             'platform_slug' => $account->platform_slug,
@@ -873,10 +875,10 @@ class DashboardController extends Controller
             'max_drawdown_limit' => $this->formatMoney((float) $account->max_drawdown_limit_amount),
             'max_drawdown_remaining' => $this->formatMoney(max((float) $account->max_drawdown_limit_amount - (float) $account->max_drawdown_used, 0)),
             'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
-            'platform_environment' => strtoupper((string) ($account->platform_environment ?: 'pending')),
-            'platform_account_id' => $account->platform_account_id ?: 'Link pending',
+            'platform_environment' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')),
+            'platform_account_id' => $account->platform_account_id ?: __('Link pending'),
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
-            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'Not available',
+            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
         ];
@@ -889,18 +891,18 @@ class DashboardController extends Controller
     {
         if (! $account instanceof TradingAccount) {
             return [
-                'next_window' => 'Not available yet',
+                'next_window' => __('Not available yet'),
                 'eligible_profit' => $this->formatMoney(0),
-                'cycle_note' => 'Payout windows appear after an account reaches funded status.',
-                'status' => 'No funded accounts',
+                'cycle_note' => __('Payout windows appear after an account reaches funded status.'),
+                'status' => __('No funded accounts'),
             ];
         }
 
         if (! $account->is_funded) {
             return [
-                'next_window' => 'Available after funding',
+                'next_window' => __('Available after funding'),
                 'eligible_profit' => $this->formatMoney(0),
-                'cycle_note' => 'The current account is still in the challenge lifecycle and is not payout-eligible yet.',
+                'cycle_note' => __('The current account is still in the challenge lifecycle and is not payout-eligible yet.'),
                 'status' => $this->humanizeStatus((string) $account->account_status),
             ];
         }
@@ -911,7 +913,7 @@ class DashboardController extends Controller
         return [
             'next_window' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'eligible_profit' => $this->formatMoney($eligibleProfit),
-            'cycle_note' => 'First payout eligibility: '.$this->formatDateTime($fundedTiming['first_payout_eligible_at']),
+            'cycle_note' => __('First payout eligibility: :value', ['value' => $this->formatDateTime($fundedTiming['first_payout_eligible_at'])]),
             'status' => $this->humanizeStatus((string) $account->account_status),
         ];
     }
@@ -966,15 +968,15 @@ class DashboardController extends Controller
                 $linkedAccount = $purchase->tradingAccounts->sortByDesc('created_at')->first();
 
                 return [
-                    'reference' => $order?->order_number ?? 'N/A',
-                    'plan' => $this->challengeTypeLabel($purchase->challenge_type).' / '.((int) ($purchase->account_size / 1000)).'K',
+                    'reference' => $order?->order_number ?? __('N/A'),
+                    'plan' => $this->planLabel((string) $purchase->challenge_type, (int) $purchase->account_size),
                     'amount' => $this->formatMoney((float) ($order?->final_price ?? 0), $purchase->currency),
-                    'payment_provider' => $order?->payment_provider ? ucfirst($order->payment_provider) : 'N/A',
-                    'payment_status' => $order?->payment_status ? ucfirst($order->payment_status) : 'N/A',
-                    'account_status' => str($purchase->account_status)->replace('_', ' ')->title()->toString(),
-                    'account_reference' => $linkedAccount?->account_reference ?? 'Pending link',
-                    'sync_status' => $linkedAccount?->sync_status ? $this->humanizeStatus((string) $linkedAccount->sync_status) : 'Not synced',
-                    'created_at' => $purchase->created_at?->format('M d, Y') ?? 'N/A',
+                    'payment_provider' => $order?->payment_provider ? ucfirst($order->payment_provider) : __('N/A'),
+                    'payment_status' => $order?->payment_status ? $this->humanizeStatus((string) $order->payment_status) : __('N/A'),
+                    'account_status' => $purchase->account_status ? $this->humanizeStatus((string) $purchase->account_status) : __('Not available'),
+                    'account_reference' => $linkedAccount?->account_reference ?? __('Pending link'),
+                    'sync_status' => $linkedAccount?->sync_status ? $this->humanizeStatus((string) $linkedAccount->sync_status) : __('Not synced'),
+                    'created_at' => $purchase->created_at ? $this->formatDate($purchase->created_at) : __('N/A'),
                 ];
             });
     }
@@ -1013,7 +1015,7 @@ class DashboardController extends Controller
 
             return collect([
                 [
-                    'label' => Carbon::parse($fallbackDate)->format('M d'),
+                    'label' => Carbon::parse($fallbackDate)->locale(app()->getLocale())->translatedFormat('M d'),
                     'date_iso' => Carbon::parse($fallbackDate)->toDateString(),
                     'balance' => round((float) $account->balance, 2),
                     'equity' => round((float) $account->equity, 2),
@@ -1026,7 +1028,7 @@ class DashboardController extends Controller
             $timestamp = Carbon::parse($snapshot->snapshot_at);
 
             return [
-                'label' => $timestamp->format('M d'),
+                'label' => $timestamp->locale(app()->getLocale())->translatedFormat('M d'),
                 'date_iso' => $timestamp->toDateString(),
                 'balance' => round((float) $snapshot->balance, 2),
                 'equity' => round((float) $snapshot->equity, 2),
@@ -1144,11 +1146,11 @@ class DashboardController extends Controller
             ?? Arr::get($row, 'symbol_id');
 
         if (blank($symbol)) {
-            return '—';
+            return __('—');
         }
 
         if (is_numeric($symbol)) {
-            return 'Symbol #'.$symbol;
+            return __('Symbol #:value', ['value' => $symbol]);
         }
 
         return (string) $symbol;
@@ -1161,12 +1163,12 @@ class DashboardController extends Controller
         return match (true) {
             $normalized === '1',
             str_contains($normalized, 'buy'),
-            str_contains($normalized, 'long') => 'Buy',
+            str_contains($normalized, 'long') => __('Buy'),
             $normalized === '2',
             str_contains($normalized, 'sell'),
-            str_contains($normalized, 'short') => 'Sell',
+            str_contains($normalized, 'short') => __('Sell'),
             $normalized !== '' => str($normalized)->replace('_', ' ')->title()->toString(),
-            default => '—',
+            default => __('—'),
         };
     }
 
@@ -1174,7 +1176,7 @@ class DashboardController extends Controller
     {
         $parsed = $this->parseTradeTimestamp($value);
 
-        return $parsed?->format('M d, Y H:i') ?? '—';
+        return $parsed?->locale(app()->getLocale())->translatedFormat('M d, Y H:i') ?? __('—');
     }
 
     private function sortableTradeTimestamp(mixed $value): int
@@ -1210,14 +1212,14 @@ class DashboardController extends Controller
     private function formatDate(mixed $value): string
     {
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('M d, Y');
+            return Carbon::instance($value)->locale(app()->getLocale())->translatedFormat('M d, Y');
         }
 
         if (is_string($value) && $value !== '') {
-            return Carbon::parse($value)->format('M d, Y');
+            return Carbon::parse($value)->locale(app()->getLocale())->translatedFormat('M d, Y');
         }
 
-        return 'Not available';
+        return __('Not available');
     }
 
     private function formatNumeric(float $value): string
@@ -1276,24 +1278,40 @@ class DashboardController extends Controller
 
     private function challengeTypeLabel(string $challengeType): string
     {
-        return (string) config(
-            'wolforix.challenge_catalog.'.$challengeType.'.label',
-            $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
-        );
+        $translationKey = 'site.home.challenge_selector.types.'.$challengeType.'.label';
+        $translated = __($translationKey);
+
+        if ($translated !== $translationKey) {
+            return $translated;
+        }
+
+        return (string) config('wolforix.challenge_catalog.'.$challengeType.'.label', $challengeType);
+    }
+
+    private function planLabel(string $challengeType, int $accountSize): string
+    {
+        return $this->challengeTypeLabel($challengeType).' / '.((int) ($accountSize / 1000)).'K';
     }
 
     private function phaseLabel(TradingAccount $account): string
     {
         return match (true) {
-            $account->challenge_type === 'one_step' => 'Single Phase',
-            (int) $account->phase_index > 1 => 'Phase 2',
-            default => 'Phase 1',
+            $account->challenge_type === 'one_step' => __('site.home.challenge_selector.phase_titles.single_phase'),
+            (int) $account->phase_index > 1 => __('site.home.challenge_selector.phase_titles.phase_2'),
+            default => __('site.home.challenge_selector.phase_titles.phase_1'),
         };
     }
 
     private function humanizeStatus(string $status): string
     {
-        return str($status)->replace('_', ' ')->title()->toString();
+        $normalized = str($status)->replace('_', ' ')->lower()->toString();
+        $translated = __($normalized);
+
+        if ($translated !== $normalized) {
+            return $translated;
+        }
+
+        return str($normalized)->title()->toString();
     }
 
     /**
@@ -1303,8 +1321,8 @@ class DashboardController extends Controller
     {
         if (! $value instanceof \DateTimeInterface) {
             return [
-                'label' => 'Awaiting first sync',
-                'hint' => 'No MT5 snapshot has been received yet.',
+                'label' => __('Awaiting first sync'),
+                'hint' => __('No MT5 snapshot has been received yet.'),
                 'tone' => 'slate',
             ];
         }
@@ -1317,23 +1335,23 @@ class DashboardController extends Controller
 
         if ($seconds <= $liveSeconds) {
             return [
-                'label' => 'Live now',
-                'hint' => "Updated {$relative}.",
+                'label' => __('Live now'),
+                'hint' => __('Updated :value.', ['value' => $relative]),
                 'tone' => 'emerald',
             ];
         }
 
         if ($seconds <= $recentSeconds) {
             return [
-                'label' => 'Synced recently',
-                'hint' => "Updated {$relative}.",
+                'label' => __('Synced recently'),
+                'hint' => __('Updated :value.', ['value' => $relative]),
                 'tone' => 'amber',
             ];
         }
 
         return [
-            'label' => 'Sync delayed',
-            'hint' => "Updated {$relative}.",
+            'label' => __('Sync delayed'),
+            'hint' => __('Updated :value.', ['value' => $relative]),
             'tone' => 'rose',
         ];
     }
@@ -1343,10 +1361,10 @@ class DashboardController extends Controller
         $seconds = max(now()->diffInSeconds($value), 0);
 
         return match (true) {
-            $seconds < 60 => $seconds.'s ago',
-            $seconds < 3600 => floor($seconds / 60).'m ago',
-            $seconds < 86400 => floor($seconds / 3600).'h ago',
-            default => floor($seconds / 86400).'d ago',
+            $seconds < 60 => __(':value s ago', ['value' => $seconds]),
+            $seconds < 3600 => __(':value m ago', ['value' => floor($seconds / 60)]),
+            $seconds < 86400 => __(':value h ago', ['value' => floor($seconds / 3600)]),
+            default => __(':value d ago', ['value' => floor($seconds / 86400)]),
         };
     }
 
@@ -1364,7 +1382,7 @@ class DashboardController extends Controller
         return match ($source) {
             'mt5_ea' => 'MT5 EA',
             'ctrader_api' => 'cTrader API',
-            'platform_sync' => 'Platform Sync',
+            'platform_sync' => __('Platform Sync'),
             default => $this->humanizeStatus($source),
         };
     }
@@ -1372,10 +1390,10 @@ class DashboardController extends Controller
     private function formatDateTime(mixed $value): string
     {
         if ($value instanceof \DateTimeInterface) {
-            return $value->format('M d, Y H:i');
+            return Carbon::instance($value)->locale(app()->getLocale())->translatedFormat('M d, Y H:i');
         }
 
-        return 'Not synced yet';
+        return __('Not synced yet');
     }
 
     /**
@@ -1395,7 +1413,7 @@ class DashboardController extends Controller
                     'id' => (string) ($row['ctid_trader_account_id'] ?? ''),
                     'label' => trim(sprintf(
                         '%s%s%s',
-                        (string) ($row['trader_login'] ?? 'Account'),
+                        (string) ($row['trader_login'] ?? __('Account')),
                         filled($row['trader_login'] ?? null) ? ' / ' : '',
                         strtoupper((string) ($row['environment'] ?? 'demo'))
                     )),
