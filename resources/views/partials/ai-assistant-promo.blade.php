@@ -58,20 +58,6 @@
                             </div>
                             <span class="assistant-promo-stat assistant-promo-stat-top">{{ __('site.ai_assistant.name') }}</span>
                             <span class="assistant-promo-stat assistant-promo-stat-bottom">{{ __('site.ai_assistant.preview_badge') }}</span>
-                            <div class="assistant-mascot-bubble">
-                                <div class="assistant-mascot-bubble-header">
-                                    <span class="assistant-mascot-bubble-dot" aria-hidden="true"></span>
-                                    <span>{{ __('site.ai_assistant.visual_response_label') }}</span>
-                                </div>
-                                <p class="assistant-mascot-bubble-message">{{ __('site.ai_assistant.visual_response_preview') }}</p>
-                                <p class="assistant-mascot-bubble-hint">{{ __('site.ai_assistant.visual_response_hint') }}</p>
-                                <div class="assistant-mascot-bubble-actions">
-                                    <button type="button" data-wolfi-launch class="assistant-mascot-action">
-                                        {{ __('site.ai_assistant.floating_cta') }}
-                                    </button>
-                                    <span class="assistant-mascot-action-note">{{ __('site.ai_assistant.visual_cta_hint') }}</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 

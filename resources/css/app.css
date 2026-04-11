@@ -1081,7 +1081,7 @@ h6 {
     min-height: 18.5rem;
     align-items: center;
     justify-content: center;
-    padding: 1.25rem 0 1.1rem;
+    padding: 1.25rem 0 0.5rem;
 }
 
 .assistant-mascot-stage::before {
@@ -1191,130 +1191,6 @@ h6 {
 .assistant-promo-stat-bottom {
     bottom: 0.35rem;
     left: 0.35rem;
-}
-
-.assistant-mascot-bubble {
-    position: absolute;
-    left: 0.6rem;
-    bottom: 1rem;
-    z-index: 4;
-    width: min(18rem, calc(100% - 1.2rem));
-    max-width: 18rem;
-    border: 1px solid rgba(244, 183, 74, 0.2);
-    border-radius: 1.45rem;
-    background:
-        radial-gradient(circle at top left, rgba(244, 183, 74, 0.12), transparent 42%),
-        linear-gradient(180deg, rgba(14, 21, 35, 0.94) 0%, rgba(7, 11, 19, 0.92) 100%);
-    box-shadow:
-        0 22px 48px rgba(2, 6, 23, 0.34),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    padding: 0.95rem 1rem 1rem;
-    backdrop-filter: blur(20px);
-}
-
-.assistant-mascot-bubble::after {
-    content: '';
-    position: absolute;
-    left: 1.55rem;
-    bottom: -0.5rem;
-    width: 1rem;
-    height: 1rem;
-    border-right: 1px solid rgba(244, 183, 74, 0.18);
-    border-bottom: 1px solid rgba(244, 183, 74, 0.18);
-    background: rgba(10, 16, 27, 0.96);
-    transform: rotate(45deg);
-}
-
-.assistant-mascot-bubble-header {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    font-size: 0.66rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(248, 218, 134, 0.95);
-}
-
-.assistant-mascot-bubble-dot {
-    height: 0.5rem;
-    width: 0.5rem;
-    flex: none;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(255, 244, 206, 1) 0%, rgba(244, 183, 74, 0.92) 48%, rgba(244, 183, 74, 0) 72%);
-    box-shadow: 0 0 14px rgba(244, 183, 74, 0.45);
-}
-
-.assistant-mascot-bubble-message {
-    margin-top: 0.8rem;
-    font-size: 0.98rem;
-    font-weight: 600;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.97);
-    text-wrap: balance;
-}
-
-.assistant-mascot-bubble-hint {
-    margin-top: 0.5rem;
-    font-size: 0.78rem;
-    line-height: 1.55;
-    color: rgba(191, 204, 222, 0.88);
-}
-
-.assistant-mascot-bubble-actions {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0.85rem;
-    margin-top: 0.95rem;
-}
-
-.assistant-mascot-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 2.7rem;
-    flex: none;
-    border-radius: 999px;
-    border: 1px solid rgba(244, 183, 74, 0.28);
-    background: linear-gradient(180deg, rgba(244, 183, 74, 0.16) 0%, rgba(214, 140, 32, 0.16) 100%);
-    padding: 0.72rem 1.1rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: rgba(255, 249, 233, 0.98);
-    box-shadow:
-        0 14px 28px rgba(2, 6, 23, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    transition:
-        transform 0.22s ease,
-        border-color 0.22s ease,
-        background-color 0.22s ease,
-        box-shadow 0.22s ease;
-}
-
-.assistant-mascot-action:hover,
-.assistant-mascot-action:focus-visible {
-    transform: translateY(-1px);
-    border-color: rgba(248, 218, 134, 0.44);
-    box-shadow:
-        0 18px 34px rgba(2, 6, 23, 0.28),
-        0 0 0 1px rgba(244, 183, 74, 0.08) inset;
-}
-
-.assistant-mascot-action:focus-visible {
-    outline: 2px solid rgba(248, 218, 134, 0.82);
-    outline-offset: 4px;
-}
-
-.assistant-mascot-action:active {
-    transform: translateY(0) scale(0.992);
-}
-
-.assistant-mascot-action-note {
-    max-width: 8.8rem;
-    font-size: 0.72rem;
-    line-height: 1.5;
-    color: rgba(191, 204, 222, 0.88);
 }
 
 @keyframes wolfiCoreBreath {
@@ -2974,28 +2850,6 @@ h6 {
     .assistant-promo-stat {
         letter-spacing: 0.18em;
         padding-inline: 0.8rem;
-    }
-
-    .assistant-mascot-bubble {
-        left: 0.35rem;
-        right: 0.35rem;
-        bottom: 0.85rem;
-        width: auto;
-        max-width: none;
-        padding: 0.82rem 0.86rem 0.88rem;
-    }
-
-    .assistant-mascot-bubble-message {
-        font-size: 0.88rem;
-    }
-
-    .assistant-mascot-bubble-actions {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .assistant-mascot-action-note {
-        max-width: none;
     }
 
     .assistant-core-breath-back {
