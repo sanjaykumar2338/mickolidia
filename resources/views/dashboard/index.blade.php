@@ -164,11 +164,11 @@
 
                                 <div class="mt-5 grid gap-3 sm:grid-cols-3">
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">
-                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Balance') }}</p>
+                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Challenge balance') }}</p>
                                         <p class="mt-2 text-lg font-semibold text-white">{{ $account['balance'] }}</p>
                                     </div>
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">
-                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Equity') }}</p>
+                                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Challenge equity') }}</p>
                                         <p class="mt-2 text-lg font-semibold text-white">{{ $account['equity'] }}</p>
                                     </div>
                                     <div class="rounded-[1.3rem] border border-white/6 bg-white/4 p-4">

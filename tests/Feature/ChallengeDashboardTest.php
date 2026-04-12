@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ChallengeFailedMail;
+use App\Mail\ChallengePassedMail;
 use App\Models\ChallengePlan;
 use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ChallengeDashboardTest extends TestCase
@@ -17,6 +20,7 @@ class ChallengeDashboardTest extends TestCase
         parent::setUp();
 
         config()->set('services.mt5_ingestion.token', 'integration-secret');
+        Mail::fake();
     }
 
     public function test_one_step_account_stays_active_below_target(): void
@@ -208,21 +212,35 @@ class ChallengeDashboardTest extends TestCase
         $account->refresh();
 
         $this->assertSame('passed', $account->challenge_status);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
         $this->assertNotNull($account->passed_at);
+        $this->assertNotNull($account->passed_email_sent_at);
         $this->assertNull($account->failure_reason);
+        Mail::assertSent(ChallengePassedMail::class, 1);
     }
 
     public function test_one_step_fails_when_daily_loss_limit_is_breached(): void
     {
         $account = $this->createChallengeAccount('one_step');
 
-        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('final_state_locked', true)
+            ->assertJsonPath('close_positions_required', true)
+            ->assertJsonPath('ea_action', 'close_all_positions_and_block_trading');
 
         $account->refresh();
 
         $this->assertSame('failed', $account->challenge_status);
         $this->assertSame('daily_loss_breached', $account->failure_reason);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
         $this->assertNotNull($account->failed_at);
+        $this->assertNotNull($account->failed_email_sent_at);
+        Mail::assertSent(ChallengeFailedMail::class, 1);
     }
 
     public function test_one_step_fails_when_max_drawdown_is_breached(): void
@@ -235,6 +253,70 @@ class ChallengeDashboardTest extends TestCase
 
         $this->assertSame('failed', $account->challenge_status);
         $this->assertSame('max_drawdown_breached', $account->failure_reason);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_final_state_emails_and_fail_actions_are_idempotent_on_repeated_sync(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('ea_action', 'close_all_positions_and_block_trading');
+
+        $account->refresh();
+        $failedAt = $account->failed_at?->toDateTimeString();
+        $failedEmailSentAt = $account->failed_email_sent_at?->toDateTimeString();
+
+        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('close_positions_required', true);
+
+        $account->refresh();
+
+        $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
+        $this->assertSame($failedEmailSentAt, $account->failed_email_sent_at?->toDateTimeString());
+        Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_five_k_dashboard_uses_challenge_relative_balance_and_equity(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_size' => 5000,
+            'starting_balance' => 5000,
+            'phase_starting_balance' => 5000,
+            'phase_reference_balance' => 5000,
+            'balance' => 5000,
+            'equity' => 5000,
+            'profit_target_amount' => 500,
+            'daily_drawdown_limit_amount' => 200,
+            'max_drawdown_limit_amount' => 400,
+        ]);
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10562.64, 10512.64, [
+            'open_profit' => -50,
+            'total_profit' => 562.64,
+            'trade_count' => 0,
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('Initial balance')
+            ->assertSee('$5,000.00')
+            ->assertSee('Current balance')
+            ->assertSee('$5,562.64')
+            ->assertSee('Challenge equity')
+            ->assertSee('$5,512.64')
+            ->assertSee('Recognized profit')
+            ->assertSee('$562.64')
+            ->assertDontSee('$10,562.64');
     }
 
     public function test_two_step_phase_one_pass_transitions_to_phase_two_and_resets_references(): void
@@ -252,7 +334,8 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('phase_2', (string) $account->account_phase);
         $this->assertSame(0, (int) $account->trading_days_completed);
         $this->assertSame('10000.00', (string) $account->phase_starting_balance);
-        $this->assertSame('11050.00', (string) $account->phase_reference_balance);
+        $this->assertSame('10000.00', (string) $account->phase_reference_balance);
+        $this->assertSame(11050.00, (float) ($account->rule_state['broker_phase_reference_balance'] ?? 0));
         $this->assertSame('5.00', (string) $account->profit_target_percent);
         $this->assertNotEmpty($account->rule_state['phase_history'] ?? []);
     }

@@ -5,7 +5,7 @@
 @php($fallbackLocale = config('wolforix.default_locale', 'en'))
 @php($current = $supportedLocales[$currentLocale] ?? $supportedLocales[$fallbackLocale] ?? reset($supportedLocales))
 
-<div data-locale-switcher {{ $attributes->class(['relative z-[80]']) }}>
+<div data-locale-switcher @if($fullWidth) data-locale-full-width="true" @endif {{ $attributes->class(['relative z-[80]']) }}>
     <button
         type="button"
         data-locale-toggle
@@ -29,7 +29,7 @@
         </svg>
     </button>
 
-    <div data-locale-menu class="pointer-events-auto absolute top-full z-[140] mt-3 hidden {{ $fullWidth ? 'left-0 right-0 w-auto min-w-full' : 'right-0 w-[18rem]' }} rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+    <div data-locale-menu class="pointer-events-auto fixed left-0 top-0 z-[9999] hidden w-[18rem] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-[1.6rem] border border-white/8 bg-slate-950/96 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <p class="px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('site.locale.menu_title') }}</p>
 
         <div class="mt-1 space-y-1">

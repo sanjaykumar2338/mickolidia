@@ -61,11 +61,11 @@
 
                 <dl class="mt-5 space-y-3 text-sm">
                     <div class="flex items-center justify-between gap-4">
-                        <dt class="text-slate-400">{{ __('Balance') }}</dt>
+                        <dt class="text-slate-400">{{ __('Challenge balance') }}</dt>
                         <dd class="font-semibold text-white">{{ $primaryAccount['balance'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4">
-                        <dt class="text-slate-400">{{ __('Equity') }}</dt>
+                        <dt class="text-slate-400">{{ __('Challenge equity') }}</dt>
                         <dd class="font-semibold text-white">{{ $primaryAccount['equity'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4">

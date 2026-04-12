@@ -18,7 +18,7 @@
 
         <div class="flex flex-wrap items-center gap-3">
             @if (! empty($primaryAccount))
-                <div class="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-white">
+                <div class="{{ $syncToneClasses[$primaryAccount['status_tone'] ?? 'slate'] ?? $syncToneClasses['slate'] }} rounded-full border px-4 py-2 text-sm">
                     {{ $primaryAccount['challenge_status'] }}
                 </div>
                 <div class="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm text-slate-200">

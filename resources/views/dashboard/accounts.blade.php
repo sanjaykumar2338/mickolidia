@@ -190,7 +190,12 @@
                                 <h2 class="mt-2 text-2xl font-semibold text-white">{{ $account['reference'] }}</h2>
                                 <p class="mt-2 text-sm text-slate-400">{{ $account['challenge_type'] }} • {{ $account['challenge_phase'] }}</p>
                             </div>
-                            <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-sm text-slate-200">{{ $account['status'] }}</span>
+                            <span class="rounded-full border px-4 py-2 text-sm font-semibold {{ match ($account['status_tone'] ?? 'slate') {
+                                'emerald' => 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
+                                'amber' => 'border-amber-400/20 bg-amber-500/10 text-amber-100',
+                                'rose' => 'border-rose-400/20 bg-rose-500/10 text-rose-100',
+                                default => 'border-white/10 bg-white/5 text-slate-200',
+                            } }}">{{ $account['challenge_status'] }}</span>
                         </div>
 
                         @php
@@ -207,14 +212,33 @@
                             };
                         @endphp
 
+                        @if (! empty($account['state_notice']))
+                            <div class="mt-5 rounded-[1.55rem] border {{ match ($account['state_notice']['tone']) {
+                                'emerald' => 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
+                                'rose' => 'border-rose-400/20 bg-rose-500/10 text-rose-100',
+                                default => 'border-amber-400/20 bg-amber-500/10 text-amber-100',
+                            } }} px-4 py-3 text-sm leading-7">
+                                <span class="font-semibold text-white">{{ $account['state_notice']['title'] }}:</span>
+                                {{ $account['state_notice']['message'] }}
+                            </div>
+                        @endif
+
                         <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.dashboard.cards.balance') }}</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Initial balance') }}</p>
+                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['starting_balance'] }}</p>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Current balance') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['balance'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Equity') }}</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Challenge equity') }}</p>
                                 <p class="mt-3 text-2xl font-semibold text-white">{{ $account['equity'] }}</p>
+                            </div>
+                            <div class="surface-card rounded-3xl p-5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Recognized profit') }}</p>
+                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['total_profit'] }}</p>
                             </div>
                             <div class="surface-card rounded-3xl p-5">
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Floating P&L') }}</p>
@@ -320,6 +344,7 @@
                             <div class="mt-4 surface-card rounded-3xl border border-rose-400/20 bg-rose-500/10 p-5">
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-rose-100">{{ __('Failure reason') }}</p>
                                 <p class="mt-3 text-lg font-semibold text-white">{{ $account['failure_reason'] }}</p>
+                                <p class="mt-2 text-sm leading-7 text-rose-100">{{ __('This account is inactive and trading is blocked.') }}</p>
                             </div>
                         @endif
 

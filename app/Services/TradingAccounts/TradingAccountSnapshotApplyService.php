@@ -4,6 +4,7 @@ namespace App\Services\TradingAccounts;
 
 use App\Models\TradingAccount;
 use App\Models\TradingAccountDay;
+use App\Services\Challenge\ChallengeFinalStateMailer;
 use App\Services\Challenge\ChallengeProgressEngine;
 use App\Support\TradingMetricsCalculator;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,7 @@ class TradingAccountSnapshotApplyService
     public function __construct(
         private readonly TradingMetricsCalculator $metricsCalculator,
         private readonly ChallengeProgressEngine $progressEngine,
+        private readonly ChallengeFinalStateMailer $finalStateMailer,
     ) {
     }
 
@@ -72,6 +74,7 @@ class TradingAccountSnapshotApplyService
                 'evaluated_at' => $snapshotAt,
                 'server_day' => $serverDay,
                 'trading_days_completed' => $tradingDaysCompleted,
+                'snapshot' => $snapshot,
             ]);
 
             $freshAccount->forceFill(array_merge(
@@ -137,8 +140,11 @@ class TradingAccountSnapshotApplyService
             return $freshAccount->fresh([
                 'challengePlan',
                 'challengePurchase',
+                'user',
             ]) ?? $freshAccount;
         });
+
+        $this->finalStateMailer->sendIfNeeded($updatedAccount);
 
         return $updatedAccount;
     }
@@ -223,16 +229,24 @@ class TradingAccountSnapshotApplyService
                 ->count();
         }
 
-        /** @var TradingAccountDay $day */
-        $day = TradingAccountDay::query()->firstOrNew([
+        $tradingDate = $this->resolveServerDay($snapshot, $occurredAt);
+
+        /** @var TradingAccountDay|null $day */
+        $day = TradingAccountDay::query()
+            ->where('trading_account_id', $account->id)
+            ->where('phase_index', (int) $account->phase_index)
+            ->whereDate('trading_date', $tradingDate)
+            ->first();
+
+        $day ??= new TradingAccountDay([
             'trading_account_id' => $account->id,
             'phase_index' => (int) $account->phase_index,
-            'trading_date' => $this->resolveServerDay($snapshot, $occurredAt),
+            'trading_date' => $tradingDate,
         ]);
 
         $day->fill([
-            'activity_count' => (int) ($day->activity_count ?? 0) + max($activityCount, 1),
-            'volume' => round((float) ($day->volume ?? 0) + $volume, 2),
+            'activity_count' => max((int) ($day->activity_count ?? 0), max($activityCount, 1)),
+            'volume' => round(max((float) ($day->volume ?? 0), $volume), 2),
             'first_activity_at' => $day->first_activity_at ?? $occurredAt,
             'last_activity_at' => $occurredAt,
             'source' => $source,

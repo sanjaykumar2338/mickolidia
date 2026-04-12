@@ -6,13 +6,19 @@ use App\Models\TradingAccount;
 
 class TradingMetricsCalculator
 {
+    public function __construct(
+        private readonly ChallengeAccountMetrics $challengeAccountMetrics,
+    ) {
+    }
+
     /**
      * @param  array<string, mixed>  $snapshot
      * @return array<string, mixed>
      */
     public function calculate(TradingAccount $account, array $snapshot): array
     {
-        $startingBalance = (float) ($snapshot['starting_balance'] ?? $account->starting_balance ?: $account->account_size ?: 0);
+        $challengeMetrics = $this->challengeAccountMetrics->resolve($account, $snapshot);
+        $startingBalance = (float) $challengeMetrics['challenge_starting_balance'];
         $balance = (float) ($snapshot['balance'] ?? $account->balance ?? $startingBalance);
         $equity = (float) ($snapshot['equity'] ?? $account->equity ?? $balance);
         $profitLoss = array_key_exists('profit_loss', $snapshot)
@@ -20,16 +26,14 @@ class TradingMetricsCalculator
             : (array_key_exists('open_profit', $snapshot)
                 ? (float) $snapshot['open_profit']
                 : round($equity - $balance, 2));
-        $totalProfit = array_key_exists('total_profit', $snapshot)
-            ? (float) $snapshot['total_profit']
-            : round($balance - $startingBalance, 2);
+        $totalProfit = (float) $challengeMetrics['realized_profit'];
         $todayProfit = (float) ($snapshot['today_profit'] ?? $account->today_profit ?? 0);
         $maxDrawdown = array_key_exists('max_drawdown', $snapshot)
             ? (float) $snapshot['max_drawdown']
-            : round(max($startingBalance - min($balance, $equity), 0), 2);
+            : round(max($startingBalance - min((float) $challengeMetrics['challenge_balance'], (float) $challengeMetrics['challenge_equity']), 0), 2);
         $dailyDrawdown = array_key_exists('daily_drawdown', $snapshot)
             ? (float) $snapshot['daily_drawdown']
-            : round(max($balance - $equity, 0), 2);
+            : round(max((float) $challengeMetrics['challenge_balance'] - (float) $challengeMetrics['challenge_equity'], 0), 2);
         $drawdownPercent = array_key_exists('drawdown_percent', $snapshot)
             ? (float) $snapshot['drawdown_percent']
             : ($startingBalance > 0 ? round(($maxDrawdown / $startingBalance) * 100, 2) : 0.0);

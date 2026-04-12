@@ -3,10 +3,16 @@
 namespace App\Services\Challenge;
 
 use App\Models\TradingAccount;
+use App\Support\ChallengeAccountMetrics;
 use Carbon\CarbonInterface;
 
 class ChallengeProgressEngine
 {
+    public function __construct(
+        private readonly ChallengeAccountMetrics $challengeAccountMetrics,
+    ) {
+    }
+
     /**
      * @param  array<string, mixed>  $context
      * @return array<string, mixed>
@@ -17,20 +23,23 @@ class ChallengeProgressEngine
         $evaluatedAt = $this->resolveDateTime($context['evaluated_at'] ?? null);
         $serverDay = (string) ($context['server_day'] ?? optional($evaluatedAt)->toDateString() ?? now()->toDateString());
         $tradingDaysCompleted = (int) ($context['trading_days_completed'] ?? $account->trading_days_completed ?? 0);
-        $phaseStartingBalance = $this->phaseStartingBalance($account);
-        $phaseReferenceBalance = $this->phaseReferenceBalance($account);
-        $currentBalance = round((float) $account->balance, 2);
-        $currentEquity = round((float) $account->equity, 2);
+        $challengeMetrics = $this->challengeAccountMetrics->resolve($account, (array) ($context['snapshot'] ?? []));
+        $phaseStartingBalance = (float) $challengeMetrics['challenge_starting_balance'];
+        $phaseReferenceBalance = $phaseStartingBalance;
+        $currentBalance = (float) $challengeMetrics['challenge_balance'];
+        $currentEquity = (float) $challengeMetrics['challenge_equity'];
+        $rawCurrentBalance = (float) $challengeMetrics['raw_balance'];
         $previousServerDay = optional($account->server_day)->toDateString();
+        $storedHighestEquityToday = $this->storedHighestChallengeEquity($account, $currentEquity, $phaseStartingBalance);
 
         $highestEquityToday = $previousServerDay !== $serverDay
             ? $currentEquity
-            : max((float) ($account->highest_equity_today ?: $currentEquity), $currentEquity);
+            : max($storedHighestEquityToday, $currentEquity);
 
         $dailyLossUsed = round(max($highestEquityToday - $currentEquity, 0), 2);
-        $currentDrawdownUsage = round(max($phaseReferenceBalance - min($currentBalance, $currentEquity), 0), 2);
+        $currentDrawdownUsage = round(max($phaseStartingBalance - min($currentBalance, $currentEquity), 0), 2);
         $maxDrawdownUsed = round(max((float) ($account->max_drawdown_used ?? 0), $currentDrawdownUsage), 2);
-        $phaseProfit = round($currentBalance - $phaseReferenceBalance, 2);
+        $phaseProfit = round($currentBalance - $phaseStartingBalance, 2);
         $profitTargetAmount = round($phaseStartingBalance * ($rules['profit_target_percent'] / 100), 2);
         $profitTargetProgressPercent = $profitTargetAmount > 0
             ? round(max(min(($phaseProfit / $profitTargetAmount) * 100, 100), 0), 2)
@@ -72,6 +81,13 @@ class ChallengeProgressEngine
         $ruleState = array_merge((array) ($account->rule_state ?? []), [
             'phase_steps' => $phaseSteps,
             'current_phase_key' => $rules['account_phase'],
+            'raw_balance' => $challengeMetrics['raw_balance'],
+            'raw_equity' => $challengeMetrics['raw_equity'],
+            'broker_phase_reference_balance' => $challengeMetrics['broker_phase_reference_balance'],
+            'broker_reference_source' => $challengeMetrics['broker_reference_source'],
+            'challenge_starting_balance' => $phaseStartingBalance,
+            'challenge_balance' => $currentBalance,
+            'challenge_equity' => $currentEquity,
             'phase_profit' => $phaseProfit,
             'phase_profit_target_amount' => $profitTargetAmount,
             'phase_profit_target_remaining' => $profitTargetRemaining,
@@ -84,6 +100,7 @@ class ChallengeProgressEngine
             'max_drawdown_used' => $maxDrawdownUsed,
             'max_drawdown_remaining' => $maxDrawdownRemaining,
             'highest_equity_today' => $highestEquityToday,
+            'highest_challenge_equity_today' => $highestEquityToday,
             'trading_days_completed' => $tradingDaysCompleted,
             'server_day' => $serverDay,
             'evaluated_at' => optional($evaluatedAt)->toIso8601String(),
@@ -121,10 +138,21 @@ class ChallengeProgressEngine
                     'server_day' => $serverDay,
                     'highest_equity_today' => $highestEquityToday,
                     'daily_loss_used' => $dailyLossUsed,
+                    'daily_loss_threshold' => $rules['daily_drawdown_limit_amount'],
                     'max_drawdown_used' => $maxDrawdownUsed,
+                    'max_drawdown_threshold' => $rules['max_drawdown_limit_amount'],
                     'phase_profit' => $phaseProfit,
+                    'rule_breached' => $failureReason,
+                    'threshold' => $failureReason === 'daily_loss_breached'
+                        ? $rules['daily_drawdown_limit_amount']
+                        : $rules['max_drawdown_limit_amount'],
+                    'recorded_value' => $failureReason === 'daily_loss_breached'
+                        ? $dailyLossUsed
+                        : $maxDrawdownUsed,
                 ],
                 'failed_at' => $account->failed_at ?? $evaluatedAt ?? now(),
+                'trading_blocked' => true,
+                'final_state_locked' => true,
                 'rule_state' => $ruleState,
             ]);
         }
@@ -172,6 +200,8 @@ class ChallengeProgressEngine
                 'passed_at' => $account->passed_at ?? $evaluatedAt ?? now(),
                 'failure_reason' => null,
                 'failure_context' => null,
+                'trading_blocked' => true,
+                'final_state_locked' => true,
                 'rule_state' => $ruleState,
             ]);
         }
@@ -189,7 +219,7 @@ class ChallengeProgressEngine
                 'phase_profit_target_amount' => $profitTargetAmount,
             ];
 
-            $nextPhaseStartingBalance = round((float) ($account->starting_balance ?: $account->account_size ?: $currentBalance), 2);
+            $nextPhaseStartingBalance = round((float) ($account->starting_balance ?: $account->account_size ?: $phaseStartingBalance), 2);
             $nextProfitTargetAmount = round($nextPhaseStartingBalance * ($nextRules['profit_target_percent'] / 100), 2);
 
             return [
@@ -200,9 +230,9 @@ class ChallengeProgressEngine
                 'account_status' => 'active',
                 'status' => 'Active',
                 'phase_starting_balance' => $nextPhaseStartingBalance,
-                'phase_reference_balance' => $currentBalance,
+                'phase_reference_balance' => $nextPhaseStartingBalance,
                 'phase_started_at' => $evaluatedAt ?? now(),
-                'highest_equity_today' => $currentEquity,
+                'highest_equity_today' => $nextPhaseStartingBalance,
                 'daily_drawdown' => 0,
                 'daily_loss_used' => 0,
                 'max_drawdown' => 0,
@@ -219,12 +249,21 @@ class ChallengeProgressEngine
                 'trading_days_completed' => 0,
                 'failure_reason' => null,
                 'failure_context' => null,
+                'trading_blocked' => false,
+                'final_state_locked' => false,
                 'server_day' => $serverDay,
                 'last_evaluated_at' => $evaluatedAt ?? now(),
                 'rule_state' => array_merge($ruleState, [
                     'phase_history' => $phaseHistory,
                     'transitioned_to_phase_index' => $nextPhaseIndex,
                     'transitioned_at' => optional($evaluatedAt)->toIso8601String(),
+                    'raw_balance' => $challengeMetrics['raw_balance'],
+                    'raw_equity' => $challengeMetrics['raw_equity'],
+                    'broker_phase_reference_balance' => $rawCurrentBalance,
+                    'broker_reference_source' => 'phase_transition',
+                    'challenge_starting_balance' => $nextPhaseStartingBalance,
+                    'challenge_balance' => $nextPhaseStartingBalance,
+                    'challenge_equity' => $nextPhaseStartingBalance,
                     'phase_profit' => 0,
                     'phase_profit_target_amount' => $nextProfitTargetAmount,
                     'phase_profit_target_remaining' => $nextProfitTargetAmount,
@@ -236,6 +275,8 @@ class ChallengeProgressEngine
                     'daily_loss_remaining' => $nextRules['daily_drawdown_limit_amount'],
                     'max_drawdown_used' => 0,
                     'max_drawdown_remaining' => $nextRules['max_drawdown_limit_amount'],
+                    'highest_equity_today' => $nextPhaseStartingBalance,
+                    'highest_challenge_equity_today' => $nextPhaseStartingBalance,
                     'current_phase_key' => $nextRules['account_phase'],
                     'failure_reason' => null,
                     'rules' => [
@@ -271,6 +312,8 @@ class ChallengeProgressEngine
                 'passed_at' => $account->passed_at ?? $evaluatedAt ?? now(),
                 'failure_reason' => null,
                 'failure_context' => null,
+                'trading_blocked' => true,
+                'final_state_locked' => true,
                 'rule_state' => array_merge($ruleState, [
                     'phase_history' => array_merge((array) ($ruleState['phase_history'] ?? []), [[
                         'phase_index' => (int) $account->phase_index,
@@ -303,6 +346,8 @@ class ChallengeProgressEngine
             'status' => $challengeStatus === 'pending_activation' ? 'Pending Activation' : 'Active',
             'failure_reason' => null,
             'failure_context' => null,
+            'trading_blocked' => (bool) $account->trading_blocked,
+            'final_state_locked' => (bool) $account->final_state_locked,
             'rule_state' => $ruleState,
         ]);
     }
@@ -350,6 +395,8 @@ class ChallengeProgressEngine
             'max_drawdown_limit_amount' => $rules['max_drawdown_limit_amount'],
             'minimum_trading_days' => $rules['minimum_trading_days'],
             'trading_days_completed' => $tradingDaysCompleted,
+            'trading_blocked' => in_array($challengeStatus, ['failed', 'passed'], true) || (bool) $account->trading_blocked,
+            'final_state_locked' => in_array($challengeStatus, ['failed', 'passed'], true) || (bool) $account->final_state_locked,
             'server_day' => $serverDay,
             'last_evaluated_at' => $evaluatedAt ?? now(),
         ];
@@ -362,7 +409,22 @@ class ChallengeProgressEngine
 
     private function phaseReferenceBalance(TradingAccount $account): float
     {
-        return round((float) ($account->phase_reference_balance ?: $account->starting_balance ?: $account->account_size ?: $account->balance), 2);
+        return round((float) ($account->phase_reference_balance ?: $account->phase_starting_balance ?: $account->starting_balance ?: $account->account_size ?: $account->balance), 2);
+    }
+
+    private function storedHighestChallengeEquity(TradingAccount $account, float $currentEquity, float $phaseStartingBalance): float
+    {
+        $stored = (float) (data_get($account->rule_state, 'highest_challenge_equity_today') ?: $account->highest_equity_today ?: $currentEquity);
+
+        if ($stored <= 0) {
+            return $currentEquity;
+        }
+
+        if ($phaseStartingBalance > 0 && $stored > ($phaseStartingBalance * 1.8) && $currentEquity < ($stored * 0.75)) {
+            return $currentEquity;
+        }
+
+        return $stored;
     }
 
     /**

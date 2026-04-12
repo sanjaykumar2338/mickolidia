@@ -18,6 +18,9 @@ class TradingAccountMetricsController extends Controller
     private const DECIMAL_FIELDS = [
         'balance',
         'equity',
+        'starting_balance',
+        'broker_starting_balance',
+        'broker_phase_reference_balance',
         'open_profit',
         'profit_loss',
         'total_profit',
@@ -39,11 +42,13 @@ class TradingAccountMetricsController extends Controller
         'trading_days_completed',
         'phase_index',
         'positions_count',
+        'closed_positions_count',
     ];
 
     private const BOOLEAN_FIELDS = [
         'has_activity',
         'is_funded',
+        'trading_blocked_ack',
     ];
 
     private const TRIMMED_STRING_FIELDS = [
@@ -79,6 +84,9 @@ class TradingAccountMetricsController extends Controller
         $validated = Validator::make($normalizedPayload, [
             'balance' => ['required', 'numeric'],
             'equity' => ['required', 'numeric'],
+            'starting_balance' => ['nullable', 'numeric'],
+            'broker_starting_balance' => ['nullable', 'numeric'],
+            'broker_phase_reference_balance' => ['nullable', 'numeric'],
             'open_profit' => ['nullable', 'numeric'],
             'profit_loss' => ['nullable', 'numeric'],
             'total_profit' => ['nullable', 'numeric'],
@@ -99,6 +107,8 @@ class TradingAccountMetricsController extends Controller
             'has_activity' => ['nullable', 'boolean'],
             'volume' => ['nullable', 'numeric', 'min:0'],
             'positions_count' => ['nullable', 'integer', 'min:0'],
+            'closed_positions_count' => ['nullable', 'integer', 'min:0'],
+            'trading_blocked_ack' => ['nullable', 'boolean'],
             'phase_index' => ['nullable', 'integer', 'min:1'],
             'account_phase' => ['nullable', 'string', 'max:255'],
             'sync_trigger' => ['nullable', 'string', 'max:255'],
@@ -164,6 +174,10 @@ class TradingAccountMetricsController extends Controller
                 'phase_index' => (int) $updatedAccount->phase_index,
                 'trading_days_completed' => (int) $updatedAccount->trading_days_completed,
                 'failure_reason' => $updatedAccount->failure_reason,
+                'trading_blocked' => (bool) $updatedAccount->trading_blocked,
+                'final_state_locked' => (bool) $updatedAccount->final_state_locked,
+                'close_positions_required' => $this->shouldRequestPositionClosure($updatedAccount),
+                'ea_action' => $this->eaAction($updatedAccount),
                 'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
             ]);
         } catch (\Throwable $exception) {
@@ -208,6 +222,24 @@ class TradingAccountMetricsController extends Controller
             401,
             'Invalid integration token.',
         );
+    }
+
+    private function shouldRequestPositionClosure(TradingAccount $account): bool
+    {
+        return $account->challenge_status === 'failed';
+    }
+
+    private function eaAction(TradingAccount $account): string
+    {
+        if ($account->challenge_status === 'failed') {
+            return 'close_all_positions_and_block_trading';
+        }
+
+        if ((bool) $account->trading_blocked) {
+            return 'block_trading';
+        }
+
+        return 'continue';
     }
 
     private function resolveAccount(string $accountIdentifier): TradingAccount

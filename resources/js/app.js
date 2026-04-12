@@ -597,6 +597,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const positionMenu = () => {
+            const viewportPadding = 12;
+            const toggleRect = toggle.getBoundingClientRect();
+            const isFullWidth = switcher.dataset.localeFullWidth === 'true';
+            const preferredWidth = isFullWidth
+                ? Math.max(toggleRect.width, 240)
+                : 288;
+            const width = Math.min(preferredWidth, window.innerWidth - (viewportPadding * 2));
+            const left = Math.min(
+                Math.max(
+                    isFullWidth ? toggleRect.left : toggleRect.right - width,
+                    viewportPadding,
+                ),
+                window.innerWidth - width - viewportPadding,
+            );
+            let top = toggleRect.bottom + 10;
+            let maxHeight = window.innerHeight - top - viewportPadding;
+
+            if (maxHeight < 220) {
+                top = viewportPadding;
+                maxHeight = window.innerHeight - (viewportPadding * 2);
+            }
+
+            menu.style.left = `${left}px`;
+            menu.style.top = `${Math.max(top, viewportPadding)}px`;
+            menu.style.width = `${width}px`;
+            menu.style.maxHeight = `${Math.max(maxHeight, 180)}px`;
+        };
+
         const closeMenu = () => {
             menu.classList.add('hidden');
             toggle.setAttribute('aria-expanded', 'false');
@@ -624,7 +653,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (isClosed) {
                 menu.classList.remove('hidden');
+                positionMenu();
                 toggle.setAttribute('aria-expanded', 'true');
+                window.requestAnimationFrame(positionMenu);
             } else {
                 closeMenu();
             }
@@ -643,6 +674,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('resize', closeMenu);
+        window.addEventListener('scroll', () => {
+            if (!menu.classList.contains('hidden')) {
+                positionMenu();
+            }
+        }, true);
     });
 
     document.querySelectorAll('[data-mobile-nav]').forEach((mobileNav) => {
