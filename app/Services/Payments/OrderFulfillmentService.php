@@ -2,13 +2,14 @@
 
 namespace App\Services\Payments;
 
-use App\Jobs\SendChallengePurchaseConfirmation;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Billing\OrderInvoiceService;
+use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,8 @@ class OrderFulfillmentService
 {
     public function __construct(
         private readonly TradingAccountProvisioner $tradingAccountProvisioner,
+        private readonly OrderInvoiceService $invoiceService,
+        private readonly ChallengeLifecycleMailer $lifecycleMailer,
     ) {
     }
 
@@ -25,7 +28,7 @@ class OrderFulfillmentService
      */
     public function markPaid(Order $order, array $paymentData): ChallengePurchase
     {
-        return DB::transaction(function () use ($order, $paymentData): ChallengePurchase {
+        $result = DB::transaction(function () use ($order, $paymentData): array {
             /** @var Order $lockedOrder */
             $lockedOrder = Order::query()
                 ->with(['challengePurchase', 'user'])
@@ -73,14 +76,31 @@ class OrderFulfillmentService
             ])->save();
 
             $this->syncUserSnapshot($user, $lockedOrder);
-            $this->tradingAccountProvisioner->provision($lockedOrder, $purchase, $plan);
+            $account = $this->tradingAccountProvisioner->provision($lockedOrder, $purchase, $plan);
 
-            if ($purchase->wasRecentlyCreated) {
-                SendChallengePurchaseConfirmation::dispatch($lockedOrder->id);
-            }
-
-            return $purchase;
+            return [
+                'purchase_id' => $purchase->id,
+                'order_id' => $lockedOrder->id,
+                'account_id' => $account->id,
+            ];
         });
+
+        /** @var Order $fulfilledOrder */
+        $fulfilledOrder = Order::query()
+            ->with(['challengePurchase.tradingAccounts', 'invoice', 'user'])
+            ->findOrFail($result['order_id']);
+
+        $this->invoiceService->ensureForOrder($fulfilledOrder);
+
+        $account = $fulfilledOrder->challengePurchase?->tradingAccounts
+            ->where('id', $result['account_id'])
+            ->first();
+
+        if ($account !== null) {
+            $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($account);
+        }
+
+        return ChallengePurchase::query()->findOrFail($result['purchase_id']);
     }
 
     /**

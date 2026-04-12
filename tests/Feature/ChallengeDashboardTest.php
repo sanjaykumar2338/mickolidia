@@ -4,11 +4,15 @@ namespace Tests\Feature;
 
 use App\Mail\ChallengeFailedMail;
 use App\Mail\ChallengePassedMail;
+use App\Mail\PhaseOnePassedMail;
+use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Models\ChallengePlan;
 use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ChallengeDashboardTest extends TestCase
@@ -21,6 +25,7 @@ class ChallengeDashboardTest extends TestCase
 
         config()->set('services.mt5_ingestion.token', 'integration-secret');
         Mail::fake();
+        Storage::fake('public');
     }
 
     public function test_one_step_account_stays_active_below_target(): void
@@ -216,7 +221,31 @@ class ChallengeDashboardTest extends TestCase
         $this->assertTrue((bool) $account->final_state_locked);
         $this->assertNotNull($account->passed_at);
         $this->assertNotNull($account->passed_email_sent_at);
+        $this->assertNotNull($account->funded_pass_email_sent_at);
+        $this->assertNotNull($account->certificate_path);
+        $this->assertNotNull($account->certificate_generated_at);
         $this->assertNull($account->failure_reason);
+        Storage::disk('public')->assertExists((string) $account->certificate_path);
+        $this->assertSame('image/png', mime_content_type(Storage::disk('public')->path((string) $account->certificate_path)));
+
+        Mail::assertSent(ChallengePassedMail::class, function (ChallengePassedMail $mail) use ($account): bool {
+            return ($mail->certificate['path'] ?? null) === $account->certificate_path
+                && count($mail->attachments()) === 1;
+        });
+
+        $certificatePath = (string) $account->certificate_path;
+        $certificateGeneratedAt = $account->certificate_generated_at?->toDateTimeString();
+        $passedEmailSentAt = $account->passed_email_sent_at?->toDateTimeString();
+        $fundedPassEmailSentAt = $account->funded_pass_email_sent_at?->toDateTimeString();
+
+        $this->pushMetrics($account, '2026-04-07 09:00:10', 11080, 11040, ['trade_count' => 1])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame($certificatePath, (string) $account->certificate_path);
+        $this->assertSame($certificateGeneratedAt, $account->certificate_generated_at?->toDateTimeString());
+        $this->assertSame($passedEmailSentAt, $account->passed_email_sent_at?->toDateTimeString());
+        $this->assertSame($fundedPassEmailSentAt, $account->funded_pass_email_sent_at?->toDateTimeString());
         Mail::assertSent(ChallengePassedMail::class, 1);
     }
 
@@ -319,6 +348,135 @@ class ChallengeDashboardTest extends TestCase
             ->assertDontSee('$10,562.64');
     }
 
+    public function test_dashboard_index_shows_command_center_stats_and_safe_mt5_access(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-12 12:00:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10140,
+                'equity' => 10110,
+                'profit_loss' => -30,
+                'total_profit' => 140,
+                'today_profit' => 80,
+                'platform_login' => '889900',
+                'platform_environment' => 'demo',
+                'last_synced_at' => now()->subMinutes(5),
+                'meta' => [
+                    'mt5_server' => 'Wolforix-Demo',
+                ],
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now()->subMinutes(5),
+                'balance' => 10140,
+                'equity' => 10110,
+                'profit_loss' => -30,
+                'total_profit' => 140,
+                'today_profit' => 80,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'trade_history' => [
+                        [
+                            'deal_id' => 'D-1001',
+                            'symbol' => 'XAUUSD',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-10 08:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-10 10:00:00')->timestamp,
+                            'volume' => 1.25,
+                            'commission' => -2,
+                            'net_profit' => 120,
+                        ],
+                        [
+                            'deal_id' => 'D-1002',
+                            'symbol' => 'BTCUSD',
+                            'trade_side' => 'sell',
+                            'open_timestamp' => Carbon::parse('2026-04-11 09:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-11 10:00:00')->timestamp,
+                            'volume' => 0.4,
+                            'commission' => -1,
+                            'net_profit' => -60,
+                        ],
+                        [
+                            'deal_id' => 'D-1003',
+                            'symbol' => 'XAUUSD',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-11 13:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-11 17:00:00')->timestamp,
+                            'volume' => 1,
+                            'commission' => -1,
+                            'net_profit' => 80,
+                        ],
+                    ],
+                    'open_positions' => [
+                        [
+                            'position_id' => 'P-9001',
+                            'symbol' => 'NVDA',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-12 09:00:00')->timestamp,
+                            'volume' => 2,
+                            'net_unrealized_pnl' => -30,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $account->tradingDays()->create([
+                'phase_index' => 1,
+                'trading_date' => '2026-04-11',
+                'activity_count' => 3,
+                'volume' => 2.65,
+                'first_activity_at' => Carbon::parse('2026-04-11 09:00:00'),
+                'last_activity_at' => Carbon::parse('2026-04-11 17:00:00'),
+                'source' => 'mt5_ea',
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Welcome back')
+                ->assertSee('All')
+                ->assertSee('Active')
+                ->assertSee('Inactive')
+                ->assertSee('Account summary')
+                ->assertSee('Credentials')
+                ->assertSee('Share metrics')
+                ->assertSee('Go to metrics')
+                ->assertSee('Trading command center')
+                ->assertSee('Current balance')
+                ->assertSee('$10,140.00')
+                ->assertSee('Time since first trade')
+                ->assertSee('2 days')
+                ->assertSee('Win ratio')
+                ->assertSee('66.7%')
+                ->assertSee('Most traded instruments')
+                ->assertSee('XAUUSD')
+                ->assertSee('BTCUSD')
+                ->assertSee('NVDA')
+                ->assertSee('MT5 access')
+                ->assertSee('MT5 account login')
+                ->assertSee('889900')
+                ->assertSee('Wolforix-Demo')
+                ->assertSee('Secure disclosure not enabled')
+                ->assertSee('Rule monitoring')
+                ->assertSee('Statistics')
+                ->assertSee('Average win')
+                ->assertSee('$100.00')
+                ->assertSee('Worst trade')
+                ->assertSee('-$60.00')
+                ->assertSee('Average trade duration')
+                ->assertSee('2 hr')
+                ->assertSee('Daily summary')
+                ->assertSee('3 trades')
+                ->assertSee('2.65')
+                ->assertDontSee('admin');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_two_step_phase_one_pass_transitions_to_phase_two_and_resets_references(): void
     {
         $account = $this->createChallengeAccount('two_step');
@@ -338,6 +496,22 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame(11050.00, (float) ($account->rule_state['broker_phase_reference_balance'] ?? 0));
         $this->assertSame('5.00', (string) $account->profit_target_percent);
         $this->assertNotEmpty($account->rule_state['phase_history'] ?? []);
+        $this->assertNotNull($account->phase_one_pass_email_sent_at);
+        $this->assertNotNull($account->phase_two_credentials_email_sent_at);
+        Mail::assertSent(PhaseOnePassedMail::class, 1);
+        Mail::assertSent(PhaseTwoAccountDetailsMail::class, 1);
+
+        $phaseOneSentAt = $account->phase_one_pass_email_sent_at?->toDateTimeString();
+        $phaseTwoCredentialsSentAt = $account->phase_two_credentials_email_sent_at?->toDateTimeString();
+
+        $this->pushMetrics($account, '2026-04-07 09:00:30', 11060, 11035, ['trade_count' => 0])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame($phaseOneSentAt, $account->phase_one_pass_email_sent_at?->toDateTimeString());
+        $this->assertSame($phaseTwoCredentialsSentAt, $account->phase_two_credentials_email_sent_at?->toDateTimeString());
+        Mail::assertSent(PhaseOnePassedMail::class, 1);
+        Mail::assertSent(PhaseTwoAccountDetailsMail::class, 1);
     }
 
     public function test_two_step_phase_two_passes_after_three_trading_days(): void

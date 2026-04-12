@@ -1200,6 +1200,11 @@ return array_replace_recursive($en, [
                 ],
             ],
         ],
+        'positioning_bullets' => [
+            'Payout rapidi. Zero complicazioni',
+            'Costruita diversamente dalle prop firm tradizionali',
+            'Progettata per trader disciplinati — non per gambler',
+        ],
         'simulated_notice' => 'Qualsiasi funded account mostrato in questa interfaccia fa parte di un programma di valutazione simulato. Nessun capitale reale viene tradato nei mercati finanziari live.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'Tutti i diritti riservati.',

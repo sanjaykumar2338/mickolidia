@@ -90,6 +90,11 @@ class Order extends Model
         return $this->hasOne(ChallengePurchase::class);
     }
 
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
     public function tradingAccounts(): HasMany
     {
         return $this->hasMany(TradingAccount::class);

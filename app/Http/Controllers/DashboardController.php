@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -52,7 +53,7 @@ class DashboardController extends Controller
             'profile',
             'ctraderConnection',
             'challengeTradingAccounts.challengePlan',
-            'challengePurchases.order',
+            'challengePurchases.order.invoice',
         ]);
 
         $accounts = $user->challengeTradingAccounts
@@ -60,7 +61,14 @@ class DashboardController extends Controller
             ->values();
 
         /** @var TradingAccount|null $primaryAccount */
-        $primaryAccount = $accounts->first();
+        $primaryAccount = null;
+        $requestedAccountId = (int) $request->query('account', 0);
+
+        if ($requestedAccountId > 0) {
+            $primaryAccount = $accounts->firstWhere('id', $requestedAccountId);
+        }
+
+        $primaryAccount ??= $accounts->first();
         $primaryPlanDefinition = $primaryAccount instanceof TradingAccount
             ? $this->planDefinitionForAccount($primaryAccount)
             : null;
@@ -75,8 +83,10 @@ class DashboardController extends Controller
             'dashboardBadges' => $this->dashboardBadges($primaryAccount),
             'progressTracks' => $this->progressTracks($primaryAccount),
             'performanceChart' => $this->performanceChart($primaryAccount),
-            'performanceCards' => $this->performanceCards($primaryAccount),
-            'analyticsSummary' => $this->analyticsSummary($primaryAccount),
+            'mt5Access' => $this->mt5AccessPanel($primaryAccount),
+            'dashboardInsights' => $this->dashboardInsights($primaryAccount),
+            'statisticsGrid' => $this->statisticsGrid($primaryAccount),
+            'dailySummary' => $this->dailySummary($primaryAccount),
             'tradesPanel' => $this->tradesPanel($primaryAccount),
             'accounts' => $accounts->map(fn (TradingAccount $account): array => $this->accountCardPayload($account))->all(),
             'payoutSummary' => $this->payoutSummary($primaryAccount),
@@ -111,8 +121,10 @@ class DashboardController extends Controller
             'dashboardBadges' => [],
             'progressTracks' => [],
             'performanceChart' => $this->performanceChart(null),
-            'performanceCards' => [],
-            'analyticsSummary' => null,
+            'mt5Access' => $this->mt5AccessPanel(null),
+            'dashboardInsights' => $this->dashboardInsights(null),
+            'statisticsGrid' => $this->statisticsGrid(null),
+            'dailySummary' => $this->dailySummary(null),
             'tradesPanel' => $this->tradesPanel(null),
             'accounts' => [],
             'payoutSummary' => $this->payoutSummary(null),
@@ -204,6 +216,7 @@ class DashboardController extends Controller
             'trading_blocked' => (bool) $account->trading_blocked,
             'final_state_locked' => (bool) $account->final_state_locked,
             'state_notice' => $this->stateNotice($account),
+            'certificate_url' => $this->certificateUrl($account),
             'payout_cycle_days' => $fundedTiming['payout_cycle_days'],
             'first_payout_days' => $fundedTiming['first_payout_days'],
             'leverage' => $plan['phases'][0]['leverage'] ?? null,
@@ -630,6 +643,311 @@ class DashboardController extends Controller
     /**
      * @return array<string, mixed>
      */
+    private function mt5AccessPanel(?TradingAccount $account): array
+    {
+        if (! $account instanceof TradingAccount || $account->platform_slug !== 'mt5') {
+            return [
+                'is_available' => false,
+                'title' => __('MT5 credentials'),
+                'message' => __('MT5 access details appear here once an MT5 challenge account is provisioned.'),
+                'fields' => [],
+                'privacy_note' => __('Only trader-facing account details are shown in the client dashboard.'),
+            ];
+        }
+
+        $serverName = $this->accountMetadataValue($account, [
+            'mt5_server',
+            'server_name',
+            'server',
+            'platform_server',
+            'broker_server',
+            'credentials.server',
+            'credentials.mt5_server',
+        ]);
+
+        $accountLogin = filled($account->platform_login)
+            ? (string) $account->platform_login
+            : (filled($account->platform_account_id) ? (string) $account->platform_account_id : null);
+
+        return [
+            'is_available' => true,
+            'title' => __('MT5 credentials'),
+            'message' => __('Use this secure access panel for the trader-facing MT5 identifiers linked to this challenge account.'),
+            'fields' => [
+                [
+                    'label' => __('MT5 account login'),
+                    'value' => $accountLogin ?: __('Link pending'),
+                    'hint' => __('Trader login used by MT5 or the connected bridge.'),
+                ],
+                [
+                    'label' => __('Server name'),
+                    'value' => $serverName ?: ($account->platform_environment ? $this->humanizeStatus((string) $account->platform_environment) : __('Not provided yet')),
+                    'hint' => $serverName ? __('Broker server supplied for this account.') : __('Server value is not stored on this account yet.'),
+                ],
+                [
+                    'label' => __('Trading password'),
+                    'value' => __('Secure disclosure not enabled'),
+                    'hint' => __('Passwords are not stored or displayed in this dashboard.'),
+                    'is_secret' => true,
+                ],
+                [
+                    'label' => __('Investor password'),
+                    'value' => __('Secure disclosure not enabled'),
+                    'hint' => __('Investor credentials can be wired later through controlled disclosure.'),
+                    'is_secret' => true,
+                ],
+                [
+                    'label' => __('Account reference'),
+                    'value' => $account->account_reference ?: __('N/A'),
+                    'hint' => __('Internal Wolforix challenge reference.'),
+                ],
+            ],
+            'privacy_note' => __('Password fields stay hidden unless a secure credential delivery model is added for this client account.'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dashboardInsights(?TradingAccount $account): array
+    {
+        if (! $account instanceof TradingAccount) {
+            return [
+                'is_available' => false,
+                'balance' => $this->formatMoney(0),
+                'equity' => $this->formatMoney(0),
+                'balance_hint' => __('Challenge-relative current balance'),
+                'equity_hint' => __('Challenge-relative equity'),
+                'trading_days' => __('0 / 0'),
+                'time_since_first_trade' => null,
+                'time_since_first_trade_segments' => null,
+                'first_trade_at' => null,
+                'win_rate_available' => false,
+                'win_rate' => __('No closed trades'),
+                'win_rate_value' => 0.0,
+                'win_rate_hint' => __('Win ratio appears after closed trades are synced.'),
+                'closed_trades' => 0,
+                'open_trades' => 0,
+                'top_instruments' => [],
+                'instrument_ring_style' => 'background: conic-gradient(rgba(148, 163, 184, 0.18) 0% 100%);',
+                'instrument_message' => __('Instrument distribution appears once trade rows are synced.'),
+                'certificate_url' => null,
+            ];
+        }
+
+        $challengeMetrics = $this->challengeMetrics($account);
+        $tradeAnalytics = $this->tradeAnalytics($account);
+        $payload = $this->latestSnapshotTradePayload($account);
+        $timeline = $this->tradeTimeline($payload);
+        $instrumentSummary = $this->topInstrumentSummary($payload);
+        $closedTrades = (int) ($tradeAnalytics['closed_trades'] ?? 0);
+        $winRate = $closedTrades > 0 ? (float) ($tradeAnalytics['win_rate'] ?? 0) : 0.0;
+
+        return [
+            'is_available' => true,
+            'balance' => $this->formatMoney((float) $challengeMetrics['challenge_balance']),
+            'equity' => $this->formatMoney((float) $challengeMetrics['challenge_equity']),
+            'balance_hint' => __('Initial balance plus realized profit'),
+            'equity_hint' => __('Challenge balance plus open P&L'),
+            'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
+            'time_since_first_trade' => $timeline['time_since_first_trade'],
+            'time_since_first_trade_segments' => $timeline['time_since_first_trade_segments'],
+            'first_trade_at' => $timeline['first_trade_at'],
+            'win_rate_available' => $closedTrades > 0,
+            'win_rate' => $closedTrades > 0 ? number_format($winRate, 1).'%' : __('No closed trades'),
+            'win_rate_value' => max(min($winRate, 100), 0),
+            'win_rate_hint' => $closedTrades > 0
+                ? __('Calculated from :count closed trades.', ['count' => $closedTrades])
+                : __('Win ratio appears after closed trades are synced.'),
+            'closed_trades' => $closedTrades,
+            'open_trades' => (int) ($tradeAnalytics['open_trades'] ?? count($payload['open_positions'] ?? [])),
+            'top_instruments' => $instrumentSummary['items'],
+            'instrument_ring_style' => $instrumentSummary['ring_style'],
+            'instrument_message' => $instrumentSummary['items'] === []
+                ? __('Instrument distribution appears once trade rows are synced.')
+                : __('Top symbols by synced trade-row count.'),
+            'certificate_url' => $this->certificateUrl($account),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function statisticsGrid(?TradingAccount $account): array
+    {
+        if (! $account instanceof TradingAccount) {
+            return [
+                'is_available' => false,
+                'cards' => [],
+                'message' => __('Statistics appear after the first synced account and trade-history payload.'),
+                'notes' => [],
+            ];
+        }
+
+        $tradeAnalytics = $this->tradeAnalytics($account);
+        $payload = $this->latestSnapshotTradePayload($account);
+        $timeline = $this->tradeTimeline($payload);
+        $challengeMetrics = $this->challengeMetrics($account);
+        $highWaterMark = $this->highWaterMarkBalance($account);
+        $phaseProfit = (float) $challengeMetrics['realized_profit'];
+
+        $cards = collect([
+            [
+                'label' => __('Win ratio'),
+                'value' => $tradeAnalytics ? number_format((float) $tradeAnalytics['win_rate'], 1).'%' : null,
+                'hint' => $tradeAnalytics ? __('Closed trades only') : null,
+                'tone' => $tradeAnalytics && (float) $tradeAnalytics['win_rate'] >= 50 ? 'emerald' : 'amber',
+            ],
+            [
+                'label' => __('HWM balance'),
+                'value' => $this->formatMoney($highWaterMark),
+                'hint' => __('Highest challenge-balance snapshot'),
+                'tone' => 'amber',
+            ],
+            [
+                'label' => __('Net profit'),
+                'value' => $this->formatMoney($phaseProfit),
+                'hint' => __('Current challenge phase'),
+                'tone' => $this->metricTone($phaseProfit),
+            ],
+            [
+                'label' => __('Average win'),
+                'value' => $tradeAnalytics && $tradeAnalytics['average_win'] !== null ? $this->formatMoney((float) $tradeAnalytics['average_win']) : null,
+                'hint' => __('Mean winning trade'),
+                'tone' => 'emerald',
+            ],
+            [
+                'label' => __('Average loss'),
+                'value' => $tradeAnalytics && $tradeAnalytics['average_loss'] !== null ? $this->formatMoney((float) $tradeAnalytics['average_loss']) : null,
+                'hint' => __('Mean losing trade'),
+                'tone' => 'rose',
+            ],
+            [
+                'label' => __('Profit factor'),
+                'value' => $tradeAnalytics && $tradeAnalytics['profit_factor'] !== null ? number_format((float) $tradeAnalytics['profit_factor'], 2) : null,
+                'hint' => __('Gross profit / gross loss'),
+                'tone' => 'sky',
+            ],
+            [
+                'label' => __('Best trade'),
+                'value' => $tradeAnalytics ? $this->formatMoney((float) $tradeAnalytics['best_profit']) : null,
+                'hint' => __('Highest closed-trade P&L'),
+                'tone' => 'emerald',
+            ],
+            [
+                'label' => __('Worst trade'),
+                'value' => $tradeAnalytics ? $this->formatMoney((float) $tradeAnalytics['biggest_loss']) : null,
+                'hint' => __('Lowest closed-trade P&L'),
+                'tone' => 'rose',
+            ],
+            [
+                'label' => __('Risk reward'),
+                'value' => $tradeAnalytics && $tradeAnalytics['risk_reward'] !== null ? number_format((float) $tradeAnalytics['risk_reward'], 2).' R' : null,
+                'hint' => __('Average win / average loss'),
+                'tone' => 'slate',
+            ],
+            [
+                'label' => __('Gross profit'),
+                'value' => $tradeAnalytics ? $this->formatMoney((float) $tradeAnalytics['gross_profit']) : null,
+                'hint' => __('Winning closed trades'),
+                'tone' => 'emerald',
+            ],
+            [
+                'label' => __('Gross loss'),
+                'value' => $tradeAnalytics ? $this->formatMoney(-(float) $tradeAnalytics['gross_loss']) : null,
+                'hint' => __('Losing closed trades'),
+                'tone' => 'rose',
+            ],
+            [
+                'label' => __('Expectancy'),
+                'value' => $tradeAnalytics && $tradeAnalytics['expectancy'] !== null ? $this->formatMoney((float) $tradeAnalytics['expectancy']) : null,
+                'hint' => __('Average P&L per trade'),
+                'tone' => $tradeAnalytics && $tradeAnalytics['expectancy'] !== null ? $this->metricTone((float) $tradeAnalytics['expectancy']) : 'slate',
+            ],
+            [
+                'label' => __('Average trade size'),
+                'value' => $tradeAnalytics && $tradeAnalytics['average_trade_size'] !== null ? $this->formatNumeric((float) $tradeAnalytics['average_trade_size']) : null,
+                'hint' => __('Mean closed-trade volume'),
+                'tone' => 'slate',
+            ],
+            [
+                'label' => __('Average trade duration'),
+                'value' => $tradeAnalytics['average_trade_duration'] ?? null,
+                'hint' => __('Requires open and close timestamps'),
+                'tone' => 'slate',
+            ],
+            [
+                'label' => __('Time since first trade'),
+                'value' => $timeline['time_since_first_trade'],
+                'hint' => $timeline['first_trade_at'] ?: __('Earliest synced trade row'),
+                'tone' => 'amber',
+            ],
+        ])
+            ->filter(fn (array $card): bool => filled($card['value']))
+            ->values()
+            ->all();
+
+        $notes = [];
+
+        if (! $tradeAnalytics) {
+            $notes[] = __('Closed-trade metrics are hidden until trade history is included in the synced payload.');
+        } elseif (($tradeAnalytics['average_trade_duration'] ?? null) === null) {
+            $notes[] = __('Average trade duration is omitted when trade rows do not include both open and close timestamps.');
+        }
+
+        return [
+            'is_available' => $cards !== [],
+            'cards' => $cards,
+            'message' => __('Only reliable values from snapshots or closed trade rows are shown.'),
+            'notes' => $notes,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dailySummary(?TradingAccount $account): array
+    {
+        $emptyState = [
+            'is_available' => false,
+            'rows' => [],
+            'message' => __('Daily summaries appear after trading-day activity is synced for this account.'),
+        ];
+
+        if (! $account instanceof TradingAccount) {
+            return $emptyState;
+        }
+
+        $rows = $account->tradingDays()
+            ->where('phase_index', (int) $account->phase_index)
+            ->latest('trading_date')
+            ->take(5)
+            ->get()
+            ->map(fn ($day): array => [
+                'date' => $this->formatDate($day->trading_date),
+                'activity' => __(':count trades', ['count' => (int) $day->activity_count]),
+                'volume' => $this->formatNumeric((float) $day->volume),
+                'first_activity_at' => $this->formatDateTime($day->first_activity_at),
+                'last_activity_at' => $this->formatDateTime($day->last_activity_at),
+                'source' => $day->source ? $this->sourceLabel((string) $day->source) : __('Snapshot payload'),
+            ])
+            ->values()
+            ->all();
+
+        if ($rows === []) {
+            return $emptyState;
+        }
+
+        return [
+            'is_available' => true,
+            'rows' => $rows,
+            'message' => __('Recent trading-day activity derived from synced challenge records.'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function tradesPanel(?TradingAccount $account): array
     {
         $emptyState = [
@@ -933,7 +1251,9 @@ class DashboardController extends Controller
             'trading_blocked' => (bool) $account->trading_blocked,
             'final_state_locked' => (bool) $account->final_state_locked,
             'state_notice' => $this->stateNotice($account),
+            'certificate_url' => $this->certificateUrl($account),
             'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
+            'dashboard_url' => route('dashboard', ['account' => $account->id]),
         ];
     }
 
@@ -1011,7 +1331,7 @@ class DashboardController extends Controller
             return collect();
         }
 
-        $user->loadMissing(['challengePurchases.order', 'challengePurchases.tradingAccounts']);
+        $user->loadMissing(['challengePurchases.order.invoice', 'challengePurchases.tradingAccounts']);
 
         return $user->challengePurchases
             ->sortByDesc('created_at')
@@ -1030,6 +1350,8 @@ class DashboardController extends Controller
                     'account_reference' => $linkedAccount?->account_reference ?? __('Pending link'),
                     'sync_status' => $linkedAccount?->sync_status ? $this->humanizeStatus((string) $linkedAccount->sync_status) : __('Not synced'),
                     'created_at' => $purchase->created_at ? $this->formatDate($purchase->created_at) : __('N/A'),
+                    'invoice_number' => $order?->invoice?->invoice_number,
+                    'invoice_download_url' => $order?->invoice ? route('dashboard.invoices.download', $order->invoice) : null,
                 ];
             });
     }
@@ -1191,9 +1513,17 @@ class DashboardController extends Controller
         $grossProfit = round($profits->filter(fn (float $value): bool => $value > 0)->sum(), 2);
         $grossLoss = round(abs($profits->filter(fn (float $value): bool => $value < 0)->sum()), 2);
         $closedTrades = $profits->count();
-        $wins = $profits->filter(fn (float $value): bool => $value > 0)->count();
+        $winningProfits = $profits->filter(fn (float $value): bool => $value > 0)->values();
+        $losingProfits = $profits->filter(fn (float $value): bool => $value < 0)->values();
+        $wins = $winningProfits->count();
         $fees = round($tradeHistory->sum(fn (array $row): float => abs((float) Arr::get($row, 'commission', 0))), 2);
         $averageTradeSize = $tradeHistory->avg(fn (array $row): float => (float) Arr::get($row, 'volume', 0));
+        $averageWin = $winningProfits->isNotEmpty() ? round((float) $winningProfits->avg(), 2) : null;
+        $averageLoss = $losingProfits->isNotEmpty() ? round((float) $losingProfits->avg(), 2) : null;
+        $averageLossAbs = $averageLoss !== null ? abs($averageLoss) : null;
+        $riskReward = $averageWin !== null && $averageLossAbs !== null && $averageLossAbs > 0
+            ? round($averageWin / $averageLossAbs, 2)
+            : null;
 
         return [
             'closed_trades' => $closedTrades,
@@ -1206,9 +1536,220 @@ class DashboardController extends Controller
             'biggest_loss' => round((float) ($profits->min() ?? 0), 2),
             'expectancy' => $closedTrades > 0 ? round((float) $profits->avg(), 2) : null,
             'average_trade_size' => $averageTradeSize !== null ? round((float) $averageTradeSize, 2) : null,
+            'average_win' => $averageWin,
+            'average_loss' => $averageLoss,
+            'risk_reward' => $riskReward,
+            'average_trade_duration' => $this->averageTradeDuration($tradeHistory),
             'win_rate' => $closedTrades > 0 ? round(($wins / $closedTrades) * 100, 1) : 0.0,
             'fees' => $fees,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{items:list<array<string, mixed>>,ring_style:string}
+     */
+    private function topInstrumentSummary(array $payload): array
+    {
+        $rows = collect($payload['trade_history'] ?? [])
+            ->merge($payload['open_positions'] ?? [])
+            ->filter(fn ($row): bool => is_array($row))
+            ->values();
+
+        if ($rows->isEmpty()) {
+            return [
+                'items' => [],
+                'ring_style' => 'background: conic-gradient(rgba(148, 163, 184, 0.18) 0% 100%);',
+            ];
+        }
+
+        $groups = [];
+
+        foreach ($rows as $row) {
+            $symbol = $this->tradeSymbolLabel($row);
+
+            if ($symbol === __('—')) {
+                continue;
+            }
+
+            $groups[$symbol] ??= [
+                'symbol' => $symbol,
+                'count' => 0,
+                'volume' => 0.0,
+                'pnl' => 0.0,
+            ];
+
+            $groups[$symbol]['count']++;
+            $groups[$symbol]['volume'] += (float) Arr::get($row, 'volume', 0);
+            $groups[$symbol]['pnl'] += (float) (Arr::get($row, 'net_profit') ?? Arr::get($row, 'net_unrealized_pnl') ?? 0);
+        }
+
+        $totalCount = collect($groups)->sum('count');
+
+        if ($totalCount <= 0) {
+            return [
+                'items' => [],
+                'ring_style' => 'background: conic-gradient(rgba(148, 163, 184, 0.18) 0% 100%);',
+            ];
+        }
+
+        $colors = ['#f4b74a', '#38bdf8', '#34d399', '#fb7185', '#a78bfa'];
+        $cursor = 0.0;
+        $segments = [];
+
+        $items = collect($groups)
+            ->sort(fn (array $left, array $right): int => [$right['count'], $right['volume']] <=> [$left['count'], $left['volume']])
+            ->take(5)
+            ->values()
+            ->map(function (array $group, int $index) use ($totalCount, $colors, &$cursor, &$segments): array {
+                $share = round(((int) $group['count'] / $totalCount) * 100, 1);
+                $color = $colors[$index % count($colors)];
+                $segmentEnd = min($cursor + $share, 100);
+
+                if ($segmentEnd > $cursor) {
+                    $segments[] = sprintf('%s %.1f%% %.1f%%', $color, $cursor, $segmentEnd);
+                    $cursor = $segmentEnd;
+                }
+
+                return [
+                    'symbol' => $group['symbol'],
+                    'count' => (int) $group['count'],
+                    'count_label' => __(':count trades', ['count' => (int) $group['count']]),
+                    'volume' => $this->formatNumeric((float) $group['volume']),
+                    'pnl' => $this->formatMoney((float) $group['pnl']),
+                    'pnl_tone' => $this->metricTone((float) $group['pnl']),
+                    'share' => $share,
+                    'share_label' => number_format($share, 1).'%',
+                    'color' => $color,
+                ];
+            })
+            ->all();
+
+        if ($cursor < 100) {
+            $segments[] = sprintf('rgba(148, 163, 184, 0.16) %.1f%% 100%%', $cursor);
+        }
+
+        return [
+            'items' => $items,
+            'ring_style' => 'background: conic-gradient('.implode(', ', $segments).');',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{time_since_first_trade:?string,time_since_first_trade_segments:?array<string, int>,first_trade_at:?string}
+     */
+    private function tradeTimeline(array $payload): array
+    {
+        $timestamps = collect($payload['trade_history'] ?? [])
+            ->merge($payload['open_positions'] ?? [])
+            ->filter(fn ($row): bool => is_array($row))
+            ->flatMap(function (array $row): array {
+                return [
+                    $this->tradeOpenTimestamp($row),
+                    $this->tradeCloseTimestamp($row),
+                ];
+            })
+            ->filter(fn ($timestamp): bool => $timestamp instanceof Carbon)
+            ->sortBy(fn (Carbon $timestamp): int => $timestamp->getTimestamp())
+            ->values();
+
+        /** @var Carbon|null $firstTradeAt */
+        $firstTradeAt = $timestamps->first();
+
+        if (! $firstTradeAt instanceof Carbon) {
+            return [
+                'time_since_first_trade' => null,
+                'time_since_first_trade_segments' => null,
+                'first_trade_at' => null,
+            ];
+        }
+
+        $seconds = $firstTradeAt->diffInSeconds(now());
+
+        return [
+            'time_since_first_trade' => $this->formatCompactDuration($seconds),
+            'time_since_first_trade_segments' => $this->durationSegments($seconds),
+            'first_trade_at' => $this->formatTradeDate($firstTradeAt),
+        ];
+    }
+
+    private function highWaterMarkBalance(TradingAccount $account): float
+    {
+        $points = $this->chartPoints($account);
+
+        if ($points->isNotEmpty()) {
+            return round((float) $points->max(fn (array $point): float => (float) $point['balance']), 2);
+        }
+
+        return round((float) $this->challengeMetrics($account)['challenge_balance'], 2);
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $tradeHistory
+     */
+    private function averageTradeDuration(Collection $tradeHistory): ?string
+    {
+        $durations = $tradeHistory
+            ->map(function (array $row): ?int {
+                $openedAt = $this->tradeOpenTimestamp($row);
+                $closedAt = $this->tradeCloseTimestamp($row);
+
+                if (! $openedAt instanceof Carbon || ! $closedAt instanceof Carbon || $closedAt->lt($openedAt)) {
+                    return null;
+                }
+
+                return $openedAt->diffInSeconds($closedAt);
+            })
+            ->filter(fn ($seconds): bool => is_int($seconds) && $seconds >= 0)
+            ->values();
+
+        if ($durations->isEmpty()) {
+            return null;
+        }
+
+        return $this->formatCompactDuration((int) round((float) $durations->avg()));
+    }
+
+    private function tradeOpenTimestamp(array $row): ?Carbon
+    {
+        foreach ([
+            'open_timestamp',
+            'open_time',
+            'opened_at',
+            'raw.openTimestamp',
+            'raw.tradeData.openTimestamp',
+            'raw.open_time',
+        ] as $key) {
+            $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
+
+            if ($timestamp instanceof Carbon) {
+                return $timestamp;
+            }
+        }
+
+        return null;
+    }
+
+    private function tradeCloseTimestamp(array $row): ?Carbon
+    {
+        foreach ([
+            'close_timestamp',
+            'closed_at',
+            'close_time',
+            'execution_timestamp',
+            'execution_time',
+            'raw.closeTimestamp',
+            'raw.executionTimestamp',
+        ] as $key) {
+            $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
+
+            if ($timestamp instanceof Carbon) {
+                return $timestamp;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1466,6 +2007,77 @@ class DashboardController extends Controller
             $seconds < 86400 => __(':value h ago', ['value' => floor($seconds / 3600)]),
             default => __(':value d ago', ['value' => floor($seconds / 86400)]),
         };
+    }
+
+    private function formatCompactDuration(int|float $seconds): string
+    {
+        $seconds = max((int) round($seconds), 0);
+
+        return match (true) {
+            $seconds >= 86400 => __(':value days', ['value' => (int) floor($seconds / 86400)]),
+            $seconds >= 3600 => __(':value hr', ['value' => (int) floor($seconds / 3600)]),
+            $seconds >= 60 => __(':value min', ['value' => (int) floor($seconds / 60)]),
+            default => __(':value sec', ['value' => $seconds]),
+        };
+    }
+
+    /**
+     * @return array{days:int,hours:int,minutes:int,seconds:int}
+     */
+    private function durationSegments(int|float $seconds): array
+    {
+        $remaining = max((int) round($seconds), 0);
+        $days = (int) floor($remaining / 86400);
+        $remaining -= $days * 86400;
+        $hours = (int) floor($remaining / 3600);
+        $remaining -= $hours * 3600;
+        $minutes = (int) floor($remaining / 60);
+        $remaining -= $minutes * 60;
+
+        return [
+            'days' => $days,
+            'hours' => $hours,
+            'minutes' => $minutes,
+            'seconds' => $remaining,
+        ];
+    }
+
+    /**
+     * @param  list<string>  $keys
+     */
+    private function accountMetadataValue(TradingAccount $account, array $keys): ?string
+    {
+        foreach ([$account->meta ?? [], $account->rule_state ?? []] as $source) {
+            if (! is_array($source)) {
+                continue;
+            }
+
+            foreach ($keys as $key) {
+                $value = Arr::get($source, $key);
+
+                if (is_scalar($value) && filled((string) $value)) {
+                    return (string) $value;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function certificateUrl(TradingAccount $account): ?string
+    {
+        if (! filled($account->certificate_path)) {
+            return null;
+        }
+
+        $path = (string) $account->certificate_path;
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            return null;
+        }
+
+        return $disk->url($path);
     }
 
     private function metricTone(float $value): string

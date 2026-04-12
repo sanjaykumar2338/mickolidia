@@ -39,6 +39,8 @@
     ];
 
     $paymentRail = array_merge($paymentMethods, $paymentMethods);
+    $positioningBullets = trans('site.footer.positioning_bullets');
+    $positioningBullets = is_array($positioningBullets) ? $positioningBullets : [];
 
     $communityLinks = [
         [
@@ -159,6 +161,23 @@
                     </div>
                 </div>
             </div>
+
+            @if ($positioningBullets !== [])
+                <div class="grid gap-3 md:grid-cols-3">
+                    @foreach ($positioningBullets as $bullet)
+                        <div class="rounded-[1.45rem] border border-amber-400/14 bg-amber-400/8 px-5 py-4 shadow-[0_18px_55px_rgba(2,6,23,0.2)]">
+                            <div class="flex items-start gap-3">
+                                <span class="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/12 text-amber-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4l3.8 3.79 6.8-6.79a1 1 0 0 1 1.4 0Z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                                <p class="text-sm font-semibold leading-6 text-white sm:text-base">{{ $bullet }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
             <div class="surface-panel relative overflow-hidden rounded-[2.4rem] p-5 sm:p-6">
                 <div class="prefooter-orb prefooter-orb-bottom" aria-hidden="true"></div>

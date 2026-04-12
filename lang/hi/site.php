@@ -1200,6 +1200,11 @@ return array_replace_recursive($en, [
                 ],
             ],
         ],
+        'positioning_bullets' => [
+            'तेज़ payouts. कोई बकवास नहीं',
+            'पारंपरिक prop firms से अलग बनाया गया',
+            'अनुशासित traders के लिए डिज़ाइन — gamblers के लिए नहीं',
+        ],
         'simulated_notice' => 'इस इंटरफ़ेस में दिखाया गया कोई भी funded account एक simulated evaluation program का हिस्सा है। लाइव फाइनेंशियल मार्केट्स में कोई वास्तविक पूंजी ट्रेड नहीं की जाती।',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'सर्वाधिकार सुरक्षित।',

@@ -20,69 +20,15 @@
         <x-consistency-banner :title="$consistencyBanner['title']" :message="$consistencyBanner['message']" :meta="$consistencyBanner['meta']" />
 
         @if ($dashboardHero && $primaryAccount)
-            @include('dashboard.partials.overview-hero', ['hero' => $dashboardHero, 'primaryAccount' => $primaryAccount])
+            @include('dashboard.partials.account-filter-bar', ['accounts' => $accounts, 'profile' => $profile])
+            @include('dashboard.partials.overview-hero', ['hero' => $dashboardHero, 'primaryAccount' => $primaryAccount, 'mt5Access' => $mt5Access, 'insights' => $dashboardInsights])
+            @include('dashboard.partials.command-center', ['mt5Access' => $mt5Access, 'insights' => $dashboardInsights])
 
             <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.94fr)]">
                 @include('dashboard.partials.performance-chart', ['performanceChart' => $performanceChart])
 
                 <div class="space-y-6">
-                    <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Risk & milestones') }}</p>
-                                <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Progress toward the rules') }}</h3>
-                            </div>
-                            <span class="rounded-full border border-white/10 bg-white/6 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
-                                {{ $primaryAccount['challenge_phase'] }}
-                            </span>
-                        </div>
-
-                        <div class="mt-6 space-y-4">
-                            @foreach ($progressTracks as $track)
-                                <article class="rounded-[1.55rem] border border-white/8 bg-black/18 p-4">
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p class="text-sm font-semibold text-white">{{ $track['label'] }}</p>
-                                            <p class="mt-1 text-xs text-slate-400">{{ $track['current'] }} / {{ $track['target'] }}</p>
-                                        </div>
-                                        <span class="{{ $toneClasses[$track['tone']] ?? $toneClasses['slate'] }} rounded-full border px-3 py-1 text-xs font-semibold">
-                                            {{ $track['value_label'] }}
-                                        </span>
-                                    </div>
-                                    <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-white/8">
-                                        <div class="h-full rounded-full {{ match ($track['tone']) {
-                                            'emerald' => 'bg-emerald-400',
-                                            'rose' => 'bg-rose-400',
-                                            'sky' => 'bg-sky-400',
-                                            default => 'bg-amber-400',
-                                        } }}" style="width: {{ $track['value'] }}%"></div>
-                                    </div>
-                                    <p class="mt-3 text-sm leading-6 text-slate-400">{{ $track['meta'] }}</p>
-                                </article>
-                            @endforeach
-                        </div>
-                    </section>
-
-                    <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('History snapshot') }}</p>
-                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ $analyticsSummary['title'] ?? __('History & analytics') }}</h3>
-                        <p class="mt-3 text-sm leading-7 text-slate-400">{{ $analyticsSummary['message'] ?? __('Trading analytics become available once synced.') }}</p>
-
-                        @if (($analyticsSummary['is_available'] ?? false) && filled($analyticsSummary['cards'] ?? []))
-                            <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                                @foreach ($analyticsSummary['cards'] as $card)
-                                    <article class="rounded-[1.45rem] border border-white/8 bg-black/18 p-4">
-                                        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ $card['label'] }}</p>
-                                        <p class="mt-3 text-2xl font-semibold text-white">{{ $card['value'] }}</p>
-                                    </article>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="mt-6 rounded-[1.55rem] border border-dashed border-white/12 bg-white/3 px-4 py-5 text-sm leading-7 text-slate-400">
-                                {{ __('Metrics like gross profit, expectancy, and win rate are shown only when the synced snapshot includes detailed closed-trade rows.') }}
-                            </div>
-                        @endif
-                    </section>
+                    @include('dashboard.partials.rules-monitor', ['progressTracks' => $progressTracks, 'primaryAccount' => $primaryAccount])
 
                     <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
                         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('site.dashboard.overview.payout_title') }}</p>
@@ -105,35 +51,9 @@
                 </div>
             </div>
 
-            <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Performance summary') }}</p>
-                        <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Key account metrics') }}</h3>
-                    </div>
-                    <p class="max-w-xl text-sm leading-7 text-slate-400">
-                        {{ __('Only metrics that are already available from the synced account or the latest trade payload are shown here.') }}
-                    </p>
-                </div>
+            @include('dashboard.partials.statistics-grid', ['statisticsGrid' => $statisticsGrid])
 
-                <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    @foreach ($performanceCards as $card)
-                        <article class="rounded-[1.65rem] border border-white/8 bg-black/18 p-4">
-                            <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ $card['label'] }}</p>
-                            <p class="mt-3 text-2xl font-semibold {{ match ($card['tone']) {
-                                'emerald' => 'text-emerald-100',
-                                'rose' => 'text-rose-100',
-                                'sky' => 'text-sky-100',
-                                'amber' => 'text-amber-100',
-                                default => 'text-white',
-                            } }}">
-                                {{ $card['value'] }}
-                            </p>
-                            <p class="mt-2 text-sm leading-6 text-slate-400">{{ $card['hint'] }}</p>
-                        </article>
-                    @endforeach
-                </div>
-            </section>
+            @include('dashboard.partials.daily-summary', ['dailySummary' => $dailySummary])
 
             @include('dashboard.partials.trades-panel', ['tradesPanel' => $tradesPanel])
 
@@ -195,6 +115,8 @@
                     </div>
                 </section>
             @endif
+
+            @include('dashboard.partials.dashboard-modals', ['mt5Access' => $mt5Access])
         @else
             <section class="surface-panel rounded-[2rem] p-6 sm:p-8">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('site.dashboard.preview_title') }}</p>

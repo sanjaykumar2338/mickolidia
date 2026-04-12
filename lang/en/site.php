@@ -1332,6 +1332,11 @@ return [
                 ],
             ],
         ],
+        'positioning_bullets' => [
+            'Fast payouts. Zero nonsense',
+            'Built differently from traditional prop firms',
+            'Designed for disciplined traders — not gamblers',
+        ],
         'simulated_notice' => 'Any funded account shown in this interface is part of a simulated evaluation program. No real capital is traded in live financial markets.',
         'company_location' => 'Wolforix Ltd. | Suite RA01, 195-197 Wood Street, London, E17 3NU',
         'copyright' => 'All rights reserved.',

@@ -109,6 +109,11 @@ class User extends Authenticatable
         return $this->hasMany(ChallengePurchase::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);

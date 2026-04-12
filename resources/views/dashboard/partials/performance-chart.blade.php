@@ -13,6 +13,7 @@
 @endphp
 
 <section
+    id="dashboard-metrics"
     class="surface-panel rounded-[2rem] p-5 sm:p-6"
     data-dashboard-chart
     data-dashboard-chart-payload='@json($performanceChart)'

@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
+use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\TradingAccount;
@@ -20,6 +22,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Tests\Fixtures\FakePayPalPaymentGateway;
 use Tests\Fixtures\FakeStripePaymentGateway;
@@ -33,6 +36,7 @@ class WolforixPlatformTest extends TestCase
         parent::setUp();
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
+        Storage::fake('public');
     }
 
     public function test_public_pages_render_successfully(): void
@@ -618,7 +622,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('By using this website, you agree to our Terms and Conditions, Privacy Policy, Payout Policy, Refund Policy, and all related legal documents.')
             ->assertSee(asset('trading123.png'), false)
             ->assertSee(asset('newfolder/mobile1.webp'), false)
-            ->assertSee(asset('mickolidia-attachments/IMG_8995.webp'), false)
+            ->assertSee(asset('IMG_9315.webp'), false)
             ->assertDontSee('Milestone 1 scope')
             ->assertDontSee('What this foundation already covers')
             ->assertDontSee('Secure checkout')
@@ -1068,6 +1072,9 @@ class WolforixPlatformTest extends TestCase
     public function test_checkout_success_marks_order_paid_and_creates_purchase_for_the_authenticated_user(): void
     {
         $this->useFakeStripeGateway();
+        Mail::fake();
+        Storage::fake('public');
+
         $user = User::factory()->create([
             'email' => 'account-owner@example.com',
         ]);
@@ -1114,6 +1121,37 @@ class WolforixPlatformTest extends TestCase
             'platform_slug' => 'ctrader',
             'account_status' => 'pending_activation',
         ]);
+
+        $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
+
+        $this->assertSame('WF-000001', $invoice->invoice_number);
+        $this->assertSame($user->id, $invoice->user_id);
+        $this->assertSame('paid', $invoice->status);
+        $this->assertNotNull($invoice->pdf_generated_at);
+        Storage::disk('public')->assertExists((string) $invoice->pdf_path);
+        $this->assertStringStartsWith('%PDF-1.4', Storage::disk('public')->get((string) $invoice->pdf_path));
+        $this->assertNotNull($account->challenge_purchase_email_sent_at);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('Download Invoice')
+            ->assertSee($invoice->invoice_number);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.invoices.download', $invoice))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($user)
+            ->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+            ->assertOk();
+
+        $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
+        $this->assertSame($invoice->pdf_path, $invoice->fresh()->pdf_path);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
     }
 
     public function test_checkout_can_redirect_to_paypal_when_the_gateway_is_enabled(): void
@@ -1278,6 +1316,8 @@ class WolforixPlatformTest extends TestCase
     public function test_stripe_webhook_is_idempotent_and_creates_one_purchase(): void
     {
         $this->useFakeStripeGateway();
+        Mail::fake();
+        Storage::fake('public');
 
         $user = User::factory()->create([
             'email' => 'webhook@example.com',
@@ -1337,7 +1377,10 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertSame(1, ChallengePurchase::query()->where('order_id', $order->id)->count());
         $this->assertSame(1, TradingAccount::query()->where('order_id', $order->id)->count());
+        $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
         $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
+        Storage::disk('public')->assertExists((string) Invoice::query()->where('order_id', $order->id)->value('pdf_path'));
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
     }
 
     public function test_dashboard_uses_real_trading_account_metrics_when_available(): void

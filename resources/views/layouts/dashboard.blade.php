@@ -11,7 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body
-    class="selection:bg-amber-400/30 selection:text-white"
+    class="overflow-x-hidden selection:bg-amber-400/30 selection:text-white"
     data-launch-promo-code="{{ session('launch_offer.applied') ? config('wolforix.launch_discount.code') : '' }}"
 >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -20,13 +20,13 @@
         <div class="absolute right-[-4rem] top-[-6rem] h-[20rem] w-[20rem] rounded-full bg-amber-400/8 blur-3xl"></div>
     </div>
 
-    <div class="min-h-screen lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
+    <div class="min-h-screen overflow-x-hidden lg:grid lg:grid-cols-[300px_minmax(0,1fr)]">
         @include('partials.dashboard-sidebar')
 
-        <div class="relative min-w-0">
+        <div class="relative min-w-0 overflow-x-hidden">
             @include('partials.dashboard-topbar')
 
-            <main class="px-4 pb-12 pt-4 sm:px-6 lg:px-8">
+            <main class="min-w-0 px-4 pb-12 pt-4 sm:px-6 lg:px-8">
                 @yield('content')
             </main>
         </div>

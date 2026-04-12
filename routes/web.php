@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminClientController;
 use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardInvoiceController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PayPalController;
@@ -75,6 +76,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/accounts', [DashboardController::class, 'accounts'])->name('dashboard.accounts');
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
+    Route::get('/invoices/{invoice}/download', DashboardInvoiceController::class)->name('dashboard.invoices.download');
 });
 
 Route::middleware('trial.session')->prefix('trial')->group(function (): void {

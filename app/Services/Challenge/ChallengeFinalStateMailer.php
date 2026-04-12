@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Mail;
 
 class ChallengeFinalStateMailer
 {
+    public function __construct(
+        private readonly ChallengeCertificateGenerator $certificateGenerator,
+    ) {
+    }
+
     public function sendIfNeeded(TradingAccount $account): void
     {
         if ($account->is_trial) {
@@ -38,14 +43,33 @@ class ChallengeFinalStateMailer
                 ];
             }
 
-            if ($freshAccount->challenge_status === 'passed' && $freshAccount->passed_email_sent_at === null) {
-                $freshAccount->forceFill(['passed_email_sent_at' => now()])->save();
+            $fundedPassAlreadySent = $freshAccount->funded_pass_email_sent_at !== null
+                || $freshAccount->passed_email_sent_at !== null;
+
+            if (
+                $freshAccount->challenge_status === 'passed'
+                && $freshAccount->funded_pass_email_sent_at === null
+                && $freshAccount->passed_email_sent_at !== null
+            ) {
+                $freshAccount->forceFill([
+                    'funded_pass_email_sent_at' => $freshAccount->passed_email_sent_at,
+                ])->save();
+            }
+
+            if ($freshAccount->challenge_status === 'passed' && ! $fundedPassAlreadySent) {
+                $certificate = $this->certificateGenerator->ensureForAccount($freshAccount);
+                $sentAt = now();
+                $freshAccount->forceFill([
+                    'passed_email_sent_at' => $sentAt,
+                    'funded_pass_email_sent_at' => $sentAt,
+                ])->save();
 
                 return [
                     'type' => 'passed',
                     'user' => $freshAccount->user,
                     'account' => $freshAccount->fresh(['user', 'challengePlan', 'challengePurchase']) ?? $freshAccount,
                     'details' => $this->passedDetails($freshAccount),
+                    'certificate' => $certificate,
                 ];
             }
 
@@ -70,6 +94,7 @@ class ChallengeFinalStateMailer
             user: $mailPayload['user'],
             tradingAccount: $mailPayload['account'],
             details: $mailPayload['details'],
+            certificate: $mailPayload['certificate'] ?? null,
         ));
     }
 

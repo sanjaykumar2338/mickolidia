@@ -588,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const localeSwitchers = document.querySelectorAll('[data-locale-switcher]');
+    const localeControls = [];
 
     localeSwitchers.forEach((switcher) => {
         const toggle = switcher.querySelector('[data-locale-toggle]');
@@ -596,6 +597,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!(toggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
             return;
         }
+
+        const control = {
+            switcher,
+            toggle,
+            menu,
+            closeMenu: null,
+        };
+
+        localeControls.push(control);
 
         const positionMenu = () => {
             const viewportPadding = 12;
@@ -626,10 +636,20 @@ document.addEventListener('DOMContentLoaded', () => {
             menu.style.maxHeight = `${Math.max(maxHeight, 180)}px`;
         };
 
+        const mountMenuToViewport = () => {
+            if (menu.parentElement !== document.body) {
+                document.body.appendChild(menu);
+            }
+        };
+
         const closeMenu = () => {
             menu.classList.add('hidden');
             toggle.setAttribute('aria-expanded', 'false');
         };
+
+        control.closeMenu = closeMenu;
+
+        mountMenuToViewport();
 
         menu.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -641,17 +661,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isClosed = menu.classList.contains('hidden');
 
-            localeSwitchers.forEach((item) => {
-                const itemToggle = item.querySelector('[data-locale-toggle]');
-                const itemMenu = item.querySelector('[data-locale-menu]');
-
-                if (item !== switcher && itemMenu instanceof HTMLElement && itemToggle instanceof HTMLButtonElement) {
-                    itemMenu.classList.add('hidden');
-                    itemToggle.setAttribute('aria-expanded', 'false');
+            localeControls.forEach((item) => {
+                if (item.switcher !== switcher && typeof item.closeMenu === 'function') {
+                    item.closeMenu();
                 }
             });
 
             if (isClosed) {
+                mountMenuToViewport();
                 menu.classList.remove('hidden');
                 positionMenu();
                 toggle.setAttribute('aria-expanded', 'true');
@@ -662,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('click', (event) => {
-            if (!switcher.contains(event.target)) {
+            if (!switcher.contains(event.target) && !menu.contains(event.target)) {
                 closeMenu();
             }
         });
@@ -768,6 +785,192 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         syncMobileNavState(false);
+    });
+
+    document.querySelectorAll('[data-account-filter]').forEach((filterRoot) => {
+        if (!(filterRoot instanceof HTMLElement)) {
+            return;
+        }
+
+        const tabs = [...filterRoot.querySelectorAll('[data-account-filter-tab]')].filter((button) => button instanceof HTMLButtonElement);
+        const statusSelect = filterRoot.querySelector('[data-account-status-filter]');
+        const cards = [...filterRoot.querySelectorAll('[data-account-filter-card]')].filter((card) => card instanceof HTMLElement);
+        const emptyState = filterRoot.querySelector('[data-account-filter-empty]');
+        let accountState = 'all';
+        let statusState = 'all';
+
+        const setActiveTab = () => {
+            tabs.forEach((button) => {
+                const isActive = button.dataset.filter === accountState;
+
+                button.dataset.active = isActive ? 'true' : 'false';
+                button.classList.toggle('bg-amber-400', isActive);
+                button.classList.toggle('text-slate-950', isActive);
+                button.classList.toggle('text-white', false);
+                button.classList.toggle('text-slate-400', !isActive);
+            });
+        };
+
+        const renderAccountFilters = () => {
+            let visibleCount = 0;
+
+            cards.forEach((card) => {
+                const matchesAccountState = accountState === 'all' || card.dataset.accountState === accountState;
+                const matchesStatusState = statusState === 'all' || card.dataset.accountStatus === statusState;
+                const shouldShow = matchesAccountState && matchesStatusState;
+
+                card.classList.toggle('hidden', !shouldShow);
+
+                if (shouldShow) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (emptyState instanceof HTMLElement) {
+                emptyState.classList.toggle('hidden', visibleCount > 0);
+            }
+
+            setActiveTab();
+        };
+
+        tabs.forEach((button) => {
+            button.addEventListener('click', () => {
+                accountState = button.dataset.filter ?? 'all';
+                renderAccountFilters();
+            });
+        });
+
+        if (statusSelect instanceof HTMLSelectElement) {
+            statusSelect.addEventListener('change', () => {
+                statusState = statusSelect.value || 'all';
+                renderAccountFilters();
+            });
+        }
+
+        renderAccountFilters();
+    });
+
+    const dashboardModals = [...document.querySelectorAll('[data-dashboard-modal]')].filter((modal) => modal instanceof HTMLElement);
+
+    if (dashboardModals.length > 0) {
+        let activeDashboardModal = null;
+
+        const setModalOpen = (modal, open) => {
+            modal.classList.toggle('hidden', !open);
+            modal.classList.toggle('flex', open);
+            modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+        };
+
+        const closeDashboardModal = () => {
+            if (!(activeDashboardModal instanceof HTMLElement)) {
+                return;
+            }
+
+            setModalOpen(activeDashboardModal, false);
+            activeDashboardModal = null;
+            document.body.classList.remove('overflow-hidden');
+            document.documentElement.classList.remove('overflow-hidden');
+        };
+
+        const openDashboardModal = (modalName) => {
+            const modal = dashboardModals.find((item) => item.dataset.dashboardModal === modalName);
+
+            if (!(modal instanceof HTMLElement)) {
+                return;
+            }
+
+            dashboardModals.forEach((item) => setModalOpen(item, false));
+            activeDashboardModal = modal;
+            setModalOpen(modal, true);
+            document.body.classList.add('overflow-hidden');
+            document.documentElement.classList.add('overflow-hidden');
+        };
+
+        dashboardModals.forEach((modal) => {
+            setModalOpen(modal, false);
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeDashboardModal();
+                }
+            });
+
+            modal.querySelectorAll('[data-dashboard-modal-close]').forEach((button) => {
+                button.addEventListener('click', closeDashboardModal);
+            });
+        });
+
+        document.querySelectorAll('[data-dashboard-modal-open]').forEach((button) => {
+            button.addEventListener('click', () => {
+                openDashboardModal(button.dataset.dashboardModalOpen);
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeDashboardModal();
+            }
+        });
+    }
+
+    const copyTextToClipboard = async (value) => {
+        const text = String(value ?? '');
+
+        if (text === '') {
+            return false;
+        }
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+
+                return true;
+            }
+        } catch (error) {
+            // Fall back to a temporary textarea below.
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', 'readonly');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+            return document.execCommand('copy');
+        } catch (error) {
+            return false;
+        } finally {
+            textarea.remove();
+        }
+    };
+
+    document.querySelectorAll('[data-dashboard-copy]').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const originalHtml = button.innerHTML;
+
+        button.addEventListener('click', async () => {
+            const copied = await copyTextToClipboard(button.dataset.dashboardCopy);
+
+            if (!copied) {
+                return;
+            }
+
+            button.innerHTML = button.textContent?.trim()
+                ? 'Copied'
+                : '<span class="sr-only">Copied</span>';
+            button.classList.add('border-emerald-300/35', 'bg-emerald-400/14', 'text-emerald-50');
+
+            window.setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.classList.remove('border-emerald-300/35', 'bg-emerald-400/14', 'text-emerald-50');
+            }, 1400);
+        });
     });
 
     document.querySelectorAll('[data-dashboard-chart]').forEach((chartRoot) => {

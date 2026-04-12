@@ -174,6 +174,18 @@
                                     <dd class="mt-2 font-semibold text-white">{{ $purchase['sync_status'] }}</dd>
                                 </div>
                             </dl>
+
+                            @if (! empty($purchase['invoice_download_url']))
+                                <div class="mt-5 flex flex-col gap-3 rounded-[1.35rem] border border-amber-400/18 bg-amber-400/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{{ __('Billing document') }}</p>
+                                        <p class="mt-1 text-sm text-slate-300">{{ __('Invoice :number is ready for permanent download.', ['number' => $purchase['invoice_number']]) }}</p>
+                                    </div>
+                                    <a href="{{ $purchase['invoice_download_url'] }}" class="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/15 px-4 py-2.5 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/22">
+                                        {{ __('Download Invoice') }}
+                                    </a>
+                                </div>
+                            @endif
                         </article>
                     @endforeach
                 </div>

@@ -219,7 +219,7 @@
                         {{ __('site.home.plans.platform_label') }}:
                     </span>
                     <img
-                        src="{{ asset('mickolidia-attachments/IMG_8995.webp') }}"
+                        src="{{ asset('IMG_9315.webp') }}"
                         alt="{{ __('site.home.plans.platform_value') }}"
                         class="h-8 w-auto sm:h-9"
                         loading="lazy"

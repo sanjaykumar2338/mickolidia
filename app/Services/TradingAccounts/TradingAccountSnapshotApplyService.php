@@ -5,6 +5,7 @@ namespace App\Services\TradingAccounts;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountDay;
 use App\Services\Challenge\ChallengeFinalStateMailer;
+use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\Challenge\ChallengeProgressEngine;
 use App\Support\TradingMetricsCalculator;
 use Illuminate\Support\Carbon;
@@ -16,6 +17,7 @@ class TradingAccountSnapshotApplyService
         private readonly TradingMetricsCalculator $metricsCalculator,
         private readonly ChallengeProgressEngine $progressEngine,
         private readonly ChallengeFinalStateMailer $finalStateMailer,
+        private readonly ChallengeLifecycleMailer $lifecycleMailer,
     ) {
     }
 
@@ -145,6 +147,7 @@ class TradingAccountSnapshotApplyService
         });
 
         $this->finalStateMailer->sendIfNeeded($updatedAccount);
+        $this->lifecycleMailer->sendPhaseProgressIfNeeded($updatedAccount);
 
         return $updatedAccount;
     }
