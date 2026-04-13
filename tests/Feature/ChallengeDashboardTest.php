@@ -480,6 +480,115 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_dashboard_most_traded_reads_mt5_payload_variants(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-13 10:00:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10120,
+                'equity' => 10145,
+                'profit_loss' => 25,
+                'total_profit' => 120,
+                'last_synced_at' => now(),
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 10120,
+                'equity' => 10145,
+                'profit_loss' => 25,
+                'total_profit' => 120,
+                'today_profit' => 120,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'positions' => [
+                        [
+                            'Ticket' => 'P-100',
+                            'Symbol' => 'XAUUSD',
+                            'Type' => 'BUY',
+                            'Volume' => 1.2,
+                            'Profit' => 25,
+                            'Time' => Carbon::parse('2026-04-13 09:00:00')->timestamp,
+                        ],
+                    ],
+                    'history' => [
+                        [
+                            'Ticket' => 'D-100',
+                            'Symbol' => 'XAUUSD',
+                            'Type' => 'SELL',
+                            'Volume' => 0.8,
+                            'Profit' => 95,
+                            'Time' => Carbon::parse('2026-04-13 08:00:00')->timestamp,
+                            'TimeClose' => Carbon::parse('2026-04-13 08:45:00')->timestamp,
+                        ],
+                        [
+                            'Ticket' => 'D-101',
+                            'Symbol' => 'BTCUSD',
+                            'Type' => 'BUY',
+                            'Volume' => 0.3,
+                            'Profit' => -20,
+                            'Time' => Carbon::parse('2026-04-13 07:00:00')->timestamp,
+                            'TimeClose' => Carbon::parse('2026-04-13 07:20:00')->timestamp,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Most traded instruments')
+                ->assertSee('XAUUSD')
+                ->assertSee('BTCUSD')
+                ->assertSee('2 trades')
+                ->assertSee('66.7%')
+                ->assertDontSee('Top symbols will populate from synced open positions and closed trade history.');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_dashboard_most_traded_renders_single_symbol_aggregate_payload(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'balance' => 10562.64,
+            'equity' => 10596.80,
+            'profit_loss' => 34.16,
+            'total_profit' => 562.64,
+            'last_synced_at' => now(),
+        ]);
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => now(),
+            'balance' => 10562.64,
+            'equity' => 10596.80,
+            'profit_loss' => 34.16,
+            'total_profit' => 562.64,
+            'today_profit' => 562.64,
+            'daily_drawdown' => 0,
+            'max_drawdown' => 0,
+            'drawdown_percent' => 0,
+            'payload' => [
+                'symbol' => 'XAUUSD',
+                'trade_count' => 20,
+                'volume' => 2.5,
+                'total_profit' => 562.64,
+            ],
+        ]);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Most traded instruments')
+            ->assertSee('XAUUSD')
+            ->assertSee('20 trades')
+            ->assertSee('100.0%')
+            ->assertDontSee('Top symbols will populate from synced open positions and closed trade history.');
+    }
+
     public function test_two_step_phase_one_pass_transitions_to_phase_two_and_resets_references(): void
     {
         $account = $this->createChallengeAccount('two_step');

@@ -355,6 +355,7 @@ class DashboardController extends Controller
                 'value_label' => number_format($targetProgress, 1).'%',
                 'current' => $this->formatMoney($phaseProfit),
                 'target' => $this->formatMoney($targetAmount),
+                'target_label' => __('Target'),
                 'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($targetAmount - $phaseProfit, 0))]),
                 'tone' => 'amber',
             ],
@@ -364,6 +365,7 @@ class DashboardController extends Controller
                 'value_label' => number_format($this->safePercentage((float) $account->daily_loss_used, $dailyLossLimit), 1).'%',
                 'current' => $this->formatMoney((float) $account->daily_loss_used),
                 'target' => $this->formatMoney($dailyLossLimit),
+                'target_label' => __('Limit'),
                 'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
                 'tone' => ((float) $account->daily_loss_used) >= ($dailyLossLimit * 0.8) && $dailyLossLimit > 0 ? 'rose' : 'sky',
             ],
@@ -373,6 +375,7 @@ class DashboardController extends Controller
                 'value_label' => number_format($this->safePercentage((float) $account->max_drawdown_used, $maxDrawdownLimit), 1).'%',
                 'current' => $this->formatMoney((float) $account->max_drawdown_used),
                 'target' => $this->formatMoney($maxDrawdownLimit),
+                'target_label' => __('Limit'),
                 'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($maxDrawdownLimit - (float) $account->max_drawdown_used, 0))]),
                 'tone' => ((float) $account->max_drawdown_used) >= ($maxDrawdownLimit * 0.8) && $maxDrawdownLimit > 0 ? 'rose' : 'slate',
             ],
@@ -382,6 +385,7 @@ class DashboardController extends Controller
                 'value_label' => sprintf('%d / %d', $tradingDaysCompleted, (int) $account->minimum_trading_days),
                 'current' => (string) $tradingDaysCompleted,
                 'target' => (string) $account->minimum_trading_days,
+                'target_label' => __('Required'),
                 'meta' => $tradingDaysCompleted >= (int) $account->minimum_trading_days
                     ? __('Minimum requirement met')
                     : __('Keep trading to unlock progression'),
@@ -976,38 +980,38 @@ class DashboardController extends Controller
         $closedTrades = collect($snapshotTradePayload['trade_history'] ?? []);
 
         $openRows = $openPositions->map(function (array $row): array {
-            $profit = (float) Arr::get($row, 'net_unrealized_pnl', 0);
+            $profit = $this->tradeProfitValue($row);
 
             return [
                 'filter' => 'open',
-                'id' => (string) (Arr::get($row, 'position_id') ?: __('—')),
+                'id' => (string) ($this->firstFilledValue($row, ['position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']) ?: __('—')),
                 'symbol' => $this->tradeSymbolLabel($row),
-                'side' => $this->tradeSideLabel(Arr::get($row, 'trade_side')),
-                'open_date' => $this->formatTradeDate(Arr::get($row, 'open_timestamp')),
+                'side' => $this->tradeSideLabel($this->tradeSideValue($row)),
+                'open_date' => $this->formatTradeDate($this->tradeOpenTimestamp($row)),
                 'close_date' => __('Live'),
-                'volume' => $this->formatNumeric((float) Arr::get($row, 'volume', 0)),
+                'volume' => $this->formatNumeric($this->tradeVolumeValue($row)),
                 'profit' => $this->formatMoney($profit),
                 'profit_tone' => $this->metricTone($profit),
                 'status' => __('Open'),
-                'sort_timestamp' => $this->sortableTradeTimestamp(Arr::get($row, 'open_timestamp')),
+                'sort_timestamp' => $this->tradeOpenTimestamp($row)?->getTimestamp() ?? 0,
             ];
         });
 
         $closedRows = $closedTrades->map(function (array $row): array {
-            $profit = (float) Arr::get($row, 'net_profit', 0);
+            $profit = $this->tradeProfitValue($row);
 
             return [
                 'filter' => 'closed',
-                'id' => (string) (Arr::get($row, 'deal_id') ?: Arr::get($row, 'position_id') ?: __('—')),
+                'id' => (string) ($this->firstFilledValue($row, ['deal_id', 'dealId', 'position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']) ?: __('—')),
                 'symbol' => $this->tradeSymbolLabel($row),
-                'side' => $this->tradeSideLabel(Arr::get($row, 'trade_side')),
-                'open_date' => __('Not available'),
-                'close_date' => $this->formatTradeDate(Arr::get($row, 'execution_timestamp')),
-                'volume' => $this->formatNumeric((float) Arr::get($row, 'volume', 0)),
+                'side' => $this->tradeSideLabel($this->tradeSideValue($row)),
+                'open_date' => $this->formatTradeDate($this->tradeOpenTimestamp($row)) ?: __('Not available'),
+                'close_date' => $this->formatTradeDate($this->tradeCloseTimestamp($row)),
+                'volume' => $this->formatNumeric($this->tradeVolumeValue($row)),
                 'profit' => $this->formatMoney($profit),
                 'profit_tone' => $this->metricTone($profit),
                 'status' => __('Closed'),
-                'sort_timestamp' => $this->sortableTradeTimestamp(Arr::get($row, 'execution_timestamp')),
+                'sort_timestamp' => $this->tradeCloseTimestamp($row)?->getTimestamp() ?? $this->tradeOpenTimestamp($row)?->getTimestamp() ?? 0,
             ];
         });
 
@@ -1509,7 +1513,7 @@ class DashboardController extends Controller
         }
 
         $profits = $tradeHistory
-            ->map(fn (array $row): float => (float) Arr::get($row, 'net_profit', 0))
+            ->map(fn (array $row): float => $this->tradeProfitValue($row))
             ->values();
 
         $grossProfit = round($profits->filter(fn (float $value): bool => $value > 0)->sum(), 2);
@@ -1518,8 +1522,8 @@ class DashboardController extends Controller
         $winningProfits = $profits->filter(fn (float $value): bool => $value > 0)->values();
         $losingProfits = $profits->filter(fn (float $value): bool => $value < 0)->values();
         $wins = $winningProfits->count();
-        $fees = round($tradeHistory->sum(fn (array $row): float => abs((float) Arr::get($row, 'commission', 0))), 2);
-        $averageTradeSize = $tradeHistory->avg(fn (array $row): float => (float) Arr::get($row, 'volume', 0));
+        $fees = round($tradeHistory->sum(fn (array $row): float => abs($this->tradeFeeValue($row))), 2);
+        $averageTradeSize = $tradeHistory->avg(fn (array $row): float => $this->tradeVolumeValue($row));
         $averageWin = $winningProfits->isNotEmpty() ? round((float) $winningProfits->avg(), 2) : null;
         $averageLoss = $losingProfits->isNotEmpty() ? round((float) $losingProfits->avg(), 2) : null;
         $averageLossAbs = $averageLoss !== null ? abs($averageLoss) : null;
@@ -1581,9 +1585,9 @@ class DashboardController extends Controller
                 'pnl' => 0.0,
             ];
 
-            $groups[$symbol]['count']++;
-            $groups[$symbol]['volume'] += (float) Arr::get($row, 'volume', 0);
-            $groups[$symbol]['pnl'] += (float) (Arr::get($row, 'net_profit') ?? Arr::get($row, 'net_unrealized_pnl') ?? 0);
+            $groups[$symbol]['count'] += $this->tradeCountValue($row);
+            $groups[$symbol]['volume'] += $this->tradeVolumeValue($row);
+            $groups[$symbol]['pnl'] += $this->tradeProfitValue($row);
         }
 
         $totalCount = collect($groups)->sum('count');
@@ -1718,10 +1722,18 @@ class DashboardController extends Controller
         foreach ([
             'open_timestamp',
             'open_time',
+            'openTime',
+            'openTimeMsc',
+            'time',
+            'Time',
+            'time_open',
+            'TimeOpen',
             'opened_at',
             'raw.openTimestamp',
             'raw.tradeData.openTimestamp',
             'raw.open_time',
+            'raw.openTime',
+            'raw.time',
         ] as $key) {
             $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
 
@@ -1739,10 +1751,17 @@ class DashboardController extends Controller
             'close_timestamp',
             'closed_at',
             'close_time',
+            'closeTime',
+            'closeTimeMsc',
             'execution_timestamp',
             'execution_time',
+            'executionTime',
+            'time_close',
+            'TimeClose',
             'raw.closeTimestamp',
             'raw.executionTimestamp',
+            'raw.closeTime',
+            'raw.executionTime',
         ] as $key) {
             $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
 
@@ -1767,26 +1786,178 @@ class DashboardController extends Controller
 
         return [
             'snapshot_at' => $latestSnapshot?->snapshot_at,
-            'open_positions' => collect(Arr::get($payload, 'open_positions', []))
-                ->filter(fn ($row): bool => is_array($row))
-                ->values()
-                ->all(),
-            'trade_history' => collect(Arr::get($payload, 'trade_history', []))
-                ->filter(fn ($row): bool => is_array($row))
-                ->values()
-                ->all(),
+            'open_positions' => $this->tradeRowsFromPayload($payload, [
+                'open_positions',
+                'openPositions',
+                'open.positions',
+                'positions.open',
+                'positions',
+                'current_positions',
+                'currentPositions',
+                'raw.open_positions',
+                'raw.openPositions',
+                'raw.open.positions',
+                'raw.positions.open',
+                'raw.positions',
+                'raw.current_positions',
+                'mt5.open_positions',
+                'mt5.positions',
+            ]),
+            'trade_history' => $this->tradeRowsFromPayload($payload, [
+                'trade_history',
+                'tradeHistory',
+                'closed_trades',
+                'closedTrades',
+                'closed_positions',
+                'closedPositions',
+                'positions.closed',
+                'history',
+                'deal_history',
+                'dealHistory',
+                'deals',
+                'orders',
+                'raw.trade_history',
+                'raw.tradeHistory',
+                'raw.closed_trades',
+                'raw.closedTrades',
+                'raw.closed_positions',
+                'raw.positions.closed',
+                'raw.history',
+                'raw.deal_history',
+                'raw.deals',
+                'raw.orders',
+                'mt5.trade_history',
+                'mt5.history',
+                'mt5.deals',
+            ], true),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  list<string>  $paths
+     * @return list<array<string, mixed>>
+     */
+    private function tradeRowsFromPayload(array $payload, array $paths, bool $allowAggregateFallback = false): array
+    {
+        $rows = collect($paths)
+            ->flatMap(fn (string $path): array => $this->coerceTradeRows(Arr::get($payload, $path)))
+            ->filter(fn ($row): bool => is_array($row))
+            ->values();
+
+        if ($rows->isEmpty() && $allowAggregateFallback) {
+            $singleSymbol = $this->firstFilledValue($payload, [
+                'symbol',
+                'Symbol',
+                'trade_symbol',
+                'tradeSymbol',
+                'last_symbol',
+                'lastSymbol',
+                'instrument',
+                'Instrument',
+                'raw.symbol',
+                'raw.Symbol',
+                'raw.trade_symbol',
+                'raw.last_symbol',
+            ]);
+
+            $singleCount = $this->tradeCountValue($payload);
+
+            if ($singleSymbol !== null && $singleCount > 0) {
+                $rows = collect([[
+                    'symbol' => $singleSymbol,
+                    'trade_count' => $singleCount,
+                    'volume' => $this->tradeVolumeValue($payload),
+                    'net_profit' => $this->tradeProfitValue($payload),
+                ]]);
+            }
+        }
+
+        $seenIdentities = [];
+
+        return $rows
+            ->filter(function (array $row) use (&$seenIdentities): bool {
+                $identity = $this->tradeIdentityKey($row);
+
+                if ($identity === null) {
+                    return true;
+                }
+
+                if (isset($seenIdentities[$identity])) {
+                    return false;
+                }
+
+                $seenIdentities[$identity] = true;
+
+                return true;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function coerceTradeRows(mixed $value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : null;
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        if (array_is_list($value)) {
+            return collect($value)
+                ->filter(fn ($row): bool => is_array($row))
+                ->values()
+                ->all();
+        }
+
+        foreach (['data', 'items', 'rows', 'records', 'positions', 'deals', 'orders', 'history'] as $key) {
+            if (isset($value[$key]) && is_array($value[$key])) {
+                return $this->coerceTradeRows($value[$key]);
+            }
+        }
+
+        $keyedRows = collect($value)
+            ->filter(fn ($row): bool => is_array($row) && $this->tradeSymbolLabel($row) !== __('—'))
+            ->values();
+
+        if ($keyedRows->isNotEmpty()) {
+            return $keyedRows->all();
+        }
+
+        return $this->tradeSymbolLabel($value) !== __('—') ? [$value] : [];
     }
 
     private function tradeSymbolLabel(array $row): string
     {
-        $symbol = Arr::get($row, 'symbol')
-            ?? Arr::get($row, 'symbol_name')
-            ?? Arr::get($row, 'raw.symbolName')
-            ?? Arr::get($row, 'raw.symbol')
-            ?? Arr::get($row, 'raw.tradeData.symbolName')
-            ?? Arr::get($row, 'raw.tradeData.symbol')
-            ?? Arr::get($row, 'symbol_id');
+        $symbol = $this->firstFilledValue($row, [
+            'symbol',
+            'Symbol',
+            'SYMBOL',
+            'symbol_name',
+            'symbolName',
+            'SymbolName',
+            'instrument',
+            'Instrument',
+            'market',
+            'Market',
+            'ticker',
+            'Ticker',
+            'raw.symbolName',
+            'raw.SymbolName',
+            'raw.symbol',
+            'raw.Symbol',
+            'raw.tradeData.symbolName',
+            'raw.tradeData.symbol',
+            'raw.tradeData.Symbol',
+            'symbol_id',
+            'symbolId',
+        ]);
 
         if (blank($symbol)) {
             return __('—');
@@ -1797,6 +1968,185 @@ class DashboardController extends Controller
         }
 
         return (string) $symbol;
+    }
+
+    private function tradeIdentityKey(array $row): ?string
+    {
+        $id = $this->firstFilledValue($row, [
+            'deal_id',
+            'dealId',
+            'position_id',
+            'positionId',
+            'ticket',
+            'Ticket',
+            'order',
+            'Order',
+            'id',
+            'raw.deal_id',
+            'raw.dealId',
+            'raw.position_id',
+            'raw.positionId',
+            'raw.ticket',
+            'raw.Ticket',
+        ]);
+
+        if ($id !== null) {
+            return 'id|'.(string) $id;
+        }
+
+        $timestamp = $this->firstFilledValue($row, [
+            'open_timestamp',
+            'open_time',
+            'openTime',
+            'time',
+            'Time',
+            'close_timestamp',
+            'close_time',
+            'closeTime',
+            'execution_timestamp',
+            'execution_time',
+            'executionTime',
+            'TimeClose',
+        ]);
+
+        if ($timestamp === null) {
+            return null;
+        }
+
+        return implode('|', [
+            'time',
+            $this->tradeSymbolLabel($row),
+            (string) $timestamp,
+            (string) $this->tradeVolumeValue($row),
+            (string) $this->tradeProfitValue($row),
+        ]);
+    }
+
+    private function tradeCountValue(array $row): int
+    {
+        $count = $this->firstFilledValue($row, [
+            'trade_count',
+            'tradeCount',
+            'activity_count',
+            'activityCount',
+            'count',
+            'Count',
+            'deals_count',
+            'dealsCount',
+            'positions_count',
+            'positionsCount',
+            'raw.trade_count',
+            'raw.count',
+        ]);
+
+        return max((int) ($count ?? 1), 1);
+    }
+
+    private function tradeVolumeValue(array $row): float
+    {
+        return round((float) ($this->firstFilledValue($row, [
+            'total_volume',
+            'totalVolume',
+            'volume',
+            'Volume',
+            'lots',
+            'Lots',
+            'lot',
+            'Lot',
+            'lot_size',
+            'lotSize',
+            'raw.total_volume',
+            'raw.volume',
+            'raw.Volume',
+            'raw.tradeData.volume',
+        ]) ?? 0), 2);
+    }
+
+    private function tradeProfitValue(array $row): float
+    {
+        return round((float) ($this->firstFilledValue($row, [
+            'net_profit',
+            'netProfit',
+            'net_unrealized_pnl',
+            'netUnrealizedPnl',
+            'profit',
+            'Profit',
+            'pnl',
+            'Pnl',
+            'PNL',
+            'floating_profit',
+            'floatingProfit',
+            'unrealized_profit',
+            'unrealizedProfit',
+            'realized_profit',
+            'realizedProfit',
+            'total_profit',
+            'totalProfit',
+            'today_profit',
+            'todayProfit',
+            'raw.net_profit',
+            'raw.netProfit',
+            'raw.profit',
+            'raw.Profit',
+            'raw.pnl',
+            'raw.tradeData.profit',
+        ]) ?? 0), 2);
+    }
+
+    private function tradeFeeValue(array $row): float
+    {
+        return round((float) ($this->firstFilledValue($row, [
+            'commission',
+            'Commission',
+            'fee',
+            'Fee',
+            'fees',
+            'Fees',
+            'swap',
+            'Swap',
+            'raw.commission',
+            'raw.Commission',
+            'raw.fee',
+            'raw.swap',
+        ]) ?? 0), 2);
+    }
+
+    private function tradeSideValue(array $row): mixed
+    {
+        return $this->firstFilledValue($row, [
+            'trade_side',
+            'tradeSide',
+            'side',
+            'Side',
+            'type',
+            'Type',
+            'position_type',
+            'positionType',
+            'order_type',
+            'orderType',
+            'raw.trade_side',
+            'raw.side',
+            'raw.type',
+            'raw.Type',
+            'raw.tradeData.side',
+            'raw.tradeData.type',
+        ]);
+    }
+
+    /**
+     * @param  list<string>  $keys
+     */
+    private function firstFilledValue(array $row, array $keys): mixed
+    {
+        foreach ($keys as $key) {
+            $value = Arr::get($row, $key);
+
+            if (! blank($value)) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function tradeSideLabel(mixed $value): string

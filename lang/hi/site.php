@@ -623,94 +623,454 @@ return array_replace_recursive($en, [
                 'title' => 'सामान्य',
                 'items' => [
                     [
-                        'question' => 'वुल्फोरिक्स क्या है?',
-                        'answer' => 'Wolforix Ltd. एक प्रॉप्रायटरी ट्रेडिंग इवैल्यूएशन और एजुकेशन कंपनी है। सभी ट्रेडिंग गतिविधियाँ शैक्षिक उद्देश्यों के लिए सिम्युलेटेड वातावरण में संचालित की जाती हैं।',
+                        'question' => 'Wolforix क्या है?',
+                        'answer' => 'Wolforix Ltd. एक proprietary trading evaluation और education कंपनी है। सभी trading activities educational purposes के लिए simulated environment में की जाती हैं।',
                     ],
                     [
-                        'question' => 'क्या यह असली पैसा है या सिम्युलेटेड ट्रेडिंग?',
-                        'answer' => 'सभी अकाउंट्स सिम्युलेटेड ट्रेडिंग वातावरण में काम करते हैं। यूज़र्स को कोई वास्तविक पूंजी आवंटित नहीं की जाती।',
+                        'question' => 'क्या यह real money है या simulated trading?',
+                        'answer' => 'सभी accounts simulated trading environment में चलते हैं। Users को real funds allocate नहीं किए जाते।',
                     ],
                     [
-                        'question' => 'कौन भाग ले सकता है?',
-                        'answer' => 'यूज़र्स की आयु कम से कम 18 वर्ष होनी चाहिए और उन्हें अपने क्षेत्राधिकार के सभी लागू कानूनों का पालन करना होगा।',
+                        'question' => 'कौन participate कर सकता है?',
+                        'answer' => 'Users की उम्र कम से कम 18 वर्ष होनी चाहिए और उन्हें अपने jurisdiction के लागू laws का पालन करना होगा।',
                     ],
                 ],
             ],
             [
-                'title' => 'ट्रेडिंग नियम',
+                'title' => 'प्लेटफॉर्म',
                 'items' => [
                     [
-                        'question' => 'कंसिस्टेंसी रूल क्या है?',
-                        'answer' => 'कुल मुनाफे का 40% से अधिक एक ही ट्रेडिंग दिन में नहीं कमाया जा सकता। पेआउट के लिए पात्र होने हेतु मुनाफा कई ट्रेडिंग दिनों में फैला होना चाहिए।',
+                        'question' => 'Wolforix कौन सा platform use करता है?',
+                        'answer' => 'Wolforix MetaTrader 5 (MT5) use करता है।',
                     ],
                     [
-                        'question' => 'डेली प्रॉफिट लिमिट कैसे गणना की जाती है?',
-                        'answer' => 'सिस्टम आज के मुनाफे की तुलना आपके कुल अकाउंट प्रॉफिट से करता है। यदि आज का मुनाफा 40% से अधिक होता है, तो डैशबोर्ड चेतावनी देगा और आपकी पेआउट पात्रता प्रभावित हो सकती है।',
+                        'question' => 'मैं MT5 में login कैसे करूँ?',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Mobile',
+                                'bullets' => [
+                                    '1. MetaTrader 5 download करें।',
+                                    '2. "Manage Accounts" में जाएँ।',
+                                    '3. "+" tap करें।',
+                                    '4. "Login to an existing account" select करें।',
+                                    '5. Search करें: MetaQuotes-Demo.',
+                                    '6. अपनी credentials enter करें।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Desktop',
+                                'bullets' => [
+                                    '1. MT5 खोलें।',
+                                    '2. File -> Login to Trade Account.',
+                                    '3. अपनी login details enter करें।',
+                                    '4. Server: MetaQuotes-Demo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important',
+                                'bullets' => [
+                                    'Wolforix अपना broker use नहीं करता।',
+                                    'हम MetaQuotes-Demo server use करते हैं।',
+                                    'आपका account Wolforix से linked है।',
+                                    'सारी activity आपके dashboard से sync होती है।',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Tradable Instruments',
+                'items' => [
+                    [
+                        'question' => 'मैं क्या trade कर सकता हूँ?',
+                        'answer' => 'Wolforix MT5 में उपलब्ध wide range of CFD instruments का access देता है।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Forex',
+                                'bullets' => [
+                                    'EURUSD, GBPUSD, USDJPY, USDCHF, USDCAD',
+                                    'AUDUSD, NZDUSD, EURJPY, GBPJPY, EURGBP और अधिक',
+                                ],
+                            ],
+                            [
+                                'title' => 'Indices',
+                                'bullets' => [
+                                    'SPX500, NDX100, US30',
+                                    'GER30, UK100, FRA40',
+                                    'JP225 और अन्य',
+                                ],
+                            ],
+                            [
+                                'title' => 'Commodities',
+                                'bullets' => [
+                                    'XAUUSD (Gold)',
+                                    'XAGUSD (Silver)',
+                                    'XPTUSD (Platinum)',
+                                    'UKOUSD (Brent)',
+                                    'USOUSD (Crude Oil)',
+                                ],
+                            ],
+                            [
+                                'title' => 'Cryptocurrencies',
+                                'bullets' => [
+                                    'BTCUSD, ETHUSD, XRPUSD',
+                                    'ADAUSD, LTCUSD, XLMUSD',
+                                ],
+                            ],
+                        ],
                     ],
                     [
-                        'question' => 'मैक्सिमम ड्रॉडाउन क्या होते हैं?',
-                        'answer' => 'हर अकाउंट के लिए ड्रॉडाउन सीमाएँ निर्धारित होती हैं। इन सीमाओं का उल्लंघन होने पर अकाउंट इवैल्यूएशन प्रोग्राम से अयोग्य ठहराया जा सकता है।',
+                        'question' => 'मैं सभी instruments कैसे देख सकता हूँ?',
+                        'answer_sections' => [
+                            [
+                                'title' => 'MT5 Market Watch',
+                                'bullets' => [
+                                    '1. MT5 खोलें।',
+                                    '2. Market Watch में जाएँ।',
+                                    '3. Right-click करें।',
+                                    '4. "Show All" select करें।',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Trading Rules',
+                'items' => [
+                    [
+                        'question' => 'Consistency rule क्या है?',
+                        'answer' => 'Total profits का 40% से अधिक एक single trading day में generate नहीं किया जा सकता। Payout eligibility के लिए profits कई trading days में spread होने चाहिए।',
                     ],
                     [
-                        'question' => 'क्या मैं हाई-इम्पैक्ट न्यूज़ इवेंट्स के दौरान ट्रेड कर सकता हूँ?',
-                        'answer' => 'हाई-इम्पैक्ट न्यूज़ इवेंट से 5 मिनट पहले और 5 मिनट बाद ट्रेड खोलना या बंद करना प्रतिबंधित है। यह प्रतिबंध मार्केट ऑर्डर और पेंडिंग ऑर्डर दोनों पर लागू होता है, जिनमें stop-loss या take-profit activation शामिल हैं। आप इवेंट के दौरान मौजूदा पोज़िशन होल्ड कर सकते हैं, लेकिन इस समय सीमा में नई ट्रेड शुरू या बंद नहीं कर सकते।',
+                        'question' => 'Daily profit limit कैसे calculate होता है?',
+                        'answer' => 'System आज के profit को आपके total account profit से compare करता है। यदि आज का profit 40% से अधिक होता है, तो dashboard warning trigger होगी और payout eligibility प्रभावित हो सकती है।',
                     ],
                     [
-                        'question' => 'मैं किन इंस्ट्रूमेंट्स पर ट्रेड कर सकता हूँ और कौन-सी रणनीतियाँ अनुमति हैं?',
+                        'question' => 'Maximum drawdowns क्या हैं?',
+                        'answer' => 'हर account के defined drawdown limits होते हैं। इन limits को exceed करने पर account evaluation program से disqualify हो सकता है।',
+                    ],
+                    [
+                        'question' => 'क्या मैं high-impact news events के दौरान trade कर सकता हूँ?',
+                        'answer' => 'High-impact news event से 5 मिनट पहले और 5 मिनट बाद trades open या close करना prohibited है। यह restriction market orders और pending orders दोनों पर लागू है, जिसमें stop-loss या take-profit activations शामिल हैं। Event के दौरान existing positions hold की जा सकती हैं, लेकिन इस time window में trades initiate या close नहीं किए जा सकते।',
+                    ],
+                    [
+                        'question' => 'कौन से trading times allowed हैं?',
+                        'answer' => 'Wolforix traded instrument के अनुसार standard market hours में trading allow करता है।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'General Rule',
+                                'bullets' => [
+                                    'Trading global market sessions के अनुसार Monday to Friday, 24 hours और 5 days a week available है।',
+                                    'Availability instrument के अनुसार vary कर सकती है, जैसे Forex, indices, crypto और अन्य CFDs.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Position Holding',
+                                'bullets' => [
+                                    'Positions intraday या overnight hold की जा सकती हैं, जब तक specific account rules restrict न करें।',
+                                    'Low liquidity periods में exposure manage करना trader की responsibility है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Market Closures',
+                                'bullets' => [
+                                    'Weekends में trading available नहीं है।',
+                                    'कुछ instruments में daily breaks या maintenance windows हो सकती हैं।',
+                                    'Holidays पर market hours reduced या modified हो सकते हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important',
+                                'bullets' => [
+                                    'Traders को market session times और liquidity conditions की जानकारी होनी चाहिए।',
+                                    'Illiquid या volatile periods में trading से हुए losses के लिए Wolforix responsible नहीं है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Restrictions',
+                                'bullets' => [
+                                    'News events से related trading restrictions (±5 minutes) अभी भी apply होते हैं।',
+                                    'बाकी सभी trading rules time की परवाह किए बिना लागू रहते हैं।',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'कौन सी trading strategies allowed हैं?',
                         'answer_paragraphs' => [
-                            'वुल्फोरिक्स discretionary trading, algorithmic trading और Expert Advisors (EAs) की अनुमति देता है, बशर्ते रणनीति वैध हो, वास्तविक मार्केट परिस्थितियों को दर्शाती हो, साउंड रिस्क मैनेजमेंट के अनुरूप हो और प्रतिबंधित प्रैक्टिसेज़ शामिल न करती हो।',
-                            'रणनीतियाँ वास्तविक मार्केट स्थितियों में दोहराई जा सकने वाली और लगातार लाइव परिणाम देने में सक्षम होनी चाहिए।',
+                            'Wolforix discretionary trading, algorithmic trading और Expert Advisors (EAs) allow करता है, जब तक strategies legitimate हों, real market conditions reflect करें, sound risk management से aligned हों और prohibited practices शामिल न करें।',
+                            'Strategies real market conditions में replicable और consistent live results produce करने में capable होनी चाहिए।',
                         ],
                         'answer_sections' => [
                             [
-                                'title' => 'ट्रेड करने योग्य इंस्ट्रूमेंट्स (CFDs)',
+                                'title' => 'Trading Conditions',
                                 'bullets' => [
-                                    'Forex: EUR/USD',
-                                    'Forex: USD/JPY',
-                                    'Commodities: Gold (XAU/USD) - मुख्य बाजार',
+                                    'Stop Loss mandatory नहीं है, लेकिन risk control strongly recommended है।',
+                                    'Trading realistic execution behavior और market conditions reflect करनी चाहिए।',
+                                    'Strategies scalable और live capital के लिए suitable होनी चाहिए।',
                                 ],
                             ],
                             [
-                                'title' => 'ट्रेडिंग शर्तें',
+                                'title' => 'Expert Advisors (EAs) & Algorithmic Trading',
                                 'bullets' => [
-                                    'Stop Loss अनिवार्य नहीं है, लेकिन रिस्क कंट्रोल की सख्त सिफारिश की जाती है।',
-                                    'ट्रेडिंग को वास्तविक execution behavior और market conditions दर्शाने चाहिए।',
-                                    'रणनीतियाँ scalable होनी चाहिए और लाइव कैपिटल के लिए उपयुक्त होनी चाहिए।',
+                                    'EAs permitted हैं।',
+                                    'Third-party EA duplication internal risk management से conflict कर सकता है।',
+                                    'ऐसे cases में Wolforix account allocation limit या deny कर सकता है।',
+                                    'Platform activity reasonable limits के भीतर रहनी चाहिए।',
+                                    'Excessive order placement, modification या server overload strategy adjustments require कर सकता है।',
                                 ],
                             ],
                             [
-                                'title' => 'Expert Advisors (EAs) और Algorithmic Trading',
+                                'title' => 'Server & Execution Limits',
                                 'bullets' => [
-                                    'EAs की अनुमति है।',
-                                    'थर्ड-पार्टी EA duplication आंतरिक रिस्क मैनेजमेंट से टकरा सकता है।',
-                                    'ऐसे मामलों में वुल्फोरिक्स अकाउंट allocation सीमित या अस्वीकार कर सकता है।',
-                                    'प्लेटफॉर्म गतिविधि उचित सीमाओं के भीतर रहनी चाहिए।',
-                                    'अत्यधिक order placement, modification या server overload होने पर strategy adjustments की आवश्यकता पड़ सकती है।',
+                                    'Maximum simultaneous open orders limits apply हो सकते हैं।',
+                                    'Daily execution limits enforce किए जा सकते हैं।',
+                                    'Excessive trading frequency review trigger कर सकती है।',
+                                    'यदि performance platform stability को harm करती है, तो Wolforix strategy adjustments request कर सकता है।',
                                 ],
                             ],
                             [
-                                'title' => 'सर्वर और एग्जीक्यूशन सीमाएँ',
+                                'title' => 'Scalping & Trade Duration Policy',
                                 'bullets' => [
-                                    'एक साथ खुले अधिकतम ऑर्डर्स की सीमा लागू हो सकती है।',
-                                    'दैनिक execution limits लागू की जा सकती हैं।',
-                                    'अत्यधिक ट्रेडिंग frequency समीक्षा को ट्रिगर कर सकती है।',
-                                    'यदि प्रदर्शन प्लेटफॉर्म स्थिरता को प्रभावित करता है, तो वुल्फोरिक्स रणनीति में बदलाव मांग सकता है।',
+                                    '60 seconds से कम में profit के साथ closed trades strictly prohibited हैं।',
+                                    'ऐसी activity real market conditions में non-replicable मानी जाती है और latency exploitation या unrealistic execution indicate कर सकती है।',
+                                    'Standard scalping allowed है यदि trade duration genuine market exposure reflect करती है।',
+                                    'Repeated होने पर Wolforix ऐसे trades को profit calculations से exclude कर सकता है या further action ले सकता है।',
                                 ],
                             ],
                             [
-                                'title' => 'Scalping और Trade Duration नीति',
-                                'bullets' => [
-                                    'यदि ट्रेड 60 सेकंड से कम समय में लाभ के साथ बंद होती है, तो वह सख्ती से प्रतिबंधित है।',
-                                    'ऐसी गतिविधि वास्तविक मार्केट परिस्थितियों में दोहराई नहीं जा सकती और latency exploitation या अवास्तविक execution का संकेत दे सकती है।',
-                                    'स्टैंडर्ड scalping की अनुमति है यदि trade duration वास्तविक market exposure दर्शाती है।',
-                                    'बार-बार ऐसा होने पर वुल्फोरिक्स ऐसे ट्रेड्स को profit calculations से बाहर कर सकता है या आगे की कार्रवाई कर सकता है।',
-                                ],
-                            ],
-                            [
-                                'title' => 'प्रतिबंधित ट्रेडिंग प्रैक्टिसेज़',
+                                'title' => 'Prohibited Trading Practices',
                                 'paragraphs' => [
-                                    'यदि प्रतिबंधित गतिविधि पाई जाती है, तो वुल्फोरिक्स पोज़िशन हटा या समायोजित कर सकता है, अकाउंट रीबैलेंस कर सकता है, leverage घटा सकता है, अकाउंट सस्पेंड या समाप्त कर सकता है, या ट्रेडर के साथ सहयोग समाप्त कर सकता है।',
-                                    'यदि आप वास्तविक इरादे, स्पष्ट बढ़त और नियमों के अनुरूप लगातार व्यवहार के साथ ट्रेड करते हैं, तो वुल्फोरिक्स आपकी सफलता के साथ संरेखित रहता है।',
+                                    'यदि prohibited activity पाई जाती है, तो Wolforix positions remove या adjust कर सकता है, account recalculate कर सकता है, leverage reduce कर सकता है, account suspend या terminate कर सकता है, या trader के साथ cooperation end कर सकता है।',
+                                    'यदि आप genuine intent, clear edge और consistent rule-compliant behavior के साथ trade करते हैं, तो Wolforix आपकी success के साथ aligned रहता है।',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'क्या accounts के बीच hedging और copy trading allowed है?',
+                        'answer' => 'Multiple accounts में hedging और unauthorized copy trading Wolforix में strictly prohibited हैं।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Hedging क्या है?',
+                                'paragraphs' => [
+                                    'Hedging का मतलब है risk को artificially reduce करने के लिए same या correlated instruments पर multiple accounts में opposite positions लेना।',
+                                    'यह behavior market direction की परवाह किए बिना एक account को profit guarantee करता है और system manipulation माना जाता है, genuine trading नहीं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Copy Trading क्या है?',
+                                'paragraphs' => [
+                                    'Copy trading का मतलब है multiple accounts के बीच trades replicate करना, चाहे manually, software, signals या third-party services से हो।',
+                                ],
+                                'bullets' => [
+                                    'अपने own accounts के बीच trades copy करना।',
+                                    'Different users के बीच trades copy करना।',
+                                    'Signals groups, bots या automation से trades mirror करना।',
+                                    'Rules bypass करने के लिए coordinated trading.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Prohibited Activity Examples',
+                                'bullets' => [
+                                    'Different accounts में same instrument पर long और short positions open करना।',
+                                    'Same user के accounts के बीच hedging.',
+                                    'Coordinated users के बीच hedging.',
+                                    'Different firms या platforms के बीच hedging.',
+                                    'Accounts में correlated instruments opposite directions में trade करना।',
+                                    'Accounts के बीच trades copy या mirror करना, manually या automated.',
+                                    'Trade copier software या signal services से trades replicate करना।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Examples',
+                                'bullets' => [
+                                    'एक account में Long EURUSD और दूसरे में Short EURUSD.',
+                                    'एक account में Long SPX500 और दूसरे में Short NDX100.',
+                                    'Multiple accounts पर same time identical trades execute करना।',
+                                    'Bot या signal provider से accounts में trades replicate करना।',
+                                ],
+                            ],
+                            [
+                                'title' => 'क्या allowed है?',
+                                'bullets' => [
+                                    'हर account के लिए independent trading decisions.',
+                                    'Personal strategies का use जो multiple accounts में shared न हों।',
+                                    'Single account के अंदर proper risk management.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important Clarification',
+                                'bullets' => [
+                                    'Same account में opposite positions खोलना MT5 में technically possible हो सकता है, लेकिन risk rules bypass करने वाली strategies allowed नहीं हैं।',
+                                    'Automation तभी allowed है जब वह independent trading logic reflect करे, trade replication नहीं।',
+                                    'सभी trading real, independent decision-making और market exposure reflect करनी चाहिए।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Detection & Monitoring',
+                                'bullets' => [
+                                    'Wolforix internal systems से hedging patterns detect करता है।',
+                                    'Wolforix trade synchronization monitor करता है।',
+                                    'Wolforix accounts के बीच identical execution behavior monitor करता है।',
+                                    'Wolforix copy trading activity monitor करता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Consequences',
+                                'bullets' => [
+                                    'Wolforix trades remove या adjust कर सकता है।',
+                                    'Wolforix account balance recalculate कर सकता है।',
+                                    'Wolforix account disqualify कर सकता है।',
+                                    'Wolforix user को restrict या permanently ban कर सकता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'यह prohibited क्यों है?',
+                                'bullets' => [
+                                    'Hedging और copy trading actual trading skill को misrepresent करते हैं।',
+                                    'Hedging और copy trading real risk exposure खत्म करते हैं।',
+                                    'Hedging और copy trading evaluation process को undermine करते हैं।',
+                                    'Hedging और copy trading platform integrity को threaten करते हैं।',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'क्या high-frequency trading (HFT) allowed है?',
+                        'answer' => 'High-frequency trading (HFT) Wolforix में strictly prohibited है।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'High-Frequency Trading क्या है?',
+                                'paragraphs' => [
+                                    'High-frequency trading (HFT) automated strategies को कहते हैं जो extremely short timeframes में बहुत बड़ी number of trades execute करती हैं, अक्सर seconds या milliseconds में।',
+                                    'ये strategies speed और high order volume से small price inefficiencies exploit करने के लिए designed होती हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'HFT क्या माना जाता है?',
+                                'bullets' => [
+                                    'बहुत short periods में high volume trades execute करना।',
+                                    'Rapid order placement और cancellation.',
+                                    'Orders की excessive modifications.',
+                                    'Ultra-fast algorithmic execution patterns.',
+                                    'Platform पर abnormal load डालने वाला trading behavior.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important Clarification',
+                                'bullets' => [
+                                    'Algorithmic trading और EAs allowed हैं।',
+                                    'Strategies normal trading frequency और realistic execution behavior में operate करनी चाहिए।',
+                                    'Speed exploitation के लिए primarily designed system market analysis के बजाय allowed नहीं है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'HFT prohibited क्यों है?',
+                                'paragraphs' => [
+                                    'Wolforix skill और consistency evaluate करने के लिए बनाया गया है, speed-based system exploitation के लिए नहीं।',
+                                ],
+                                'bullets' => [
+                                    'HFT platform performance degrade कर सकता है।',
+                                    'HFT execution instability create कर सकता है।',
+                                    'HFT pricing consistency affect कर सकता है।',
+                                    'HFT other users के trading environment को impact कर सकता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Detection & Monitoring',
+                                'bullets' => [
+                                    'Wolforix trade frequency monitor करता है।',
+                                    'Wolforix order volume monitor करता है।',
+                                    'Wolforix execution patterns monitor करता है।',
+                                    'Wolforix server load impact monitor करता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Consequences',
+                                'bullets' => [
+                                    'Warning issue की जा सकती है।',
+                                    'HFT activity से generated profits remove किए जा सकते हैं।',
+                                    'Account restrict या close किया जा सकता है।',
+                                    'Repeated violations permanent ban का कारण बन सकती हैं।',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'क्या duration abuse, grid trading और martingale strategies allowed हैं?',
+                        'answer' => 'Wolforix ऐसी strategies strictly prohibit करता है जो risk structures exploit करती हैं या unrealistic performance profiles बनाती हैं, जिसमें duration abuse, grid trading और martingale systems शामिल हैं।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Duration Abuse',
+                                'paragraphs' => [
+                                    'Duration abuse का मतलब है trades को systematically open और close करना ताकि intended risk exposure या trading rules bypass हों, बिना genuine market participation के।',
+                                    'सभी trades genuine market exposure और intent reflect करनी चाहिए, rule manipulation नहीं।',
+                                ],
+                                'bullets' => [
+                                    'Minimum duration threshold के आसपास repeatedly trades open और close करना, जैसे 60 seconds से थोड़ा ऊपर।',
+                                    'Real market intent के बिना trades execute करना, सिर्फ rule requirements satisfy करने के लिए।',
+                                    'Restrictions bypass करने के लिए artificial trade timing.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Grid Trading',
+                                'paragraphs' => [
+                                    'Grid trading में fixed price intervals पर multiple pending या active orders place किए जाते हैं, अक्सर clear stop-loss logic के बिना।',
+                                ],
+                                'bullets' => [
+                                    'Proper risk control के बिना grid systems allowed नहीं हैं।',
+                                    'High-density order stacking allowed नहीं है।',
+                                    'Defined risk के बिना price oscillation पर rely करने वाली strategies allowed नहीं हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Martingale Strategies',
+                                'paragraphs' => [
+                                    'Martingale strategies losses के बाद position size बढ़ाती हैं ताकि previous losses एक single winning trade से recover हों।',
+                                ],
+                                'bullets' => [
+                                    'Losses के बाद lot sizes double या increase करना allowed नहीं है।',
+                                    'Risk limits के बिना recovery-based position sizing allowed नहीं है।',
+                                    'Exponential risk exposure create करने वाली strategies allowed नहीं हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'क्या allowed है?',
+                                'bullets' => [
+                                    'Defined risk per trade वाली structured strategies.',
+                                    'Logical position sizing.',
+                                    'Consistent और controlled exposure.',
+                                    'Stop-loss और proper risk management का use.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Detection & Monitoring',
+                                'bullets' => [
+                                    'Wolforix trade duration patterns monitor करता है।',
+                                    'Wolforix position sizing behavior monitor करता है।',
+                                    'Wolforix order distribution monitor करता है।',
+                                    'Wolforix risk escalation patterns monitor करता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Consequences',
+                                'bullets' => [
+                                    'Wolforix trades remove या adjust कर सकता है।',
+                                    'Wolforix account balance recalculate कर सकता है।',
+                                    'Wolforix trading activity restrict कर सकता है।',
+                                    'Wolforix account suspend या terminate कर सकता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'यह prohibited क्यों है?',
+                                'bullets' => [
+                                    'ये strategies real trading performance distort करती हैं।',
+                                    'ये strategies proper risk exposure eliminate करती हैं।',
+                                    'ये strategies unstable equity curves create करती हैं।',
+                                    'ये strategies real market conditions में sustainable नहीं हैं।',
                                 ],
                             ],
                         ],
@@ -718,62 +1078,224 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'पेआउट्स',
+                'title' => 'Payouts',
                 'items' => [
                     [
-                        'question' => 'पेआउट्स कितनी बार प्रोसेस होते हैं?',
-                        'answer' => 'फंडेड अकाउंट्स 21 दिनों बाद पहला विड्रॉ रिक्वेस्ट कर सकते हैं। उसके बाद विड्रॉ रिक्वेस्ट 14-दिन के चक्र का पालन करती है, जिसमें प्रति चक्र अधिकतम सीमा होती है। एक बार विड्रॉ रिक्वेस्ट सबमिट होने के बाद, पेआउट 24 घंटों के भीतर प्रोसेस किए जाते हैं।',
+                        'question' => 'Payouts कितनी बार process होते हैं?',
+                        'answer' => 'Funded accounts पहला withdrawal 21 days के बाद request कर सकते हैं। उसके बाद withdrawal requests 14-day cycle follow करती हैं, जिसमें per cycle maximum limit होती है। Request submit होने के बाद payouts 24 hours के भीतर process होते हैं।',
                     ],
                     [
-                        'question' => 'मेरा पेआउट कैसे गणना होता है?',
-                        'answer' => 'पेआउट आपके मॉडल और अकाउंट साइज पर लागू profit split, मॉडल-विशिष्ट पेआउट टाइमिंग, जहाँ लागू हो वहाँ consistency-rule compliance, और आंतरिक payout limits पर निर्भर करता है। यदि daily limits exceed होती हैं, तो withdrawal के लिए पात्र राशि कुल मुनाफे से कम हो सकती है।',
+                        'question' => 'कौन से payout methods available हैं?',
+                        'answer' => 'Wolforix approved withdrawals के लिए secure और efficient payout methods support करता है।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Available payout options',
+                                'bullets' => [
+                                    'Bank Transfer (Stripe infrastructure के through, region के अनुसार)',
+                                    'PayPal',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important',
+                                'bullets' => [
+                                    'Payout methods आपकी location के अनुसार vary कर सकते हैं।',
+                                    'सभी withdrawals account review और compliance checks के अधीन हैं।',
+                                    'Processing times provider और region के अनुसार vary कर सकते हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Processing Time',
+                                'bullets' => [
+                                    'Requests आमतौर पर 1–3 business days में review होती हैं।',
+                                    'Approve होने के बाद funds shortly process होते हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Additional Notes',
+                                'bullets' => [
+                                    'Payout method account holder की identity से match करना चाहिए।',
+                                    'Wolforix withdrawals process करने से पहले verification request कर सकता है।',
+                                    'Fees selected payout method के अनुसार vary कर सकती हैं।',
+                                ],
+                            ],
+                        ],
                     ],
                     [
-                        'question' => 'क्या फंडेड अकाउंट्स स्केल होते हैं?',
-                        'answer' => '2-Step फंडेड अकाउंट्स लाभदायक होने पर हर 3 महीने में +25% कैपिटल से स्केल कर सकते हैं। 1-Step फंडेड अकाउंट्स में फिलहाल यह scaling rule शामिल नहीं है।',
+                        'question' => 'मेरा payout कैसे calculate होता है?',
+                        'answer' => 'Payouts आपके model और account size के profit split, model-specific payout timing, जहां लागू हो consistency-rule compliance, और internal payout limits पर depend करते हैं। Daily limits exceed होने पर withdrawal eligible amount total profits से कम हो सकता है।',
+                    ],
+                    [
+                        'question' => 'क्या funded accounts scale होते हैं?',
+                        'answer' => '2-Step funded accounts profitable होने पर हर 3 months में +25% capital से scale कर सकते हैं। 1-Step funded accounts में currently यह scaling rule शामिल नहीं है।',
+                    ],
+                    [
+                        'question' => 'Account scaling plan कैसे work करता है?',
+                        'answer_paragraphs' => [
+                            'Wolforix funded accounts पर trading performance के आधार पर dynamic scaling system apply करता है।',
+                            'जैसे-जैसे account grow करता है, maximum allowed position size progressively increase होती है, जिससे consistency demonstrate होने पर greater market exposure मिलता है।',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Scaling system कैसे काम करता है',
+                                'bullets' => [
+                                    'Scaling आपके simulated profits पर based है।',
+                                    'Profits increase होने पर trading capacity increase होती है।',
+                                    'Performance decline होने पर limits accordingly adjust हो सकती हैं।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Update Frequency',
+                                'bullets' => [
+                                    'Scaling updates हर trading day के end में apply होते हैं।',
+                                    'Changes day के दौरान real time में apply नहीं होते।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Scaling Structure',
+                                'paragraphs' => [
+                                    'Scaling model consistency, risk management और sustainable performance को reward करने के लिए designed है।',
+                                    'Account समय के साथ stability demonstrate करता है तो maximum exposure evolve होता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important',
+                                'bullets' => [
+                                    'Scaling linear नहीं है और account performance के अनुसार vary कर सकता है।',
+                                    'Sufficient performance के बिना overexposure restrictions का कारण बन सकता है।',
+                                    'System short-term gains के बजाय long-term consistency को prioritize करता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Scaling System Circumvent करना',
+                                'paragraphs' => [
+                                    'Scaling system को bypass या manipulate करने का कोई भी attempt strictly prohibited है।',
+                                ],
+                                'bullets' => [
+                                    'Limits exceed करने के लिए trades split करना।',
+                                    'Artificially exposure increase करने के लिए multiple entries use करना।',
+                                    'Execution behavior या platform mechanics exploit करना।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Consequences',
+                                'bullets' => [
+                                    'Wolforix trades adjust या remove कर सकता है।',
+                                    'Wolforix account balance recalculate कर सकता है।',
+                                    'Wolforix trading conditions restrict कर सकता है।',
+                                    'Wolforix account suspend या terminate कर सकता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Summary',
+                                'bullets' => [
+                                    'Performance बढ़े, trading capacity बढ़े।',
+                                    'Performance घटे, limits adjust हो सकती हैं।',
+                                    'Scaling daily update होता है।',
+                                    'Consistency required है।',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
             [
-                'title' => 'अकाउंट / डैशबोर्ड',
+                'title' => 'Billing',
                 'items' => [
                     [
-                        'question' => 'मैं अपना प्रॉफिट और बैलेंस कैसे देखूँ?',
-                        'answer' => 'आपका डैशबोर्ड कुल प्रॉफिट, डेली प्रॉफिट और अकाउंट बैलेंस रियल टाइम में दिखाता है।',
-                    ],
-                    [
-                        'question' => 'यदि मैं consistency limit के पास पहुँच जाऊँ तो क्या होगा?',
-                        'answer' => 'डैशबोर्ड में एक चेतावनी दिखाई देगी: “⚠ आप consistency rule limit के करीब पहुँच रहे हैं। पेआउट पात्रता के लिए प्रॉफिट कई ट्रेडिंग दिनों में फैला होना चाहिए।” इसके अलावा, critical threshold के पास पहुँचने पर एक ऑटोमेटेड ईमेल अलर्ट भी भेजा जा सकता है।',
-                    ],
-                    [
-                        'question' => 'मैं पेआउट कैसे रिक्वेस्ट कर सकता हूँ?',
-                        'answer' => 'पेआउट रिक्वेस्ट बटन आपके डैशबोर्ड में है। 1-Step फंडेड अकाउंट्स को profit payout-eligible होने से पहले अनिवार्य consistency rule पूरा करना होगा।',
+                        'question' => 'कौन से payment methods accepted हैं?',
+                        'answer' => 'Wolforix trusted providers के through secure online payments accept करता है। सभी payments Stripe और PayPal के through securely process होते हैं, जिससे fast और reliable transactions मिलते हैं।',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Available payment methods',
+                                'bullets' => [
+                                    'Credit और debit cards (Visa, Mastercard, American Express)',
+                                    'PayPal',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important',
+                                'bullets' => [
+                                    'Approval के बाद payments instantly confirm होते हैं।',
+                                    'सभी transactions encrypted और securely processed होते हैं।',
+                                    'कुछ payment methods की availability आपकी location के अनुसार vary कर सकती है।',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
             [
-                'title' => 'सपोर्ट / संपर्क',
+                'title' => 'Accounts / Dashboard',
                 'items' => [
                     [
-                        'question' => 'मैं सपोर्ट से कैसे संपर्क करूँ?',
-                        'answer' => 'सभी सपोर्ट रिक्वेस्ट ईमेल या आपके डैशबोर्ड के टिकट सिस्टम के माध्यम से संभाली जाती हैं।',
+                        'question' => 'मैं अपना profit और balance कैसे देखूँ?',
+                        'answer' => 'आपका dashboard total profit, daily profit और account balance real time में दिखाता है।',
                     ],
                     [
-                        'question' => 'क्या आपके पास फोन नंबर है?',
-                        'answer' => 'नहीं, Wolforix Ltd. फोन सपोर्ट प्रदान नहीं करता। कंप्लायंस और सुरक्षा कारणों से सभी संचार ईमेल या टिकट्स के माध्यम से दस्तावेज़ित किए जाते हैं।',
+                        'question' => 'यदि मैं consistency limit के पास पहुँचूँ तो क्या होगा?',
+                        'answer' => 'Dashboard warning दिखाई देगी: “⚠ आप consistency rule limit के करीब हैं। Payout eligible होने के लिए profits कई trading days में spread होने चाहिए।” Critical threshold के पास पहुँचने पर automated email alert भी भेजा जा सकता है।',
+                    ],
+                    [
+                        'question' => 'मैं payout कैसे request कर सकता हूँ?',
+                        'answer' => 'Payout request button आपके dashboard में है। 1-Step funded accounts को profit payout-eligible होने से पहले mandatory consistency rule satisfy करना होगा।',
                     ],
                 ],
             ],
             [
-                'title' => 'कानूनी / कंप्लायंस',
+                'title' => 'Support / Contact',
                 'items' => [
                     [
-                        'question' => 'क्या मुझे अपनी पहचान सत्यापित करनी होगी?',
-                        'answer' => 'हाँ, एंटी-मनी लॉन्ड्रिंग नियमों के पालन के लिए पेआउट प्रोसेस करने से पहले identity verification (KYC) आवश्यक हो सकती है।',
+                        'question' => 'मैं support से कैसे contact करूँ?',
+                        'answer' => 'सभी support requests email या dashboard के ticket system के through handle होती हैं।',
                     ],
                     [
-                        'question' => 'क्या fraud या abuse के लिए नियम हैं?',
-                        'answer' => 'सिस्टम में छेड़छाड़, loopholes का दुरुपयोग या fraudulent activity का कोई भी प्रयास अकाउंट समाप्ति का कारण बनेगा और इसे अधिकारियों को रिपोर्ट भी किया जा सकता है।',
+                        'question' => 'क्या phone number है?',
+                        'answer' => 'नहीं, Wolforix Ltd. phone support provide नहीं करता। Compliance और safety reasons के लिए सभी communications email या tickets में documented होती हैं।',
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Legal / Compliance',
+                'items' => [
+                    [
+                        'question' => 'क्या मुझे identity verify करनी होगी?',
+                        'answer' => 'हाँ, anti-money laundering regulations comply करने के लिए payouts process करने से पहले identity verification (KYC) required हो सकती है।',
+                    ],
+                    [
+                        'question' => 'कौन से countries restricted हैं?',
+                        'answer_paragraphs' => [
+                            'Wolforix ऐसे countries में रहने वाले individuals या entities को services provide नहीं करता जो international sanctions या regulatory restrictions के subject हैं।',
+                            'इसमें Iran, North Korea, Syria, Sudan, Cuba, Russia और Venezuela शामिल हैं, लेकिन list इन्हीं तक limited नहीं है।',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Eligibility',
+                                'bullets' => [
+                                    'Wolforix services use करके आप confirm करते हैं कि आप restricted jurisdiction के resident नहीं हैं।',
+                                    'आप confirm करते हैं कि आप किसी applicable sanctions के subject नहीं हैं।',
+                                    'आप confirm करते हैं कि अपने country के laws के तहत participate करना legal है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Compliance',
+                                'paragraphs' => [
+                                    'Wolforix international regulations comply करता है, जिसमें anti-money laundering (AML) और counter-terrorism financing (CTF) policies शामिल हैं।',
+                                    'Services का access country of residence, nationality, Stripe या PayPal जैसे payment provider limitations, या internal risk assessment के आधार पर restrict हो सकता है।',
+                                ],
+                            ],
+                            [
+                                'title' => 'Important Notice',
+                                'bullets' => [
+                                    'Wolforix अपने sole discretion पर किसी भी user का access restrict या deny कर सकता है।',
+                                    'Wolforix किसी भी समय identity verification (KYC) request कर सकता है।',
+                                    'Wolforix restricted jurisdictions की list बिना prior notice update कर सकता है।',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'क्या fraud या abuse के लिए rules हैं?',
+                        'answer' => 'System manipulate करने, loopholes exploit करने या fraudulent activity करने का कोई भी attempt account termination का कारण बनेगा और authorities को report किया जा सकता है।',
                     ],
                 ],
             ],

@@ -33,18 +33,26 @@
     </div>
 
     @if (! empty($progressTracks))
-        <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
             @foreach ($progressTracks as $track)
-                <article class="rounded-[1.55rem] border {{ $track['tone'] === 'rose' ? 'border-rose-400/28 bg-rose-500/10' : 'border-white/8 bg-black/18' }} p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-white">{{ $track['label'] }}</p>
-                            <p class="mt-1 text-xs leading-5 text-slate-400">{{ $track['current'] }} / {{ $track['target'] }}</p>
-                        </div>
-                        <span class="{{ $toneClasses[$track['tone']] ?? $toneClasses['slate'] }} shrink-0 rounded-full border px-3 py-1 text-xs font-semibold">
+                <article class="flex min-h-[12rem] flex-col rounded-[1.55rem] border {{ $track['tone'] === 'rose' ? 'border-rose-400/28 bg-rose-500/10' : 'border-white/8 bg-black/18' }} p-4 sm:p-5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <p class="max-w-full text-sm font-semibold leading-6 text-white sm:max-w-[70%]">{{ $track['label'] }}</p>
+                        <span class="{{ $toneClasses[$track['tone']] ?? $toneClasses['slate'] }} inline-flex w-fit max-w-full shrink-0 rounded-full border px-3 py-1 text-xs font-semibold leading-5">
                             {{ $track['value_label'] }}
                         </span>
                     </div>
+
+                    <dl class="mt-4 grid gap-2 sm:grid-cols-2">
+                        <div class="rounded-2xl border border-white/6 bg-white/4 px-3 py-3">
+                            <dt class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('Current') }}</dt>
+                            <dd class="mt-1 break-words text-sm font-semibold text-white">{{ $track['current'] }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-white/4 px-3 py-3">
+                            <dt class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-500">{{ $track['target_label'] ?? __('Limit') }}</dt>
+                            <dd class="mt-1 break-words text-sm font-semibold text-white">{{ $track['target'] }}</dd>
+                        </div>
+                    </dl>
 
                     <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-white/8">
                         <div class="h-full rounded-full {{ $barClasses[$track['tone']] ?? $barClasses['amber'] }}" style="width: {{ $track['value'] }}%"></div>

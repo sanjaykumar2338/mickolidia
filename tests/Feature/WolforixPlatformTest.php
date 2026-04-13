@@ -15,6 +15,7 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
+use App\Support\PublicContentIndex;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -1604,6 +1605,63 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Grid systems without proper risk control are not allowed.')
             ->assertSee('Strategies that create exponential risk exposure are not allowed.')
             ->assertSee('Trades closed in less than 60 seconds are strictly prohibited if they result in profit.');
+    }
+
+    public function test_translated_faq_locales_include_the_new_policy_content(): void
+    {
+        $expectedByLocale = [
+            'de' => ['Welche Plattform verwendet Wolforix?', 'Welche Auszahlungsmethoden sind verfügbar?', 'Welche Zahlungsmethoden werden akzeptiert?', 'Welche Länder sind eingeschränkt?', 'Ist High-Frequency Trading (HFT) erlaubt?', 'Sind Duration Abuse, Grid Trading und Martingale-Strategien erlaubt?'],
+            'es' => ['¿Qué plataforma utiliza Wolforix?', '¿Qué métodos de payout están disponibles?', '¿Qué métodos de pago se aceptan?', '¿Qué países están restringidos?', '¿Está permitido el high-frequency trading (HFT)?', '¿Se permiten duration abuse, grid trading y estrategias martingale?'],
+            'fr' => ['Quelle plateforme Wolforix utilise-t-il ?', 'Quels moyens de payout sont disponibles ?', 'Quels moyens de paiement sont acceptés ?', 'Quels pays sont restreints ?', 'Le high-frequency trading (HFT) est-il autorisé ?', 'Le duration abuse, le grid trading et les stratégies martingale sont-ils autorisés ?'],
+            'hi' => ['Wolforix कौन सा platform use करता है?', 'कौन से payout methods available हैं?', 'कौन से payment methods accepted हैं?', 'कौन से countries restricted हैं?', 'क्या high-frequency trading (HFT) allowed है?', 'क्या duration abuse, grid trading और martingale strategies allowed हैं?'],
+            'it' => ['Quale piattaforma usa Wolforix?', 'Quali metodi di payout sono disponibili?', 'Quali metodi di pagamento sono accettati?', 'Quali Paesi sono soggetti a restrizioni?', 'High-frequency trading (HFT) è consentito?', 'Duration abuse, grid trading e strategie martingale sono consentiti?'],
+            'pt' => ['Que plataforma usa a Wolforix?', 'Que métodos de payout estão disponíveis?', 'Que métodos de pagamento são aceites?', 'Que países estão restritos?', 'High-frequency trading (HFT) é permitido?', 'Duration abuse, grid trading e estratégias martingale são permitidos?'],
+        ];
+
+        foreach ($expectedByLocale as $locale => $expectedStrings) {
+            $translations = require base_path("lang/{$locale}/site.php");
+            $faqText = json_encode($translations['faq']['sections'], JSON_UNESCAPED_UNICODE);
+
+            $this->assertCount(9, $translations['faq']['sections'], "FAQ section count mismatch for {$locale}.");
+            $this->assertStringContainsString('MetaQuotes-Demo', $faqText, "MT5 login details missing for {$locale}.");
+
+            foreach ($expectedStrings as $expectedString) {
+                $this->assertStringContainsString($expectedString, $faqText, "Missing translated FAQ text for {$locale}: {$expectedString}");
+            }
+        }
+    }
+
+    public function test_wolfi_and_site_search_indexes_include_updated_faq_content(): void
+    {
+        $contentIndex = app(PublicContentIndex::class);
+        $siteSearchText = json_encode($contentIndex->siteSearchIndex('en'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $wolfiIndexText = json_encode($contentIndex->voiceAssistantIndex(['en'], ['en' => 'en-US']), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $expectedFaqContent = [
+            'MetaQuotes-Demo',
+            'Bank Transfer (via Stripe infrastructure, depending on region)',
+            'Trading is available 24 hours, 5 days a week',
+            'Hedging across multiple accounts and unauthorized copy trading',
+            'High-frequency trading (HFT) is strictly prohibited in Wolforix.',
+            'Grid systems without proper risk control',
+        ];
+
+        $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);
+        $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $wolfiIndexText);
+
+        foreach ($expectedFaqContent as $expectedString) {
+            $this->assertStringContainsString($expectedString, $siteSearchText, "Site search index is missing FAQ content: {$expectedString}");
+            $this->assertStringContainsString($expectedString, $wolfiIndexText, "Wolfi index is missing FAQ content: {$expectedString}");
+        }
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('MetaQuotes-Demo')
+            ->assertSee('High-frequency trading (HFT) is strictly prohibited in Wolforix.');
+
+        $this->get(route('contact'))
+            ->assertOk()
+            ->assertSee('MetaQuotes-Demo')
+            ->assertSee('High-frequency trading (HFT) is strictly prohibited in Wolforix.');
     }
 
     public function test_terms_page_contains_news_and_scalping_rules(): void

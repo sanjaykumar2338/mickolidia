@@ -628,7 +628,7 @@ return array_replace_recursive($en, [
                     ],
                     [
                         'question' => 'Si tratta di denaro reale o trading simulato?',
-                        'answer' => 'Tutti gli account operano in un ambiente di trading simulato. Nessun capitale reale viene allocato agli utenti.',
+                        'answer' => 'Tutti gli account operano in un ambiente di trading simulato. Nessun capitale reale viene assegnato agli utenti.',
                     ],
                     [
                         'question' => 'Chi può partecipare?',
@@ -637,80 +637,440 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
+                'title' => 'Piattaforma',
+                'items' => [
+                    [
+                        'question' => 'Quale piattaforma usa Wolforix?',
+                        'answer' => 'Wolforix usa MetaTrader 5 (MT5).',
+                    ],
+                    [
+                        'question' => 'Come accedo a MT5?',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Mobile',
+                                'bullets' => [
+                                    '1. Scarica MetaTrader 5.',
+                                    '2. Vai su "Manage Accounts".',
+                                    '3. Tocca "+".',
+                                    '4. Seleziona "Login to an existing account".',
+                                    '5. Cerca: MetaQuotes-Demo.',
+                                    '6. Inserisci le tue credenziali.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Desktop',
+                                'bullets' => [
+                                    '1. Apri MT5.',
+                                    '2. File -> Login to Trade Account.',
+                                    '3. Inserisci i dati di accesso.',
+                                    '4. Server: MetaQuotes-Demo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Importante',
+                                'bullets' => [
+                                    'Wolforix non usa un broker proprio.',
+                                    'Usiamo il server MetaQuotes-Demo.',
+                                    'Il tuo account è collegato a Wolforix.',
+                                    'Tutta l’attività viene sincronizzata con la dashboard.',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Strumenti negoziabili',
+                'items' => [
+                    [
+                        'question' => 'Cosa posso tradare?',
+                        'answer' => 'Wolforix offre accesso a un’ampia gamma di strumenti CFD disponibili in MT5.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Forex',
+                                'bullets' => [
+                                    'EURUSD, GBPUSD, USDJPY, USDCHF, USDCAD',
+                                    'AUDUSD, NZDUSD, EURJPY, GBPJPY, EURGBP e altri',
+                                ],
+                            ],
+                            [
+                                'title' => 'Indici',
+                                'bullets' => [
+                                    'SPX500, NDX100, US30',
+                                    'GER30, UK100, FRA40',
+                                    'JP225 e altri',
+                                ],
+                            ],
+                            [
+                                'title' => 'Materie prime',
+                                'bullets' => [
+                                    'XAUUSD (Oro)',
+                                    'XAGUSD (Argento)',
+                                    'XPTUSD (Platino)',
+                                    'UKOUSD (Brent)',
+                                    'USOUSD (Crude Oil)',
+                                ],
+                            ],
+                            [
+                                'title' => 'Criptovalute',
+                                'bullets' => [
+                                    'BTCUSD, ETHUSD, XRPUSD',
+                                    'ADAUSD, LTCUSD, XLMUSD',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'Come posso vedere tutti gli strumenti?',
+                        'answer_sections' => [
+                            [
+                                'title' => 'MT5 Market Watch',
+                                'bullets' => [
+                                    '1. Apri MT5.',
+                                    '2. Vai su Market Watch.',
+                                    '3. Fai clic destro.',
+                                    '4. Seleziona "Show All".',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'title' => 'Regole di trading',
                 'items' => [
                     [
                         'question' => 'Che cos’è la regola di consistenza?',
-                        'answer' => 'Non più del 40% dei profitti totali può essere generato in un singolo giorno di trading. I profitti devono essere distribuiti su più giorni di trading per essere idonei al payout.',
+                        'answer' => 'Non più del 40% dei profitti totali può essere generato in un singolo giorno di trading. I profitti devono essere distribuiti su più giorni per essere idonei al payout.',
                     ],
                     [
                         'question' => 'Come viene calcolato il limite di profitto giornaliero?',
-                        'answer' => 'Il sistema confronta il profitto di oggi con il profitto totale del tuo account. Se il profitto di oggi supera il 40%, verrà generato un avviso in dashboard e la tua idoneità al payout potrebbe essere influenzata.',
+                        'answer' => 'Il sistema confronta il profitto di oggi con il profitto totale dell’account. Se il profitto di oggi supera il 40%, verrà mostrato un avviso in dashboard e l’idoneità al payout può essere influenzata.',
                     ],
                     [
                         'question' => 'Cosa sono i drawdown massimi?',
-                        'answer' => 'Ogni account ha limiti di drawdown definiti. Il superamento di questi limiti può comportare la squalifica dell’account dal programma di valutazione.',
+                        'answer' => 'Ogni account ha limiti di drawdown definiti. Superarli può comportare la squalifica dell’account dal programma di valutazione.',
                     ],
                     [
-                        'question' => 'Posso fare trading durante eventi news ad alto impatto?',
-                        'answer' => 'È vietato aprire o chiudere operazioni 5 minuti prima e 5 minuti dopo un evento news ad alto impatto. Questa restrizione si applica sia agli ordini a mercato sia agli ordini pendenti, incluse le attivazioni di stop-loss o take-profit. Puoi mantenere posizioni esistenti durante l’evento, ma non puoi aprire né chiudere trade in questa finestra temporale.',
+                        'question' => 'Posso fare trading durante news ad alto impatto?',
+                        'answer' => 'È vietato aprire o chiudere trade 5 minuti prima e 5 minuti dopo una news ad alto impatto. La restrizione si applica a ordini a mercato e ordini pendenti, incluse attivazioni di stop-loss o take-profit. Puoi mantenere posizioni esistenti durante l’evento, ma non puoi aprire né chiudere trade in quella finestra.',
                     ],
                     [
-                        'question' => 'Quali strumenti posso tradare e quali strategie sono consentite?',
-                        'answer_paragraphs' => [
-                            'Wolforix consente discretionary trading, algorithmic trading ed Expert Advisors (EA), purché le strategie siano legittime, riflettano condizioni di mercato reali, seguano una corretta gestione del rischio e non includano pratiche vietate.',
-                            'Le strategie devono essere replicabili in condizioni di mercato reali e in grado di produrre risultati live coerenti.',
-                        ],
+                        'question' => 'Quali orari di trading sono consentiti?',
+                        'answer' => 'Wolforix consente il trading durante gli orari di mercato standard in base allo strumento tradato.',
                         'answer_sections' => [
                             [
-                                'title' => 'Strumenti tradabili (CFD)',
+                                'title' => 'Regola generale',
                                 'bullets' => [
-                                    'Forex: EUR/USD',
-                                    'Forex: USD/JPY',
-                                    'Commodities: Gold (XAU/USD) - mercato principale',
+                                    'Il trading è disponibile 24 ore, 5 giorni a settimana, dal lunedì al venerdì, in linea con le sessioni globali.',
+                                    'La disponibilità può variare in base allo strumento, inclusi Forex, indici, crypto e altri CFD.',
                                 ],
                             ],
+                            [
+                                'title' => 'Mantenimento posizioni',
+                                'bullets' => [
+                                    'Le posizioni possono essere mantenute intraday o overnight, salvo restrizioni specifiche dell’account.',
+                                    'I trader sono responsabili della gestione dell’esposizione durante periodi di bassa liquidità.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Chiusure di mercato',
+                                'bullets' => [
+                                    'Il trading non è disponibile nei weekend.',
+                                    'Alcuni strumenti possono avere pause giornaliere o finestre di manutenzione.',
+                                    'Durante le festività, gli orari di mercato possono essere ridotti o modificati.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Importante',
+                                'bullets' => [
+                                    'I trader devono conoscere orari di sessione e condizioni di liquidità.',
+                                    'Wolforix non è responsabile per perdite causate da trading in periodi illiquidi o volatili.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Restrizioni',
+                                'bullets' => [
+                                    'Le restrizioni relative alle news (±5 minuti) restano valide.',
+                                    'Tutte le altre regole di trading rimangono in vigore indipendentemente dall’orario.',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'Quali strategie di trading sono consentite?',
+                        'answer_paragraphs' => [
+                            'Wolforix consente trading discrezionale, trading algoritmico ed Expert Advisors (EAs), purché le strategie siano legittime, riflettano condizioni reali di mercato, rispettino una solida gestione del rischio e non includano pratiche vietate.',
+                            'Le strategie devono essere replicabili in condizioni reali di mercato e in grado di produrre risultati live coerenti.',
+                        ],
+                        'answer_sections' => [
                             [
                                 'title' => 'Condizioni di trading',
                                 'bullets' => [
                                     'Lo Stop Loss non è obbligatorio, ma il controllo del rischio è fortemente raccomandato.',
-                                    'Il trading deve riflettere un comportamento esecutivo realistico e condizioni di mercato reali.',
+                                    'Il trading deve riflettere comportamento esecutivo realistico e condizioni reali di mercato.',
                                     'Le strategie devono essere scalabili e adatte al capitale live.',
                                 ],
                             ],
                             [
-                                'title' => 'Expert Advisors (EA) e trading algoritmico',
+                                'title' => 'Expert Advisors (EAs) e trading algoritmico',
                                 'bullets' => [
-                                    'Gli EA sono consentiti.',
+                                    'Gli EAs sono consentiti.',
                                     'La duplicazione di EA di terze parti può entrare in conflitto con il risk management interno.',
-                                    'Wolforix può limitare o negare l’allocazione dell’account in tali casi.',
-                                    'L’attività di piattaforma deve restare entro limiti ragionevoli.',
-                                    'Un eccesso di ordini, modifiche o carico server può richiedere adeguamenti di strategia.',
+                                    'Wolforix può limitare o negare l’allocazione dell’account in questi casi.',
+                                    'L’attività della piattaforma deve restare entro limiti ragionevoli.',
+                                    'Eccesso di ordini, modifiche o carico server può richiedere adeguamenti di strategia.',
                                 ],
                             ],
                             [
-                                'title' => 'Limiti di server ed esecuzione',
+                                'title' => 'Limiti server ed esecuzione',
                                 'bullets' => [
                                     'Possono applicarsi limiti al numero massimo di ordini aperti contemporaneamente.',
-                                    'Possono essere imposti limiti di esecuzione giornalieri.',
+                                    'Possono essere imposti limiti giornalieri di esecuzione.',
                                     'Una frequenza di trading eccessiva può attivare una revisione.',
-                                    'Wolforix può richiedere aggiustamenti di strategia se la performance danneggia la stabilità della piattaforma.',
+                                    'Wolforix può richiedere aggiustamenti se la performance danneggia la stabilità della piattaforma.',
                                 ],
                             ],
                             [
-                                'title' => 'Policy su scalping e durata dei trade',
+                                'title' => 'Policy su scalping e durata trade',
                                 'bullets' => [
-                                    'I trade chiusi in meno di 60 secondi sono severamente vietati se risultano in profitto.',
-                                    'Tale attività è considerata non replicabile in condizioni di mercato reali e può indicare sfruttamento della latenza o esecuzione irrealistica.',
-                                    'Lo scalping standard è consentito se la durata del trade riflette una reale esposizione al mercato.',
-                                    'Wolforix può escludere tali trade dal calcolo dei profitti o intraprendere ulteriori azioni in caso di ripetizione.',
+                                    'I trade chiusi in meno di 60 secondi sono severamente vietati se generano profitto.',
+                                    'Questa attività è considerata non replicabile in condizioni reali e può indicare sfruttamento della latenza o esecuzione irrealistica.',
+                                    'Lo scalping standard è consentito se la durata riflette reale esposizione al mercato.',
+                                    'Wolforix può escludere tali trade dal calcolo dei profitti o adottare ulteriori azioni se ripetuti.',
                                 ],
                             ],
                             [
                                 'title' => 'Pratiche di trading vietate',
                                 'paragraphs' => [
-                                    'Se viene rilevata attività vietata, Wolforix può rimuovere o regolare posizioni, riequilibrare l’account, ridurre la leva, sospendere o terminare l’account, oppure interrompere la collaborazione con il trader.',
-                                    'Se fai trading con intento genuino, un vantaggio chiaro e comportamento costante conforme alle regole, Wolforix resta allineata con il tuo successo.',
+                                    'Se viene rilevata attività vietata, Wolforix può rimuovere o regolare posizioni, ricalcolare l’account, ridurre la leva, sospendere o chiudere l’account, o terminare la collaborazione con il trader.',
+                                    'Se fai trading con intento genuino, edge chiaro e comportamento coerente conforme alle regole, Wolforix resta allineata con il tuo successo.',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'Hedging tra account e copy trading sono consentiti?',
+                        'answer' => 'Hedging tra più account e copy trading non autorizzato sono severamente vietati in Wolforix.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Che cos’è l’hedging?',
+                                'paragraphs' => [
+                                    'Hedging significa assumere posizioni opposte sullo stesso strumento o su strumenti correlati tra più account per ridurre artificialmente il rischio.',
+                                    'Questo comportamento garantisce che un account generi profitto indipendentemente dalla direzione del mercato ed è considerato manipolazione del sistema, non trading genuino.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Che cos’è il copy trading?',
+                                'paragraphs' => [
+                                    'Copy trading significa replicare trade tra più account, manualmente, tramite software, segnali o servizi di terze parti.',
+                                ],
+                                'bullets' => [
+                                    'Copiare trade tra i propri account.',
+                                    'Copiare trade tra utenti diversi.',
+                                    'Usare gruppi di segnali, bot o automazioni per replicare trade.',
+                                    'Trading coordinato progettato per aggirare le regole.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Esempi di attività vietata',
+                                'bullets' => [
+                                    'Aprire posizioni long e short sullo stesso strumento su account diversi.',
+                                    'Hedging tra account dello stesso utente.',
+                                    'Hedging tra utenti coordinati.',
+                                    'Hedging tra diverse firm o piattaforme.',
+                                    'Tradare strumenti correlati in direzioni opposte tra account.',
+                                    'Copiare o replicare trade tra account, manualmente o automaticamente.',
+                                    'Usare trade copier software o servizi di segnali per replicare trade.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Esempi',
+                                'bullets' => [
+                                    'Long EURUSD in un account e short EURUSD in un altro.',
+                                    'Long SPX500 in un account e short NDX100 in un altro.',
+                                    'Eseguire trade identici su più account nello stesso momento.',
+                                    'Usare un bot o provider di segnali per replicare trade tra account.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Cosa è consentito?',
+                                'bullets' => [
+                                    'Decisioni di trading indipendenti per account.',
+                                    'Uso di strategie personali non condivise su più account.',
+                                    'Corretta gestione del rischio in un singolo account.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Chiarimento importante',
+                                'bullets' => [
+                                    'Aprire posizioni opposte nello stesso account può essere tecnicamente possibile in MT5, ma strategie progettate per aggirare le regole di rischio non sono consentite.',
+                                    'L’automazione è consentita solo se riflette logica di trading indipendente, non replica di trade.',
+                                    'Ogni trading deve riflettere decisioni reali e indipendenti ed esposizione reale al mercato.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Rilevamento e monitoraggio',
+                                'bullets' => [
+                                    'Wolforix usa sistemi interni per rilevare pattern di hedging.',
+                                    'Wolforix monitora la sincronizzazione dei trade.',
+                                    'Wolforix monitora comportamenti di esecuzione identici tra account.',
+                                    'Wolforix monitora attività di copy trading.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Conseguenze',
+                                'bullets' => [
+                                    'Wolforix può rimuovere o regolare trade.',
+                                    'Wolforix può ricalcolare il saldo account.',
+                                    'Wolforix può squalificare l’account.',
+                                    'Wolforix può limitare o bannare permanentemente l’utente.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Perché è vietato?',
+                                'bullets' => [
+                                    'Hedging e copy trading falsano la reale abilità di trading.',
+                                    'Hedging e copy trading eliminano la reale esposizione al rischio.',
+                                    'Hedging e copy trading indeboliscono il processo di valutazione.',
+                                    'Hedging e copy trading minacciano l’integrità della piattaforma.',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'High-frequency trading (HFT) è consentito?',
+                        'answer' => 'High-frequency trading (HFT) è severamente vietato in Wolforix.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Che cos’è High-Frequency Trading?',
+                                'paragraphs' => [
+                                    'High-frequency trading (HFT) indica strategie automatizzate che eseguono molte operazioni in tempi estremamente brevi, spesso misurati in secondi o millisecondi.',
+                                    'Queste strategie mirano tipicamente a sfruttare piccole inefficienze di prezzo tramite velocità e alto volume di ordini.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Cosa è considerato HFT?',
+                                'bullets' => [
+                                    'Eseguire un alto volume di trade in periodi molto brevi.',
+                                    'Inserimento e cancellazione rapida di ordini.',
+                                    'Modifiche eccessive agli ordini.',
+                                    'Pattern di esecuzione algoritmica ultra-veloci.',
+                                    'Comportamento di trading che crea carico anomalo sulla piattaforma.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Chiarimento importante',
+                                'bullets' => [
+                                    'Trading algoritmico ed EAs sono consentiti.',
+                                    'Le strategie devono operare con frequenza normale e comportamento esecutivo realistico.',
+                                    'Non è consentito alcun sistema progettato principalmente per sfruttare la velocità invece dell’analisi di mercato.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Perché HFT è vietato?',
+                                'paragraphs' => [
+                                    'Wolforix è progettata per valutare abilità e consistenza, non sfruttamento del sistema basato sulla velocità.',
+                                ],
+                                'bullets' => [
+                                    'HFT può degradare le prestazioni della piattaforma.',
+                                    'HFT può creare instabilità di esecuzione.',
+                                    'HFT può influenzare la coerenza dei prezzi.',
+                                    'HFT può impattare l’ambiente di trading degli altri utenti.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Rilevamento e monitoraggio',
+                                'bullets' => [
+                                    'Wolforix monitora la frequenza dei trade.',
+                                    'Wolforix monitora il volume degli ordini.',
+                                    'Wolforix monitora i pattern di esecuzione.',
+                                    'Wolforix monitora l’impatto sul carico server.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Conseguenze',
+                                'bullets' => [
+                                    'Può essere emesso un avviso.',
+                                    'I profitti generati da HFT possono essere rimossi.',
+                                    'L’account può essere limitato o chiuso.',
+                                    'Violazioni ripetute possono portare a ban permanente.',
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'question' => 'Duration abuse, grid trading e strategie martingale sono consentiti?',
+                        'answer' => 'Wolforix vieta severamente strategie che sfruttano strutture di rischio o creano profili di performance irrealistici, inclusi duration abuse, grid trading e sistemi martingale.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Duration Abuse',
+                                'paragraphs' => [
+                                    'Duration abuse significa aprire e chiudere sistematicamente trade in modo da aggirare l’esposizione al rischio o le regole di trading previste, senza reale partecipazione al mercato.',
+                                    'Tutti i trade devono riflettere reale esposizione e intenzione di mercato, non manipolazione delle regole.',
+                                ],
+                                'bullets' => [
+                                    'Aprire e chiudere ripetutamente trade intorno alla soglia minima di durata, ad esempio appena sopra 60 secondi.',
+                                    'Eseguire trade senza reale intento di mercato, solo per soddisfare requisiti di regola.',
+                                    'Timing artificiale dei trade progettato per aggirare restrizioni.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Grid Trading',
+                                'paragraphs' => [
+                                    'Grid trading implica piazzare più ordini pendenti o attivi a intervalli di prezzo fissi, spesso senza chiara logica di stop-loss.',
+                                ],
+                                'bullets' => [
+                                    'Sistemi grid senza adeguato controllo del rischio non sono consentiti.',
+                                    'Order stacking ad alta densità non è consentito.',
+                                    'Strategie basate su oscillazione del prezzo senza rischio definito non sono consentite.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Strategie Martingale',
+                                'paragraphs' => [
+                                    'Le strategie martingale aumentano la dimensione della posizione dopo perdite per recuperare perdite precedenti con un singolo trade vincente.',
+                                ],
+                                'bullets' => [
+                                    'Raddoppiare o aumentare lotti dopo perdite non è consentito.',
+                                    'Position sizing di recupero senza limiti di rischio non è consentito.',
+                                    'Strategie che creano esposizione esponenziale al rischio non sono consentite.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Cosa è consentito?',
+                                'bullets' => [
+                                    'Strategie strutturate con rischio definito per trade.',
+                                    'Position sizing logico.',
+                                    'Esposizione coerente e controllata.',
+                                    'Uso di stop-loss e corretta gestione del rischio.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Rilevamento e monitoraggio',
+                                'bullets' => [
+                                    'Wolforix monitora pattern di durata dei trade.',
+                                    'Wolforix monitora comportamento di position sizing.',
+                                    'Wolforix monitora distribuzione degli ordini.',
+                                    'Wolforix monitora pattern di escalation del rischio.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Conseguenze',
+                                'bullets' => [
+                                    'Wolforix può rimuovere o regolare trade.',
+                                    'Wolforix può ricalcolare il saldo account.',
+                                    'Wolforix può limitare l’attività di trading.',
+                                    'Wolforix può sospendere o chiudere l’account.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Perché è vietato?',
+                                'bullets' => [
+                                    'Queste strategie distorcono la reale performance di trading.',
+                                    'Queste strategie eliminano corretta esposizione al rischio.',
+                                    'Queste strategie creano curve equity instabili.',
+                                    'Queste strategie non sono sostenibili in condizioni reali di mercato.',
                                 ],
                             ],
                         ],
@@ -722,15 +1082,145 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Ogni quanto vengono elaborati i payout?',
-                        'answer' => 'Gli account funded possono richiedere il primo prelievo dopo 21 giorni. Successivamente, le richieste di prelievo seguono un ciclo di 14 giorni con un limite massimo per ciclo. Una volta inviata la richiesta di prelievo, i payout vengono elaborati entro 24 ore.',
+                        'answer' => 'Gli account funded possono richiedere il primo prelievo dopo 21 giorni. Successivamente, le richieste seguono un ciclo di 14 giorni con un limite massimo per ciclo. Una volta inviata la richiesta, i payout vengono elaborati entro 24 ore.',
+                    ],
+                    [
+                        'question' => 'Quali metodi di payout sono disponibili?',
+                        'answer' => 'Wolforix supporta metodi di payout sicuri ed efficienti per prelievi approvati.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Opzioni disponibili',
+                                'bullets' => [
+                                    'Bonifico bancario (tramite infrastruttura Stripe, in base alla regione)',
+                                    'PayPal',
+                                ],
+                            ],
+                            [
+                                'title' => 'Importante',
+                                'bullets' => [
+                                    'I metodi di payout possono variare in base alla località.',
+                                    'Tutti i prelievi sono soggetti a revisione account e controlli compliance.',
+                                    'I tempi di elaborazione possono variare in base a provider e regione.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Tempo di elaborazione',
+                                'bullets' => [
+                                    'Le richieste sono generalmente revisionate entro 1–3 giorni lavorativi.',
+                                    'Una volta approvati, i fondi vengono processati poco dopo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Note aggiuntive',
+                                'bullets' => [
+                                    'Il metodo di payout deve corrispondere all’identità del titolare dell’account.',
+                                    'Wolforix si riserva il diritto di richiedere verifica prima di processare prelievi.',
+                                    'Le commissioni possono variare in base al metodo selezionato.',
+                                ],
+                            ],
+                        ],
                     ],
                     [
                         'question' => 'Come viene calcolato il mio payout?',
-                        'answer' => 'I payout dipendono dal profit split assegnato al tuo modello e alla dimensione del tuo account, dalla tempistica payout specifica del modello, dalla conformità alla regola di consistenza dove applicabile e dai limiti payout interni. L’importo prelevabile può essere inferiore ai profitti totali se i limiti giornalieri vengono superati.',
+                        'answer' => 'I payout dipendono dal profit split assegnato al modello e alla dimensione dell’account, dai tempi specifici del modello, dal rispetto della regola di consistenza dove applicabile e dai limiti interni. L’importo idoneo può essere inferiore ai profitti totali se i limiti giornalieri vengono superati.',
                     ],
                     [
                         'question' => 'Gli account funded scalano?',
-                        'answer' => 'Gli account funded 2-Step possono scalare del +25% di capitale ogni 3 mesi se profittevoli. Gli account funded 1-Step al momento non includono questa regola di scaling.',
+                        'answer' => 'Gli account funded 2-Step possono scalare del +25% di capitale ogni 3 mesi se profittevoli. Gli account funded 1-Step al momento non includono questa regola.',
+                    ],
+                    [
+                        'question' => 'Come funziona il piano di scaling dell’account?',
+                        'answer_paragraphs' => [
+                            'Wolforix applica un sistema di scaling dinamico agli account funded basato sulla performance di trading.',
+                            'Man mano che l’account cresce, la dimensione massima consentita delle posizioni aumenta progressivamente, permettendo maggiore esposizione quando viene dimostrata consistenza.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Come funziona il sistema',
+                                'bullets' => [
+                                    'Lo scaling si basa sui profitti simulati.',
+                                    'Quando i profitti aumentano, aumenta la capacità di trading.',
+                                    'Se la performance cala, i limiti possono essere adeguati.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Frequenza aggiornamenti',
+                                'bullets' => [
+                                    'Gli aggiornamenti di scaling vengono applicati alla fine di ogni giornata di trading.',
+                                    'Le modifiche non vengono applicate in tempo reale durante la giornata.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Struttura di scaling',
+                                'paragraphs' => [
+                                    'Il modello premia consistenza, gestione del rischio e performance sostenibile.',
+                                    'La tua esposizione massima evolve quando l’account dimostra stabilità nel tempo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Importante',
+                                'bullets' => [
+                                    'Lo scaling non è lineare e può variare in base alla performance dell’account.',
+                                    'Sovraesposizione senza performance sufficiente può portare a restrizioni.',
+                                    'Il sistema dà priorità alla consistenza di lungo periodo rispetto ai guadagni di breve periodo.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Aggirare il sistema di scaling',
+                                'paragraphs' => [
+                                    'Qualsiasi tentativo di aggirare o manipolare il sistema di scaling è severamente vietato.',
+                                ],
+                                'bullets' => [
+                                    'Suddividere trade per superare limiti.',
+                                    'Usare ingressi multipli per aumentare artificialmente l’esposizione.',
+                                    'Sfruttare comportamento esecutivo o meccaniche della piattaforma.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Conseguenze',
+                                'bullets' => [
+                                    'Wolforix può regolare o rimuovere trade.',
+                                    'Wolforix può ricalcolare il saldo account.',
+                                    'Wolforix può limitare condizioni di trading.',
+                                    'Wolforix può sospendere o chiudere l’account.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Riepilogo',
+                                'bullets' => [
+                                    'Performance in aumento, capacità di trading in aumento.',
+                                    'Performance in calo, i limiti possono adeguarsi.',
+                                    'Scaling aggiornato quotidianamente.',
+                                    'La consistenza è richiesta.',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Fatturazione',
+                'items' => [
+                    [
+                        'question' => 'Quali metodi di pagamento sono accettati?',
+                        'answer' => 'Wolforix accetta pagamenti online sicuri tramite provider affidabili. Tutti i pagamenti sono elaborati in modo sicuro tramite Stripe e PayPal, garantendo transazioni rapide e affidabili.',
+                        'answer_sections' => [
+                            [
+                                'title' => 'Metodi disponibili',
+                                'bullets' => [
+                                    'Carte di credito e debito (Visa, Mastercard, American Express)',
+                                    'PayPal',
+                                ],
+                            ],
+                            [
+                                'title' => 'Importante',
+                                'bullets' => [
+                                    'I pagamenti sono confermati immediatamente dopo l’approvazione.',
+                                    'Tutte le transazioni sono criptate ed elaborate in modo sicuro.',
+                                    'La disponibilità di alcuni metodi può variare in base alla località.',
+                                ],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -739,7 +1229,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Come vedo profitto e saldo?',
-                        'answer' => 'La tua dashboard mostra profitto totale, profitto giornaliero e saldo account in tempo reale.',
+                        'answer' => 'La dashboard mostra profitto totale, profitto giornaliero e saldo account in tempo reale.',
                     ],
                     [
                         'question' => 'Cosa succede se mi avvicino al limite di consistenza?',
@@ -747,7 +1237,7 @@ return array_replace_recursive($en, [
                     ],
                     [
                         'question' => 'Come posso richiedere un payout?',
-                        'answer' => 'Il pulsante per la richiesta payout è nella tua dashboard. Gli account funded 1-Step devono soddisfare la regola di consistenza obbligatoria prima che il profitto diventi idoneo al payout.',
+                        'answer' => 'Il pulsante per richiedere payout è nella dashboard. Gli account funded 1-Step devono soddisfare la regola di consistenza obbligatoria prima che il profitto diventi idoneo.',
                     ],
                 ],
             ],
@@ -756,7 +1246,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Come contatto il supporto?',
-                        'answer' => 'Tutte le richieste di supporto vengono gestite via email o tramite sistema ticket all’interno della dashboard.',
+                        'answer' => 'Tutte le richieste di supporto sono gestite via email o tramite sistema ticket nella dashboard.',
                     ],
                     [
                         'question' => 'Avete un numero di telefono?',
@@ -769,7 +1259,39 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Devo verificare la mia identità?',
-                        'answer' => 'Sì, la verifica dell’identità (KYC) può essere richiesta prima dell’elaborazione dei payout per rispettare le normative antiriciclaggio.',
+                        'answer' => 'Sì, la verifica dell’identità (KYC) può essere richiesta prima di processare payout per rispettare le norme antiriciclaggio.',
+                    ],
+                    [
+                        'question' => 'Quali Paesi sono soggetti a restrizioni?',
+                        'answer_paragraphs' => [
+                            'Wolforix non fornisce servizi a persone o entità residenti in Paesi soggetti a sanzioni internazionali o restrizioni regolamentari.',
+                            'Questo include, tra gli altri, Iran, Corea del Nord, Siria, Sudan, Cuba, Russia e Venezuela.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Idoneità',
+                                'bullets' => [
+                                    'Usando i servizi Wolforix, confermi di non risiedere in una giurisdizione soggetta a restrizioni.',
+                                    'Confermi di non essere soggetto ad alcuna sanzione applicabile.',
+                                    'Confermi di poter partecipare legalmente secondo le leggi del tuo Paese.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Compliance',
+                                'paragraphs' => [
+                                    'Wolforix rispetta normative internazionali, incluse politiche antiriciclaggio (AML) e contrasto al finanziamento del terrorismo (CTF).',
+                                    'L’accesso ai servizi può essere limitato in base a Paese di residenza, nazionalità, limiti dei provider di pagamento come Stripe o PayPal, o valutazione interna del rischio.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Avviso importante',
+                                'bullets' => [
+                                    'Wolforix si riserva il diritto di limitare o negare l’accesso a qualsiasi utente a sua esclusiva discrezione.',
+                                    'Wolforix può richiedere verifica identità (KYC) in qualsiasi momento.',
+                                    'Wolforix può aggiornare la lista delle giurisdizioni soggette a restrizioni senza preavviso.',
+                                ],
+                            ],
+                        ],
                     ],
                     [
                         'question' => 'Esistono regole contro frodi o abusi?',

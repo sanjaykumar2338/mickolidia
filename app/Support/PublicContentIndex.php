@@ -301,11 +301,13 @@ class PublicContentIndex
 
                 $answer = $this->faqAnswer($item);
 
+                $faqItemUrl = route('faq').'#'.$this->faqItemAnchor($sectionTitle, $question);
+
                 $items[] = $this->makeItem(
                     section: $searchLabels['faq'] ?? 'FAQ',
                     title: $question,
                     description: Str::limit($answer, 180),
-                    url: route('faq'),
+                    url: $faqItemUrl,
                     answer: $answer,
                     keywords: $sectionTitle,
                     searchText: $this->searchableText([
@@ -400,5 +402,10 @@ class PublicContentIndex
     private function sectionAnchor(string $title): string
     {
         return Str::slug($title);
+    }
+
+    private function faqItemAnchor(string $sectionTitle, string $question): string
+    {
+        return Str::slug(trim($sectionTitle.' '.$question));
     }
 }

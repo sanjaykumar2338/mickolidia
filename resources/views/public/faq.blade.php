@@ -66,6 +66,7 @@
                         <div class="mt-5 space-y-4">
                             @foreach ($section['items'] as $item)
                                 <details
+                                    id="{{ Str::slug(($section['title'] ?? '').' '.($item['question'] ?? '')) }}"
                                     data-faq-item
                                     data-faq-text="{{ $faqSearchText($item) }}"
                                     class="surface-card rounded-[1.8rem] p-5"

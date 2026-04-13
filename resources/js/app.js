@@ -2109,6 +2109,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchInput.addEventListener('input', filterFaq);
         filterFaq();
+
+        const openFaqHashTarget = () => {
+            const hash = window.location.hash ? decodeURIComponent(window.location.hash.slice(1)) : '';
+
+            if (hash === '') {
+                return;
+            }
+
+            const target = document.getElementById(hash);
+
+            if (target instanceof HTMLDetailsElement) {
+                const shouldReduceMotion = typeof window.matchMedia === 'function'
+                    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                target.open = true;
+                target.classList.remove('hidden');
+                target.closest('[data-faq-section]')?.classList.remove('hidden');
+                target.scrollIntoView({ block: 'start', behavior: shouldReduceMotion ? 'auto' : 'smooth' });
+            }
+        };
+
+        window.addEventListener('hashchange', openFaqHashTarget);
+        openFaqHashTarget();
     }
 
     const contactChatButton = document.querySelector('[data-contact-chat-launch]');
