@@ -1750,6 +1750,8 @@ return array_replace_recursive($en, [
         'close_label' => 'नोटिस बंद करें',
     ],
     'dashboard' => [
+        'preview_title' => 'ट्रेडिंग डैशबोर्ड',
+        'preview_subtitle' => 'अकाउंट, पेआउट और प्रगति एक जगह देखें।',
         'settings' => [
             'preferences_copy' => 'डैशबोर्ड पहले से locale-aware है, इसलिए जैसे-जैसे और समर्थित भाषाएँ जुड़ती हैं, भाषा बदलना लगातार एक जैसा रहेगा।',
         ],

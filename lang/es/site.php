@@ -1886,7 +1886,7 @@ return [
 
     'dashboard' => [
         'preview_title' => 'Dashboard de Trading',
-        'preview_subtitle' => 'Sigue cuentas de challenge vinculadas, metricas sincronizadas, ventanas de payout y estado de progresion desde un solo espacio.',
+        'preview_subtitle' => 'Cuentas, payouts y progresión en un solo espacio.',
         'sidebar_label' => 'Espacio del trader',
         'simulated_badge' => 'Vista de cuenta de evaluación simulada',
         'status_badge' => 'Vista previa de sincronización por intervalos',

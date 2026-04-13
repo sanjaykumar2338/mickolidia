@@ -1886,7 +1886,7 @@ return [
 
     'dashboard' => [
         'preview_title' => 'Trading-Dashboard',
-        'preview_subtitle' => 'Verfolge verknüpfte Challenge-Konten, synchronisierte Performance-Metriken, Auszahlungsfenster und Fortschrittsstatus an einem Ort.',
+        'preview_subtitle' => 'Konten, Auszahlungen und Fortschritt an einem Ort verfolgen.',
         'sidebar_label' => 'Trader-Arbeitsbereich',
         'simulated_badge' => 'Ansicht eines simulierten Evaluationskontos',
         'status_badge' => 'Intervall-Sync-Vorschau',

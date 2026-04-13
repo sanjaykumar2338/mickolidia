@@ -1750,6 +1750,8 @@ return array_replace_recursive($en, [
         'close_label' => 'Chiudi avviso',
     ],
     'dashboard' => [
+        'preview_title' => 'Dashboard di Trading',
+        'preview_subtitle' => 'Account, payout e progressione in un solo spazio.',
         'settings' => [
             'preferences_copy' => 'La dashboard è già locale-aware, quindi il cambio lingua resta coerente man mano che vengono aggiunte altre lingue supportate.',
         ],

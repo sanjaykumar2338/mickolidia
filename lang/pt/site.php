@@ -1750,6 +1750,8 @@ return array_replace_recursive($en, [
         'close_label' => 'Fechar aviso',
     ],
     'dashboard' => [
+        'preview_title' => 'Dashboard de Trading',
+        'preview_subtitle' => 'Contas, payouts e progresso num só espaço.',
         'settings' => [
             'preferences_copy' => 'O dashboard já é locale-aware, por isso a mudança de idioma mantém-se consistente à medida que são adicionados mais idiomas suportados.',
         ],

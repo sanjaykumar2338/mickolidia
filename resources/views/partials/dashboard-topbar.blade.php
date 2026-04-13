@@ -9,14 +9,16 @@
 @endphp
 
 <header class="sticky top-0 z-30 border-b border-white/6 bg-slate-950/82 px-4 py-5 backdrop-blur-xl sm:px-6 lg:px-8">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="min-w-0">
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div class="min-w-0 lg:max-w-[38rem] 2xl:max-w-[42rem]">
             <span class="section-label">{{ __('site.public_layout.preview_badge') }}</span>
             <h1 class="mt-4 text-3xl font-semibold text-white">@yield('dashboard-title', __('site.dashboard.preview_title'))</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-7 text-slate-400">@yield('dashboard-subtitle', __('site.dashboard.preview_subtitle'))</p>
+            <p class="mt-2 max-w-2xl text-sm leading-7 text-slate-400">@yield('dashboard-subtitle', __('site.dashboard.preview_subtitle'))</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3 lg:max-w-[56rem] lg:justify-end">
+            <x-language-switcher compact class="order-first hidden shrink-0 lg:block" />
+
             @if (! empty($primaryAccount))
                 <div class="{{ $syncToneClasses[$primaryAccount['status_tone'] ?? 'slate'] ?? $syncToneClasses['slate'] }} rounded-full border px-4 py-2 text-sm">
                     {{ $primaryAccount['challenge_status'] }}
@@ -32,8 +34,6 @@
                     {{ __('site.dashboard.status_badge') }}
                 </div>
             @endif
-
-            <x-language-switcher class="hidden lg:block" />
         </div>
     </div>
 </header>

@@ -32,7 +32,7 @@
     ];
 @endphp
 
-<aside class="border-b border-white/6 bg-slate-950/86 px-4 py-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-5">
+<aside class="dashboard-scrollbar border-b border-white/6 bg-slate-950/86 px-4 py-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-5">
     <div class="lg:hidden" data-mobile-nav>
         <div class="rounded-[1.6rem] border border-white/8 bg-slate-950/92 p-3 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
             <div class="flex items-center justify-between gap-3">

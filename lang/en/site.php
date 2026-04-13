@@ -1886,7 +1886,7 @@ return [
 
     'dashboard' => [
         'preview_title' => 'Trading Dashboard',
-        'preview_subtitle' => 'Track linked challenge accounts, synced performance metrics, payout timing, and progression status from one workspace.',
+        'preview_subtitle' => 'Track accounts, payouts, and progression in one workspace.',
         'sidebar_label' => 'Trader workspace',
         'simulated_badge' => 'Simulated evaluation account view',
         'status_badge' => 'Interval sync preview',

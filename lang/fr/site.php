@@ -1510,6 +1510,8 @@ return array_replace_recursive($en, [
         ],
     ],
     'dashboard' => [
+        'preview_title' => 'Dashboard de Trading',
+        'preview_subtitle' => 'Comptes, payouts et progression au même endroit.',
         'settings' => [
             'preferences_copy' => 'Le dashboard est deja adapte aux locales afin que le changement de langue reste coherent a mesure que de nouvelles langues prises en charge sont ajoutees.',
         ],

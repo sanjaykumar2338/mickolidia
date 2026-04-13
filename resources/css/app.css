@@ -93,6 +93,45 @@ h6 {
     background: rgba(148, 163, 184, 0.24);
 }
 
+.dashboard-scrollbar-root,
+.dashboard-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(244, 183, 74, 0.48) rgba(5, 11, 19, 0.94);
+}
+
+.dashboard-scrollbar-root::-webkit-scrollbar,
+.dashboard-scrollbar::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.dashboard-scrollbar-root::-webkit-scrollbar-track,
+.dashboard-scrollbar::-webkit-scrollbar-track {
+    background:
+        linear-gradient(180deg, rgba(6, 11, 20, 0.98), rgba(4, 8, 15, 0.96));
+    border-left: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.dashboard-scrollbar-root::-webkit-scrollbar-thumb,
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+    min-height: 4rem;
+    border: 3px solid rgba(5, 11, 19, 0.96);
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(248, 218, 134, 0.88), rgba(244, 183, 74, 0.48) 48%, rgba(148, 163, 184, 0.34));
+}
+
+.dashboard-scrollbar-root::-webkit-scrollbar-thumb:hover,
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+    background:
+        linear-gradient(180deg, rgba(255, 230, 164, 0.96), rgba(244, 183, 74, 0.68) 48%, rgba(148, 163, 184, 0.44));
+}
+
+.dashboard-scrollbar-root::-webkit-scrollbar-corner,
+.dashboard-scrollbar::-webkit-scrollbar-corner {
+    background: rgba(5, 11, 19, 0.96);
+}
+
 .global-reach-panel {
     position: relative;
     background:
