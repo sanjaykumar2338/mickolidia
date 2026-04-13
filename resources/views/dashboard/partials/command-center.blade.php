@@ -21,7 +21,7 @@
         </p>
     </div>
 
-    <div class="mt-6 grid items-stretch gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(0,0.95fr)_minmax(0,0.95fr)_minmax(0,1.12fr)_minmax(18rem,1fr)]">
+    <div class="mt-6 grid items-stretch gap-4 lg:grid-cols-3">
         <article class="flex h-full flex-col rounded-[1.75rem] border border-amber-400/14 bg-amber-400/8 p-5 shadow-[0_22px_60px_rgba(2,6,23,0.26)]">
             <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('Current balance') }}</p>
             <p class="mt-4 text-3xl font-semibold text-white sm:text-4xl">{{ $insights['balance'] }}</p>
@@ -135,26 +135,5 @@
             @endif
         </article>
 
-        <article id="mt5-access-panel" class="flex h-full flex-col rounded-[1.75rem] border border-amber-400/16 bg-gradient-to-b from-amber-400/10 to-black/18 p-5">
-            <div class="flex items-start gap-3">
-                <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-amber-300/24 bg-amber-300/12 text-amber-100">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M14.6 9.4a4.6 4.6 0 1 1-1.7-3.57l1.94 1.94h2.06v2.06h2.05v2.05h2.05v2.2h-4.37l-2.03-2.03a4.5 4.5 0 0 1-1.7.33Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                        <path d="M7.8 12.1h.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
-                    </svg>
-                </span>
-                <span>
-                    <span class="block text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('MT5 access') }}</span>
-                    <span class="mt-2 block text-xl font-semibold text-white">{{ $mt5Access['title'] }}</span>
-                    <span class="mt-2 block text-sm leading-6 text-amber-50/70">{{ $mt5Access['message'] }}</span>
-                </span>
-            </div>
-
-            <button type="button" data-dashboard-modal-open="credentials" class="mt-auto inline-flex w-full items-center justify-center rounded-full border border-amber-300/28 bg-amber-300/14 px-4 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/20">
-                {{ __('Open credentials panel') }}
-            </button>
-
-            <p class="mt-5 text-xs leading-6 text-amber-50/65">{{ $mt5Access['privacy_note'] }}</p>
-        </article>
     </div>
 </section>

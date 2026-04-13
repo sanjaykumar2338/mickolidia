@@ -730,7 +730,7 @@ class DashboardController extends Controller
                 'open_trades' => 0,
                 'top_instruments' => [],
                 'instrument_ring_style' => 'background: conic-gradient(rgba(148, 163, 184, 0.18) 0% 100%);',
-                'instrument_message' => __('Instrument distribution appears once trade rows are synced.'),
+                'instrument_message' => __('Instrument distribution activates once detailed MT5 trade rows are synced.'),
                 'certificate_url' => null,
             ];
         }
@@ -764,7 +764,7 @@ class DashboardController extends Controller
             'top_instruments' => $instrumentSummary['items'],
             'instrument_ring_style' => $instrumentSummary['ring_style'],
             'instrument_message' => $instrumentSummary['items'] === []
-                ? __('Instrument distribution appears once trade rows are synced.')
+                ? __('Instrument distribution activates once detailed MT5 trade rows are synced.')
                 : __('Top symbols by synced trade-row count.'),
             'certificate_url' => $this->certificateUrl($account),
         ];
@@ -963,7 +963,7 @@ class DashboardController extends Controller
                 'closed' => 0,
                 'both' => 0,
             ],
-            'message' => __('Detailed trade rows are not available in the current synced snapshot for this account yet.'),
+            'message' => __('Trade visualization activates once detailed MT5 trade rows are synced for this account. Daily activity counts may already appear in the summary above.'),
             'source' => __('Snapshot payload'),
         ];
 
@@ -1370,9 +1370,9 @@ class DashboardController extends Controller
     /**
      * @return array<string, float|string|null>
      */
-    private function challengeMetrics(TradingAccount $account): array
+    private function challengeMetrics(TradingAccount $account, array $snapshot = []): array
     {
-        return app(ChallengeAccountMetrics::class)->resolve($account);
+        return app(ChallengeAccountMetrics::class)->resolve($account, $snapshot);
     }
 
     /**
@@ -1442,19 +1442,21 @@ class DashboardController extends Controller
             ]);
         }
 
-        $phaseStartingBalance = (float) $this->challengeMetrics($account)['challenge_starting_balance'];
-
-        return $snapshots->map(function ($snapshot) use ($phaseStartingBalance): array {
+        return $snapshots->map(function ($snapshot) use ($account): array {
             $timestamp = Carbon::parse($snapshot->snapshot_at);
-            $balance = round($phaseStartingBalance + (float) $snapshot->total_profit, 2);
-            $equity = round($balance + (float) $snapshot->profit_loss, 2);
+            $challengeMetrics = $this->challengeMetrics($account, [
+                'balance' => $snapshot->balance,
+                'equity' => $snapshot->equity,
+                'profit_loss' => $snapshot->profit_loss,
+                'total_profit' => $snapshot->total_profit,
+            ]);
 
             return [
                 'label' => $timestamp->locale(app()->getLocale())->translatedFormat('M d'),
                 'date_iso' => $timestamp->toDateString(),
-                'balance' => $balance,
-                'equity' => $equity,
-                'total_profit' => round((float) $snapshot->total_profit, 2),
+                'balance' => round((float) $challengeMetrics['challenge_balance'], 2),
+                'equity' => round((float) $challengeMetrics['challenge_equity'], 2),
+                'total_profit' => round((float) $challengeMetrics['realized_profit'], 2),
             ];
         });
     }

@@ -326,13 +326,15 @@ class ChallengeDashboardTest extends TestCase
             'max_drawdown_limit_amount' => 400,
         ]);
 
-        $this->pushMetrics($account, '2026-04-05 09:00:00', 10562.64, 10512.64, [
-            'open_profit' => -50,
-            'total_profit' => 562.64,
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10562.64, 10596.80, [
+            'open_profit' => 34.16,
+            'total_profit' => 5562.64,
             'trade_count' => 0,
         ])->assertOk();
 
         $account->refresh();
+
+        $this->assertSame('562.64', (string) $account->total_profit);
 
         $this->actingAs($account->user)
             ->get(route('dashboard.accounts'))
@@ -342,7 +344,7 @@ class ChallengeDashboardTest extends TestCase
             ->assertSee('Current balance')
             ->assertSee('$5,562.64')
             ->assertSee('Challenge equity')
-            ->assertSee('$5,512.64')
+            ->assertSee('$5,596.80')
             ->assertSee('Recognized profit')
             ->assertSee('$562.64')
             ->assertDontSee('$10,562.64');
@@ -456,6 +458,7 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('BTCUSD')
                 ->assertSee('NVDA')
                 ->assertSee('MT5 access')
+                ->assertDontSee('Open credentials panel')
                 ->assertSee('MT5 account login')
                 ->assertSee('889900')
                 ->assertSee('Wolforix-Demo')
