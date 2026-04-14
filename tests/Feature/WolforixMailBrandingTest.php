@@ -11,6 +11,7 @@ use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
+use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
@@ -90,5 +91,19 @@ class WolforixMailBrandingTest extends TestCase
             $this->assertStringContainsString('Wolforix', $html, $mailable::class);
             $this->assertStringContainsString($supportEmail, $html, $mailable::class);
         }
+
+        $passwordResetHtml = view('emails.password-reset', [
+            'user' => $user,
+            'actionUrl' => route('password.reset', [
+                'token' => 'reset-token-123',
+                'email' => $user->email,
+            ]),
+            'expireMinutes' => 60,
+        ])->render();
+
+        $this->assertStringContainsString('background-color:#050b13', $passwordResetHtml, WolforixResetPasswordNotification::class);
+        $this->assertStringContainsString('Trade Fearlessly. Win Real.', $passwordResetHtml, WolforixResetPasswordNotification::class);
+        $this->assertStringContainsString('Reset your Wolforix password', $passwordResetHtml, WolforixResetPasswordNotification::class);
+        $this->assertStringContainsString($supportEmail, $passwordResetHtml, WolforixResetPasswordNotification::class);
     }
 }

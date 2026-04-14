@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\WolforixResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -132,5 +133,10 @@ class User extends Authenticatable
     public function latestChallengePurchase(): HasOne
     {
         return $this->hasOne(ChallengePurchase::class)->latestOfMany();
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new WolforixResetPasswordNotification($token));
     }
 }

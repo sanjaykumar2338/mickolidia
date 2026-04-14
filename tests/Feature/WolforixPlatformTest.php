@@ -7,6 +7,7 @@ use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
+use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Invoice;
@@ -17,7 +18,6 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
 use App\Support\PublicContentIndex;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -469,7 +469,7 @@ class WolforixPlatformTest extends TestCase
 
         $resetToken = null;
 
-        Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use (&$resetToken): bool {
+        Notification::assertSentTo($user, WolforixResetPasswordNotification::class, function (WolforixResetPasswordNotification $notification) use (&$resetToken): bool {
             $resetToken = $notification->token;
 
             return true;
