@@ -474,6 +474,7 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('All')
                 ->assertSee('Active')
                 ->assertSee('Inactive')
+                ->assertSee('Logout')
                 ->assertSee('Account summary')
                 ->assertSee('Credentials')
                 ->assertSee('Share metrics')

@@ -91,6 +91,21 @@
                             </a>
                         @endforeach
                     </nav>
+
+                    <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                        @csrf
+                        <button
+                            type="submit"
+                            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-white/6 bg-white/2 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                        >
+                            <span>{{ __('site.nav.logout') }}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 17l5-5-5-5" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H4" />
+                            </svg>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -127,6 +142,21 @@
                 </a>
             @endforeach
         </nav>
+
+        <form method="POST" action="{{ route('logout') }}" class="mt-3">
+            @csrf
+            <button
+                type="submit"
+                class="flex w-full items-center justify-between rounded-2xl border border-white/6 bg-white/2 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+            >
+                <span>{{ __('site.nav.logout') }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 17l5-5-5-5" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H4" />
+                </svg>
+            </button>
+        </form>
 
         @if (! empty($primaryAccount))
             <div class="mt-6 space-y-6">
