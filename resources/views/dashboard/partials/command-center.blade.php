@@ -50,7 +50,7 @@
             </div>
 
             @if (! empty($insights['certificate_url']))
-                <a href="{{ $insights['certificate_url'] }}" target="_blank" rel="noopener" class="mt-4 inline-flex w-full items-center justify-center rounded-full border border-amber-300/28 bg-amber-300/14 px-4 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/20">
+                <a href="{{ $insights['certificate_url'] }}" class="mt-4 inline-flex w-full items-center justify-center rounded-full border border-amber-300/28 bg-amber-300/14 px-4 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/20">
                     {{ __('Download certificate') }}
                 </a>
             @endif

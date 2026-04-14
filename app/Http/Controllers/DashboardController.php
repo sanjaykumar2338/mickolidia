@@ -2352,7 +2352,7 @@ class DashboardController extends Controller
             return null;
         }
 
-        return $disk->url($path);
+        return route('dashboard.certificates.download', $account);
     }
 
     private function metricTone(float $value): string

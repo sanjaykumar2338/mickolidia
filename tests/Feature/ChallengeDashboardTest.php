@@ -249,6 +249,38 @@ class ChallengeDashboardTest extends TestCase
         Mail::assertSent(ChallengePassedMail::class, 1);
     }
 
+    public function test_dashboard_certificate_download_uses_authenticated_route(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_reference' => 'WFX-CT-00001-CERT',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10400, 10380, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-06 09:00:00', 10800, 10780, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-07 09:00:00', 11050, 11020, ['trade_count' => 1])->assertOk();
+
+        $account->refresh();
+
+        $downloadUrl = route('dashboard.certificates.download', $account);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee($downloadUrl, false)
+            ->assertDontSee('/storage/certificates/', false);
+
+        $this->actingAs($account->user)
+            ->get($downloadUrl)
+            ->assertOk()
+            ->assertDownload('wolforix-certificate-wfx-ct-00001-cert.png');
+
+        $otherUser = User::factory()->create();
+
+        $this->actingAs($otherUser)
+            ->get($downloadUrl)
+            ->assertForbidden();
+    }
+
     public function test_one_step_fails_when_daily_loss_limit_is_breached(): void
     {
         $account = $this->createChallengeAccount('one_step');
