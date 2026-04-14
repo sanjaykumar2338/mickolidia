@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\ChallengeAccountDetailsMail;
+use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
@@ -1133,8 +1134,9 @@ class WolforixPlatformTest extends TestCase
         $this->assertNotNull($invoice->pdf_generated_at);
         Storage::disk('public')->assertExists((string) $invoice->pdf_path);
         $this->assertStringStartsWith('%PDF-1.4', Storage::disk('public')->get((string) $invoice->pdf_path));
-        $this->assertNotNull($account->challenge_purchase_email_sent_at);
-        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+        $this->assertNull($account->challenge_purchase_email_sent_at);
+        Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
+        Mail::assertNotSent(ChallengeAccountDetailsMail::class);
 
         $this->actingAs($user)
             ->get(route('dashboard.accounts'))
@@ -1160,7 +1162,8 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
         $this->assertSame($invoice->pdf_path, $invoice->fresh()->pdf_path);
-        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+        Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
+        Mail::assertNotSent(ChallengeAccountDetailsMail::class);
     }
 
     public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void
@@ -1437,7 +1440,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
         $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
         Storage::disk('public')->assertExists((string) Invoice::query()->where('order_id', $order->id)->value('pdf_path'));
-        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+        Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
+        Mail::assertNotSent(ChallengeAccountDetailsMail::class);
     }
 
     public function test_dashboard_uses_real_trading_account_metrics_when_available(): void
@@ -2164,6 +2168,137 @@ class WolforixPlatformTest extends TestCase
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_admin_can_save_mt5_credentials_and_trigger_purchase_credential_email_once(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'name' => 'Credential Trader',
+            'email' => 'credential-trader@example.com',
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'full_name' => $user->name,
+            'street_address' => '1 Credential Way',
+            'city' => 'Dubai',
+            'postal_code' => '00000',
+            'country' => 'AE',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 99,
+            'discount_percent' => 0,
+            'discount_amount' => 0,
+            'final_price' => 99,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_COMPLETED,
+            'metadata' => [],
+        ]);
+
+        $purchase = ChallengePurchase::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'account_status' => 'active',
+            'meta' => [],
+        ]);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'challenge_purchase_id' => $purchase->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'account_reference' => 'WFX-MT5-CREDS',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'demo',
+            'platform_status' => 'awaiting_metrics',
+            'stage' => 'Single Phase',
+            'status' => 'Active',
+            'account_type' => 'challenge',
+            'account_phase' => 'single_phase',
+            'phase_index' => 1,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'is_funded' => false,
+            'is_trial' => false,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'highest_equity_today' => 10000,
+            'daily_drawdown' => 0,
+            'daily_loss_used' => 0,
+            'max_drawdown' => 0,
+            'max_drawdown_used' => 0,
+            'profit_loss' => 0,
+            'total_profit' => 0,
+            'today_profit' => 0,
+            'drawdown_percent' => 0,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
+            'profit_target_progress_percent' => 0,
+            'daily_drawdown_limit_percent' => 4,
+            'daily_drawdown_limit_amount' => 400,
+            'max_drawdown_limit_percent' => 8,
+            'max_drawdown_limit_amount' => 800,
+            'profit_split' => 80,
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 0,
+            'sync_status' => 'pending',
+            'sync_source' => 'admin_activation',
+            'meta' => [],
+        ]);
+
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->post(route('admin.clients.credentials', $user), [
+            'account_id' => $account->id,
+            'platform_login' => '105381073',
+            'platform_account_id' => '105381073',
+            'server_name' => 'Wolforix-Demo',
+            'trading_password' => 'secret-pass',
+        ])->assertRedirect(route('admin.clients.show', ['user' => $user, 'account' => $account->id]));
+
+        $account->refresh();
+
+        $this->assertSame('105381073', $account->platform_login);
+        $this->assertSame('105381073', $account->platform_account_id);
+        $this->assertSame('Wolforix-Demo', data_get($account->meta, 'credentials.server'));
+        $this->assertSame('secret-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertNotNull($account->challenge_purchase_email_sent_at);
+
+        Mail::assertSent(ChallengeAccountDetailsMail::class, function (ChallengeAccountDetailsMail $mail) use ($user): bool {
+            return $mail->hasTo($user->email)
+                && $mail->details['login_id'] === '105381073'
+                && $mail->details['server'] === 'Wolforix-Demo'
+                && $mail->details['password'] === 'secret-pass';
+        });
+
+        $this->post(route('admin.clients.credentials', $user), [
+            'account_id' => $account->id,
+            'platform_login' => '105381073',
+            'platform_account_id' => '105381073',
+            'server_name' => 'Wolforix-Demo',
+            'trading_password' => '',
+        ])->assertRedirect(route('admin.clients.show', ['user' => $user, 'account' => $account->id]));
+
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
     }
 
     public function test_admin_can_activate_a_pending_client_account_and_receive_mt5_metrics(): void

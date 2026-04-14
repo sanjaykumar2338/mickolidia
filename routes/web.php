@@ -92,6 +92,7 @@ Route::prefix('admin')->group(function (): void {
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('admin.logout');
         Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
         Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
+        Route::post('/client/{user}/credentials', [AdminClientController::class, 'updateCredentials'])->name('admin.clients.credentials');
         Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
     });
 });

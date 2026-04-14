@@ -6,7 +6,9 @@ use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
+use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
+use Illuminate\Support\Arr;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -188,6 +190,79 @@ class AdminClientController extends Controller
                 'name' => $user->name,
                 'reference' => $account->account_reference,
             ]));
+    }
+
+    public function updateCredentials(Request $request, User $user, ChallengeLifecycleMailer $mailer): RedirectResponse
+    {
+        $validated = $request->validate([
+            'account_id' => ['required', 'integer'],
+            'platform_login' => ['nullable', 'string', 'max:255'],
+            'platform_account_id' => ['nullable', 'string', 'max:255'],
+            'server_name' => ['nullable', 'string', 'max:255'],
+            'trading_password' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        /** @var TradingAccount $account */
+        $account = TradingAccount::query()
+            ->where('user_id', $user->id)
+            ->where('id', (int) $validated['account_id'])
+            ->firstOrFail();
+
+        $platformLogin = trim((string) ($validated['platform_login'] ?? ''));
+        $platformAccountId = trim((string) ($validated['platform_account_id'] ?? ''));
+
+        if ($platformLogin === '' && $platformAccountId !== '') {
+            $platformLogin = $platformAccountId;
+        }
+
+        if ($platformAccountId === '' && $platformLogin !== '') {
+            $platformAccountId = $platformLogin;
+        }
+
+        $meta = $account->meta ?? [];
+        $credentials = is_array(Arr::get($meta, 'credentials')) ? Arr::get($meta, 'credentials') : [];
+
+        $serverName = trim((string) ($validated['server_name'] ?? ''));
+        $tradingPassword = trim((string) ($validated['trading_password'] ?? ''));
+
+        if ($serverName !== '') {
+            $credentials['server'] = $serverName;
+            $credentials['mt5_server'] = $serverName;
+            $meta['mt5_server'] = $serverName;
+        }
+
+        if ($tradingPassword !== '') {
+            $credentials['password'] = $tradingPassword;
+            $credentials['trading_password'] = $tradingPassword;
+        }
+
+        if ($serverName !== '' || $tradingPassword !== '') {
+            $credentials['last_updated_at'] = now()->toIso8601String();
+            $meta['credentials'] = $credentials;
+        }
+
+        $account->forceFill(array_filter([
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => $platformLogin !== '' ? $platformLogin : null,
+            'platform_account_id' => $platformAccountId !== '' ? $platformAccountId : null,
+            'meta' => $meta,
+        ], static fn ($value) => $value !== null))->save();
+
+        $freshAccount = $account->fresh(['user', 'order', 'challengePlan', 'challengePurchase']) ?? $account;
+        $emailWasSent = $mailer->sendPurchaseCredentialsIfNeeded($freshAccount);
+
+        $status = $freshAccount->fresh()?->challenge_purchase_email_sent_at !== null
+            ? __('MT5 credentials were saved. The credential email has already been sent for this account.')
+            : __('MT5 credentials were saved. The credential email will send once the login, server, and trading password are all available.');
+
+        if ($emailWasSent) {
+            $status = __('MT5 credentials were saved and the purchase credential email was sent.');
+        }
+
+        return redirect()
+            ->route('admin.clients.show', ['user' => $user, 'account' => $account->id])
+            ->with('status', $status);
     }
 
     private function clientTableRow(User $user): array

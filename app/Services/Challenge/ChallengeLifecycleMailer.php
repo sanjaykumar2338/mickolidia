@@ -3,6 +3,7 @@
 namespace App\Services\Challenge;
 
 use App\Mail\ChallengeAccountDetailsMail;
+use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Models\Order;
@@ -14,7 +15,53 @@ use Illuminate\Support\Facades\Mail;
 
 class ChallengeLifecycleMailer
 {
-    public function sendPurchaseCredentialsIfNeeded(TradingAccount $account): void
+    public function sendPurchaseConfirmationIfNeeded(Order $order): bool
+    {
+        $payload = DB::transaction(function () use ($order): ?array {
+            /** @var Order|null $freshOrder */
+            $freshOrder = Order::query()
+                ->with(['challengePurchase', 'user'])
+                ->lockForUpdate()
+                ->find($order->id);
+
+            if (! $freshOrder instanceof Order || ! $freshOrder->challengePurchase) {
+                return null;
+            }
+
+            $recipient = $this->recipientForOrder($freshOrder);
+
+            if ($recipient === null) {
+                return null;
+            }
+
+            $metadata = $freshOrder->metadata ?? [];
+
+            if (Arr::has($metadata, 'emails.purchase_confirmation_sent_at')) {
+                return null;
+            }
+
+            Arr::set($metadata, 'emails.purchase_confirmation_sent_at', now()->toIso8601String());
+
+            $freshOrder->forceFill([
+                'metadata' => $metadata,
+            ])->save();
+
+            return [
+                'email' => $recipient['email'],
+                'order' => $freshOrder->fresh(['challengePurchase', 'user']) ?? $freshOrder,
+            ];
+        });
+
+        if ($payload === null) {
+            return false;
+        }
+
+        Mail::to($payload['email'])->send(new ChallengePurchaseConfirmationMail($payload['order']));
+
+        return true;
+    }
+
+    public function sendPurchaseCredentialsIfNeeded(TradingAccount $account): bool
     {
         $payload = DB::transaction(function () use ($account): ?array {
             /** @var TradingAccount|null $freshAccount */
@@ -33,6 +80,12 @@ class ChallengeLifecycleMailer
                 return null;
             }
 
+            $details = $this->readyCredentialDetails($freshAccount);
+
+            if ($details === null) {
+                return null;
+            }
+
             $freshAccount->forceFill([
                 'challenge_purchase_email_sent_at' => now(),
             ])->save();
@@ -42,12 +95,12 @@ class ChallengeLifecycleMailer
                 'trader_name' => $recipient['name'],
                 'account' => $freshAccount->fresh(['user', 'order', 'challengePlan', 'challengePurchase']) ?? $freshAccount,
                 'order' => $freshAccount->order,
-                'details' => $this->credentialDetails($freshAccount),
+                'details' => $details,
             ];
         });
 
         if ($payload === null) {
-            return;
+            return false;
         }
 
         Mail::to($payload['email'])->send(new ChallengeAccountDetailsMail(
@@ -56,6 +109,8 @@ class ChallengeLifecycleMailer
             order: $payload['order'],
             details: $payload['details'],
         ));
+
+        return true;
     }
 
     public function sendPhaseProgressIfNeeded(TradingAccount $account): void
@@ -151,31 +206,61 @@ class ChallengeLifecycleMailer
     }
 
     /**
+     * @return array{email:string}|null
+     */
+    private function recipientForOrder(Order $order): ?array
+    {
+        $user = $order->user;
+        $email = filled($order->email)
+            ? (string) $order->email
+            : ($user instanceof User && filled($user->email) ? (string) $user->email : null);
+
+        if ($email === null) {
+            return null;
+        }
+
+        return [
+            'email' => $email,
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function credentialDetails(TradingAccount $account): array
     {
-        $login = filled($account->platform_login)
-            ? (string) $account->platform_login
-            : (filled($account->platform_account_id) ? (string) $account->platform_account_id : 'Pending provisioning');
-        $server = $this->metadataValue($account, [
-            'mt5_server',
-            'server_name',
-            'server',
-            'platform_server',
-            'broker_server',
-            'credentials.server',
-            'credentials.mt5_server',
-        ]) ?: ($account->platform_environment ? $this->humanize((string) $account->platform_environment) : 'Pending provisioning');
-        $password = $this->metadataValue($account, [
-            'trading_password',
-            'password',
-            'mt5_password',
-            'platform_password',
-            'credentials.password',
-            'credentials.trading_password',
-            'credentials.mt5_password',
-        ]) ?: 'Provided separately by Wolforix support';
+        $deliverableDetails = $this->readyCredentialDetails($account);
+
+        if ($deliverableDetails !== null) {
+            return $deliverableDetails;
+        }
+
+        $login = $this->accountLogin($account) ?? 'Pending provisioning';
+        $server = $this->accountServer($account) ?: ($account->platform_environment ? $this->humanize((string) $account->platform_environment) : 'Pending provisioning');
+        $password = $this->accountPassword($account) ?: 'Provided separately by Wolforix support';
+
+        return [
+            'platform' => (string) ($account->platform ?: 'MT5'),
+            'login_id' => $login,
+            'password' => $password,
+            'server' => $server,
+            'account_type' => $this->planLabel($account),
+            'account_size' => $this->money((float) ($account->account_size ?: $account->starting_balance ?: 0)),
+        ];
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private function readyCredentialDetails(TradingAccount $account): ?array
+    {
+        $login = $this->accountLogin($account);
+        $server = $this->accountServer($account);
+        $password = $this->accountPassword($account);
+
+        if (! filled($login) || ! filled($server) || ! filled($password)) {
+            return null;
+        }
 
         return [
             'platform' => (string) ($account->platform ?: 'MT5'),
@@ -219,6 +304,45 @@ class ChallengeLifecycleMailer
         }
 
         return null;
+    }
+
+    private function accountLogin(TradingAccount $account): ?string
+    {
+        if (filled($account->platform_login)) {
+            return (string) $account->platform_login;
+        }
+
+        if (filled($account->platform_account_id)) {
+            return (string) $account->platform_account_id;
+        }
+
+        return null;
+    }
+
+    private function accountServer(TradingAccount $account): ?string
+    {
+        return $this->metadataValue($account, [
+            'mt5_server',
+            'server_name',
+            'server',
+            'platform_server',
+            'broker_server',
+            'credentials.server',
+            'credentials.mt5_server',
+        ]);
+    }
+
+    private function accountPassword(TradingAccount $account): ?string
+    {
+        return $this->metadataValue($account, [
+            'trading_password',
+            'password',
+            'mt5_password',
+            'platform_password',
+            'credentials.password',
+            'credentials.trading_password',
+            'credentials.mt5_password',
+        ]);
     }
 
     private function planLabel(TradingAccount $account): string

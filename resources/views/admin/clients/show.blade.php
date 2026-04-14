@@ -227,6 +227,124 @@
         </section>
     </div>
 
+    @if ($selectedAccount !== null && $selectedAccount->platform_slug === 'mt5')
+        @php
+            $storedServerName = data_get($selectedAccount->meta ?? [], 'credentials.server')
+                ?? data_get($selectedAccount->meta ?? [], 'mt5_server');
+            $hasStoredPassword = filled(data_get($selectedAccount->meta ?? [], 'credentials.password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'credentials.trading_password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'trading_password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'mt5_password'));
+        @endphp
+
+        <section class="mt-8 surface-panel rounded-[2rem] p-6">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('MT5 delivery') }}</p>
+                    <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('Credential handoff') }}</h2>
+                </div>
+                <p class="max-w-3xl text-sm leading-7 text-slate-400">
+                    {{ __('Use this panel after the broker-side MT5 account is ready. Saving the login, server, and trading password here lets Wolforix send the purchase credential email once and prevents duplicate sends later.') }}
+                </p>
+            </div>
+
+            <div class="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                <div class="surface-card rounded-[1.8rem] p-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Current handoff state') }}</p>
+                    <dl class="mt-4 grid gap-3 text-sm">
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('Client email') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $client['email'] }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('MT5 login') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->platform_login ?: ($selectedAccount->platform_account_id ?: 'Not saved yet') }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('Server name') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $storedServerName ?: 'Not saved yet' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('Trading password') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $hasStoredPassword ? 'Stored securely for delivery' : 'Not saved yet' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('Credential email') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->challenge_purchase_email_sent_at?->format('Y-m-d H:i') ?: 'Not sent yet' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <form method="POST" action="{{ route('admin.clients.credentials', $client['id']) }}" class="surface-card rounded-[1.8rem] p-5">
+                    @csrf
+                    <input type="hidden" name="account_id" value="{{ $selectedAccount->id }}">
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <label class="block">
+                            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('MT5 login') }}</span>
+                            <input
+                                type="text"
+                                name="platform_login"
+                                value="{{ old('platform_login', $selectedAccount->platform_login ?? $selectedAccount->platform_account_id) }}"
+                                class="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-0"
+                                placeholder="105381073"
+                            >
+                        </label>
+
+                        <label class="block">
+                            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Platform account ID') }}</span>
+                            <input
+                                type="text"
+                                name="platform_account_id"
+                                value="{{ old('platform_account_id', $selectedAccount->platform_account_id ?? $selectedAccount->platform_login) }}"
+                                class="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-0"
+                                placeholder="105381073"
+                            >
+                        </label>
+
+                        <label class="block sm:col-span-2">
+                            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Server name') }}</span>
+                            <input
+                                type="text"
+                                name="server_name"
+                                value="{{ old('server_name', $storedServerName) }}"
+                                class="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-0"
+                                placeholder="Wolforix-Demo"
+                            >
+                        </label>
+
+                        <label class="block sm:col-span-2">
+                            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Trading password') }}</span>
+                            <input
+                                type="password"
+                                name="trading_password"
+                                value=""
+                                class="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-0"
+                                placeholder="{{ $hasStoredPassword ? 'Leave blank to keep the current password' : 'Enter the MT5 trading password' }}"
+                            >
+                            <p class="mt-2 text-xs leading-6 text-slate-400">{{ __('Leave this blank to keep the existing stored password.') }}</p>
+                        </label>
+                    </div>
+
+                    @if ($errors->any())
+                        <div class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                            {{ __('Please review the credential fields and try again.') }}
+                        </div>
+                    @endif
+
+                    <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-sm leading-7 text-slate-400">
+                            {{ __('The purchase credential email only sends after all three values are present: MT5 login, server, and trading password.') }}
+                        </p>
+                        <button type="submit" class="rounded-full border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/18">
+                            {{ __('Save MT5 credentials') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    @endif
+
     <div class="mt-8">
         @include('dashboard.partials.trades-panel', [
             'tradesPanel' => $tradesPanel,

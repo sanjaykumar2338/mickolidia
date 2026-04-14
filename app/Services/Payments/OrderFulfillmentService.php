@@ -91,6 +91,7 @@ class OrderFulfillmentService
             ->findOrFail($result['order_id']);
 
         $this->invoiceService->ensureForOrder($fulfilledOrder);
+        $this->lifecycleMailer->sendPurchaseConfirmationIfNeeded($fulfilledOrder);
 
         $account = $fulfilledOrder->challengePurchase?->tradingAccounts
             ->where('id', $result['account_id'])

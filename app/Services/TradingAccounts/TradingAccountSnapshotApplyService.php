@@ -148,6 +148,7 @@ class TradingAccountSnapshotApplyService
 
         $this->finalStateMailer->sendIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPhaseProgressIfNeeded($updatedAccount);
+        $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($updatedAccount);
 
         return $updatedAccount;
     }

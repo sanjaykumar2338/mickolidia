@@ -696,7 +696,7 @@ class DashboardController extends Controller
                 [
                     'label' => __('Trading password'),
                     'value' => __('Secure disclosure not enabled'),
-                    'hint' => __('Passwords are not stored or displayed in this dashboard.'),
+                    'hint' => __('Passwords stay hidden in this dashboard and are delivered through controlled channels only.'),
                     'is_secret' => true,
                 ],
                 [
@@ -711,7 +711,7 @@ class DashboardController extends Controller
                     'hint' => __('Internal Wolforix challenge reference.'),
                 ],
             ],
-            'privacy_note' => __('Password fields stay hidden unless a secure credential delivery model is added for this client account.'),
+            'privacy_note' => __('Password fields stay hidden in the dashboard even when MT5 credentials are managed for this account.'),
         ];
     }
 
