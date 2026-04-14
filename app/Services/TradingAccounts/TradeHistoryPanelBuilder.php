@@ -161,10 +161,13 @@ class TradeHistoryPanelBuilder
         }
 
         $snapshotTradePayload = $this->latestSnapshotTradePayload($account);
+        $snapshotReferenceAt = $snapshotTradePayload['snapshot_at'] instanceof Carbon
+            ? $snapshotTradePayload['snapshot_at']->copy()
+            : null;
         $openRows = collect($snapshotTradePayload['open_positions'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, true));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, true, $snapshotReferenceAt));
         $closedRows = collect($snapshotTradePayload['trade_history'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, false));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, false, $snapshotReferenceAt));
 
         $rows = $openRows
             ->concat($closedRows)
@@ -207,7 +210,7 @@ class TradeHistoryPanelBuilder
     /**
      * @return array<string, mixed>
      */
-    private function buildTradeRow(array $row, bool $isOpen): array
+    private function buildTradeRow(array $row, bool $isOpen, ?Carbon $snapshotReferenceAt = null): array
     {
         $openedAt = $this->tradeOpenTimestamp($row);
         $closedAt = $isOpen ? null : $this->tradeCloseTimestamp($row);
@@ -238,7 +241,7 @@ class TradeHistoryPanelBuilder
             'swap' => $swap !== null ? $this->formatMoney($swap) : null,
             'net_result' => $netResult !== null ? $this->formatMoney($netResult) : null,
             'net_result_tone' => $this->metricTone($netResult ?? 0),
-            'duration' => $this->formatTradeDuration($openedAt, $closedAt, $isOpen),
+            'duration' => $this->formatTradeDuration($openedAt, $closedAt, $isOpen, $snapshotReferenceAt),
             'sort_timestamp' => $closedAt?->getTimestamp() ?? $openedAt?->getTimestamp() ?? 0,
         ];
     }
@@ -536,7 +539,7 @@ class TradeHistoryPanelBuilder
             return __('Symbol #:value', ['value' => $symbol]);
         }
 
-        return (string) $symbol;
+        return trim((string) $symbol);
     }
 
     private function tradeCountValue(array $row): int
@@ -883,13 +886,23 @@ class TradeHistoryPanelBuilder
         return $value?->locale(app()->getLocale())->translatedFormat('M d, Y H:i') ?? __('—');
     }
 
-    private function formatTradeDuration(?Carbon $openedAt, ?Carbon $closedAt, bool $isOpen): ?string
+    private function formatTradeDuration(?Carbon $openedAt, ?Carbon $closedAt, bool $isOpen, ?Carbon $snapshotReferenceAt = null): ?string
     {
         if (! $openedAt instanceof Carbon) {
             return null;
         }
 
-        $endedAt = $closedAt instanceof Carbon ? $closedAt : ($isOpen ? now() : null);
+        $endedAt = $closedAt instanceof Carbon ? $closedAt : null;
+
+        if (! $endedAt instanceof Carbon && $isOpen) {
+            foreach ([$snapshotReferenceAt, now()] as $candidate) {
+                if ($candidate instanceof Carbon && $candidate->gte($openedAt)) {
+                    $endedAt = $endedAt instanceof Carbon && $endedAt->gt($candidate)
+                        ? $endedAt
+                        : $candidate;
+                }
+            }
+        }
 
         if (! $endedAt instanceof Carbon || $endedAt->lt($openedAt)) {
             return null;

@@ -157,42 +157,42 @@
 
         <div class="mt-5 hidden overflow-hidden rounded-[1.7rem] border border-white/8 bg-black/18 md:block">
             <div class="dashboard-table-wrap overflow-x-auto">
-                <table class="min-w-[980px] w-full divide-y divide-white/8 text-left text-sm">
+                <table class="min-w-[1160px] w-full divide-y divide-white/8 text-left text-sm">
                     <thead class="bg-white/4 text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
                         <tr>
-                            <th class="px-4 py-4">{{ __('Ticket') }}</th>
-                            <th class="px-4 py-4">{{ __('Symbol') }}</th>
-                            <th class="px-4 py-4">{{ __('Side') }}</th>
-                            <th class="px-4 py-4">{{ __('Status') }}</th>
-                            <th class="px-4 py-4">{{ __('Open date') }}</th>
-                            <th class="px-4 py-4">{{ __('Close date') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Ticket') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Symbol') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Side') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Status') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Open date') }}</th>
+                            <th class="px-4 py-4 whitespace-nowrap">{{ __('Close date') }}</th>
                             @if ($visibleColumns['duration'])
-                                <th class="px-4 py-4">{{ __('Duration') }}</th>
+                                <th class="px-4 py-4 whitespace-nowrap">{{ __('Duration') }}</th>
                             @endif
                             @if ($visibleColumns['entry_price'])
-                                <th class="px-4 py-4 text-right">{{ __('Entry') }}</th>
+                                <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Entry') }}</th>
                             @endif
                             @if ($visibleColumns['exit_price'])
-                                <th class="px-4 py-4 text-right">{{ __('Exit') }}</th>
+                                <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Exit') }}</th>
                             @endif
-                            <th class="px-4 py-4 text-right">{{ __('Qty') }}</th>
+                            <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Qty') }}</th>
                             @if ($visibleColumns['commission'])
-                                <th class="px-4 py-4 text-right">{{ __('Commission') }}</th>
+                                <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Commission') }}</th>
                             @endif
                             @if ($visibleColumns['swap'])
-                                <th class="px-4 py-4 text-right">{{ __('Swap') }}</th>
+                                <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Swap') }}</th>
                             @endif
-                            <th class="px-4 py-4 text-right">{{ __('P&L') }}</th>
+                            <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('P&L') }}</th>
                             @if ($visibleColumns['net_result'])
-                                <th class="px-4 py-4 text-right">{{ __('Net result') }}</th>
+                                <th class="px-4 py-4 text-right whitespace-nowrap">{{ __('Net result') }}</th>
                             @endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/6">
                         @foreach ($tradesPanel['rows'] as $row)
                             <tr data-dashboard-trades-row data-trade-filter="{{ $row['filter'] }}" class="align-top text-slate-300 transition hover:bg-white/5">
-                                <td class="px-4 py-4 font-semibold text-white">{{ $row['id'] }}</td>
-                                <td class="px-4 py-4 text-white">{{ $row['symbol'] }}</td>
+                                <td class="px-4 py-4 font-semibold text-white whitespace-nowrap">{{ $row['id'] }}</td>
+                                <td class="px-4 py-4 min-w-[8rem] font-semibold text-white whitespace-nowrap">{{ $row['symbol'] }}</td>
                                 <td class="px-4 py-4">
                                     <span class="{{ $sideToneClasses[$row['side_tone']] ?? $sideToneClasses['slate'] }} inline-flex rounded-full border px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em]">
                                         {{ $row['side'] }}
@@ -203,27 +203,27 @@
                                         {{ $row['status'] }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-4">{{ $row['open_date'] }}</td>
-                                <td class="px-4 py-4">{{ $row['close_date'] }}</td>
+                                <td class="px-4 py-4 whitespace-nowrap">{{ $row['open_date'] }}</td>
+                                <td class="px-4 py-4 whitespace-nowrap">{{ $row['close_date'] }}</td>
                                 @if ($visibleColumns['duration'])
-                                    <td class="px-4 py-4">{{ $row['duration'] ?? '—' }}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap">{{ $row['duration'] ?? '—' }}</td>
                                 @endif
                                 @if ($visibleColumns['entry_price'])
-                                    <td class="px-4 py-4 text-right text-white">{{ $row['entry_price'] ?? '—' }}</td>
+                                    <td class="px-4 py-4 text-right text-white whitespace-nowrap">{{ $row['entry_price'] ?? '—' }}</td>
                                 @endif
                                 @if ($visibleColumns['exit_price'])
-                                    <td class="px-4 py-4 text-right text-white">{{ $row['exit_price'] ?? '—' }}</td>
+                                    <td class="px-4 py-4 text-right text-white whitespace-nowrap">{{ $row['exit_price'] ?? '—' }}</td>
                                 @endif
-                                <td class="px-4 py-4 text-right">{{ $row['volume'] }}</td>
+                                <td class="px-4 py-4 text-right whitespace-nowrap">{{ $row['volume'] }}</td>
                                 @if ($visibleColumns['commission'])
-                                    <td class="px-4 py-4 text-right">{{ $row['commission'] ?? '—' }}</td>
+                                    <td class="px-4 py-4 text-right whitespace-nowrap">{{ $row['commission'] ?? '—' }}</td>
                                 @endif
                                 @if ($visibleColumns['swap'])
-                                    <td class="px-4 py-4 text-right">{{ $row['swap'] ?? '—' }}</td>
+                                    <td class="px-4 py-4 text-right whitespace-nowrap">{{ $row['swap'] ?? '—' }}</td>
                                 @endif
-                                <td class="px-4 py-4 text-right font-semibold {{ $profitToneClasses[$row['profit_tone']] ?? $profitToneClasses['slate'] }}">{{ $row['profit'] }}</td>
+                                <td class="px-4 py-4 text-right font-semibold whitespace-nowrap {{ $profitToneClasses[$row['profit_tone']] ?? $profitToneClasses['slate'] }}">{{ $row['profit'] }}</td>
                                 @if ($visibleColumns['net_result'])
-                                    <td class="px-4 py-4 text-right font-semibold {{ $profitToneClasses[$row['net_result_tone']] ?? $profitToneClasses['slate'] }}">
+                                    <td class="px-4 py-4 text-right font-semibold whitespace-nowrap {{ $profitToneClasses[$row['net_result_tone']] ?? $profitToneClasses['slate'] }}">
                                         {{ $row['net_result'] ?? '—' }}
                                     </td>
                                 @endif

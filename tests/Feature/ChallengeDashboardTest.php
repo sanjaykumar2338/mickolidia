@@ -834,6 +834,55 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_dashboard_trade_panel_uses_snapshot_time_for_open_trade_duration_when_mt5_server_clock_is_ahead(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-14 09:30:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'last_synced_at' => now(),
+                'sync_source' => 'mt5_ea',
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => Carbon::parse('2026-04-14 12:30:00'),
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'today_profit' => 240,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'open_positions' => [
+                        [
+                            'position_id' => 'P-9001',
+                            'symbol' => 'USDJPY',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-14 12:15:00')->timestamp,
+                            'entry_price' => 153.245,
+                            'volume' => 0.1,
+                            'profit' => 8.40,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('USDJPY')
+                ->assertSee('00h 15m');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_dashboard_trade_panel_explains_when_activity_arrives_without_row_level_trade_payload(): void
     {
         $account = $this->createChallengeAccount('one_step', [
