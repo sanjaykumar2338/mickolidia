@@ -17,16 +17,17 @@ use App\Models\UserProfile;
 use App\Services\Pricing\ChallengePricingService;
 use App\Support\PublicContentIndex;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
 use Tests\Fixtures\FakePayPalPaymentGateway;
 use Tests\Fixtures\FakeStripePaymentGateway;
+use Tests\TestCase;
 
 class WolforixPlatformTest extends TestCase
 {
@@ -816,11 +817,11 @@ class WolforixPlatformTest extends TestCase
     {
         $this->actingAs(User::factory()->create())
             ->get(route('checkout.show', [
-            'challenge_type' => 'two_step',
-            'account_size' => 50000,
-            'currency' => 'EUR',
-            'promo_code' => config('wolforix.launch_discount.code'),
-        ]))
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'EUR',
+                'promo_code' => config('wolforix.launch_discount.code'),
+            ]))
             ->assertOk()
             ->assertSee('Complete your challenge order')
             ->assertSee('Promo code')
@@ -966,17 +967,17 @@ class WolforixPlatformTest extends TestCase
                 'currency' => 'USD',
             ]))
             ->post(route('checkout.store'), [
-            'full_name' => 'Test Trader',
-            'email' => 'trader@example.com',
-            'street_address' => '1 Market Street',
-            'city' => 'Berlin',
-            'postal_code' => '10115',
-            'country' => 'DE',
-            'challenge_type' => 'two_step',
-            'account_size' => 50000,
-            'currency' => 'USD',
-            'payment_provider' => 'stripe',
-        ]);
+                'full_name' => 'Test Trader',
+                'email' => 'trader@example.com',
+                'street_address' => '1 Market Street',
+                'city' => 'Berlin',
+                'postal_code' => '10115',
+                'country' => 'DE',
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'payment_provider' => 'stripe',
+            ]);
 
         $response
             ->assertRedirect(route('checkout.show', [
@@ -1142,6 +1143,13 @@ class WolforixPlatformTest extends TestCase
             ->assertSee($invoice->invoice_number);
 
         $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Invoice ready')
+            ->assertSee('Download Invoice')
+            ->assertSee($invoice->invoice_number);
+
+        $this->actingAs($user)
             ->get(route('dashboard.invoices.download', $invoice))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
@@ -1153,6 +1161,54 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
         $this->assertSame($invoice->pdf_path, $invoice->fresh()->pdf_path);
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+    }
+
+    public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void
+    {
+        $owner = User::factory()->create([
+            'email' => 'invoice-owner@example.com',
+        ]);
+        $otherUser = User::factory()->create([
+            'email' => 'invoice-other@example.com',
+        ]);
+
+        $order = Order::query()->create([
+            'user_id' => $owner->id,
+            'email' => $owner->email,
+            'full_name' => $owner->name,
+            'street_address' => '1 Invoice Street',
+            'city' => 'Madrid',
+            'postal_code' => '28001',
+            'country' => 'ES',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 99,
+            'discount_percent' => 0,
+            'discount_amount' => 0,
+            'final_price' => 99,
+            'payment_status' => 'paid',
+            'order_status' => 'completed',
+            'external_checkout_id' => 'cs_invoice_scope',
+            'external_payment_id' => 'pi_invoice_scope',
+        ]);
+
+        $invoice = Invoice::query()->create([
+            'invoice_number' => 'WF-SCOPE-0001',
+            'user_id' => $owner->id,
+            'order_id' => $order->id,
+            'currency' => 'USD',
+            'subtotal' => 99,
+            'tax_amount' => 0,
+            'total' => 99,
+            'status' => 'paid',
+            'issued_at' => now(),
+        ]);
+
+        $this->actingAs($otherUser)
+            ->get(route('dashboard.invoices.download', $invoice))
+            ->assertForbidden();
     }
 
     public function test_checkout_can_redirect_to_paypal_when_the_gateway_is_enabled(): void
@@ -1840,6 +1896,274 @@ class WolforixPlatformTest extends TestCase
             ])
             ->assertRedirect(route('admin.login'))
             ->assertSessionHasErrors('username');
+    }
+
+    public function test_admin_client_show_can_switch_accounts_and_review_detailed_trade_history(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+        Carbon::setTestNow(Carbon::parse('2026-04-14 12:30:00'));
+
+        try {
+            $user = User::factory()->create([
+                'name' => 'Trade Review Trader',
+                'email' => 'trade-review@example.com',
+            ]);
+
+            UserProfile::query()->create([
+                'user_id' => $user->id,
+                'country' => 'Spain',
+                'city' => 'Madrid',
+                'street_address' => '8 Trader Street',
+                'postal_code' => '28001',
+            ]);
+
+            $plan = ChallengePlan::query()->create([
+                'slug' => 'one-step-25000',
+                'name' => '1-Step 25K',
+                'account_size' => 25000,
+                'currency' => 'USD',
+                'entry_fee' => 159,
+                'profit_target' => 10,
+                'daily_loss_limit' => 4,
+                'max_loss_limit' => 8,
+                'steps' => 1,
+                'profit_share' => 80,
+                'first_payout_days' => 21,
+                'minimum_trading_days' => 3,
+                'payout_cycle_days' => 14,
+                'is_active' => true,
+            ]);
+
+            $order = Order::query()->create([
+                'user_id' => $user->id,
+                'challenge_plan_id' => $plan->id,
+                'email' => $user->email,
+                'full_name' => $user->name,
+                'street_address' => '8 Trader Street',
+                'city' => 'Madrid',
+                'postal_code' => '28001',
+                'country' => 'ES',
+                'challenge_type' => 'one_step',
+                'account_size' => 25000,
+                'currency' => 'USD',
+                'payment_provider' => 'stripe',
+                'base_price' => 199,
+                'discount_percent' => 20,
+                'discount_amount' => 40,
+                'final_price' => 159,
+                'payment_status' => 'paid',
+                'order_status' => 'completed',
+                'external_checkout_id' => 'cs_trade_review',
+                'external_payment_id' => 'pi_trade_review',
+            ]);
+
+            $purchase = ChallengePurchase::query()->create([
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'challenge_plan_id' => $plan->id,
+                'challenge_type' => 'one_step',
+                'account_size' => 25000,
+                'currency' => 'USD',
+                'account_status' => 'active',
+            ]);
+
+            $olderAccount = TradingAccount::query()->create([
+                'user_id' => $user->id,
+                'challenge_plan_id' => $plan->id,
+                'order_id' => $order->id,
+                'challenge_purchase_id' => $purchase->id,
+                'challenge_type' => 'one_step',
+                'account_size' => 25000,
+                'account_reference' => 'MT5-REVIEW-001',
+                'platform' => 'MT5',
+                'platform_slug' => 'mt5',
+                'platform_account_id' => 'MT5-001',
+                'platform_login' => '770001',
+                'platform_environment' => 'demo',
+                'platform_status' => 'connected',
+                'stage' => 'Single Phase',
+                'status' => 'Active',
+                'account_type' => 'challenge',
+                'account_phase' => 'single_phase',
+                'phase_index' => 1,
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'is_funded' => false,
+                'is_trial' => false,
+                'starting_balance' => 25000,
+                'phase_starting_balance' => 25000,
+                'phase_reference_balance' => 25000,
+                'balance' => 25420,
+                'equity' => 25395,
+                'highest_equity_today' => 25420,
+                'daily_drawdown' => 0,
+                'daily_loss_used' => 0,
+                'max_drawdown' => 0,
+                'max_drawdown_used' => 0,
+                'profit_loss' => -25,
+                'total_profit' => 420,
+                'today_profit' => 120,
+                'drawdown_percent' => 0.3,
+                'profit_target_percent' => 10,
+                'profit_target_amount' => 2500,
+                'profit_target_progress_percent' => 16.8,
+                'daily_drawdown_limit_percent' => 4,
+                'daily_drawdown_limit_amount' => 1000,
+                'max_drawdown_limit_percent' => 8,
+                'max_drawdown_limit_amount' => 2000,
+                'profit_split' => 80,
+                'minimum_trading_days' => 3,
+                'trading_days_completed' => 2,
+                'sync_status' => 'success',
+                'sync_source' => 'mt5_ea',
+                'last_synced_at' => now(),
+                'last_evaluated_at' => now(),
+            ]);
+
+            $olderAccount->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 25420,
+                'equity' => 25395,
+                'profit_loss' => -25,
+                'total_profit' => 420,
+                'today_profit' => 120,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0.3,
+                'payload' => [
+                    'trade_history' => [
+                        [
+                            'deal_id' => 'D-3101',
+                            'symbol' => 'EURUSD',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-14 09:10:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-14 10:30:00')->timestamp,
+                            'entry_price' => 1.10020,
+                            'exit_price' => 1.10170,
+                            'volume' => 1,
+                            'profit' => 140,
+                            'commission' => -2,
+                            'swap' => -1,
+                        ],
+                    ],
+                    'open_positions' => [
+                        [
+                            'position_id' => 'P-3102',
+                            'symbol' => 'XAUUSD',
+                            'trade_side' => 'sell',
+                            'open_timestamp' => Carbon::parse('2026-04-14 11:10:00')->timestamp,
+                            'entry_price' => 3240.20,
+                            'volume' => 0.5,
+                            'profit' => -25,
+                            'commission' => -0.5,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $newerAccount = TradingAccount::query()->create([
+                'user_id' => $user->id,
+                'challenge_plan_id' => $plan->id,
+                'order_id' => $order->id,
+                'challenge_purchase_id' => $purchase->id,
+                'challenge_type' => 'one_step',
+                'account_size' => 25000,
+                'account_reference' => 'MT5-REVIEW-002',
+                'platform' => 'MT5',
+                'platform_slug' => 'mt5',
+                'platform_account_id' => 'MT5-002',
+                'platform_login' => '770002',
+                'platform_environment' => 'demo',
+                'platform_status' => 'connected',
+                'stage' => 'Single Phase',
+                'status' => 'Active',
+                'account_type' => 'challenge',
+                'account_phase' => 'single_phase',
+                'phase_index' => 1,
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'is_funded' => false,
+                'is_trial' => false,
+                'starting_balance' => 25000,
+                'phase_starting_balance' => 25000,
+                'phase_reference_balance' => 25000,
+                'balance' => 25110,
+                'equity' => 25180,
+                'highest_equity_today' => 25180,
+                'daily_drawdown' => 0,
+                'daily_loss_used' => 0,
+                'max_drawdown' => 0,
+                'max_drawdown_used' => 0,
+                'profit_loss' => 70,
+                'total_profit' => 110,
+                'today_profit' => 110,
+                'drawdown_percent' => 0.1,
+                'profit_target_percent' => 10,
+                'profit_target_amount' => 2500,
+                'profit_target_progress_percent' => 4.4,
+                'daily_drawdown_limit_percent' => 4,
+                'daily_drawdown_limit_amount' => 1000,
+                'max_drawdown_limit_percent' => 8,
+                'max_drawdown_limit_amount' => 2000,
+                'profit_split' => 80,
+                'minimum_trading_days' => 3,
+                'trading_days_completed' => 1,
+                'sync_status' => 'success',
+                'sync_source' => 'mt5_ea',
+                'last_synced_at' => now(),
+                'last_evaluated_at' => now(),
+            ]);
+
+            $newerAccount->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 25110,
+                'equity' => 25180,
+                'profit_loss' => 70,
+                'total_profit' => 110,
+                'today_profit' => 110,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0.1,
+                'payload' => [
+                    'trade_history' => [
+                        [
+                            'deal_id' => 'D-4101',
+                            'symbol' => 'NAS100',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-14 08:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-14 08:20:00')->timestamp,
+                            'entry_price' => 18200.5,
+                            'exit_price' => 18230.5,
+                            'volume' => 0.3,
+                            'profit' => 110,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->post(route('admin.login.store'), [
+                'username' => 'admin',
+                'password' => 'secret',
+            ])->assertRedirect(route('admin.clients.index'));
+
+            $this->get(route('admin.clients.show', ['user' => $user, 'account' => $olderAccount->id]))
+                ->assertOk()
+                ->assertSee('Per-account review')
+                ->assertSee('MT5-REVIEW-001')
+                ->assertSee('MT5-REVIEW-002')
+                ->assertSee('Detailed trade history')
+                ->assertSee('EURUSD')
+                ->assertSee('XAUUSD')
+                ->assertSee('1.10020')
+                ->assertSee('1.10170')
+                ->assertSee('01h 20m')
+                ->assertSee('Open')
+                ->assertSee('Win')
+                ->assertDontSee('NAS100');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_admin_can_activate_a_pending_client_account_and_receive_mt5_metrics(): void

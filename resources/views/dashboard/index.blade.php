@@ -14,10 +14,28 @@
             'slate' => 'border-white/10 bg-white/5 text-slate-200',
         ];
         $linkedAccounts = collect($accounts)->skip(1)->values();
+        $latestInvoicePurchase = $purchasedChallenges->first(fn ($purchase): bool => ! empty($purchase['invoice_download_url']));
     @endphp
 
     <div class="space-y-6">
         <x-consistency-banner :title="$consistencyBanner['title']" :message="$consistencyBanner['message']" :meta="$consistencyBanner['meta']" />
+
+        @if ($latestInvoicePurchase)
+            <section class="surface-panel rounded-[2rem] p-5 sm:p-6">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">{{ __('Billing document') }}</p>
+                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('Invoice ready') }}</h2>
+                        <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
+                            {{ __('Invoice :number for :plan is available from your dashboard at any time.', ['number' => $latestInvoicePurchase['invoice_number'], 'plan' => $latestInvoicePurchase['plan']]) }}
+                        </p>
+                    </div>
+                    <a href="{{ $latestInvoicePurchase['invoice_download_url'] }}" class="inline-flex items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/15 px-4 py-2.5 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/22">
+                        {{ __('Download Invoice') }}
+                    </a>
+                </div>
+            </section>
+        @endif
 
         @if ($dashboardHero && $primaryAccount)
             @include('dashboard.partials.account-filter-bar', ['accounts' => $accounts, 'profile' => $profile])

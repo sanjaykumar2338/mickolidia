@@ -589,6 +589,104 @@ class ChallengeDashboardTest extends TestCase
             ->assertDontSee('Top symbols will populate from synced open positions and closed trade history.');
     }
 
+    public function test_dashboard_trade_panel_shows_detailed_trade_fields_from_synced_snapshot(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-14 12:30:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'last_synced_at' => now(),
+                'sync_source' => 'mt5_ea',
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'today_profit' => 240,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'trade_history' => [
+                        [
+                            'deal_id' => 'D-2001',
+                            'symbol' => 'EURUSD',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-14 09:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-14 09:45:00')->timestamp,
+                            'entry_price' => 1.08215,
+                            'exit_price' => 1.08355,
+                            'volume' => 0.8,
+                            'profit' => 125.50,
+                            'commission' => -2.25,
+                            'swap' => -0.75,
+                        ],
+                        [
+                            'deal_id' => 'D-2002',
+                            'symbol' => 'BTCUSD',
+                            'trade_side' => 'sell',
+                            'open_timestamp' => Carbon::parse('2026-04-14 07:10:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-14 08:15:00')->timestamp,
+                            'entry_price' => 67890.10,
+                            'exit_price' => 67955.80,
+                            'volume' => 0.25,
+                            'profit' => -60.00,
+                            'commission' => -1.00,
+                            'swap' => 0,
+                        ],
+                    ],
+                    'open_positions' => [
+                        [
+                            'position_id' => 'P-7001',
+                            'symbol' => 'XAUUSD',
+                            'trade_side' => 'sell',
+                            'open_timestamp' => Carbon::parse('2026-04-14 10:15:00')->timestamp,
+                            'entry_price' => 3235.40,
+                            'volume' => 1.2,
+                            'profit' => -18.40,
+                            'commission' => -1.40,
+                            'swap' => 0.20,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Entry')
+                ->assertSee('Exit')
+                ->assertSee('Duration')
+                ->assertSee('Commission')
+                ->assertSee('Swap')
+                ->assertSee('Net result')
+                ->assertSee('EURUSD')
+                ->assertSee('BTCUSD')
+                ->assertSee('XAUUSD')
+                ->assertSee('Buy')
+                ->assertSee('Sell')
+                ->assertSee('Win')
+                ->assertSee('Loss')
+                ->assertSee('Open')
+                ->assertSee('1.08215')
+                ->assertSee('1.08355')
+                ->assertSee('00h 45m')
+                ->assertSee('02h 15m')
+                ->assertSee('$125.50')
+                ->assertSee('$122.50')
+                ->assertSee('-$61.00');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_two_step_phase_one_pass_transitions_to_phase_two_and_resets_references(): void
     {
         $account = $this->createChallengeAccount('two_step');

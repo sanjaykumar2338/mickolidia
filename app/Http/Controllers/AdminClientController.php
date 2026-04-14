@@ -6,11 +6,17 @@ use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
+use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AdminClientController extends Controller
 {
+    public function __construct(
+        private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
+    ) {}
+
     public function index(): View
     {
         $clients = User::query()
@@ -31,18 +37,24 @@ class AdminClientController extends Controller
         ]);
     }
 
-    public function show(User $user): View
+    public function show(Request $request, User $user): View
     {
         $user->loadMissing([
             'profile',
             'ctraderConnection',
+            'challengeTradingAccounts.challengePlan',
             'latestChallengeTradingAccount.challengePlan',
             'latestTradingAccount.challengePlan',
             'latestOrder.paymentAttempts',
             'latestChallengePurchase.order',
         ]);
 
-        $latestAccount = $this->currentTradingAccount($user);
+        $accounts = $this->availableAccountsForUser($user);
+        $requestedAccountId = (int) $request->query('account', 0);
+        $selectedAccount = $requestedAccountId > 0
+            ? $accounts->firstWhere('id', $requestedAccountId)
+            : null;
+        $selectedAccount ??= $accounts->first();
         $latestOrder = $user->latestOrder;
 
         return view('admin.clients.show', [
@@ -60,30 +72,42 @@ class AdminClientController extends Controller
                 'account_status_key' => $this->resolveAccountStatusKey($user),
                 'can_activate' => $this->canActivate($user),
             ],
+            'accountOptions' => $accounts
+                ->map(fn (TradingAccount $account): array => [
+                    'id' => $account->id,
+                    'reference' => $account->account_reference ?? 'Pending link',
+                    'platform_login' => $account->platform_login ?? 'Link pending',
+                    'phase' => $this->phaseLabel($account),
+                    'status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'pending')),
+                    'status_key' => (string) ($account->challenge_status ?: $account->account_status ?: 'pending'),
+                    'url' => route('admin.clients.show', ['user' => $user, 'account' => $account->id]),
+                    'is_selected' => (int) $account->id === (int) ($selectedAccount?->id ?? 0),
+                ])
+                ->all(),
             'metrics' => [
                 [
                     'label' => __('site.admin.metrics.profit'),
-                    'value' => $this->formatMoney((float) ($latestAccount?->total_profit ?? 0)),
+                    'value' => $this->formatMoney((float) ($selectedAccount?->total_profit ?? 0)),
                 ],
                 [
                     'label' => 'Balance',
-                    'value' => $this->formatMoney((float) ($latestAccount?->balance ?? 0)),
+                    'value' => $this->formatMoney((float) ($selectedAccount?->balance ?? 0)),
                 ],
                 [
                     'label' => 'Equity',
-                    'value' => $this->formatMoney((float) ($latestAccount?->equity ?? 0)),
+                    'value' => $this->formatMoney((float) ($selectedAccount?->equity ?? 0)),
                 ],
                 [
                     'label' => __('site.admin.metrics.max_drawdown'),
-                    'value' => number_format((float) ($latestAccount?->drawdown_percent ?? 0), 1).'%',
+                    'value' => number_format((float) ($selectedAccount?->drawdown_percent ?? 0), 1).'%',
                 ],
                 [
                     'label' => __('site.admin.metrics.trading_days'),
-                    'value' => $latestAccount !== null
+                    'value' => $selectedAccount !== null
                         ? sprintf(
                             '%d / %d',
-                            (int) $latestAccount->trading_days_completed,
-                            (int) $latestAccount->minimum_trading_days
+                            (int) $selectedAccount->trading_days_completed,
+                            (int) $selectedAccount->minimum_trading_days
                         )
                         : '0 / 0',
                 ],
@@ -93,18 +117,18 @@ class AdminClientController extends Controller
                 ],
                 [
                     'label' => 'Challenge Phase',
-                    'value' => $latestAccount !== null ? $this->phaseLabel($latestAccount) : 'N/A',
+                    'value' => $selectedAccount !== null ? $this->phaseLabel($selectedAccount) : 'N/A',
                 ],
                 [
                     'label' => 'Failure Reason',
-                    'value' => $latestAccount?->failure_reason
-                        ? $this->humanizeStatus((string) $latestAccount->failure_reason)
+                    'value' => $selectedAccount?->failure_reason
+                        ? $this->humanizeStatus((string) $selectedAccount->failure_reason)
                         : 'None',
                 ],
                 [
                     'label' => 'Sync Status',
-                    'value' => $latestAccount?->sync_status
-                        ? $this->humanizeStatus((string) $latestAccount->sync_status)
+                    'value' => $selectedAccount?->sync_status
+                        ? $this->humanizeStatus((string) $selectedAccount->sync_status)
                         : 'Not synced',
                 ],
                 [
@@ -112,7 +136,11 @@ class AdminClientController extends Controller
                     'value' => $user->ctraderConnection?->last_authorized_at !== null ? 'Connected' : 'Pending',
                 ],
             ],
-            'latestAccount' => $latestAccount,
+            'selectedAccount' => $selectedAccount,
+            'tradesPanel' => $this->tradeHistoryPanelBuilder->build($selectedAccount, [
+                'empty_message' => __('Detailed trade rows will appear here after the selected account receives a synced snapshot with open positions or trade history.'),
+                'available_message' => __('The latest persisted sync snapshot powers this admin trade review. Open and closed rows appear only when that snapshot includes them.'),
+            ]),
             'billing' => [
                 'full_name' => $latestOrder?->full_name ?? $user->name,
                 'street_address' => $latestOrder?->street_address ?? $user->profile?->street_address ?? 'N/A',
@@ -127,13 +155,13 @@ class AdminClientController extends Controller
                 'checkout_id' => $latestOrder?->external_checkout_id ?? 'N/A',
                 'payment_id' => $latestOrder?->external_payment_id ?? 'N/A',
                 'customer_id' => $latestOrder?->external_customer_id ?? 'N/A',
-                'platform_account_id' => $latestAccount?->platform_account_id ?? 'Link pending',
-                'platform_login' => $latestAccount?->platform_login ?? 'Link pending',
-                'platform_environment' => $latestAccount?->platform_environment ?? 'N/A',
-                'last_synced_at' => $this->formatDateTime($latestAccount?->last_synced_at),
-                'last_evaluated_at' => $this->formatDateTime($latestAccount?->last_evaluated_at),
-                'sync_source' => $latestAccount?->sync_source ? $this->humanizeStatus((string) $latestAccount->sync_source) : 'N/A',
-                'sync_error' => $latestAccount?->sync_error ?? 'None',
+                'platform_account_id' => $selectedAccount?->platform_account_id ?? 'Link pending',
+                'platform_login' => $selectedAccount?->platform_login ?? 'Link pending',
+                'platform_environment' => $selectedAccount?->platform_environment ?? 'N/A',
+                'last_synced_at' => $this->formatDateTime($selectedAccount?->last_synced_at),
+                'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
+                'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
+                'sync_error' => $selectedAccount?->sync_error ?? 'None',
                 'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
                 'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
             ],
@@ -305,6 +333,23 @@ class AdminClientController extends Controller
     private function currentTradingAccount(User $user): ?TradingAccount
     {
         return $user->latestChallengeTradingAccount ?? $user->latestTradingAccount;
+    }
+
+    private function availableAccountsForUser(User $user)
+    {
+        $accounts = $user->challengeTradingAccounts
+            ->sortByDesc('created_at')
+            ->values();
+
+        if ($accounts->isNotEmpty()) {
+            return $accounts;
+        }
+
+        $fallbackAccount = $this->currentTradingAccount($user);
+
+        return $fallbackAccount instanceof TradingAccount
+            ? collect([$fallbackAccount])
+            : collect();
     }
 
     private function challengeTypeLabel(string $challengeType): string

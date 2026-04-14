@@ -5,16 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Pricing\ChallengePricingService;
+use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\ChallengeAccountMetrics;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
+    ) {}
+
     public function index(Request $request, ChallengePricingService $pricingService): View
     {
         return view('dashboard.index', $this->dashboardViewData($request, $pricingService));
@@ -954,92 +959,10 @@ class DashboardController extends Controller
      */
     private function tradesPanel(?TradingAccount $account): array
     {
-        $emptyState = [
-            'is_available' => false,
-            'rows' => [],
-            'filters' => [
-                ['key' => 'both', 'label' => __('Both')],
-                ['key' => 'open', 'label' => __('Open')],
-                ['key' => 'closed', 'label' => __('Closed')],
-            ],
-            'summary' => [
-                'open' => 0,
-                'closed' => 0,
-                'both' => 0,
-            ],
-            'message' => __('Trade visualization activates once detailed MT5 trade rows are synced for this account. Daily activity counts may already appear in the summary above.'),
-            'source' => __('Snapshot payload'),
-        ];
-
-        if (! $account instanceof TradingAccount) {
-            return $emptyState;
-        }
-
-        $snapshotTradePayload = $this->latestSnapshotTradePayload($account);
-        $openPositions = collect($snapshotTradePayload['open_positions'] ?? []);
-        $closedTrades = collect($snapshotTradePayload['trade_history'] ?? []);
-
-        $openRows = $openPositions->map(function (array $row): array {
-            $profit = $this->tradeProfitValue($row);
-
-            return [
-                'filter' => 'open',
-                'id' => (string) ($this->firstFilledValue($row, ['position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']) ?: __('—')),
-                'symbol' => $this->tradeSymbolLabel($row),
-                'side' => $this->tradeSideLabel($this->tradeSideValue($row)),
-                'open_date' => $this->formatTradeDate($this->tradeOpenTimestamp($row)),
-                'close_date' => __('Live'),
-                'volume' => $this->formatNumeric($this->tradeVolumeValue($row)),
-                'profit' => $this->formatMoney($profit),
-                'profit_tone' => $this->metricTone($profit),
-                'status' => __('Open'),
-                'sort_timestamp' => $this->tradeOpenTimestamp($row)?->getTimestamp() ?? 0,
-            ];
-        });
-
-        $closedRows = $closedTrades->map(function (array $row): array {
-            $profit = $this->tradeProfitValue($row);
-
-            return [
-                'filter' => 'closed',
-                'id' => (string) ($this->firstFilledValue($row, ['deal_id', 'dealId', 'position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']) ?: __('—')),
-                'symbol' => $this->tradeSymbolLabel($row),
-                'side' => $this->tradeSideLabel($this->tradeSideValue($row)),
-                'open_date' => $this->formatTradeDate($this->tradeOpenTimestamp($row)) ?: __('Not available'),
-                'close_date' => $this->formatTradeDate($this->tradeCloseTimestamp($row)),
-                'volume' => $this->formatNumeric($this->tradeVolumeValue($row)),
-                'profit' => $this->formatMoney($profit),
-                'profit_tone' => $this->metricTone($profit),
-                'status' => __('Closed'),
-                'sort_timestamp' => $this->tradeCloseTimestamp($row)?->getTimestamp() ?? $this->tradeOpenTimestamp($row)?->getTimestamp() ?? 0,
-            ];
-        });
-
-        $rows = $openRows
-            ->concat($closedRows)
-            ->sortByDesc('sort_timestamp')
-            ->values()
-            ->map(fn (array $row): array => Arr::except($row, ['sort_timestamp']))
-            ->all();
-
-        if ($rows === []) {
-            $emptyState['source'] = $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : $emptyState['source'];
-
-            return $emptyState;
-        }
-
-        return [
-            'is_available' => true,
-            'rows' => $rows,
-            'filters' => $emptyState['filters'],
-            'summary' => [
-                'open' => $openRows->count(),
-                'closed' => $closedRows->count(),
-                'both' => count($rows),
-            ],
-            'message' => __('The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.'),
-            'source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Snapshot payload'),
-        ];
+        return $this->tradeHistoryPanelBuilder->build($account, [
+            'empty_message' => __('Trade visualization activates once detailed MT5 trade rows are synced for this account. Daily activity counts may already appear in the summary above.'),
+            'available_message' => __('The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.'),
+        ]);
     }
 
     /**

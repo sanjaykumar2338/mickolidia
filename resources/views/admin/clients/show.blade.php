@@ -33,6 +33,46 @@
         </div>
     </div>
 
+    @if (! empty($accountOptions))
+        <section class="mt-8 surface-panel rounded-[2rem] p-6">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('Trading accounts') }}</p>
+                    <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('Per-account review') }}</h2>
+                </div>
+                <p class="max-w-3xl text-sm leading-7 text-slate-400">
+                    {{ __('Switch accounts here to inspect the synced metrics, trade history, and platform references for the exact trader account you want to review.') }}
+                </p>
+            </div>
+
+            <div class="mt-6 grid gap-4 xl:grid-cols-2">
+                @foreach ($accountOptions as $accountOption)
+                    @php
+                        $accountOptionStatusClass = match (strtolower($accountOption['status_key'])) {
+                            'active', 'passed', 'completed', 'funded' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
+                            'failed', 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
+                            default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
+                        };
+                    @endphp
+                    <a
+                        href="{{ $accountOption['url'] }}"
+                        class="rounded-[1.6rem] border px-5 py-4 transition {{ $accountOption['is_selected'] ? 'border-amber-300/35 bg-amber-300/10 shadow-[0_18px_45px_rgba(2,6,23,0.24)]' : 'border-white/8 bg-black/18 hover:border-white/16 hover:bg-white/6' }}"
+                    >
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-lg font-semibold text-white">{{ $accountOption['reference'] }}</p>
+                                <p class="mt-1 text-sm text-slate-400">{{ $accountOption['phase'] }} • {{ $accountOption['platform_login'] }}</p>
+                            </div>
+                            <span class="{{ $accountOptionStatusClass }} inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                                {{ $accountOption['status'] }}
+                            </span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <div class="mt-8 grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <section class="surface-panel rounded-[2rem] p-6">
             <h2 class="text-lg font-semibold text-white">{{ __('site.admin.client_show.client_summary') }}</h2>
@@ -88,56 +128,56 @@
             </div>
 
             <div class="mt-6 rounded-[1.8rem] border border-amber-400/18 bg-amber-400/10 p-5 text-sm leading-7 text-amber-50">
-                Live account state now comes from the latest linked trading account, local rule evaluation, and sync history. Missing platform credentials or account linkage will appear below as sync gaps instead of fake metrics.
+                Live account state now comes from the selected linked trading account, local rule evaluation, and sync history. Missing platform credentials or account linkage will appear below as sync gaps instead of fake metrics.
             </div>
 
-            @if ($latestAccount !== null)
+            @if ($selectedAccount !== null)
                 <div class="mt-6 surface-card rounded-[1.8rem] p-5">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">{{ __('site.admin.client_show.account_snapshot') }}</p>
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.reference') }}</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->account_reference ?? 'N/A' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->account_reference ?? 'N/A' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.platform') }}</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->platform }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.stage') }}</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->stage }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->stage }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Challenge Type</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->challenge_type === 'one_step' ? '1-Step Instant' : '2-Step Pro' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->challenge_type === 'one_step' ? '1-Step Instant' : '2-Step Pro' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Current Phase</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->challenge_type === 'one_step' ? 'Single Phase' : ((int) $latestAccount->phase_index > 1 ? 'Phase 2' : 'Phase 1') }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->challenge_type === 'one_step' ? 'Single Phase' : ((int) $selectedAccount->phase_index > 1 ? 'Phase 2' : 'Phase 1') }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Challenge Status</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ str($latestAccount->challenge_status ?: $latestAccount->account_status)->replace('_', ' ')->title() }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ str($selectedAccount->challenge_status ?: $selectedAccount->account_status)->replace('_', ' ')->title() }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.balance') }}</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->balance, 2) }}</dd>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->balance, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Equity</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->equity, 2) }}</dd>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->equity, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Platform Account ID</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_account_id ?? 'Link pending' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->platform_account_id ?? 'Link pending' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Platform Login</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_login ?? 'Link pending' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->platform_login ?? 'Link pending' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Environment</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->platform_environment ?? 'N/A' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->platform_environment ?? 'N/A' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Last Synced</dt>
@@ -145,35 +185,35 @@
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Daily Drawdown</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->daily_drawdown, 2) }}</dd>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->daily_drawdown, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Daily Loss Used / Remaining</dt>
                             <dd class="mt-2 font-semibold text-white">
-                                ${{ number_format((float) $latestAccount->daily_loss_used, 2) }}
+                                ${{ number_format((float) $selectedAccount->daily_loss_used, 2) }}
                                 /
-                                ${{ number_format(max((float) $latestAccount->daily_drawdown_limit_amount - (float) $latestAccount->daily_loss_used, 0), 2) }}
+                                ${{ number_format(max((float) $selectedAccount->daily_drawdown_limit_amount - (float) $selectedAccount->daily_loss_used, 0), 2) }}
                             </dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Total Drawdown</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $latestAccount->max_drawdown, 2) }}</dd>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->max_drawdown, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Max Drawdown Used / Remaining</dt>
                             <dd class="mt-2 font-semibold text-white">
-                                ${{ number_format((float) $latestAccount->max_drawdown_used, 2) }}
+                                ${{ number_format((float) $selectedAccount->max_drawdown_used, 2) }}
                                 /
-                                ${{ number_format(max((float) $latestAccount->max_drawdown_limit_amount - (float) $latestAccount->max_drawdown_used, 0), 2) }}
+                                ${{ number_format(max((float) $selectedAccount->max_drawdown_limit_amount - (float) $selectedAccount->max_drawdown_used, 0), 2) }}
                             </dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Profit Target Progress</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ number_format((float) $latestAccount->profit_target_progress_percent, 1) }}%</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ number_format((float) $selectedAccount->profit_target_progress_percent, 1) }}%</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Failure Reason</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ $latestAccount->failure_reason ? str($latestAccount->failure_reason)->replace('_', ' ')->title() : 'None' }}</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->failure_reason ? str($selectedAccount->failure_reason)->replace('_', ' ')->title() : 'None' }}</dd>
                         </div>
                     </dl>
 
@@ -185,6 +225,15 @@
                 </div>
             @endif
         </section>
+    </div>
+
+    <div class="mt-8">
+        @include('dashboard.partials.trades-panel', [
+            'tradesPanel' => $tradesPanel,
+            'panelEyebrow' => __('Trade review'),
+            'panelTitle' => __('Detailed trade history'),
+            'panelDescription' => __('Review the same persisted open and closed trade rows the client sees, with lifecycle timestamps, direction, pricing, and result context for the selected account.'),
+        ])
     </div>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
