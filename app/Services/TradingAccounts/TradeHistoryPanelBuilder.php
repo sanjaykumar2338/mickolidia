@@ -8,6 +8,121 @@ use Illuminate\Support\Carbon;
 
 class TradeHistoryPanelBuilder
 {
+    private const RECENT_SNAPSHOT_LIMIT = 50;
+
+    private const OPEN_POSITION_PATHS = [
+        'open_positions',
+        'openPositions',
+        'open_trades',
+        'openTrades',
+        'active_trades',
+        'activeTrades',
+        'open.positions',
+        'positions.open',
+        'positions',
+        'positions_open',
+        'positionsOpen',
+        'current_positions',
+        'currentPositions',
+        'trades.open',
+        'trades.active',
+        'raw.open_positions',
+        'raw.openPositions',
+        'raw.open_trades',
+        'raw.openTrades',
+        'raw.active_trades',
+        'raw.activeTrades',
+        'raw.open.positions',
+        'raw.positions.open',
+        'raw.positions',
+        'raw.positions_open',
+        'raw.positionsOpen',
+        'raw.current_positions',
+        'raw.currentPositions',
+        'raw.trades.open',
+        'raw.trades.active',
+        'mt5.open_positions',
+        'mt5.openPositions',
+        'mt5.open_trades',
+        'mt5.openTrades',
+        'mt5.active_trades',
+        'mt5.activeTrades',
+        'mt5.positions',
+        'mt5.positions_open',
+        'mt5.positionsOpen',
+        'mt5.trades.open',
+        'mt5.trades.active',
+    ];
+
+    private const CLOSED_TRADE_PATHS = [
+        'trade_history',
+        'tradeHistory',
+        'closed_trades',
+        'closedTrades',
+        'closed_positions',
+        'closedPositions',
+        'closed_orders',
+        'closedOrders',
+        'closed_deals',
+        'closedDeals',
+        'positions.closed',
+        'history',
+        'history_orders',
+        'historyOrders',
+        'history_deals',
+        'historyDeals',
+        'deal_history',
+        'dealHistory',
+        'deals',
+        'orders',
+        'orders.closed',
+        'deals.closed',
+        'trades.closed',
+        'trades.history',
+        'raw.trade_history',
+        'raw.tradeHistory',
+        'raw.closed_trades',
+        'raw.closedTrades',
+        'raw.closed_positions',
+        'raw.closedPositions',
+        'raw.closed_orders',
+        'raw.closedOrders',
+        'raw.closed_deals',
+        'raw.closedDeals',
+        'raw.positions.closed',
+        'raw.history',
+        'raw.history_orders',
+        'raw.historyOrders',
+        'raw.history_deals',
+        'raw.historyDeals',
+        'raw.deal_history',
+        'raw.dealHistory',
+        'raw.deals',
+        'raw.orders',
+        'raw.orders.closed',
+        'raw.deals.closed',
+        'raw.trades.closed',
+        'raw.trades.history',
+        'mt5.trade_history',
+        'mt5.tradeHistory',
+        'mt5.closed_trades',
+        'mt5.closedTrades',
+        'mt5.closed_orders',
+        'mt5.closedOrders',
+        'mt5.closed_deals',
+        'mt5.closedDeals',
+        'mt5.history',
+        'mt5.history_orders',
+        'mt5.historyOrders',
+        'mt5.history_deals',
+        'mt5.historyDeals',
+        'mt5.deals',
+        'mt5.orders',
+        'mt5.orders.closed',
+        'mt5.trades.closed',
+        'mt5.trades.history',
+    ];
+
     /**
      * @param  array<string, mixed>  $options
      * @return array<string, mixed>
@@ -60,6 +175,7 @@ class TradeHistoryPanelBuilder
 
         if ($rows === []) {
             $emptyState['source'] = $this->sourceLabel((string) ($account->sync_source ?: 'snapshot_payload'));
+            $emptyState['message'] = (string) ($snapshotTradePayload['empty_message'] ?? $emptyState['message']);
 
             return $emptyState;
         }
@@ -83,7 +199,7 @@ class TradeHistoryPanelBuilder
                 'swap' => $rowCollection->contains(fn (array $row): bool => $row['swap'] !== null),
                 'net_result' => $rowCollection->contains(fn (array $row): bool => $row['net_result'] !== null),
             ],
-            'message' => (string) ($options['available_message'] ?? __('The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.')),
+            'message' => (string) ($snapshotTradePayload['available_message'] ?? $options['available_message'] ?? __('The latest synced snapshot powers this table. Open and closed rows are shown only when the platform payload includes them.')),
             'source' => $this->sourceLabel((string) ($account->sync_source ?: 'snapshot_payload')),
         ];
     }
@@ -158,8 +274,8 @@ class TradeHistoryPanelBuilder
     private function tradeIdentifier(array $row, bool $isOpen): mixed
     {
         return $this->firstFilledValue($row, $isOpen
-            ? ['position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']
-            : ['deal_id', 'dealId', 'position_id', 'positionId', 'ticket', 'Ticket', 'order', 'Order', 'id']);
+            ? ['position_id', 'positionId', 'position_ticket', 'positionTicket', 'ticket', 'ticket_number', 'ticketNumber', 'Ticket', 'order_id', 'orderId', 'order', 'Order', 'id']
+            : ['deal_id', 'dealId', 'deal_ticket', 'dealTicket', 'position_id', 'positionId', 'ticket', 'ticket_number', 'ticketNumber', 'Ticket', 'order_id', 'orderId', 'order', 'Order', 'id']);
     }
 
     /**
@@ -167,58 +283,53 @@ class TradeHistoryPanelBuilder
      */
     private function latestSnapshotTradePayload(TradingAccount $account): array
     {
-        $latestSnapshot = $account->balanceSnapshots()
-            ->latest('snapshot_at')
-            ->first(['snapshot_at', 'payload']);
+        $snapshots = $account->balanceSnapshots()
+            ->orderByDesc('snapshot_at')
+            ->orderByDesc('id')
+            ->limit(self::RECENT_SNAPSHOT_LIMIT)
+            ->get(['id', 'snapshot_at', 'payload']);
 
+        $latestSnapshot = $snapshots->first();
         $payload = is_array($latestSnapshot?->payload) ? $latestSnapshot->payload : [];
+        $latestOpenRows = $this->tradeRowsFromPayload($payload, self::OPEN_POSITION_PATHS);
+        $latestClosedRows = $this->tradeRowsFromPayload($payload, self::CLOSED_TRADE_PATHS, true);
+        $openRows = $latestOpenRows;
+        $closedRows = $latestClosedRows;
+        $usedOpenFallback = false;
+        $usedClosedFallback = false;
+        $latestOpenExplicitlyEmpty = $this->payloadDeclaresNoOpenRows($payload, $latestOpenRows);
+
+        foreach ($snapshots->slice(1) as $snapshot) {
+            $snapshotPayload = is_array($snapshot->payload) ? $snapshot->payload : [];
+
+            if ($openRows === [] && ! $latestOpenExplicitlyEmpty) {
+                $snapshotOpenRows = $this->tradeRowsFromPayload($snapshotPayload, self::OPEN_POSITION_PATHS);
+
+                if ($snapshotOpenRows !== []) {
+                    $openRows = $snapshotOpenRows;
+                    $usedOpenFallback = true;
+                }
+            }
+
+            $snapshotClosedRows = $this->tradeRowsFromPayload($snapshotPayload, self::CLOSED_TRADE_PATHS, true);
+
+            if ($snapshotClosedRows !== []) {
+                if ($latestClosedRows === [] && $closedRows === []) {
+                    $usedClosedFallback = true;
+                }
+
+                $closedRows = $this->mergeTradeRows($closedRows, $snapshotClosedRows);
+            }
+        }
 
         return [
             'snapshot_at' => $latestSnapshot?->snapshot_at,
-            'open_positions' => $this->tradeRowsFromPayload($payload, [
-                'open_positions',
-                'openPositions',
-                'open.positions',
-                'positions.open',
-                'positions',
-                'current_positions',
-                'currentPositions',
-                'raw.open_positions',
-                'raw.openPositions',
-                'raw.open.positions',
-                'raw.positions.open',
-                'raw.positions',
-                'raw.current_positions',
-                'mt5.open_positions',
-                'mt5.positions',
-            ]),
-            'trade_history' => $this->tradeRowsFromPayload($payload, [
-                'trade_history',
-                'tradeHistory',
-                'closed_trades',
-                'closedTrades',
-                'closed_positions',
-                'closedPositions',
-                'positions.closed',
-                'history',
-                'deal_history',
-                'dealHistory',
-                'deals',
-                'orders',
-                'raw.trade_history',
-                'raw.tradeHistory',
-                'raw.closed_trades',
-                'raw.closedTrades',
-                'raw.closed_positions',
-                'raw.positions.closed',
-                'raw.history',
-                'raw.deal_history',
-                'raw.deals',
-                'raw.orders',
-                'mt5.trade_history',
-                'mt5.history',
-                'mt5.deals',
-            ], true),
+            'open_positions' => $openRows,
+            'trade_history' => $closedRows,
+            'empty_message' => $this->missingTradeRowsMessage($payload),
+            'available_message' => $usedOpenFallback || $usedClosedFallback
+                ? __('Showing the latest persisted detailed trade rows. A newer MT5 sync updated account metrics without row-level trade data.')
+                : null,
         ];
     }
 
@@ -262,26 +373,7 @@ class TradeHistoryPanelBuilder
             }
         }
 
-        $seenIdentities = [];
-
-        return $rows
-            ->filter(function (array $row) use (&$seenIdentities): bool {
-                $identity = $this->tradeIdentityKey($row);
-
-                if ($identity === null) {
-                    return true;
-                }
-
-                if (isset($seenIdentities[$identity])) {
-                    return false;
-                }
-
-                $seenIdentities[$identity] = true;
-
-                return true;
-            })
-            ->values()
-            ->all();
+        return $this->uniqueTradeRows($rows->all());
     }
 
     /**
@@ -305,7 +397,33 @@ class TradeHistoryPanelBuilder
                 ->all();
         }
 
-        foreach (['data', 'items', 'rows', 'records', 'positions', 'deals', 'orders', 'history'] as $key) {
+        foreach ([
+            'data',
+            'items',
+            'rows',
+            'records',
+            'positions',
+            'open_positions',
+            'openPositions',
+            'current_positions',
+            'currentPositions',
+            'openTrades',
+            'deals',
+            'orders',
+            'history',
+            'trade_history',
+            'tradeHistory',
+            'closed_trades',
+            'closedTrades',
+            'closed_orders',
+            'closedOrders',
+            'closed_deals',
+            'closedDeals',
+            'trades',
+            'payload',
+            'result',
+            'response',
+        ] as $key) {
             if (isset($value[$key]) && is_array($value[$key])) {
                 return $this->coerceTradeRows($value[$key]);
             }
@@ -327,10 +445,18 @@ class TradeHistoryPanelBuilder
         $id = $this->firstFilledValue($row, [
             'deal_id',
             'dealId',
+            'deal_ticket',
+            'dealTicket',
             'position_id',
             'positionId',
+            'position_ticket',
+            'positionTicket',
             'ticket',
+            'ticket_number',
+            'ticketNumber',
             'Ticket',
+            'order_id',
+            'orderId',
             'order',
             'Order',
             'id',
@@ -383,6 +509,8 @@ class TradeHistoryPanelBuilder
             'symbol_name',
             'symbolName',
             'SymbolName',
+            'instrument_name',
+            'instrumentName',
             'instrument',
             'Instrument',
             'market',
@@ -439,6 +567,8 @@ class TradeHistoryPanelBuilder
             'filled_volume',
             'filledVolume',
             'volume',
+            'volume_lots',
+            'volumeLots',
             'Volume',
             'lots',
             'Lots',
@@ -562,6 +692,12 @@ class TradeHistoryPanelBuilder
             'tradeSide',
             'side',
             'Side',
+            'direction',
+            'Direction',
+            'cmd',
+            'Cmd',
+            'action',
+            'Action',
             'type',
             'Type',
             'position_type',
@@ -581,13 +717,21 @@ class TradeHistoryPanelBuilder
     private function tradeSideLabel(mixed $value): string
     {
         $normalized = strtolower((string) $value);
+        $numeric = is_numeric($value) ? (int) $value : null;
+
+        if ($numeric !== null) {
+            if (in_array($numeric, [0, 2, 4, 6], true)) {
+                return __('Buy');
+            }
+
+            if (in_array($numeric, [1, 3, 5, 7], true)) {
+                return __('Sell');
+            }
+        }
 
         return match (true) {
-            $normalized === '0',
-            $normalized === '1',
             str_contains($normalized, 'buy'),
             str_contains($normalized, 'long') => __('Buy'),
-            $normalized === '2',
             str_contains($normalized, 'sell'),
             str_contains($normalized, 'short') => __('Sell'),
             $normalized !== '' => str($normalized)->replace('_', ' ')->title()->toString(),
@@ -820,6 +964,168 @@ class TradeHistoryPanelBuilder
             'snapshot_payload' => __('Snapshot payload'),
             default => str($source)->replace(['_', '-'], ' ')->title()->toString(),
         };
+    }
+
+    private function mergeTradeRows(array $primaryRows, array $secondaryRows): array
+    {
+        return $this->uniqueTradeRows(array_merge($primaryRows, $secondaryRows));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function uniqueTradeRows(array $rows): array
+    {
+        $seenIdentities = [];
+
+        return collect($rows)
+            ->filter(function (array $row) use (&$seenIdentities): bool {
+                $identity = $this->tradeIdentityKey($row);
+
+                if ($identity === null) {
+                    return true;
+                }
+
+                if (isset($seenIdentities[$identity])) {
+                    return false;
+                }
+
+                $seenIdentities[$identity] = true;
+
+                return true;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function payloadDeclaresNoOpenRows(array $payload, array $openRows): bool
+    {
+        if ($openRows !== []) {
+            return false;
+        }
+
+        if ($this->payloadHasAnyPath($payload, self::OPEN_POSITION_PATHS)) {
+            return true;
+        }
+
+        $openCount = $this->payloadIntegerValue($payload, [
+            'positions_count',
+            'positionsCount',
+            'open_positions_count',
+            'openPositionsCount',
+            'open_trades_count',
+            'openTradesCount',
+            'raw.positions_count',
+            'raw.positionsCount',
+            'raw.open_positions_count',
+            'raw.openPositionsCount',
+            'raw.open_trades_count',
+            'raw.openTradesCount',
+            'mt5.positions_count',
+            'mt5.positionsCount',
+            'mt5.open_positions_count',
+            'mt5.openPositionsCount',
+            'mt5.open_trades_count',
+            'mt5.openTradesCount',
+        ]);
+
+        return $openCount === 0;
+    }
+
+    private function payloadHasAnyPath(array $payload, array $paths): bool
+    {
+        foreach ($paths as $path) {
+            if (Arr::has($payload, $path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function missingTradeRowsMessage(array $payload): ?string
+    {
+        if (! $this->payloadReportsTradeActivity($payload)) {
+            return null;
+        }
+
+        return __('MT5 sync is updating this account, but recent snapshots still do not include row-level open or closed trade rows. The account summary can refresh before detailed rows arrive, and this table only fills from real synced MT5 trade data.');
+    }
+
+    private function payloadReportsTradeActivity(array $payload): bool
+    {
+        if ($this->payloadBooleanValue($payload, [
+            'has_activity',
+            'hasActivity',
+            'raw.has_activity',
+            'raw.hasActivity',
+            'mt5.has_activity',
+            'mt5.hasActivity',
+        ]) === true) {
+            return true;
+        }
+
+        return ($this->payloadIntegerValue($payload, [
+            'positions_count',
+            'positionsCount',
+            'closed_positions_count',
+            'closedPositionsCount',
+            'trade_count',
+            'tradeCount',
+            'activity_count',
+            'activityCount',
+            'raw.positions_count',
+            'raw.positionsCount',
+            'raw.closed_positions_count',
+            'raw.closedPositionsCount',
+            'raw.trade_count',
+            'raw.tradeCount',
+            'raw.activity_count',
+            'raw.activityCount',
+            'mt5.positions_count',
+            'mt5.positionsCount',
+            'mt5.closed_positions_count',
+            'mt5.closedPositionsCount',
+            'mt5.trade_count',
+            'mt5.tradeCount',
+            'mt5.activity_count',
+            'mt5.activityCount',
+        ]) ?? 0) > 0;
+    }
+
+    private function payloadIntegerValue(array $payload, array $keys): ?int
+    {
+        $value = $this->firstFilledValue($payload, $keys);
+
+        if ($value === null || ! is_numeric($value)) {
+            return null;
+        }
+
+        return max((int) $value, 0);
+    }
+
+    private function payloadBooleanValue(array $payload, array $keys): ?bool
+    {
+        $value = $this->firstFilledValue($payload, $keys);
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value !== 0;
+        }
+
+        if (is_string($value)) {
+            return filter_var(trim($value), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        }
+
+        return null;
     }
 
     /**

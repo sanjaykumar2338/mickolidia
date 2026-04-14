@@ -687,6 +687,188 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_dashboard_trade_panel_falls_back_to_latest_persisted_detailed_rows_when_newest_snapshot_is_summary_only(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-14 12:30:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'last_synced_at' => now(),
+                'sync_source' => 'mt5_ea',
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => Carbon::parse('2026-04-14 12:10:00'),
+                'balance' => 10235,
+                'equity' => 10205,
+                'profit_loss' => -30,
+                'total_profit' => 235,
+                'today_profit' => 235,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'trade_history' => [
+                        [
+                            'deal_id' => 'D-2301',
+                            'symbol' => 'EURUSD',
+                            'trade_side' => 'buy',
+                            'open_timestamp' => Carbon::parse('2026-04-14 09:00:00')->timestamp,
+                            'execution_timestamp' => Carbon::parse('2026-04-14 09:45:00')->timestamp,
+                            'entry_price' => 1.08215,
+                            'exit_price' => 1.08355,
+                            'volume' => 0.8,
+                            'profit' => 125.50,
+                        ],
+                    ],
+                    'open_positions' => [
+                        [
+                            'position_id' => 'P-7301',
+                            'symbol' => 'XAUUSD',
+                            'trade_side' => 'sell',
+                            'open_timestamp' => Carbon::parse('2026-04-14 10:15:00')->timestamp,
+                            'entry_price' => 3235.40,
+                            'volume' => 1.2,
+                            'profit' => -18.40,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => Carbon::parse('2026-04-14 12:29:00'),
+                'balance' => 10240,
+                'equity' => 10210,
+                'profit_loss' => -30,
+                'total_profit' => 240,
+                'today_profit' => 240,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'positions_count' => 1,
+                    'trade_count' => 1,
+                    'has_activity' => true,
+                ],
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('EURUSD')
+                ->assertSee('XAUUSD')
+                ->assertSee('Showing the latest persisted detailed trade rows. A newer MT5 sync updated account metrics without row-level trade data.');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_dashboard_trade_panel_reads_alternate_mt5_trade_payload_keys(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-04-14 12:30:00'));
+
+        try {
+            $account = $this->createChallengeAccount('one_step', [
+                'balance' => 10190,
+                'equity' => 10140,
+                'profit_loss' => -50,
+                'total_profit' => 190,
+                'last_synced_at' => now(),
+                'sync_source' => 'mt5_ea',
+            ]);
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 10190,
+                'equity' => 10140,
+                'profit_loss' => -50,
+                'total_profit' => 190,
+                'today_profit' => 190,
+                'daily_drawdown' => 0,
+                'max_drawdown' => 0,
+                'drawdown_percent' => 0,
+                'payload' => [
+                    'closedOrders' => [
+                        [
+                            'ticket_number' => 'D-2401',
+                            'instrument_name' => 'EURUSD',
+                            'Type' => 1,
+                            'time_open' => Carbon::parse('2026-04-14 08:30:00')->timestamp,
+                            'time_close' => Carbon::parse('2026-04-14 10:00:00')->timestamp,
+                            'price_open' => 1.10020,
+                            'price_close' => 1.09890,
+                            'volume_lots' => 0.75,
+                            'profit' => 98.25,
+                        ],
+                    ],
+                    'openTrades' => [
+                        [
+                            'ticket_number' => 'P-2402',
+                            'instrument_name' => 'XAUUSD',
+                            'Type' => 0,
+                            'time_open' => Carbon::parse('2026-04-14 11:20:00')->timestamp,
+                            'price_open' => 3230.40,
+                            'volume_lots' => 0.40,
+                            'profit' => -12.50,
+                        ],
+                    ],
+                ],
+            ]);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('EURUSD')
+                ->assertSee('XAUUSD')
+                ->assertSee('Sell')
+                ->assertSee('Buy')
+                ->assertSee('01h 30m')
+                ->assertSee('3,230.40')
+                ->assertSee('1.09890');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_dashboard_trade_panel_explains_when_activity_arrives_without_row_level_trade_payload(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'balance' => 10080,
+            'equity' => 10065,
+            'profit_loss' => -15,
+            'total_profit' => 80,
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => now(),
+            'balance' => 10080,
+            'equity' => 10065,
+            'profit_loss' => -15,
+            'total_profit' => 80,
+            'today_profit' => 80,
+            'daily_drawdown' => 0,
+            'max_drawdown' => 0,
+            'drawdown_percent' => 0,
+            'payload' => [
+                'positions_count' => 1,
+                'closed_positions_count' => 2,
+                'trade_count' => 3,
+                'has_activity' => true,
+            ],
+        ]);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('MT5 sync is updating this account, but recent snapshots still do not include row-level open or closed trade rows. The account summary can refresh before detailed rows arrive, and this table only fills from real synced MT5 trade data.');
+    }
+
     public function test_two_step_phase_one_pass_transitions_to_phase_two_and_resets_references(): void
     {
         $account = $this->createChallengeAccount('two_step');
