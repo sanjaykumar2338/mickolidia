@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -12,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class WelcomeMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     public function __construct(public User $user)
     {
@@ -19,9 +21,7 @@ class WelcomeMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Welcome to Wolforix | Your account is active',
-        );
+        return $this->automatedEnvelope('Welcome to Wolforix | Your account is active');
     }
 
     public function content(): Content

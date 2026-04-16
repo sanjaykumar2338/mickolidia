@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use Illuminate\Bus\Queueable;
@@ -13,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 class ChallengeAccountDetailsMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     /**
      * @param  array<string, string>  $details
@@ -27,9 +29,7 @@ class ChallengeAccountDetailsMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Your Challenge Account Details — Wolforix',
-        );
+        return $this->automatedEnvelope('Your Challenge Account Details — Wolforix');
     }
 
     public function content(): Content

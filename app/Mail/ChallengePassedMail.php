@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -14,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 class ChallengePassedMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     /**
      * @param  array<string, string>  $details
@@ -29,9 +31,7 @@ class ChallengePassedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Congratulations — You’ve Passed the Evaluation',
-        );
+        return $this->automatedEnvelope('Congratulations — You’ve Passed the Evaluation');
     }
 
     public function content(): Content

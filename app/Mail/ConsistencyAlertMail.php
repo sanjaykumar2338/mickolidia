@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\TradingAccount;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -12,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class ConsistencyAlertMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     /**
      * @param  array<string, string>  $details
@@ -29,7 +31,7 @@ class ConsistencyAlertMail extends Mailable
             ? 'Consistency Rule Alert - Threshold Reached'
             : 'Consistency Rule Alert - Approaching Threshold';
 
-        return new Envelope(subject: $subject);
+        return $this->automatedEnvelope($subject);
     }
 
     public function content(): Content

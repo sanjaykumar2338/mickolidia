@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -13,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 class ChallengeFailedMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     /**
      * @param  array<string, string>  $details
@@ -26,9 +28,7 @@ class ChallengeFailedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Account Status Update – Challenge Failed',
-        );
+        return $this->automatedEnvelope('Account Status Update – Challenge Failed');
     }
 
     public function content(): Content

@@ -115,4 +115,19 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Automated Mail "From" Address
+    |--------------------------------------------------------------------------
+    |
+    | System-generated notifications can use a dedicated sender identity so
+    | transactional alerts do not come from a personal or support inbox.
+    |
+    */
+
+    'automated_from' => [
+        'address' => env('MAIL_AUTOMATED_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+        'name' => env('MAIL_AUTOMATED_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
+    ],
+
 ];

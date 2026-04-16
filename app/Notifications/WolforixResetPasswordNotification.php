@@ -28,6 +28,10 @@ class WolforixResetPasswordNotification extends Notification
         $expireMinutes = (int) config("auth.passwords.{$passwordBroker}.expire", 60);
 
         return (new MailMessage)
+            ->from(
+                (string) config('mail.automated_from.address'),
+                (string) config('mail.automated_from.name'),
+            )
             ->subject('Reset your Wolforix password')
             ->view('emails.password-reset', [
                 'user' => $notifiable,

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -13,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 class TrialPassedMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     public function __construct(
         public User $user,
@@ -22,9 +24,7 @@ class TrialPassedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Wolforix Free Trial Completed | Next Step: Simulation Account',
-        );
+        return $this->automatedEnvelope('Wolforix Free Trial Completed | Next Step: Simulation Account');
     }
 
     public function content(): Content

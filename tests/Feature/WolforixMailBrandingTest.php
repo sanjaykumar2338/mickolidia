@@ -6,6 +6,7 @@ use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengeFailedMail;
 use App\Mail\ChallengePassedMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
+use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrialBreachedMail;
@@ -21,6 +22,9 @@ class WolforixMailBrandingTest extends TestCase
 {
     public function test_transactional_mailables_share_the_welcome_brand_shell(): void
     {
+        config()->set('mail.automated_from.address', 'noreply@wolforix.com');
+        config()->set('mail.automated_from.name', 'Wolforix Notifications');
+
         $user = User::factory()->make([
             'name' => 'Mail Trader',
             'email' => 'mail-trader@example.com',
@@ -81,16 +85,33 @@ class WolforixMailBrandingTest extends TestCase
             ]),
             new TrialPassedMail($user, $account),
             new TrialBreachedMail($user, $account, 'Daily loss limit reached'),
+            new ConsistencyAlertMail('Mail Trader', $account, [
+                'status' => 'approaching',
+                'rule_label' => 'Approaching threshold',
+                'account_reference' => 'WFX-CT-TEST-001',
+                'current_month_profit' => '$330.00',
+                'highest_single_day_profit' => '$130.00',
+                'ratio_percent' => '39.39%',
+                'threshold_percent' => '35.00%',
+                'highest_single_day_date' => '2026-04-01',
+                'rule_explanation' => 'Profits should be distributed across multiple trading days.',
+                'support_email' => $supportEmail,
+            ]),
         ];
 
         foreach ($mailables as $mailable) {
+            $envelope = $mailable->envelope();
             $html = $mailable->render();
 
+            $this->assertSame('noreply@wolforix.com', $envelope->from?->address, $mailable::class);
+            $this->assertSame('Wolforix Notifications', $envelope->from?->name, $mailable::class);
             $this->assertStringContainsString('background-color:#050b13', $html, $mailable::class);
             $this->assertStringContainsString('Trade Fearlessly. Win Real.', $html, $mailable::class);
             $this->assertStringContainsString('Wolforix', $html, $mailable::class);
             $this->assertStringContainsString($supportEmail, $html, $mailable::class);
         }
+
+        $passwordResetMail = (new WolforixResetPasswordNotification('reset-token-123'))->toMail($user);
 
         $passwordResetHtml = view('emails.password-reset', [
             'user' => $user,
@@ -105,5 +126,6 @@ class WolforixMailBrandingTest extends TestCase
         $this->assertStringContainsString('Trade Fearlessly. Win Real.', $passwordResetHtml, WolforixResetPasswordNotification::class);
         $this->assertStringContainsString('Reset your Wolforix password', $passwordResetHtml, WolforixResetPasswordNotification::class);
         $this->assertStringContainsString($supportEmail, $passwordResetHtml, WolforixResetPasswordNotification::class);
+        $this->assertSame(['noreply@wolforix.com', 'Wolforix Notifications'], $passwordResetMail->from);
     }
 }

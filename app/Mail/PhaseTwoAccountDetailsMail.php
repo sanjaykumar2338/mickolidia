@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\UsesAutomatedSender;
 use App\Models\TradingAccount;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -12,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 class PhaseTwoAccountDetailsMail extends Mailable
 {
     use Queueable, SerializesModels;
+    use UsesAutomatedSender;
 
     /**
      * @param  array<string, string>  $details
@@ -25,9 +27,7 @@ class PhaseTwoAccountDetailsMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Your Phase 2 Account Details — Wolforix 2-Step Pro',
-        );
+        return $this->automatedEnvelope('Your Phase 2 Account Details — Wolforix 2-Step Pro');
     }
 
     public function content(): Content
