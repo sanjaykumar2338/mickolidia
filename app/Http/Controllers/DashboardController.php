@@ -1059,9 +1059,9 @@ class DashboardController extends Controller
             ];
         }
 
-        if ($account->platform_slug === 'mt5') {
-            $syncFreshness = $this->syncFreshness($account->last_synced_at);
+        $consistency = $this->consistencyState($account);
 
+        if (in_array($account->challenge_status, ['failed', 'passed'], true)) {
             if ($account->challenge_status === 'failed') {
                 return [
                     'title' => __('Challenge failed - trading blocked'),
@@ -1074,17 +1074,33 @@ class DashboardController extends Controller
                 ];
             }
 
-            if ($account->challenge_status === 'passed') {
-                return [
-                    'title' => __('Challenge passed'),
-                    'message' => __('This challenge has reached the required target and is locked for review and next steps.'),
-                    'meta' => [
-                        __('Passed at: :value', ['value' => $this->formatDateTime($account->passed_at)]),
-                        __('Profit target: :value', ['value' => $this->formatMoney($this->profitTargetAmount($account))]),
-                        __('Trading blocked: :value', ['value' => (bool) $account->trading_blocked ? __('Yes') : __('No')]),
-                    ],
-                ];
-            }
+            return [
+                'title' => __('Challenge passed'),
+                'message' => __('This challenge has reached the required target and is locked for review and next steps.'),
+                'meta' => [
+                    __('Passed at: :value', ['value' => $this->formatDateTime($account->passed_at)]),
+                    __('Profit target: :value', ['value' => $this->formatMoney($this->profitTargetAmount($account))]),
+                    __('Trading blocked: :value', ['value' => (bool) $account->trading_blocked ? __('Yes') : __('No')]),
+                ],
+            ];
+        }
+
+        if ((bool) ($consistency['warning_visible'] ?? false)) {
+            return [
+                'title' => __('Consistency rule warning'),
+                'message' => $consistency['status'] === 'breach'
+                    ? __('Your profit concentration has reached the consistency rule threshold. Review your trading-day distribution.')
+                    : __('You are approaching the consistency rule limit. Profits should be spread across multiple trading days.'),
+                'meta' => [
+                    __('Current month profit').': '.$this->formatMoney((float) ($consistency['current_month_profit'] ?? 0)),
+                    __('Highest single-day profit').': '.$this->formatMoney((float) ($consistency['highest_single_day_profit'] ?? 0)),
+                    __('Ratio').': '.number_format((float) ($consistency['ratio_percent'] ?? 0), 2).'%',
+                ],
+            ];
+        }
+
+        if ($account->platform_slug === 'mt5') {
+            $syncFreshness = $this->syncFreshness($account->last_synced_at);
 
             return [
                 'title' => __('MT5 live sync'),
@@ -1093,23 +1109,6 @@ class DashboardController extends Controller
                     __('Sync freshness: :value', ['value' => $syncFreshness['label']]),
                     __('Last sync: :value', ['value' => $this->formatDateTime($account->last_synced_at)]),
                     __('Data source: :value', ['value' => $this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea'))]),
-                ],
-            ];
-        }
-
-        $consistencyLimitAmount = (float) $account->total_profit * (((float) $account->consistency_limit_percent) / 100);
-        $consistencyUsage = $consistencyLimitAmount > 0
-            ? round((((float) $account->today_profit) / $consistencyLimitAmount) * 100, 1)
-            : 0.0;
-
-        if ($consistencyUsage >= 80) {
-            return [
-                'title' => __('site.dashboard.consistency.title'),
-                'message' => __('site.dashboard.consistency.message'),
-                'meta' => [
-                    __('site.dashboard.consistency.meta.today_profit').': '.$this->formatMoney((float) $account->today_profit),
-                    __('site.dashboard.consistency.meta.limit').': '.$this->formatMoney($consistencyLimitAmount),
-                    __('site.dashboard.consistency.meta.usage').': '.number_format($consistencyUsage, 1).'%',
                 ],
             ];
         }
@@ -1132,6 +1131,7 @@ class DashboardController extends Controller
     {
         $syncFreshness = $this->syncFreshness($account->last_synced_at);
         $challengeMetrics = $this->challengeMetrics($account);
+        $consistency = $this->consistencyState($account);
 
         return [
             'id' => $account->id,
@@ -1179,8 +1179,32 @@ class DashboardController extends Controller
             'final_state_locked' => (bool) $account->final_state_locked,
             'state_notice' => $this->stateNotice($account),
             'certificate_url' => $this->certificateUrl($account),
+            'consistency' => $consistency,
             'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
             'dashboard_url' => route('dashboard', ['account' => $account->id]),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function consistencyState(TradingAccount $account): array
+    {
+        $consistency = (array) data_get($account->rule_state, 'consistency', []);
+        $status = (string) ($consistency['status'] ?? $account->consistency_status ?? 'clear');
+
+        return [
+            'status' => $status,
+            'warning_visible' => (bool) ($consistency['warning_visible'] ?? in_array($status, ['approaching', 'breach'], true)),
+            'current_month_profit' => (float) ($consistency['current_month_profit'] ?? 0),
+            'highest_single_day_profit' => (float) ($consistency['highest_single_day_profit'] ?? 0),
+            'highest_single_day_date' => $consistency['highest_single_day_date'] ?? null,
+            'ratio_percent' => (float) ($consistency['ratio_percent'] ?? 0),
+            'approach_threshold_percent' => (float) ($consistency['approach_threshold_percent'] ?? max((float) $account->consistency_limit_percent - 5, 0)),
+            'breach_threshold_percent' => (float) ($consistency['breach_threshold_percent'] ?? $account->consistency_limit_percent),
+            'active_threshold_percent' => $consistency['active_threshold_percent'] ?? null,
+            'last_triggered_threshold_percent' => $consistency['last_triggered_threshold_percent'] ?? $account->consistency_last_trigger_threshold,
+            'triggered_at' => $consistency['triggered_at'] ?? optional($account->consistency_triggered_at)->toIso8601String(),
         ];
     }
 

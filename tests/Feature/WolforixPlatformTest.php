@@ -2170,6 +2170,106 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_admin_client_show_exposes_consistency_state_for_selected_account(): void
+    {
+        config()->set('wolforix.admin_auth.username', 'admin');
+        config()->set('wolforix.admin_auth.password', 'secret');
+
+        $user = User::factory()->create([
+            'name' => 'Consistency Review Trader',
+            'email' => 'consistency-review@example.com',
+        ]);
+
+        $plan = ChallengePlan::query()->create([
+            'slug' => 'one-step-10k',
+            'name' => '1-Step Instant 10K',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'entry_fee' => 99,
+            'profit_target' => 10,
+            'daily_loss_limit' => 4,
+            'max_loss_limit' => 8,
+            'steps' => 1,
+            'profit_share' => 80,
+            'first_payout_days' => 21,
+            'minimum_trading_days' => 3,
+            'payout_cycle_days' => 14,
+            'is_active' => true,
+        ]);
+
+        TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_plan_id' => $plan->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'account_reference' => 'WFX-CONSISTENCY-001',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_account_id' => 'MT5-CONSISTENCY-001',
+            'platform_login' => '105381073',
+            'platform_environment' => 'demo',
+            'platform_status' => 'connected',
+            'stage' => 'Single Phase',
+            'status' => 'active',
+            'account_type' => 'challenge',
+            'account_phase' => 'single_phase',
+            'phase_index' => 1,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10330,
+            'equity' => 10330,
+            'profit_loss' => 0,
+            'total_profit' => 330,
+            'today_profit' => 100,
+            'drawdown_percent' => 0,
+            'consistency_limit_percent' => 40,
+            'consistency_status' => 'approaching',
+            'consistency_last_trigger_threshold' => 35,
+            'consistency_triggered_at' => Carbon::parse('2026-04-03 12:00:00'),
+            'minimum_trading_days' => 3,
+            'trading_days_completed' => 3,
+            'sync_status' => 'success',
+            'sync_source' => 'mt5_ea',
+            'last_synced_at' => Carbon::parse('2026-04-03 12:00:00'),
+            'last_evaluated_at' => Carbon::parse('2026-04-03 12:00:00'),
+            'rule_state' => [
+                'consistency' => [
+                    'status' => 'approaching',
+                    'warning_visible' => true,
+                    'current_month_profit' => 330,
+                    'highest_single_day_profit' => 130,
+                    'highest_single_day_date' => '2026-04-01',
+                    'ratio_percent' => 39.39,
+                    'approach_threshold_percent' => 35,
+                    'breach_threshold_percent' => 40,
+                    'last_triggered_threshold_percent' => 35,
+                ],
+            ],
+            'meta' => [],
+        ]);
+
+        $this->post(route('admin.login.store'), [
+            'username' => 'admin',
+            'password' => 'secret',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->get(route('admin.clients.show', $user))
+            ->assertOk()
+            ->assertSee('Consistency Status')
+            ->assertSee('Approaching')
+            ->assertSee('Current Month Profit')
+            ->assertSee('$330.00')
+            ->assertSee('Highest Single-Day Profit')
+            ->assertSee('$130.00')
+            ->assertSee('Consistency Ratio')
+            ->assertSee('39.39%')
+            ->assertSee('Last Triggered Threshold')
+            ->assertSee('35.00%');
+    }
+
     public function test_admin_can_save_mt5_credentials_and_trigger_purchase_credential_email_once(): void
     {
         config()->set('wolforix.admin_auth.username', 'admin');

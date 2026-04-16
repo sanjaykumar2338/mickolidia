@@ -4,6 +4,8 @@ namespace App\Services\TradingAccounts;
 
 use App\Models\TradingAccount;
 use App\Models\TradingAccountDay;
+use App\Services\TradingAccounts\ConsistencyAlertMailer;
+use App\Services\TradingAccounts\TradingAccountConsistencyService;
 use App\Services\Challenge\ChallengeFinalStateMailer;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\Challenge\ChallengeProgressEngine;
@@ -16,8 +18,10 @@ class TradingAccountSnapshotApplyService
     public function __construct(
         private readonly TradingMetricsCalculator $metricsCalculator,
         private readonly ChallengeProgressEngine $progressEngine,
+        private readonly TradingAccountConsistencyService $consistencyService,
         private readonly ChallengeFinalStateMailer $finalStateMailer,
         private readonly ChallengeLifecycleMailer $lifecycleMailer,
+        private readonly ConsistencyAlertMailer $consistencyAlertMailer,
     ) {
     }
 
@@ -109,6 +113,12 @@ class TradingAccountSnapshotApplyService
                 'payload' => $snapshot['raw'] ?? $snapshot,
             ]);
 
+            $this->consistencyService->evaluateAndPersist(
+                account: $freshAccount,
+                serverDay: $serverDay,
+                evaluatedAt: $snapshotAt,
+            );
+
             if ($freshAccount->challengePurchase !== null) {
                 $freshAccount->challengePurchase->forceFill([
                     'account_status' => $freshAccount->challenge_status ?: $freshAccount->account_status,
@@ -149,6 +159,7 @@ class TradingAccountSnapshotApplyService
         $this->finalStateMailer->sendIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPhaseProgressIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($updatedAccount);
+        $this->consistencyAlertMailer->sendIfNeeded($updatedAccount);
 
         return $updatedAccount;
     }

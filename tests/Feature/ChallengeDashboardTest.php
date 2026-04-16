@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\ChallengeFailedMail;
 use App\Mail\ChallengePassedMail;
+use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Models\ChallengePlan;
@@ -342,6 +343,192 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
         $this->assertSame($failedEmailSentAt, $account->failed_email_sent_at?->toDateTimeString());
         Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_consistency_rule_stays_clear_below_approach_threshold(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-03 12:00:00', 10300, 10300, [
+            'trade_count' => 3,
+            'trade_history' => [
+                $this->closedTrade('CONS-1001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 100),
+                $this->closedTrade('CONS-1002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', 100),
+                $this->closedTrade('CONS-1003', '2026-04-03 08:45:00', '2026-04-03 11:45:00', 100),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('clear', $account->consistency_status);
+        $this->assertNull($account->consistency_last_trigger_threshold);
+        $this->assertNull($account->consistency_triggered_at);
+        $this->assertSame(300.0, (float) data_get($account->rule_state, 'consistency.current_month_profit'));
+        $this->assertSame(33.33, (float) data_get($account->rule_state, 'consistency.ratio_percent'));
+        Mail::assertNotSent(ConsistencyAlertMail::class);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('You are approaching the consistency rule limit. Profits should be spread across multiple trading days.')
+            ->assertDontSee('Your profit concentration has reached the consistency rule threshold. Review your trading-day distribution.');
+    }
+
+    public function test_consistency_rule_triggers_approaching_warning_and_email_once(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-03 12:00:00', 10330, 10330, [
+            'trade_count' => 3,
+            'trade_history' => [
+                $this->closedTrade('CONS-2001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 130),
+                $this->closedTrade('CONS-2002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', 100),
+                $this->closedTrade('CONS-2003', '2026-04-03 08:45:00', '2026-04-03 11:45:00', 100),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('approaching', $account->consistency_status);
+        $this->assertSame('35.00', (string) $account->consistency_last_trigger_threshold);
+        $this->assertNotNull($account->consistency_triggered_at);
+        $this->assertNotNull($account->consistency_approach_email_sent_at);
+        $this->assertNull($account->consistency_breach_email_sent_at);
+        $this->assertSame(39.39, (float) data_get($account->rule_state, 'consistency.ratio_percent'));
+
+        Mail::assertSent(ConsistencyAlertMail::class, function (ConsistencyAlertMail $mail) use ($account): bool {
+            return $mail->hasTo($account->user->email)
+                && $mail->details['status'] === 'approaching'
+                && $mail->details['current_month_profit'] === '$330.00'
+                && $mail->details['highest_single_day_profit'] === '$130.00'
+                && $mail->details['ratio_percent'] === '39.39%';
+        });
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('You are approaching the consistency rule limit. Profits should be spread across multiple trading days.')
+            ->assertSee('$330.00')
+            ->assertSee('$130.00')
+            ->assertSee('39.39%');
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('You are approaching the consistency rule limit. Profits should be spread across multiple trading days.')
+            ->assertSee('39.39%');
+    }
+
+    public function test_consistency_rule_triggers_breach_warning_and_email_once(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-03 12:00:00', 10500, 10500, [
+            'trade_count' => 3,
+            'trade_history' => [
+                $this->closedTrade('CONS-3001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 200),
+                $this->closedTrade('CONS-3002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', 150),
+                $this->closedTrade('CONS-3003', '2026-04-03 08:45:00', '2026-04-03 11:45:00', 150),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('breach', $account->consistency_status);
+        $this->assertSame('40.00', (string) $account->consistency_last_trigger_threshold);
+        $this->assertNotNull($account->consistency_triggered_at);
+        $this->assertNull($account->consistency_approach_email_sent_at);
+        $this->assertNotNull($account->consistency_breach_email_sent_at);
+        $this->assertSame(40.0, (float) data_get($account->rule_state, 'consistency.ratio_percent'));
+
+        Mail::assertSent(ConsistencyAlertMail::class, function (ConsistencyAlertMail $mail) use ($account): bool {
+            return $mail->hasTo($account->user->email)
+                && $mail->details['status'] === 'breach'
+                && $mail->details['current_month_profit'] === '$500.00'
+                && $mail->details['highest_single_day_profit'] === '$200.00'
+                && $mail->details['ratio_percent'] === '40.00%';
+        });
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Your profit concentration has reached the consistency rule threshold. Review your trading-day distribution.')
+            ->assertSee('$500.00')
+            ->assertSee('$200.00')
+            ->assertSee('40.00%');
+    }
+
+    public function test_repeated_sync_does_not_resend_duplicate_consistency_alerts(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-03 12:00:00', 10330, 10330, [
+            'trade_count' => 3,
+            'trade_history' => [
+                $this->closedTrade('CONS-4001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 130),
+                $this->closedTrade('CONS-4002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', 100),
+                $this->closedTrade('CONS-4003', '2026-04-03 08:45:00', '2026-04-03 11:45:00', 100),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+        $approachSentAt = $account->consistency_approach_email_sent_at?->toDateTimeString();
+
+        $this->pushMetrics($account, '2026-04-03 12:05:00', 10330, 10330, [
+            'trade_count' => 3,
+            'trade_history' => [
+                $this->closedTrade('CONS-4001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 130),
+                $this->closedTrade('CONS-4002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', 100),
+                $this->closedTrade('CONS-4003', '2026-04-03 08:45:00', '2026-04-03 11:45:00', 100),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame($approachSentAt, $account->consistency_approach_email_sent_at?->toDateTimeString());
+        Mail::assertSent(ConsistencyAlertMail::class, 1);
+    }
+
+    public function test_consistency_rule_ignores_zero_or_negative_monthly_profit(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'last_synced_at' => now(),
+            'sync_source' => 'mt5_ea',
+        ]);
+
+        $this->pushMetrics($account, '2026-04-02 12:00:00', 9950, 9950, [
+            'trade_count' => 2,
+            'trade_history' => [
+                $this->closedTrade('CONS-5001', '2026-04-01 09:00:00', '2026-04-01 11:30:00', 120),
+                $this->closedTrade('CONS-5002', '2026-04-02 09:00:00', '2026-04-02 11:15:00', -170),
+            ],
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('clear', $account->consistency_status);
+        $this->assertNull($account->consistency_last_trigger_threshold);
+        $this->assertNull($account->consistency_triggered_at);
+        $this->assertSame(-50.0, (float) data_get($account->rule_state, 'consistency.current_month_profit'));
+        Mail::assertNotSent(ConsistencyAlertMail::class);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('You are approaching the consistency rule limit. Profits should be spread across multiple trading days.')
+            ->assertDontSee('Your profit concentration has reached the consistency rule threshold. Review your trading-day distribution.');
     }
 
     public function test_five_k_dashboard_uses_challenge_relative_balance_and_equity(): void
@@ -1169,5 +1356,17 @@ class ChallengeDashboardTest extends TestCase
             'server_day' => substr($timestamp, 0, 10),
             'platform_status' => 'connected',
         ], $extra));
+    }
+
+    private function closedTrade(string $dealId, string $openedAt, string $closedAt, float $netProfit, string $symbol = 'XAUUSD'): array
+    {
+        return [
+            'deal_id' => $dealId,
+            'symbol' => $symbol,
+            'trade_side' => 'buy',
+            'open_timestamp' => Carbon::parse($openedAt)->timestamp,
+            'execution_timestamp' => Carbon::parse($closedAt)->timestamp,
+            'net_profit' => $netProfit,
+        ];
     }
 }

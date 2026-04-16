@@ -132,6 +132,10 @@
             </div>
 
             @if ($selectedAccount !== null)
+                @php
+                    $consistencyState = data_get($selectedAccount->rule_state ?? [], 'consistency', []);
+                    $consistencyStatus = (string) ($consistencyState['status'] ?? $selectedAccount->consistency_status ?? 'clear');
+                @endphp
                 <div class="mt-6 surface-card rounded-[1.8rem] p-5">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">{{ __('site.admin.client_show.account_snapshot') }}</p>
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
@@ -158,6 +162,10 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Challenge Status</dt>
                             <dd class="mt-2 font-semibold text-white">{{ str($selectedAccount->challenge_status ?: $selectedAccount->account_status)->replace('_', ' ')->title() }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Consistency Status</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ str($consistencyStatus)->replace('_', ' ')->title() }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('site.admin.account.balance') }}</dt>
@@ -214,6 +222,30 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Failure Reason</dt>
                             <dd class="mt-2 font-semibold text-white">{{ $selectedAccount->failure_reason ? str($selectedAccount->failure_reason)->replace('_', ' ')->title() : 'None' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Current Month Profit</dt>
+                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) ($consistencyState['current_month_profit'] ?? 0), 2) }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Highest Single-Day Profit</dt>
+                            <dd class="mt-2 font-semibold text-white">
+                                ${{ number_format((float) ($consistencyState['highest_single_day_profit'] ?? 0), 2) }}
+                                @if (! empty($consistencyState['highest_single_day_date']))
+                                    <span class="text-slate-400">• {{ $consistencyState['highest_single_day_date'] }}</span>
+                                @endif
+                            </dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Consistency Ratio</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ number_format((float) ($consistencyState['ratio_percent'] ?? 0), 2) }}%</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Last Triggered Threshold</dt>
+                            <dd class="mt-2 font-semibold text-white">
+                                {{ ($consistencyState['last_triggered_threshold_percent'] ?? $selectedAccount->consistency_last_trigger_threshold) !== null
+                                    ? number_format((float) ($consistencyState['last_triggered_threshold_percent'] ?? $selectedAccount->consistency_last_trigger_threshold), 2).'%' : 'None' }}
+                            </dd>
                         </div>
                     </dl>
 

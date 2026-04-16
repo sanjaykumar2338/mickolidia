@@ -208,6 +208,50 @@ class TradeHistoryPanelBuilder
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public function closedTradeRowsFromSnapshots(TradingAccount $account, ?Carbon $snapshotFrom = null): array
+    {
+        $query = $account->balanceSnapshots()
+            ->orderByDesc('snapshot_at')
+            ->orderByDesc('id');
+
+        if ($snapshotFrom instanceof Carbon) {
+            $query->where('snapshot_at', '>=', $snapshotFrom);
+        }
+
+        $snapshots = $query->get(['id', 'snapshot_at', 'payload']);
+        $closedRows = [];
+
+        foreach ($snapshots as $snapshot) {
+            $payload = is_array($snapshot->payload) ? $snapshot->payload : [];
+            $snapshotClosedRows = $this->tradeRowsFromPayload($payload, self::CLOSED_TRADE_PATHS, true);
+
+            if ($snapshotClosedRows === []) {
+                continue;
+            }
+
+            $closedRows = $this->mergeTradeRows($closedRows, $snapshotClosedRows);
+        }
+
+        return $closedRows;
+    }
+
+    public function tradeCloseTimestampForRow(array $row): ?Carbon
+    {
+        return $this->tradeCloseTimestamp($row);
+    }
+
+    public function tradeRealizedResultForRow(array $row): ?float
+    {
+        $pnl = $this->tradePnlValue($row);
+        $commission = $this->tradeCommissionValue($row);
+        $swap = $this->tradeSwapValue($row);
+
+        return $this->tradeNetResultValue($row, $pnl, $commission, $swap) ?? $pnl;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function buildTradeRow(array $row, bool $isOpen, ?Carbon $snapshotReferenceAt = null): array
