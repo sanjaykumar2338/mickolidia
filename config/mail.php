@@ -130,4 +130,19 @@ return [
         'name' => env('MAIL_AUTOMATED_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Automated Mail Reply-To Address
+    |--------------------------------------------------------------------------
+    |
+    | Replies to system-generated notifications should route to the monitored
+    | support inbox instead of the automated sender address.
+    |
+    */
+
+    'automated_reply_to' => [
+        'address' => env('MAIL_AUTOMATED_REPLY_TO_ADDRESS', env('SUPPORT_EMAIL', 'support@wolforix.com')),
+        'name' => env('MAIL_AUTOMATED_REPLY_TO_NAME', 'Wolforix Support'),
+    ],
+
 ];

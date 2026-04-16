@@ -24,6 +24,8 @@ class WolforixMailBrandingTest extends TestCase
     {
         config()->set('mail.automated_from.address', 'noreply@wolforix.com');
         config()->set('mail.automated_from.name', 'Wolforix Notifications');
+        config()->set('mail.automated_reply_to.address', 'support@wolforix.com');
+        config()->set('mail.automated_reply_to.name', 'Wolforix Support');
 
         $user = User::factory()->make([
             'name' => 'Mail Trader',
@@ -105,6 +107,8 @@ class WolforixMailBrandingTest extends TestCase
 
             $this->assertSame('noreply@wolforix.com', $envelope->from?->address, $mailable::class);
             $this->assertSame('Wolforix Notifications', $envelope->from?->name, $mailable::class);
+            $this->assertSame('support@wolforix.com', $envelope->replyTo[0]?->address, $mailable::class);
+            $this->assertSame('Wolforix Support', $envelope->replyTo[0]?->name, $mailable::class);
             $this->assertStringContainsString('background-color:#050b13', $html, $mailable::class);
             $this->assertStringContainsString('Trade Fearlessly. Win Real.', $html, $mailable::class);
             $this->assertStringContainsString('Wolforix', $html, $mailable::class);
@@ -127,5 +131,6 @@ class WolforixMailBrandingTest extends TestCase
         $this->assertStringContainsString('Reset your Wolforix password', $passwordResetHtml, WolforixResetPasswordNotification::class);
         $this->assertStringContainsString($supportEmail, $passwordResetHtml, WolforixResetPasswordNotification::class);
         $this->assertSame(['noreply@wolforix.com', 'Wolforix Notifications'], $passwordResetMail->from);
+        $this->assertSame([['support@wolforix.com', 'Wolforix Support']], $passwordResetMail->replyTo);
     }
 }

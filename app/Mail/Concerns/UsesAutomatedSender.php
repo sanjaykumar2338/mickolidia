@@ -14,6 +14,12 @@ trait UsesAutomatedSender
                 (string) config('mail.automated_from.address'),
                 (string) config('mail.automated_from.name'),
             ),
+            replyTo: [
+                new Address(
+                    (string) config('mail.automated_reply_to.address'),
+                    (string) config('mail.automated_reply_to.name'),
+                ),
+            ],
             subject: $subject,
         );
     }

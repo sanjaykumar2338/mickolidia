@@ -32,6 +32,10 @@ class WolforixResetPasswordNotification extends Notification
                 (string) config('mail.automated_from.address'),
                 (string) config('mail.automated_from.name'),
             )
+            ->replyTo(
+                (string) config('mail.automated_reply_to.address'),
+                (string) config('mail.automated_reply_to.name'),
+            )
             ->subject('Reset your Wolforix password')
             ->view('emails.password-reset', [
                 'user' => $notifiable,
