@@ -2997,6 +2997,7 @@ h6 {
 }
 
 .wolfi-dashboard-avatar-card,
+.wolfi-dashboard-capability-panel,
 .wolfi-dashboard-source-card,
 .wolfi-dashboard-chat-wrap {
     box-shadow: 0 22px 56px rgba(2, 6, 23, 0.22);
@@ -3064,6 +3065,33 @@ h6 {
 
 .wolfi-dashboard-chat-wrap {
     backdrop-filter: blur(16px);
+}
+
+.wolfi-dashboard-capability-panel {
+    background:
+        radial-gradient(circle at top right, rgba(244, 183, 74, 0.06), transparent 34%),
+        linear-gradient(180deg, rgba(11, 18, 30, 0.92) 0%, rgba(6, 10, 18, 0.88) 100%);
+    backdrop-filter: blur(16px);
+}
+
+.wolfi-dashboard-source-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.wolfi-dashboard-source-card {
+    display: flex;
+    min-height: 10.5rem;
+    flex-direction: column;
+    justify-content: flex-start;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 48%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.wolfi-dashboard-source-heading {
+    letter-spacing: 0.18em;
+    line-height: 1.45;
 }
 
 .wolfi-dashboard-insights-block {
@@ -3354,6 +3382,13 @@ h6 {
 @media (max-width: 1024px) {
     .wolfi-dashboard-thread {
         max-height: 26rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .wolfi-dashboard-source-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.15rem;
     }
 }
 

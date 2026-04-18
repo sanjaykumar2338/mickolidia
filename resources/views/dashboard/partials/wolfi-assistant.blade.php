@@ -35,8 +35,8 @@
         <div class="wolfi-dashboard-grid"></div>
     </div>
 
-    <div class="relative grid gap-6 xl:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] xl:items-start">
-        <div class="min-w-0">
+    <div class="relative grid gap-7 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.1fr)] xl:items-start">
+        <div class="min-w-0 space-y-6">
             <div class="flex flex-wrap items-center gap-3">
                 <span class="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-amber-100">
                     {{ $assistant['eyebrow'] ?? 'Wolfi Assistant' }}
@@ -53,48 +53,49 @@
                 {{ $assistant['description'] ?? '' }}
             </p>
 
-            <div class="mt-6 grid gap-5 lg:grid-cols-[minmax(15rem,19rem)_minmax(0,1fr)]">
-                <div class="wolfi-dashboard-avatar-card rounded-[1.9rem] border border-white/10 bg-black/20 p-5">
-                    <div class="wolfi-dashboard-avatar-shell mx-auto" data-wolfi-avatar>
-                        <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer"></span>
-                        <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-inner"></span>
-                        <img
-                            src="{{ asset($assistant['avatar_asset'] ?? 'newfolder/IMG_8542.png') }}"
-                            alt="{{ $assistant['name'] ?? 'Wolfi' }}"
-                            class="wolfi-dashboard-avatar-image"
-                            loading="eager"
-                            decoding="async"
-                        >
-                    </div>
-
-                    <div class="mt-5 text-center">
-                        <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-300">
-                            {{ $assistant['response_label'] ?? 'Live response' }}
-                        </p>
-                        <p class="mt-3 text-lg font-semibold text-white" data-wolfi-live-label>
-                            {{ $assistant['status_idle'] ?? 'Ready to guide your next step' }}
-                        </p>
-                        <p class="mt-3 text-sm leading-6 text-slate-400">
-                            {{ $assistant['response_hint'] ?? '' }}
-                        </p>
-                    </div>
+            <div class="wolfi-dashboard-avatar-card max-w-[22rem] rounded-[1.9rem] border border-white/10 bg-black/20 p-5 xl:max-w-none">
+                <div class="wolfi-dashboard-avatar-shell mx-auto" data-wolfi-avatar>
+                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer"></span>
+                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-inner"></span>
+                    <img
+                        src="{{ asset($assistant['avatar_asset'] ?? 'newfolder/IMG_8542.png') }}"
+                        alt="{{ $assistant['name'] ?? 'Wolfi' }}"
+                        class="wolfi-dashboard-avatar-image"
+                        loading="eager"
+                        decoding="async"
+                    >
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2">
-                    @foreach ($pillars as $pillar)
-                        <article class="wolfi-dashboard-source-card rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-300">{{ $pillar['title'] }}</p>
-                            <p class="mt-3 text-sm leading-6 text-slate-300">{{ $pillar['description'] }}</p>
-                        </article>
-                    @endforeach
+                <div class="mt-5 text-center">
+                    <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
+                        {{ $assistant['response_label'] ?? 'Live response' }}
+                    </p>
+                    <p class="mt-3 text-lg font-semibold text-white" data-wolfi-live-label>
+                        {{ $assistant['status_idle'] ?? 'Ready to guide your next step' }}
+                    </p>
+                    <p class="mt-3 text-sm leading-6 text-slate-400">
+                        {{ $assistant['response_hint'] ?? '' }}
+                    </p>
                 </div>
             </div>
         </div>
 
-        <div class="wolfi-dashboard-chat-wrap min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/72 p-4 sm:p-5 lg:p-6">
+        <div class="min-w-0 space-y-5">
+            <section class="wolfi-dashboard-capability-panel rounded-[2rem] border border-white/10 bg-slate-950/60 p-5 sm:p-6">
+                <div class="wolfi-dashboard-source-grid">
+                    @foreach ($pillars as $pillar)
+                        <article class="wolfi-dashboard-source-card rounded-[1.7rem] border border-white/8 bg-black/18 p-5 sm:p-6">
+                            <p class="wolfi-dashboard-source-heading text-[0.68rem] font-semibold uppercase text-amber-300">{{ $pillar['title'] }}</p>
+                            <p class="mt-4 text-sm leading-7 text-slate-300">{{ $pillar['description'] }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+
+            <div class="wolfi-dashboard-chat-wrap min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/72 p-4 sm:p-5 lg:p-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-300">
+                    <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
                         {{ $assistant['sources_title'] ?? 'Grounded in Wolforix data' }}
                     </p>
                     <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
@@ -119,7 +120,7 @@
                 <section class="wolfi-dashboard-insights-block mt-5">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-amber-300">
+                            <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
                                 {{ $smartInsightsMeta['title'] ?? 'Smart Insights' }}
                             </p>
                             <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
@@ -233,6 +234,7 @@
             <p class="mt-3 text-xs leading-6 text-slate-500">
                 {{ $assistant['input_help'] ?? '' }}
             </p>
+            </div>
         </div>
     </div>
 </section>
