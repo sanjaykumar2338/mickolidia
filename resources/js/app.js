@@ -1,4 +1,5 @@
 import './bootstrap';
+import { initWolfiDashboard } from './wolfi-dashboard';
 
 document.addEventListener('DOMContentLoaded', () => {
     const storage = {
@@ -4278,4 +4279,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
+
+    initWolfiDashboard();
 });

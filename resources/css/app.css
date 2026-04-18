@@ -2917,6 +2917,466 @@ h6 {
     }
 }
 
+@keyframes wolfiDashboardBreath {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(0, -8px, 0) scale(1.028);
+    }
+}
+
+@keyframes wolfiDashboardRingPulse {
+    0% {
+        opacity: 0.38;
+        transform: scale(0.96);
+    }
+    70% {
+        opacity: 0;
+        transform: scale(1.16);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes wolfiDashboardStatusPulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: scale(1.16);
+        opacity: 1;
+    }
+}
+
+.wolfi-dashboard-shell {
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.08), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 32%),
+        linear-gradient(180deg, rgba(9, 16, 28, 0.98) 0%, rgba(5, 10, 18, 0.96) 100%);
+    box-shadow: 0 34px 90px rgba(2, 6, 23, 0.42);
+}
+
+.wolfi-dashboard-ambient {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(80px);
+    opacity: 0.32;
+    pointer-events: none;
+}
+
+.wolfi-dashboard-ambient-gold {
+    top: -4rem;
+    right: -2rem;
+    height: 16rem;
+    width: 16rem;
+    background: rgba(244, 183, 74, 0.28);
+}
+
+.wolfi-dashboard-ambient-blue {
+    bottom: -6rem;
+    left: -3rem;
+    height: 18rem;
+    width: 18rem;
+    background: rgba(56, 189, 248, 0.18);
+}
+
+.wolfi-dashboard-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 100%);
+}
+
+.wolfi-dashboard-avatar-card,
+.wolfi-dashboard-source-card,
+.wolfi-dashboard-chat-wrap {
+    box-shadow: 0 22px 56px rgba(2, 6, 23, 0.22);
+}
+
+.wolfi-dashboard-avatar-shell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(100%, 14rem);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), transparent 46%),
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.18), transparent 48%),
+        rgba(4, 8, 15, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    animation: wolfiDashboardBreath 6.2s ease-in-out infinite;
+}
+
+.wolfi-dashboard-avatar-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(244, 183, 74, 0.22);
+}
+
+.wolfi-dashboard-avatar-ring-outer {
+    inset: -0.7rem;
+    border-color: rgba(244, 183, 74, 0.24);
+    animation: wolfiDashboardRingPulse 4.6s ease-out infinite;
+}
+
+.wolfi-dashboard-avatar-ring-inner {
+    inset: 0.45rem;
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.wolfi-dashboard-avatar-image {
+    position: relative;
+    z-index: 1;
+    width: 78%;
+    height: 78%;
+    object-fit: cover;
+    border-radius: 999px;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 18px 36px rgba(2, 6, 23, 0.45);
+}
+
+.wolfi-dashboard-shell.is-thinking .wolfi-dashboard-avatar-shell,
+.wolfi-dashboard-shell.is-responding .wolfi-dashboard-avatar-shell {
+    box-shadow:
+        0 0 0 1px rgba(244, 183, 74, 0.16),
+        0 0 36px rgba(244, 183, 74, 0.16);
+}
+
+.wolfi-dashboard-shell.is-thinking .wolfi-dashboard-avatar-ring-outer,
+.wolfi-dashboard-shell.is-responding .wolfi-dashboard-avatar-ring-outer {
+    animation-duration: 1.8s;
+    border-color: rgba(244, 183, 74, 0.34);
+}
+
+.wolfi-dashboard-chat-wrap {
+    backdrop-filter: blur(16px);
+}
+
+.wolfi-dashboard-insights-block {
+    border-radius: 1.55rem;
+}
+
+.wolfi-dashboard-insight-card {
+    border-radius: 1.45rem;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.18) 100%);
+    padding: 1rem 1rem 1.05rem;
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        background-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.wolfi-dashboard-insight-card:hover,
+.wolfi-dashboard-insight-card:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.24);
+}
+
+.wolfi-dashboard-insight-card-rose {
+    border-color: rgba(251, 113, 133, 0.18);
+    background:
+        linear-gradient(180deg, rgba(251, 113, 133, 0.1) 0%, rgba(0, 0, 0, 0.18) 100%);
+}
+
+.wolfi-dashboard-insight-card-amber {
+    border-color: rgba(244, 183, 74, 0.2);
+    background:
+        linear-gradient(180deg, rgba(244, 183, 74, 0.1) 0%, rgba(0, 0, 0, 0.18) 100%);
+}
+
+.wolfi-dashboard-insight-card-sky {
+    border-color: rgba(56, 189, 248, 0.18);
+    background:
+        linear-gradient(180deg, rgba(56, 189, 248, 0.1) 0%, rgba(0, 0, 0, 0.18) 100%);
+}
+
+.wolfi-dashboard-insight-card-emerald {
+    border-color: rgba(52, 211, 153, 0.18);
+    background:
+        linear-gradient(180deg, rgba(52, 211, 153, 0.1) 0%, rgba(0, 0, 0, 0.18) 100%);
+}
+
+.wolfi-dashboard-insight-icon {
+    display: inline-flex;
+    min-height: 2.4rem;
+    min-width: 2.4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.24);
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.wolfi-dashboard-thread {
+    max-height: 31rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(244, 183, 74, 0.5) transparent;
+}
+
+.wolfi-dashboard-thread::-webkit-scrollbar {
+    width: 8px;
+}
+
+.wolfi-dashboard-thread::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wolfi-dashboard-thread::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(244, 183, 74, 0.42);
+}
+
+.wolfi-dashboard-message {
+    border-radius: 1.7rem;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 1rem 1.05rem;
+}
+
+.wolfi-dashboard-message-assistant {
+    background:
+        linear-gradient(180deg, rgba(244, 183, 74, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.wolfi-dashboard-message-user {
+    margin-left: auto;
+    max-width: min(34rem, 88%);
+    background:
+        linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(15, 23, 42, 0.45) 100%);
+}
+
+.wolfi-dashboard-message-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.wolfi-dashboard-message-badge {
+    display: inline-flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    border: 1px solid rgba(244, 183, 74, 0.18);
+    background: rgba(0, 0, 0, 0.2);
+    color: #fde7b0;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.wolfi-dashboard-message-name {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.wolfi-dashboard-message-title {
+    margin-top: 0.15rem;
+    color: rgba(253, 230, 138, 0.84);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.wolfi-dashboard-message-copy {
+    margin-top: 1rem;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    line-height: 1.9;
+}
+
+.wolfi-dashboard-message-list {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.wolfi-dashboard-message-list-item {
+    display: flex;
+    gap: 0.75rem;
+    color: #cbd5e1;
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+
+.wolfi-dashboard-message-list-dot {
+    margin-top: 0.65rem;
+    height: 0.4rem;
+    width: 0.4rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: #f4b74a;
+}
+
+.wolfi-dashboard-user-label {
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.wolfi-dashboard-user-copy {
+    margin-top: 0.55rem;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+.wolfi-dashboard-stats-grid {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+}
+
+.wolfi-dashboard-stat-card {
+    border-radius: 1.1rem;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(0, 0, 0, 0.22);
+    padding: 0.85rem 0.9rem;
+}
+
+.wolfi-dashboard-stat-card.is-amber {
+    border-color: rgba(244, 183, 74, 0.2);
+}
+
+.wolfi-dashboard-stat-card.is-sky {
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.wolfi-dashboard-stat-card.is-emerald {
+    border-color: rgba(52, 211, 153, 0.18);
+}
+
+.wolfi-dashboard-stat-card.is-rose {
+    border-color: rgba(251, 113, 133, 0.18);
+}
+
+.wolfi-dashboard-stat-label {
+    color: rgba(148, 163, 184, 0.9);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.wolfi-dashboard-stat-value {
+    margin-top: 0.55rem;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.wolfi-dashboard-chip {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.25s ease;
+}
+
+.wolfi-dashboard-chip:hover,
+.wolfi-dashboard-chip:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(244, 183, 74, 0.3);
+    background: rgba(244, 183, 74, 0.12);
+    outline: none;
+}
+
+.wolfi-dashboard-input {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.01);
+}
+
+.wolfi-dashboard-input:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.wolfi-dashboard-input:focus-visible {
+    border-color: rgba(244, 183, 74, 0.34);
+    box-shadow:
+        0 0 0 1px rgba(244, 183, 74, 0.14),
+        0 0 0 5px rgba(244, 183, 74, 0.08);
+}
+
+.wolfi-dashboard-submit:disabled,
+.wolfi-dashboard-voice-slot:disabled {
+    cursor: default;
+    opacity: 0.86;
+}
+
+.wolfi-dashboard-status-dot {
+    display: inline-flex;
+    height: 0.75rem;
+    width: 0.75rem;
+    border-radius: 999px;
+    background: rgba(244, 183, 74, 0.92);
+    box-shadow: 0 0 18px rgba(244, 183, 74, 0.28);
+    animation: wolfiDashboardStatusPulse 2.2s ease-in-out infinite;
+}
+
+.wolfi-dashboard-shell.is-thinking .wolfi-dashboard-status-dot {
+    background: rgba(248, 218, 134, 1);
+}
+
+.wolfi-dashboard-shell.is-responding .wolfi-dashboard-status-dot {
+    background: rgba(52, 211, 153, 0.98);
+    box-shadow: 0 0 18px rgba(52, 211, 153, 0.26);
+}
+
+@media (max-width: 1024px) {
+    .wolfi-dashboard-thread {
+        max-height: 26rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .wolfi-dashboard-message-user {
+        max-width: 100%;
+    }
+
+    .wolfi-dashboard-avatar-shell {
+        width: min(100%, 11.75rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wolfi-dashboard-avatar-shell,
+    .wolfi-dashboard-avatar-ring-outer,
+    .wolfi-dashboard-status-dot,
+    .wolfi-dashboard-chip {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 .grid-pattern {
     background-image:
         linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),

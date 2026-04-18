@@ -6,6 +6,7 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Pricing\ChallengePricingService;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
+use App\Services\Wolfi\WolfiAssistantService;
 use App\Support\ChallengeAccountMetrics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -18,6 +19,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
+        private readonly WolfiAssistantService $wolfiAssistantService,
     ) {}
 
     public function index(Request $request, ChallengePricingService $pricingService): View
@@ -105,6 +107,11 @@ class DashboardController extends Controller
             'purchasedChallenges' => $this->purchasedChallenges(),
             'hasTradingAccounts' => $accounts->isNotEmpty(),
             'availablePlans' => $availablePlans,
+            'wolfiPanel' => $this->wolfiAssistantService->panelData(
+                $user,
+                $primaryAccount,
+                (string) ($request->route()?->getName() ?: 'dashboard'),
+            ),
             'emptyState' => [
                 'title' => __('No challenge accounts linked yet'),
                 'message' => __('Paid challenges stay visible below. A trading account card appears here once the purchase is provisioned and linked for sync.'),
@@ -143,6 +150,7 @@ class DashboardController extends Controller
             'purchasedChallenges' => collect(),
             'hasTradingAccounts' => false,
             'availablePlans' => $availablePlans,
+            'wolfiPanel' => null,
             'emptyState' => [
                 'title' => __('No challenge accounts linked yet'),
                 'message' => __('Your dashboard will populate here after a paid challenge is provisioned.'),

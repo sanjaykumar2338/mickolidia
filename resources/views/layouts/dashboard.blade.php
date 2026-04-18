@@ -27,6 +27,12 @@
             @include('partials.dashboard-topbar')
 
             <main class="min-w-0 px-4 pb-12 pt-4 sm:px-6 lg:px-8">
+                @if (! empty($wolfiPanel))
+                    <div class="mb-6">
+                        @include('dashboard.partials.wolfi-assistant', ['wolfiPanel' => $wolfiPanel])
+                    </div>
+                @endif
+
                 @yield('content')
             </main>
         </div>
