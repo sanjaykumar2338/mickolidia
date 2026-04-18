@@ -53,7 +53,7 @@
                 {{ $assistant['description'] ?? '' }}
             </p>
 
-            <div class="wolfi-dashboard-avatar-card max-w-[22rem] rounded-[1.9rem] border border-white/10 bg-black/20 p-5 xl:max-w-none">
+            <div class="wolfi-dashboard-avatar-card max-w-[22rem] rounded-[1.9rem] border border-white/10 bg-black/20 px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-5 xl:max-w-none">
                 <div class="wolfi-dashboard-avatar-shell mx-auto" data-wolfi-avatar>
                     <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer"></span>
                     <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-inner"></span>
@@ -66,7 +66,7 @@
                     >
                 </div>
 
-                <div class="mt-5 text-center">
+                <div class="mt-4 text-center">
                     <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
                         {{ $assistant['response_label'] ?? 'Live response' }}
                     </p>

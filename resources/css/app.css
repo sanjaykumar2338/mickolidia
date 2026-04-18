@@ -3007,7 +3007,7 @@ h6 {
     position: relative;
     display: grid;
     place-items: center;
-    width: min(100%, 14rem);
+    width: min(100%, 15.6rem);
     aspect-ratio: 1;
     margin-inline: auto;
     border-radius: 999px;
@@ -3041,8 +3041,8 @@ h6 {
 .wolfi-dashboard-avatar-image {
     position: relative;
     z-index: 1;
-    width: 78%;
-    height: 78%;
+    width: 80%;
+    height: 80%;
     object-fit: cover;
     border-radius: 999px;
     box-shadow:
@@ -3398,7 +3398,7 @@ h6 {
     }
 
     .wolfi-dashboard-avatar-shell {
-        width: min(100%, 11.75rem);
+        width: min(100%, 13rem);
     }
 }
 
