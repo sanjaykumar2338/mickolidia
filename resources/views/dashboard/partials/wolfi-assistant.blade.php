@@ -6,6 +6,7 @@
     $pillars = $wolfiPanel['pillars'] ?? [];
     $smartInsightsMeta = $wolfiPanel['smart_insights'] ?? [];
     $smartInsights = $wolfiPanel['insights'] ?? [];
+    $showVoicePlaceholder = (bool) ($voice['placeholder_enabled'] ?? false);
     $config = [
         'endpoint' => $wolfiPanel['endpoint'] ?? '',
         'page' => $wolfiPanel['page']['key'] ?? 'dashboard',
@@ -93,7 +94,7 @@
             </section>
 
             <div class="wolfi-dashboard-chat-wrap min-w-0 rounded-[2rem] border border-white/10 bg-slate-950/72 p-4 sm:p-5 lg:p-6">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex flex-col gap-4 {{ $showVoicePlaceholder ? 'sm:flex-row sm:items-start sm:justify-between' : '' }}">
                 <div>
                     <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
                         {{ $assistant['sources_title'] ?? 'Grounded in Wolforix data' }}
@@ -103,17 +104,19 @@
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    disabled
-                    class="wolfi-dashboard-voice-slot inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200"
-                    title="{{ $voice['action_note'] ?? ($assistant['voice_copy'] ?? '') }}"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v9m0 0a3 3 0 0 0 3-3V8a3 3 0 1 0-6 0v2a3 3 0 0 0 3 3Zm0 0v4m-4 0h8m-9 3h10" />
-                    </svg>
-                    <span>{{ $voice['action_label'] ?? ($assistant['voice_label'] ?? 'Voice actions soon') }}</span>
-                </button>
+                @if ($showVoicePlaceholder)
+                    <button
+                        type="button"
+                        disabled
+                        class="wolfi-dashboard-voice-slot inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200"
+                        title="{{ $voice['action_note'] ?? ($assistant['voice_copy'] ?? '') }}"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v9m0 0a3 3 0 0 0 3-3V8a3 3 0 1 0-6 0v2a3 3 0 0 0 3 3Zm0 0v4m-4 0h8m-9 3h10" />
+                        </svg>
+                        <span>{{ $voice['action_label'] ?? ($assistant['voice_label'] ?? 'Voice actions soon') }}</span>
+                    </button>
+                @endif
             </div>
 
             @if ($smartInsights !== [])

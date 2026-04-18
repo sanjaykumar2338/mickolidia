@@ -178,7 +178,9 @@ return [
     ],
 
     'voice' => [
-        'placeholder_enabled' => true,
+        // Keep the placeholder wiring ready for a future voice milestone,
+        // but do not expose the unfinished UI in the current dashboard.
+        'placeholder_enabled' => false,
         'action_label' => 'Voice actions soon',
         'action_note' => 'The layout and response payloads already reserve a clean place for future playback controls and approved voice samples.',
     ],
