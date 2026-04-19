@@ -740,8 +740,8 @@ return [
 
     'faq' => [
         'eyebrow' => 'Häufig gestellte Fragen',
-        'title' => 'Durchsuchbare Antworten auf Basis des Kundenbriefings.',
-        'description' => 'Fragen, Compliance-Formulierungen, Auszahlungsregeln und Dashboard-Verhalten sind direkt aus dem lokal gespeicherten Kundenchat strukturiert.',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'Suche',
         'search_placeholder' => 'FAQs durchsuchen...',
         'no_results' => 'Für diese Suche wurden keine FAQ-Einträge gefunden.',

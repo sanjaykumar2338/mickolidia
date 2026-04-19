@@ -613,8 +613,8 @@ return array_replace_recursive($en, [
     ],
     'faq' => [
         'eyebrow' => 'अक्सर पूछे जाने वाले प्रश्न',
-        'title' => 'क्लाइंट ब्रीफ़ पर आधारित खोजने योग्य उत्तर।',
-        'description' => 'प्रश्न, कंप्लायंस भाषा, पेआउट नियम और डैशबोर्ड व्यवहार सीधे इस प्रोजेक्ट में लोकली संग्रहित क्लाइंट चैट से संरचित किए गए हैं।',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'खोज',
         'search_placeholder' => 'FAQ खोजें...',
         'no_results' => 'उस खोज से कोई FAQ आइटम नहीं मिला।',

@@ -740,8 +740,8 @@ return [
 
     'faq' => [
         'eyebrow' => 'Frequently Asked Questions',
-        'title' => 'Searchable answers built from the client brief.',
-        'description' => 'Questions, compliance wording, payout rules, and dashboard behavior are structured directly from the client chat stored locally in this project.',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'Search',
         'search_placeholder' => 'Search FAQs...',
         'no_results' => 'No FAQ items matched that search.',

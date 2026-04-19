@@ -613,8 +613,8 @@ return array_replace_recursive($en, [
     ],
     'faq' => [
         'eyebrow' => 'Domande frequenti',
-        'title' => 'Risposte ricercabili costruite sul brief del cliente.',
-        'description' => 'Domande, testo di compliance, regole payout e comportamento della dashboard sono strutturati direttamente dalla chat del cliente conservata localmente in questo progetto.',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'Cerca',
         'search_placeholder' => 'Cerca nelle FAQ...',
         'no_results' => 'Nessun elemento FAQ corrisponde a questa ricerca.',

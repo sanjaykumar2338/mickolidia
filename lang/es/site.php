@@ -740,8 +740,8 @@ return [
 
     'faq' => [
         'eyebrow' => 'Preguntas frecuentes',
-        'title' => 'Respuestas con búsqueda basadas en el briefing del cliente.',
-        'description' => 'Preguntas, redacción de cumplimiento, reglas de payout y comportamiento del dashboard están estructurados directamente a partir del chat del cliente almacenado localmente.',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'Buscar',
         'search_placeholder' => 'Buscar en las FAQs...',
         'no_results' => 'Ninguna FAQ coincide con esa búsqueda.',

@@ -613,8 +613,8 @@ return array_replace_recursive($en, [
     ],
     'faq' => [
         'eyebrow' => 'Perguntas frequentes',
-        'title' => 'Respostas pesquisáveis construídas a partir do briefing do cliente.',
-        'description' => 'Perguntas, texto de compliance, regras de payout e comportamento do dashboard são estruturados diretamente a partir da conversa com o cliente guardada localmente neste projeto.',
+        'title' => 'Everything you need. Instantly.',
+        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
         'search_label' => 'Pesquisar',
         'search_placeholder' => 'Pesquisar nas FAQ...',
         'no_results' => 'Nenhum item FAQ corresponde a essa pesquisa.',
