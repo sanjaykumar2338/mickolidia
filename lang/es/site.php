@@ -740,8 +740,8 @@ return [
 
     'faq' => [
         'eyebrow' => 'Preguntas frecuentes',
-        'title' => 'Everything you need. Instantly.',
-        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
+        'title' => 'Todo lo que necesitas. Al instante.',
+        'description' => 'Todas tus reglas de trading, pagos e información de cuenta — claras y accesibles.',
         'search_label' => 'Buscar',
         'search_placeholder' => 'Buscar en las FAQs...',
         'no_results' => 'Ninguna FAQ coincide con esa búsqueda.',

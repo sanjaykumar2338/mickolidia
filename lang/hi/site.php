@@ -613,8 +613,8 @@ return array_replace_recursive($en, [
     ],
     'faq' => [
         'eyebrow' => 'अक्सर पूछे जाने वाले प्रश्न',
-        'title' => 'Everything you need. Instantly.',
-        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
+        'title' => 'आपको जो चाहिए, तुरंत।',
+        'description' => 'आपके सभी ट्रेडिंग नियम, भुगतान और अकाउंट जानकारी — स्पष्ट और आसानी से उपलब्ध।',
         'search_label' => 'खोज',
         'search_placeholder' => 'FAQ खोजें...',
         'no_results' => 'उस खोज से कोई FAQ आइटम नहीं मिला।',

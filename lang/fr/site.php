@@ -378,8 +378,8 @@ return array_replace_recursive($en, [
     ],
     'faq' => [
         'eyebrow' => 'Questions fréquentes',
-        'title' => 'Everything you need. Instantly.',
-        'description' => 'All your trading rules, payouts, and account info — clear and accessible.',
+        'title' => 'Tout ce dont vous avez besoin. Instantanément.',
+        'description' => 'Toutes vos règles de trading, paiements et informations de compte — claires et accessibles.',
         'search_label' => 'Recherche',
         'search_placeholder' => 'Rechercher dans la FAQ...',
         'no_results' => 'Aucun élément de FAQ ne correspond à cette recherche.',
