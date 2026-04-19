@@ -5,6 +5,7 @@ namespace App\Services\Challenge;
 use App\Mail\ChallengeFailedMail;
 use App\Mail\ChallengePassedMail;
 use App\Models\TradingAccount;
+use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -12,6 +13,7 @@ class ChallengeFinalStateMailer
 {
     public function __construct(
         private readonly ChallengeCertificateGenerator $certificateGenerator,
+        private readonly TrustpilotReviewRequestMailer $reviewRequestMailer,
     ) {
     }
 
@@ -86,6 +88,7 @@ class ChallengeFinalStateMailer
                 tradingAccount: $mailPayload['account'],
                 details: $mailPayload['details'],
             ));
+            $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
 
             return;
         }
@@ -96,6 +99,7 @@ class ChallengeFinalStateMailer
             details: $mailPayload['details'],
             certificate: $mailPayload['certificate'] ?? null,
         ));
+        $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
     }
 
     /**

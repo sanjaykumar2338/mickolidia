@@ -11,6 +11,7 @@ use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
+use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\WelcomeMail;
 use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\Order;
@@ -85,6 +86,7 @@ class WolforixMailBrandingTest extends TestCase
             ]),
             new TrialPassedMail($user, $account),
             new TrialBreachedMail($user, $account, 'Daily loss limit reached'),
+            new TrustpilotReviewRequestMail('Mail Trader', 'https://de.trustpilot.com/review/wolforix.com'),
             new ConsistencyAlertMail('Mail Trader', $account, [
                 'status' => 'approaching',
                 'rule_label' => 'Approaching threshold',

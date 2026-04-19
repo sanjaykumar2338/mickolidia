@@ -7,9 +7,11 @@ use App\Mail\ChallengePassedMail;
 use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
+use App\Mail\TrustpilotReviewRequestMail;
 use App\Models\ChallengePlan;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -233,6 +235,15 @@ class ChallengeDashboardTest extends TestCase
             return ($mail->certificate['path'] ?? null) === $account->certificate_path
                 && count($mail->attachments()) === 1;
         });
+        Mail::assertSent(TrustpilotReviewRequestMail::class, function (TrustpilotReviewRequestMail $mail): bool {
+            return $mail->reviewUrl === 'https://de.trustpilot.com/review/wolforix.com'
+                && ! str_contains($mail->reviewUrl, '?')
+                && ! $mail->reminder;
+        });
+
+        $this->assertSame('https://de.trustpilot.com/review/wolforix.com', config('wolforix.review_requests.trustpilot.url'));
+        $this->assertNotEmpty(data_get($account->meta, 'trustpilot_review.initial_requested_at'));
+        $this->assertNotEmpty(data_get($account->meta, 'trustpilot_review.reminder_due_at'));
 
         $certificatePath = (string) $account->certificate_path;
         $certificateGeneratedAt = $account->certificate_generated_at?->toDateTimeString();
@@ -248,6 +259,7 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($passedEmailSentAt, $account->passed_email_sent_at?->toDateTimeString());
         $this->assertSame($fundedPassEmailSentAt, $account->funded_pass_email_sent_at?->toDateTimeString());
         Mail::assertSent(ChallengePassedMail::class, 1);
+        Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
     }
 
     public function test_dashboard_certificate_download_uses_authenticated_route(): void
@@ -303,6 +315,8 @@ class ChallengeDashboardTest extends TestCase
         $this->assertNotNull($account->failed_at);
         $this->assertNotNull($account->failed_email_sent_at);
         Mail::assertSent(ChallengeFailedMail::class, 1);
+        Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
+        $this->assertNotEmpty(data_get($account->meta, 'trustpilot_review.initial_requested_at'));
     }
 
     public function test_one_step_fails_when_max_drawdown_is_breached(): void
@@ -343,6 +357,43 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
         $this->assertSame($failedEmailSentAt, $account->failed_email_sent_at?->toDateTimeString());
         Mail::assertSent(ChallengeFailedMail::class, 1);
+        Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
+    }
+
+    public function test_trustpilot_review_reminder_waits_until_due(): void
+    {
+        config()->set('wolforix.review_requests.trustpilot.reminder_delay_days', 7);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10400, 10380, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-06 09:00:00', 10800, 10780, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-07 09:00:00', 11050, 11020, ['trade_count' => 1])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame(
+            Carbon::parse((string) data_get($account->meta, 'trustpilot_review.initial_requested_at'))->addDays(7)->toIso8601String(),
+            Carbon::parse((string) data_get($account->meta, 'trustpilot_review.reminder_due_at'))->toIso8601String(),
+        );
+
+        Mail::fake();
+
+        $this->assertSame(0, app(TrustpilotReviewRequestMailer::class)->sendDueReminders());
+        Mail::assertNotSent(TrustpilotReviewRequestMail::class);
+
+        $meta = $account->meta ?? [];
+        data_set($meta, 'trustpilot_review.reminder_due_at', now()->subMinute()->toIso8601String());
+        $account->forceFill(['meta' => $meta])->save();
+
+        $this->assertSame(1, app(TrustpilotReviewRequestMailer::class)->sendDueReminders());
+        Mail::assertSent(TrustpilotReviewRequestMail::class, function (TrustpilotReviewRequestMail $mail): bool {
+            return $mail->reviewUrl === 'https://de.trustpilot.com/review/wolforix.com'
+                && ! str_contains($mail->reviewUrl, '?')
+                && $mail->reminder;
+        });
+
+        $this->assertSame(0, app(TrustpilotReviewRequestMailer::class)->sendDueReminders());
     }
 
     public function test_consistency_rule_stays_clear_below_approach_threshold(): void

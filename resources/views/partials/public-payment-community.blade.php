@@ -55,8 +55,26 @@
             'whatsapp' => 'photo/mickolidia-attachments-spanish/3D3A8551-F94D-4B95-AD71-51B381E7D2A5.png',
             'youtube' => 'photo/mickolidia-attachments-spanish/A3EBA35E-6E4D-42C6-86C3-60261AB729ED.png',
         ],
+        'fr' => [
+            'instagram' => 'photo/mickolidia-attachments-france/90ED6E5E-2AE5-4212-B38E-890B7339D195.png',
+            'youtube' => 'photo/mickolidia-attachments-france/B737867F-DFB9-46B1-85DF-2FAD244F49ED.png',
+        ],
+        'hi' => [
+            'instagram' => 'photo/mickolidia-attachments-hindi/691B4344-37E5-4D47-A838-98BCB9F8CDAD.png',
+            'youtube' => 'photo/mickolidia-attachments-hindi/C33805EC-5A03-4ACC-AA9C-A448309EFB33.png',
+        ],
+        'it' => [
+            'instagram' => 'photo/mickolidia-attachments-italian/BCA6ED34-FB3A-4360-9A8D-6BB99F5228A1.png',
+            'youtube' => 'photo/mickolidia-attachments-italian/0249830F-F136-446A-B6B6-AF4EBEBFD5A6.png',
+        ],
+        'pt' => [
+            'instagram' => 'photo/mickolidia-attachments-portugal/F61C70BD-CF73-4B79-B41C-9BD7C06BA9BF.png',
+        ],
     ];
-    $communityImages = $communityImageSets[$communityImageLocale] ?? $communityImageSets['en'];
+    $communityImages = array_merge(
+        $communityImageSets['en'],
+        $communityImageSets[$communityImageLocale] ?? [],
+    );
 
     $communityLinks = [
         [

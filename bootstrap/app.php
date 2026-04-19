@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('trading:sync-accounts --queued')
             ->cron((string) config('trading.sync.cron', '*/15 * * * *'))
             ->when(fn (): bool => (bool) config('trading.sync.enabled', false));
+
+        $schedule->command('reviews:send-trustpilot-reminders')
+            ->dailyAt((string) config('wolforix.review_requests.trustpilot.reminder_schedule_time', '10:00'))
+            ->when(fn (): bool => (bool) config('wolforix.review_requests.trustpilot.enabled', true)
+                && (bool) config('wolforix.review_requests.trustpilot.reminder_enabled', true));
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [

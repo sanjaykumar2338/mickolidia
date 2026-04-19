@@ -235,6 +235,16 @@ return [
         'business_hours' => env('SUPPORT_BUSINESS_HOURS', 'Mon-Fri, 09:00-18:00 UTC'),
     ],
 
+    'review_requests' => [
+        'trustpilot' => [
+            'enabled' => env('TRUSTPILOT_REVIEW_REQUESTS_ENABLED', true),
+            'url' => 'https://de.trustpilot.com/review/wolforix.com',
+            'reminder_enabled' => env('TRUSTPILOT_REVIEW_REMINDER_ENABLED', true),
+            'reminder_delay_days' => (int) env('TRUSTPILOT_REVIEW_REMINDER_DELAY_DAYS', 7),
+            'reminder_schedule_time' => env('TRUSTPILOT_REVIEW_REMINDER_SCHEDULE_TIME', '10:00'),
+        ],
+    ],
+
     'mt5_account_pool' => [
         'default_client_source' => env('WOLFORIX_MT5_CLIENT_POOL_SOURCE', 'public/Accounts List 2 Wolforix.ods'),
         'default_pool' => env('WOLFORIX_MT5_DEFAULT_POOL', 'client_pool'),
