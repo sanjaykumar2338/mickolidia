@@ -40,6 +40,9 @@
                     <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                         {{ __('site.admin.clients.title') }}
                     </a>
+                    <a href="{{ route('admin.reviews.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                        Review Emails
+                    </a>
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
                         <button type="submit" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">

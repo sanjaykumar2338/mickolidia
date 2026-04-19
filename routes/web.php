@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\AdminReviewRequestController;
 use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
@@ -100,5 +101,8 @@ Route::prefix('admin')->group(function (): void {
         Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
         Route::post('/client/{user}/credentials', [AdminClientController::class, 'updateCredentials'])->name('admin.clients.credentials');
         Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
+        Route::get('/reviews', [AdminReviewRequestController::class, 'index'])->name('admin.reviews.index');
+        Route::post('/reviews/test', [AdminReviewRequestController::class, 'sendTest'])->name('admin.reviews.test');
+        Route::post('/reviews/reminders/run', [AdminReviewRequestController::class, 'sendDueReminders'])->name('admin.reviews.reminders.run');
     });
 });

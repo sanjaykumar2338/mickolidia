@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
+use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
@@ -1770,6 +1771,9 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('admin.clients.index'))
             ->assertRedirect(route('admin.login'));
+
+        $this->get(route('admin.reviews.index'))
+            ->assertRedirect(route('admin.login'));
     }
 
     public function test_admin_can_log_in_via_form_and_view_client_list_and_metrics(): void
@@ -1886,6 +1890,92 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('$3,350.00')
             ->assertSee('Current Status')
             ->assertSee('Active');
+    }
+
+    public function test_admin_review_panel_shows_trustpilot_status_and_sends_test_email(): void
+    {
+        Mail::fake();
+        Carbon::setTestNow(Carbon::parse('2026-04-20 10:00:00'));
+
+        try {
+            config()->set('wolforix.admin_auth.username', 'admin');
+            config()->set('wolforix.admin_auth.password', 'secret');
+            config()->set('wolforix.review_requests.trustpilot.url', 'https://de.trustpilot.com/review/wolforix.com');
+            config()->set('wolforix.review_requests.trustpilot.reminder_enabled', true);
+
+            $user = User::factory()->create([
+                'name' => 'Review Monitor Trader',
+                'email' => 'profile-review@example.com',
+            ]);
+
+            $order = Order::query()->create([
+                'user_id' => $user->id,
+                'email' => 'recipient-review@example.com',
+                'full_name' => 'Review Recipient',
+                'street_address' => '9 Review Street',
+                'city' => 'Madrid',
+                'postal_code' => '28001',
+                'country' => 'ES',
+                'challenge_type' => 'one_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'payment_provider' => 'stripe',
+                'base_price' => 99,
+                'discount_amount' => 0,
+                'final_price' => 99,
+                'payment_status' => 'paid',
+                'order_status' => 'completed',
+            ]);
+
+            TradingAccount::query()->create([
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'challenge_type' => 'one_step',
+                'account_size' => 10000,
+                'account_reference' => 'WFX-REVIEW-10001',
+                'challenge_status' => 'passed',
+                'account_status' => 'completed',
+                'is_trial' => false,
+                'passed_email_sent_at' => Carbon::parse('2026-04-18 09:00:00'),
+                'meta' => [
+                    'trustpilot_review' => [
+                        'initial_requested_at' => '2026-04-18T09:01:00+00:00',
+                        'reminder_due_at' => '2026-04-25T09:01:00+00:00',
+                    ],
+                ],
+            ]);
+
+            $this->post(route('admin.login.store'), [
+                'username' => 'admin',
+                'password' => 'secret',
+            ])->assertRedirect(route('admin.clients.index'));
+
+            $this->get(route('admin.reviews.index'))
+                ->assertOk()
+                ->assertSee('Trustpilot review emails')
+                ->assertSee('recipient-review@example.com')
+                ->assertSee('Review Recipient')
+                ->assertSee('WFX-REVIEW-10001')
+                ->assertSee('Challenge passed email')
+                ->assertSee('2026-04-18 09:01')
+                ->assertSee('Scheduled')
+                ->assertSee('https://de.trustpilot.com/review/wolforix.com');
+
+            $this->post(route('admin.reviews.test'), [
+                'email' => 'qa-review@example.com',
+                'trader_name' => 'QA Review',
+            ])
+                ->assertRedirect(route('admin.reviews.index'))
+                ->assertSessionHas('status', 'Trustpilot test email sent to: qa-review@example.com');
+
+            Mail::assertSent(TrustpilotReviewRequestMail::class, function (TrustpilotReviewRequestMail $mail): bool {
+                return $mail->traderName === 'QA Review'
+                    && $mail->reviewUrl === 'https://de.trustpilot.com/review/wolforix.com'
+                    && $mail->reminder === false;
+            });
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_admin_login_form_rejects_invalid_credentials(): void
