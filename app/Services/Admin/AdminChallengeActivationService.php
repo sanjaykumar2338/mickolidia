@@ -7,6 +7,7 @@ use App\Models\ChallengePurchase;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\Mt5\Mt5AccountAllocator;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -15,6 +16,7 @@ class AdminChallengeActivationService
 {
     public function __construct(
         private readonly TradingAccountProvisioner $tradingAccountProvisioner,
+        private readonly Mt5AccountAllocator $mt5AccountAllocator,
     ) {
     }
 
@@ -161,6 +163,8 @@ class AdminChallengeActivationService
                 ],
                 'changed_at' => $activatedAt,
             ]);
+
+            $this->mt5AccountAllocator->allocate($account);
 
             return $account->fresh(['challengePlan', 'challengePurchase']) ?? $account;
         });

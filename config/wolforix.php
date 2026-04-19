@@ -235,6 +235,11 @@ return [
         'business_hours' => env('SUPPORT_BUSINESS_HOURS', 'Mon-Fri, 09:00-18:00 UTC'),
     ],
 
+    'mt5_account_pool' => [
+        'default_client_source' => env('WOLFORIX_MT5_CLIENT_POOL_SOURCE', 'public/Accounts List 2 Wolforix.ods'),
+        'default_pool' => env('WOLFORIX_MT5_DEFAULT_POOL', 'client_pool'),
+    ],
+
     'admin_auth' => [
         'username' => env('ADMIN_USERNAME', 'admin'),
         'password' => env('ADMIN_PASSWORD', 'wolforix-admin'),
