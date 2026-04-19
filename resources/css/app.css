@@ -2787,12 +2787,13 @@ h6 {
 
     .community-access-card--primary {
         grid-column: auto;
-        grid-row: span 3;
+        grid-row: span 2;
     }
 
     .community-access-card--primary .community-access-media {
-        flex: 1 1 auto;
-        min-height: 27rem;
+        flex: 0 0 auto;
+        min-height: 0;
+        max-height: 22rem;
     }
 
     .community-access-card:not(.community-access-card--primary) .community-access-media {

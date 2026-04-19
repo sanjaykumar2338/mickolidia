@@ -41,6 +41,22 @@
     $paymentRail = array_merge($paymentMethods, $paymentMethods);
     $positioningBullets = trans('site.footer.positioning_bullets');
     $positioningBullets = is_array($positioningBullets) ? $positioningBullets : [];
+    $communityImageLocale = explode('-', strtolower(str_replace('_', '-', app()->getLocale())))[0] ?: 'en';
+    $communityImageSets = [
+        'en' => [
+            'instagram' => 'photo/mickolidia-attachments-englsih/14A600E1-31EF-45B2-9371-117EE60A3E51.png',
+            'telegram' => 'photo/mickolidia-attachments-englsih/866B008F-4AC9-4341-ADBB-74AF5B7C0584.png',
+            'whatsapp' => 'photo/mickolidia-attachments-englsih/7C41556E-3E1A-407A-97CD-22A84970EA82.png',
+            'youtube' => 'photo/mickolidia-attachments-englsih/DECE0553-9101-497D-AF85-8B62BB21A3EA.png',
+        ],
+        'es' => [
+            'instagram' => 'photo/mickolidia-attachments-spanish/4D02D06C-F184-40F3-A843-11FCB7F7BB9D.png',
+            'telegram' => 'photo/mickolidia-attachments-spanish/2E180800-8FFA-44FA-B231-C84F32D425C8.png',
+            'whatsapp' => 'photo/mickolidia-attachments-spanish/3D3A8551-F94D-4B95-AD71-51B381E7D2A5.png',
+            'youtube' => 'photo/mickolidia-attachments-spanish/A3EBA35E-6E4D-42C6-86C3-60261AB729ED.png',
+        ],
+    ];
+    $communityImages = $communityImageSets[$communityImageLocale] ?? $communityImageSets['en'];
 
     $communityLinks = [
         [
@@ -50,7 +66,7 @@
             'title' => 'Start here',
             'description' => 'Discover Wolforix and stay connected',
             'url' => 'https://www.instagram.com/wolforix?igsh=djA4NHZicW5oam96&utm_source=qr',
-            'image' => asset('mickolidia-attachments%20(1)/14A600E1-31EF-45B2-9371-117EE60A3E51.png'),
+            'image' => asset($communityImages['instagram']),
             'primary' => true,
         ],
         [
@@ -60,7 +76,7 @@
             'suffix_html' => '&#127468;&#127463;',
             'description' => 'Access daily market insights',
             'url' => 'https://t.me/wolforix',
-            'image' => asset('mickolidia-attachments%20(1)/866B008F-4AC9-4341-ADBB-74AF5B7C0584.png'),
+            'image' => asset($communityImages['telegram']),
         ],
         [
             'key' => 'whatsapp',
@@ -68,7 +84,7 @@
             'title' => 'Spanish-Speaking Community',
             'description_html' => 'Accede a informaci&oacute;n diaria de mercado',
             'url' => 'https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t',
-            'image' => asset('mickolidia-attachments%20(1)/7C41556E-3E1A-407A-97CD-22A84970EA82.png'),
+            'image' => asset($communityImages['whatsapp']),
         ],
         [
             'key' => 'youtube',
@@ -76,7 +92,7 @@
             'title' => 'Media & Promotions',
             'description' => 'Latest updates and announcements',
             'url' => 'https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3',
-            'image' => asset('mickolidia-attachments%20(1)/DECE0553-9101-497D-AF85-8B62BB21A3EA.png'),
+            'image' => asset($communityImages['youtube']),
         ],
     ];
 
