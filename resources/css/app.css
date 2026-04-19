@@ -2781,13 +2781,12 @@ h6 {
 
 @media (min-width: 1280px) {
     .community-access-grid {
-        grid-auto-rows: minmax(0, 1fr);
         grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
     }
 
     .community-access-card--primary {
         grid-column: auto;
-        grid-row: span 2;
+        grid-row: auto;
     }
 
     .community-access-card--primary .community-access-media {
