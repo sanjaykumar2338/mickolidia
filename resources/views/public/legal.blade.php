@@ -73,11 +73,6 @@
                         @endforeach
                     </nav>
                 </div>
-
-                <div class="rounded-[2rem] border border-sky-400/15 bg-sky-500/10 p-6">
-                    <p class="text-sm font-semibold uppercase tracking-[0.26em] text-sky-100">{{ __('site.legal.overview_title') }}</p>
-                    <p class="mt-4 text-sm leading-7 text-sky-50/90">{{ __('site.legal.overview_copy') }}</p>
-                </div>
             </aside>
         </div>
     </section>

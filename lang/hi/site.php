@@ -1705,8 +1705,8 @@ return array_replace_recursive($en, [
         ],
         'community' => [
             'eyebrow' => 'कम्युनिटी एक्सेस',
-            'title' => 'वुल्फोरिक्स कम्युनिटी के करीब रहें',
-            'description' => 'उन चैनल्स को फॉलो करें जहाँ वुल्फोरिक्स अपडेट्स, मार्केट कंटेंट और ट्रेडर-फ़ेसिंग एजुकेशन साझा करता है।',
+            'title' => 'Wolforix Community Access',
+            'description' => 'Access structured market insights, analysis and updates in real time',
             'channels' => [
                 'youtube' => [
                     'description' => 'प्लेटफॉर्म अपडेट्स, एजुकेशनल कंटेंट और ट्रेडर-केंद्रित वीडियो देखें।',

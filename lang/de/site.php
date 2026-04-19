@@ -1837,8 +1837,8 @@ return [
         ],
         'community' => [
             'eyebrow' => 'Community-Zugang',
-            'title' => 'Bleib nah an der Wolforix-Community',
-            'description' => 'Folge den Kanaelen, auf denen Wolforix Updates, Marktinhalte und Education fuer Trader teilt.',
+            'title' => 'Wolforix Community Access',
+            'description' => 'Access structured market insights, analysis and updates in real time',
             'channels' => [
                 'youtube' => [
                     'description' => 'Sieh dir Plattform-Updates, Lerninhalte und traderfokussierte Videos an.',

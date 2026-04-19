@@ -44,46 +44,39 @@
 
     $communityLinks = [
         [
-            'key' => 'youtube',
-            'title' => 'YouTube',
-            'url' => 'https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3',
-            'icon' => <<<'SVG'
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M21.58 7.19a2.98 2.98 0 0 0-2.1-2.1C17.62 4.6 12 4.6 12 4.6s-5.62 0-7.48.49a2.98 2.98 0 0 0-2.1 2.1A31.4 31.4 0 0 0 1.93 12c0 1.61.16 3.22.49 4.81a2.98 2.98 0 0 0 2.1 2.1c1.86.49 7.48.49 7.48.49s5.62 0 7.48-.49a2.98 2.98 0 0 0 2.1-2.1c.33-1.59.49-3.2.49-4.81 0-1.61-.16-3.22-.49-4.81ZM10.2 15.01V8.99L15.4 12l-5.2 3.01Z"/>
-                </svg>
-            SVG,
-        ],
-        [
             'key' => 'instagram',
-            'title' => 'Instagram',
+            'platform' => 'Instagram',
+            'badge' => 'Primary Entry',
+            'title' => 'Start here',
+            'description' => 'Discover Wolforix and stay connected',
             'url' => 'https://www.instagram.com/wolforix?igsh=djA4NHZicW5oam96&utm_source=qr',
-            'icon' => <<<'SVG'
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-                    <rect x="3.75" y="3.75" width="16.5" height="16.5" rx="4.5" />
-                    <circle cx="12" cy="12" r="3.75" />
-                    <circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none" />
-                </svg>
-            SVG,
+            'image' => asset('mickolidia-attachments%20(1)/14A600E1-31EF-45B2-9371-117EE60A3E51.png'),
+            'primary' => true,
         ],
         [
             'key' => 'telegram',
-            'title' => 'Telegram',
+            'platform' => 'Telegram',
+            'title' => 'English Community',
+            'suffix_html' => '&#127468;&#127463;',
+            'description' => 'Access daily market insights',
             'url' => 'https://t.me/wolforix',
-            'icon' => <<<'SVG'
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="m20.67 4.37-2.91 14.1c-.22 1-.8 1.24-1.62.77l-4.48-3.3-2.16 2.08c-.24.24-.44.44-.9.44l.32-4.56 8.3-7.5c.36-.32-.08-.5-.56-.18L6.71 12.7l-4.41-1.38c-.96-.3-.98-.96.2-1.42L19.8 3.23c.8-.3 1.5.18 1.24 1.14Z"/>
-                </svg>
-            SVG,
+            'image' => asset('mickolidia-attachments%20(1)/866B008F-4AC9-4341-ADBB-74AF5B7C0584.png'),
         ],
         [
             'key' => 'whatsapp',
-            'title' => 'WhatsApp',
+            'platform' => 'WhatsApp',
+            'title' => 'Spanish-Speaking Community',
+            'description_html' => 'Accede a informaci&oacute;n diaria de mercado',
             'url' => 'https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t',
-            'icon' => <<<'SVG'
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M19.11 4.89A9.92 9.92 0 0 0 12.04 2c-5.48 0-9.94 4.46-9.94 9.94 0 1.75.46 3.46 1.33 4.97L2 22l5.24-1.37a9.9 9.9 0 0 0 4.79 1.22h.01c5.48 0 9.94-4.46 9.94-9.94a9.86 9.86 0 0 0-2.87-7.02Zm-7.07 15.29h-.01a8.22 8.22 0 0 1-4.18-1.14l-.3-.18-3.11.81.83-3.03-.2-.31a8.24 8.24 0 0 1-1.27-4.39c0-4.55 3.7-8.26 8.25-8.26 2.2 0 4.27.85 5.83 2.42a8.17 8.17 0 0 1 2.42 5.84c0 4.55-3.7 8.25-8.26 8.25Zm4.53-6.18c-.25-.13-1.49-.74-1.72-.82-.23-.08-.4-.13-.57.12-.17.25-.65.82-.8.99-.15.17-.29.19-.54.06-.25-.13-1.05-.39-2-1.25-.74-.66-1.24-1.48-1.39-1.73-.15-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.49-.42-.42-.57-.43h-.49c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.44 1.02 2.61c.13.17 1.76 2.69 4.26 3.77.59.26 1.05.42 1.41.54.59.19 1.12.16 1.54.1.47-.07 1.49-.61 1.7-1.2.21-.59.21-1.1.15-1.2-.06-.1-.22-.17-.46-.29Z"/>
-                </svg>
-            SVG,
+            'image' => asset('mickolidia-attachments%20(1)/7C41556E-3E1A-407A-97CD-22A84970EA82.png'),
+        ],
+        [
+            'key' => 'youtube',
+            'platform' => 'YouTube',
+            'title' => 'Media & Promotions',
+            'description' => 'Latest updates and announcements',
+            'url' => 'https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3',
+            'image' => asset('mickolidia-attachments%20(1)/DECE0553-9101-497D-AF85-8B62BB21A3EA.png'),
         ],
     ];
 
@@ -185,19 +178,53 @@
                 <div class="relative z-10 max-w-3xl">
                     <span class="section-label">{{ __('site.footer.community.eyebrow') }}</span>
                     <h2 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ __('site.footer.community.title') }}</h2>
+                    <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">{{ __('site.footer.community.description') }}</p>
                 </div>
 
-                <div class="community-icon-grid relative z-10 mt-6 grid grid-cols-2 gap-4">
+                <div class="community-access-grid relative z-10 mt-8">
                     @foreach ($communityLinks as $communityLink)
+                        @php($isPrimaryCommunityLink = ! empty($communityLink['primary']))
                         <a
                             href="{{ $communityLink['url'] }}"
                             target="_blank"
                             rel="noreferrer"
-                            aria-label="{{ $communityLink['title'] }}"
-                            class="community-icon-card community-icon-card--{{ $communityLink['key'] }} group rounded-[1.8rem] p-5 sm:p-6"
+                            aria-label="{{ $communityLink['platform'] }} - {{ $communityLink['title'] }}"
+                            class="community-access-card community-access-card--{{ $communityLink['key'] }} {{ $isPrimaryCommunityLink ? 'community-access-card--primary' : '' }} group"
                         >
-                            <span class="community-card-icon">
-                                {!! $communityLink['icon'] !!}
+                            <span class="community-access-platform">
+                                <span>{{ $communityLink['platform'] }}</span>
+
+                                @if (! empty($communityLink['badge']))
+                                    <span class="community-access-badge">{{ $communityLink['badge'] }}</span>
+                                @endif
+                            </span>
+
+                            <span class="community-access-media" aria-hidden="true">
+                                <img
+                                    src="{{ $communityLink['image'] }}"
+                                    alt=""
+                                    class="community-access-image"
+                                    decoding="async"
+                                    loading="lazy"
+                                >
+                            </span>
+
+                            <span class="community-access-copy">
+                                <span class="community-access-title">
+                                    {{ $communityLink['title'] }}
+
+                                    @if (! empty($communityLink['suffix_html']))
+                                        <span class="community-access-title-suffix" aria-hidden="true">{!! $communityLink['suffix_html'] !!}</span>
+                                    @endif
+                                </span>
+
+                                <span class="community-access-description">
+                                    @if (! empty($communityLink['description_html']))
+                                        {!! $communityLink['description_html'] !!}
+                                    @else
+                                        {{ $communityLink['description'] }}
+                                    @endif
+                                </span>
                             </span>
                         </a>
                     @endforeach

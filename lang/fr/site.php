@@ -1338,8 +1338,8 @@ return array_replace_recursive($en, [
         ],
         'community' => [
             'eyebrow' => 'Accès communauté',
-            'title' => 'Restez proche de la communauté Wolforix',
-            'description' => 'Suivez les canaux où Wolforix partage mises à jour, contenu marché et éducation pour traders.',
+            'title' => 'Wolforix Community Access',
+            'description' => 'Access structured market insights, analysis and updates in real time',
             'channels' => [
                 'youtube' => [
                     'description' => 'Regardez les mises à jour plateforme, le contenu éducatif et les vidéos pensées pour les traders.',
