@@ -80,6 +80,19 @@ class WolforixPlatformTest extends TestCase
             ->assertSee(route('contact'), false);
     }
 
+    public function test_public_footer_renders_clean_social_links(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('https://www.facebook.com/share/1JQhTJwzJq/', false)
+            ->assertSee('https://www.instagram.com/wolforix', false)
+            ->assertSee('https://t.me/wolforix', false)
+            ->assertSee('https://x.com/wolforixhq', false)
+            ->assertSee('https://youtube.com/@wolforix', false)
+            ->assertDontSee('mibextid', false)
+            ->assertDontSee('v3aluoTJ6BAc1gh7kuZvMg', false);
+    }
+
     public function test_contact_page_contains_support_channels_and_voice_assistant(): void
     {
         $this->get(route('contact'))

@@ -1,5 +1,38 @@
 @php
     $authUser = request()->user();
+    $socialLinks = collect(config('wolforix.social_links', []))
+        ->filter(fn (array $link): bool => filled($link['url'] ?? null))
+        ->all();
+    $socialIconSvgs = [
+        'facebook' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M14 8.2V6.7c0-.74.48-.91.82-.91h2.09V2.2L14.03 2.2c-3.2 0-3.93 2.39-3.93 3.92v2.08H7.58v3.7h2.52V22h3.9V11.9h2.94l.39-3.7H14Z" />
+            </svg>
+        SVG,
+        'instagram' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="4" y="4" width="16" height="16" rx="4.5" />
+                <circle cx="12" cy="12" r="3.25" />
+                <circle cx="16.75" cy="7.25" r="0.75" fill="currentColor" stroke="none" />
+            </svg>
+        SVG,
+        'telegram' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.5 4.75 3.75 11.2c-.84.32-.8 1.52.07 1.78l4.3 1.28 1.62 4.73c.29.84 1.39.98 1.87.24l2.22-3.43 4.37 3.2c.74.54 1.8.13 1.96-.77l2.2-12.1c.16-.9-.99-1.58-1.86-1.38Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 14.1 8.35-5.45-5.9 7.05" />
+            </svg>
+        SVG,
+        'x' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M13.87 10.47 21.16 2h-1.73l-6.33 7.35L8.04 2H2.2l7.65 11.12L2.2 22h1.73l6.68-7.75L15.95 22h5.84l-7.92-11.53Zm-2.36 2.74-.78-1.11L4.57 3.3H7.2l4.98 7.12.77 1.1 6.48 9.25h-2.64l-5.28-7.56Z" />
+            </svg>
+        SVG,
+        'youtube' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M21.58 7.18a2.63 2.63 0 0 0-1.85-1.86C18.1 4.88 12 4.88 12 4.88s-6.1 0-7.73.44a2.63 2.63 0 0 0-1.85 1.86A27.35 27.35 0 0 0 2 12a27.35 27.35 0 0 0 .42 4.82 2.63 2.63 0 0 0 1.85 1.86c1.63.44 7.73.44 7.73.44s6.1 0 7.73-.44a2.63 2.63 0 0 0 1.85-1.86A27.35 27.35 0 0 0 22 12a27.35 27.35 0 0 0-.42-4.82ZM10 15.1V8.9l5.2 3.1-5.2 3.1Z" />
+            </svg>
+        SVG,
+    ];
     $footerMobileNavLinks = [
         [
             'href' => route('home').'#plans',
@@ -45,6 +78,22 @@
                 </div>
             </div>
         </div>
+
+        @if ($socialLinks !== [])
+            <nav class="mt-5 flex items-center justify-center gap-3 rounded-[1.9rem] border border-white/8 bg-white/[0.03] px-4 py-4 shadow-[0_24px_70px_rgba(2,6,23,0.28)] lg:hidden" aria-label="Wolforix social links">
+                @foreach ($socialLinks as $key => $link)
+                    <a
+                        href="{{ $link['url'] }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="{{ $link['label'] ?? str($key)->headline() }}"
+                        class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_16px_40px_rgba(2,6,23,0.28)] transition hover:border-amber-300/35 hover:bg-amber-400/10 hover:text-amber-100"
+                    >
+                        {!! $socialIconSvgs[$key] ?? '<span class="text-sm font-semibold">'.e($link['label'] ?? str($key)->headline()).'</span>' !!}
+                    </a>
+                @endforeach
+            </nav>
+        @endif
     </div>
 
     <div class="border-t border-white/5">
@@ -174,7 +223,24 @@
 
                 <div class="hidden flex-col gap-3 text-xs text-slate-500 lg:flex lg:flex-row lg:items-center lg:justify-between">
                     <p>&copy; {{ now()->year }} {{ __('site.meta.brand') }}®. {{ __('site.footer.copyright') }}</p>
-                    <p>{{ __('site.footer.company_location') }}</p>
+                    <div class="flex flex-wrap items-center justify-end gap-3">
+                        @if ($socialLinks !== [])
+                            <nav class="flex flex-wrap items-center gap-2" aria-label="Wolforix social links">
+                                @foreach ($socialLinks as $key => $link)
+                                    <a
+                                        href="{{ $link['url'] }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="{{ $link['label'] ?? str($key)->headline() }}"
+                                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-amber-300/30 hover:bg-amber-400/10 hover:text-amber-100"
+                                    >
+                                        {!! $socialIconSvgs[$key] ?? '<span class="text-xs font-semibold">'.e($link['label'] ?? str($key)->headline()).'</span>' !!}
+                                    </a>
+                                @endforeach
+                            </nav>
+                        @endif
+                        <p>{{ __('site.footer.company_location') }}</p>
+                    </div>
                 </div>
             </div>
         </div>

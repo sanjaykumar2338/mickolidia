@@ -235,6 +235,29 @@ return [
         'business_hours' => env('SUPPORT_BUSINESS_HOURS', 'Mon-Fri, 09:00-18:00 UTC'),
     ],
 
+    'social_links' => [
+        'facebook' => [
+            'label' => 'Facebook',
+            'url' => 'https://www.facebook.com/share/1JQhTJwzJq/',
+        ],
+        'instagram' => [
+            'label' => 'Instagram',
+            'url' => 'https://www.instagram.com/wolforix',
+        ],
+        'telegram' => [
+            'label' => 'Telegram',
+            'url' => 'https://t.me/wolforix',
+        ],
+        'x' => [
+            'label' => 'X',
+            'url' => 'https://x.com/wolforixhq',
+        ],
+        'youtube' => [
+            'label' => 'YouTube',
+            'url' => 'https://youtube.com/@wolforix',
+        ],
+    ],
+
     'review_requests' => [
         'trustpilot' => [
             'enabled' => env('TRUSTPILOT_REVIEW_REQUESTS_ENABLED', true),
