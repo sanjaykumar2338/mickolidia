@@ -95,7 +95,15 @@
                     aria-hidden="true"
                 >
                     <div class="grid h-full w-full place-items-center rounded-full border border-white/8 bg-slate-950 text-center">
-                        <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ __('Symbols') }}</span>
+                        <span class="dashboard-wolfi-ring-avatar">
+                            <img
+                                src="{{ asset('newfolder/IMG_8542.png') }}"
+                                alt=""
+                                class="h-full w-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                        </span>
                     </div>
                 </div>
 

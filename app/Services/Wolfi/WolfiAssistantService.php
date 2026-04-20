@@ -25,7 +25,7 @@ class WolfiAssistantService
             'pillars' => $this->knowledgeBase->pillars(),
             'quick_actions' => $this->knowledgeBase->quickActions(),
             'voice' => $this->knowledgeBase->voiceMeta(),
-            'smart_insights' => (array) config('wolfi.smart_insights', []),
+            'smart_insights' => $this->knowledgeBase->smartInsights(),
             'insights' => $this->insightService->generate($context),
             'page' => $context['page'],
             'endpoint' => route('dashboard.wolfi.respond'),
@@ -69,64 +69,67 @@ class WolfiAssistantService
     private function welcomeResponse(array $context): array
     {
         $account = $context['account'] ?? null;
-        $pageTitle = (string) data_get($context, 'page.title', 'Dashboard workspace');
+        $pageTitle = (string) data_get($context, 'page.title', __('site.dashboard.wolfi.fallbacks.dashboard_workspace'));
 
         if (is_array($account)) {
-            $message = sprintf(
-                'I am watching your %s account on the %s page. Ask me to explain rules, metrics, payout timing, or where to find the next action.',
-                $account['plan_label'],
-                $pageTitle,
-            );
+            $message = __('site.dashboard.wolfi.welcome.account_message', [
+                'plan' => $account['plan_label'],
+                'page' => $pageTitle,
+            ]);
 
             $bullets = [
-                sprintf('Current status: %s with %s target progress.', $account['status'], number_format((float) $account['target_progress_percent'], 1).'%' ),
-                sprintf('Balance is %s, equity is %s, and floating P&L is %s.', $account['balance'], $account['equity'], $account['floating_pnl']),
-                sprintf('Trading days currently read %s.', $account['trading_days']),
+                __('site.dashboard.wolfi.welcome.account_bullets.status', [
+                    'status' => $account['status'],
+                    'progress' => number_format((float) $account['target_progress_percent'], 1).'%',
+                ]),
+                __('site.dashboard.wolfi.welcome.account_bullets.balance', [
+                    'balance' => $account['balance'],
+                    'equity' => $account['equity'],
+                    'pnl' => $account['floating_pnl'],
+                ]),
+                __('site.dashboard.wolfi.welcome.account_bullets.trading_days', [
+                    'days' => $account['trading_days'],
+                ]),
             ];
 
             $stats = [
                 [
-                    'label' => 'Status',
+                    'label' => __('site.dashboard.wolfi.stat_labels.status'),
                     'value' => $account['status'],
                     'tone' => 'amber',
                 ],
                 [
-                    'label' => 'Balance',
+                    'label' => __('site.dashboard.wolfi.stat_labels.balance'),
                     'value' => $account['balance'],
                     'tone' => 'amber',
                 ],
                 [
-                    'label' => 'Equity',
+                    'label' => __('site.dashboard.wolfi.stat_labels.equity'),
                     'value' => $account['equity'],
                     'tone' => 'sky',
                 ],
             ];
         } else {
-            $message = sprintf(
-                'I can guide you through the %s page, explain Wolforix rules, and answer support questions even before a challenge account is fully synced.',
-                $pageTitle,
-            );
+            $message = __('site.dashboard.wolfi.welcome.empty_message', [
+                'page' => $pageTitle,
+            ]);
 
-            $bullets = [
-                'Use the quick actions to jump into dashboard guidance, rules, metrics, payout logic, or consistency explanations.',
-                'If account data is unavailable, I will fall back to Wolforix platform rules and workflow guidance.',
-                'Once an account is linked, I can explain your live balance, equity, drawdown room, and payout readiness in context.',
-            ];
+            $bullets = array_values((array) trans('site.dashboard.wolfi.welcome.empty_bullets'));
 
             $stats = [
                 [
-                    'label' => 'Page',
+                    'label' => __('site.dashboard.wolfi.stat_labels.page'),
                     'value' => $pageTitle,
                     'tone' => 'amber',
                 ],
                 [
-                    'label' => 'Rules',
-                    'value' => 'Structured',
+                    'label' => __('site.dashboard.wolfi.stat_labels.rules'),
+                    'value' => __('site.dashboard.wolfi.stat_values.structured'),
                     'tone' => 'sky',
                 ],
                 [
-                    'label' => 'Support',
-                    'value' => 'Ready',
+                    'label' => __('site.dashboard.wolfi.stat_labels.support'),
+                    'value' => __('site.dashboard.wolfi.stat_values.ready'),
                     'tone' => 'emerald',
                 ],
             ];
@@ -134,7 +137,7 @@ class WolfiAssistantService
 
         return [
             'group' => 'welcome',
-            'title' => 'Wolfi is online',
+            'title' => __('site.dashboard.wolfi.welcome.title'),
             'message' => $message,
             'bullets' => $bullets,
             'stats' => $stats,

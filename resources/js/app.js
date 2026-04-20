@@ -3974,6 +3974,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const wolfiModal = document.querySelector('[data-wolfi-modal]');
     const wolfiLaunchButtons = document.querySelectorAll('[data-wolfi-launch]');
+    const wolfiFabVideos = [...document.querySelectorAll('[data-wolfi-fab-video]')]
+        .filter((video) => video instanceof HTMLVideoElement);
 
     if (wolfiModal instanceof HTMLElement) {
         const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
@@ -4036,17 +4038,47 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const syncWolfiFabPlayback = (active) => {
+            wolfiFabVideos.forEach((video) => {
+                if (!active) {
+                    video.pause();
+
+                    if (video.currentTime > 0.01) {
+                        try {
+                            video.currentTime = 0;
+                        } catch (error) {
+                            // Ignore seek failures while returning the launcher to its idle frame.
+                        }
+                    }
+
+                    return;
+                }
+
+                video.muted = true;
+
+                const playPromise = video.play();
+
+                if (playPromise instanceof Promise) {
+                    playPromise.catch(() => {});
+                }
+            });
+        };
+
         const syncWolfiLaunchButtons = ({
             open = modalIsOpen,
             speaking = wolfiModal.classList.contains('is-speaking'),
             listening = wolfiModal.classList.contains('is-listening'),
+            rendering = wolfiModal.classList.contains('is-rendering'),
         } = {}) => {
             wolfiLaunchButtons.forEach((button) => {
                 button.setAttribute('aria-expanded', open ? 'true' : 'false');
                 button.classList.toggle('is-open', open);
                 button.classList.toggle('is-speaking', open && speaking);
                 button.classList.toggle('is-listening', open && listening);
+                button.classList.toggle('is-rendering', open && rendering);
             });
+
+            syncWolfiFabPlayback(open && (speaking || listening || rendering));
         };
 
         const scheduleWolfiModalHide = () => {
@@ -4103,6 +4135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     open: true,
                     speaking: false,
                     listening: false,
+                    rendering: false,
                 });
 
                 window.requestAnimationFrame(() => {
@@ -4134,6 +4167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 open: false,
                 speaking: false,
                 listening: false,
+                rendering: false,
             });
             syncWolfiAvatarPlayback({
                 active: false,
@@ -4153,6 +4187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 open: modalIsOpen,
                 speaking: Boolean(event.detail?.speaking),
                 listening: Boolean(event.detail?.listening),
+                rendering: Boolean(event.detail?.rendering),
             });
             syncWolfiAvatarPlayback({
                 active: Boolean(event.detail?.speaking)

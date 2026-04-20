@@ -3,9 +3,11 @@
 namespace App\Services\Challenge;
 
 use App\Mail\ChallengeFailedMail;
+use App\Mail\ChallengePhasePassSupportNotificationMail;
 use App\Mail\ChallengePassedMail;
 use App\Models\TradingAccount;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -45,6 +47,9 @@ class ChallengeFinalStateMailer
                 ];
             }
 
+            $meta = is_array($freshAccount->meta) ? $freshAccount->meta : [];
+            $supportNotifiedAt = Arr::get($meta, 'support_notifications.challenge_pass.notified_at');
+            $shouldNotifySupport = $freshAccount->challenge_status === 'passed' && blank($supportNotifiedAt);
             $fundedPassAlreadySent = $freshAccount->funded_pass_email_sent_at !== null
                 || $freshAccount->passed_email_sent_at !== null;
 
@@ -58,13 +63,22 @@ class ChallengeFinalStateMailer
                 ])->save();
             }
 
-            if ($freshAccount->challenge_status === 'passed' && ! $fundedPassAlreadySent) {
-                $certificate = $this->certificateGenerator->ensureForAccount($freshAccount);
+            if ($freshAccount->challenge_status === 'passed' && (! $fundedPassAlreadySent || $shouldNotifySupport)) {
+                $certificate = ! $fundedPassAlreadySent
+                    ? $this->certificateGenerator->ensureForAccount($freshAccount)
+                    : null;
                 $sentAt = now();
-                $freshAccount->forceFill([
-                    'passed_email_sent_at' => $sentAt,
-                    'funded_pass_email_sent_at' => $sentAt,
-                ])->save();
+
+                if ($shouldNotifySupport) {
+                    Arr::set($meta, 'support_notifications.challenge_pass.notified_at', $sentAt->toIso8601String());
+                    Arr::set($meta, 'support_notifications.challenge_pass.completed_phase', $this->completedPhaseLabel($freshAccount));
+                }
+
+                $freshAccount->forceFill(array_filter([
+                    'passed_email_sent_at' => ! $fundedPassAlreadySent ? $sentAt : null,
+                    'funded_pass_email_sent_at' => ! $fundedPassAlreadySent ? $sentAt : null,
+                    'meta' => $shouldNotifySupport ? $meta : null,
+                ], static fn (mixed $value): bool => $value !== null))->save();
 
                 return [
                     'type' => 'passed',
@@ -72,6 +86,9 @@ class ChallengeFinalStateMailer
                     'account' => $freshAccount->fresh(['user', 'challengePlan', 'challengePurchase']) ?? $freshAccount,
                     'details' => $this->passedDetails($freshAccount),
                     'certificate' => $certificate,
+                    'send_client' => ! $fundedPassAlreadySent,
+                    'send_support' => $shouldNotifySupport,
+                    'support_details' => $this->supportDetails($freshAccount, $sentAt, $this->completedPhaseLabel($freshAccount)),
                 ];
             }
 
@@ -93,13 +110,23 @@ class ChallengeFinalStateMailer
             return;
         }
 
-        Mail::to($mailPayload['user']->email)->send(new ChallengePassedMail(
-            user: $mailPayload['user'],
-            tradingAccount: $mailPayload['account'],
-            details: $mailPayload['details'],
-            certificate: $mailPayload['certificate'] ?? null,
-        ));
-        $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
+        if ($mailPayload['send_client'] ?? true) {
+            Mail::to($mailPayload['user']->email)->send(new ChallengePassedMail(
+                user: $mailPayload['user'],
+                tradingAccount: $mailPayload['account'],
+                details: $mailPayload['details'],
+                certificate: $mailPayload['certificate'] ?? null,
+            ));
+            $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
+        }
+
+        if ($mailPayload['send_support'] ?? false) {
+            Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
+                user: $mailPayload['user'],
+                tradingAccount: $mailPayload['account'],
+                details: $mailPayload['support_details'],
+            ));
+        }
     }
 
     /**
@@ -143,6 +170,27 @@ class ChallengeFinalStateMailer
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    private function supportDetails(TradingAccount $account, \DateTimeInterface $sentAt, string $completedPhase): array
+    {
+        $user = $account->user;
+
+        return [
+            'client_name' => (string) ($user?->name ?: 'Trader'),
+            'client_email' => (string) ($user?->email ?: 'Not available'),
+            'account_reference' => (string) ($account->account_reference ?: 'N/A'),
+            'account_id' => (string) $account->id,
+            'challenge_type' => $this->challengeTypeLabel($account),
+            'completed_phase' => $completedPhase,
+            'current_status' => $this->reasonLabel((string) ($account->challenge_status ?: $account->account_status ?: 'passed')),
+            'pass_timestamp' => optional($account->passed_at)->toDateTimeString() ?: $sentAt->format('Y-m-d H:i:s'),
+            'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
+            'mt5_deactivation_status' => (string) (data_get($account->meta, 'mt5_deactivation.events.challenge_pass.status') ?: 'requested'),
+        ];
+    }
+
     private function reasonLabel(string $reason): string
     {
         return match ($reason) {
@@ -159,6 +207,22 @@ class ChallengeFinalStateMailer
         $size = (float) ($account->account_size ?: $account->starting_balance ?: 0);
 
         return trim($typeLabel.' '.$this->money($size));
+    }
+
+    private function challengeTypeLabel(TradingAccount $account): string
+    {
+        $challengeType = (string) ($account->challenge_type ?: 'challenge');
+
+        return (string) (config("wolforix.challenge_catalog.{$challengeType}.label") ?: str($challengeType)->replace('_', ' ')->title());
+    }
+
+    private function completedPhaseLabel(TradingAccount $account): string
+    {
+        if ($account->challenge_type === 'one_step') {
+            return 'Single Phase';
+        }
+
+        return (int) $account->phase_index > 1 ? 'Phase 2' : 'Phase 1';
     }
 
     private function money(float $value): string

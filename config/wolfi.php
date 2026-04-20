@@ -4,8 +4,8 @@ return [
     'assistant' => [
         'name' => 'Wolfi',
         'eyebrow' => 'AI desk assistant',
-        'title' => 'Wolfi lives inside your trading workspace',
-        'description' => 'Ask Wolfi about dashboard navigation, challenge rules, payout timing, performance metrics, and common support questions without leaving the Wolforix dashboard.',
+        'title' => 'Wolfi supports your trading workspace',
+        'description' => 'Ask Wolfi about MT5 sync, dashboard navigation, challenge rules, payout timing, performance metrics, and common support questions from the dedicated Wolfi Hub.',
         'avatar_asset' => 'newfolder/IMG_8542.png',
         'sources_title' => 'Grounded in Wolforix data',
         'sources_copy' => 'Wolfi answers from stored dashboard structure, challenge rules, payout logic, and support guidance instead of generic chatbot filler.',
@@ -24,7 +24,7 @@ return [
     'pillars' => [
         [
             'title' => 'Platform guidance',
-            'description' => 'Step-by-step help for overview, accounts, payouts, and settings.',
+            'description' => 'Step-by-step help for overview, accounts, payouts, Wolfi Hub, and settings.',
         ],
         [
             'title' => 'Challenge rules',
@@ -111,7 +111,7 @@ return [
             'sections' => [
                 [
                     'title' => 'Live sync',
-                    'description' => 'MT5 or cTrader connection status explains whether account metrics are updating correctly.',
+                    'description' => 'MT5 connection status explains whether account metrics are updating correctly.',
                 ],
                 [
                     'title' => 'Challenge inventory',
@@ -138,6 +138,24 @@ return [
                 [
                     'title' => 'Requirements',
                     'description' => 'This checklist keeps the funded-account rules and internal review conditions visible before payout requests.',
+                ],
+            ],
+        ],
+        'dashboard.wolfi' => [
+            'title' => 'Wolfi Hub',
+            'summary' => 'Use this page for the full Wolfi assistant, account-aware explanations, smart insights, support routes, and platform guidance.',
+            'sections' => [
+                [
+                    'title' => 'Personal briefing',
+                    'description' => 'Wolfi explains the selected account status, MT5 data, rules, progress, and payout context in plain language.',
+                ],
+                [
+                    'title' => 'Smart prompts',
+                    'description' => 'Quick actions help you ask about the dashboard, challenge rules, metrics, payouts, and consistency.',
+                ],
+                [
+                    'title' => 'Support context',
+                    'description' => 'Wolfi can point you toward billing, support, dashboard navigation, or the next operational step.',
                 ],
             ],
         ],

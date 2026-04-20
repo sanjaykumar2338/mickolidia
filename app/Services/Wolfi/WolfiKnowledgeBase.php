@@ -9,7 +9,7 @@ class WolfiKnowledgeBase
      */
     public function assistantMeta(): array
     {
-        return (array) config('wolfi.assistant', []);
+        return $this->translatedArray('assistant', (array) config('wolfi.assistant', []));
     }
 
     /**
@@ -17,7 +17,7 @@ class WolfiKnowledgeBase
      */
     public function pillars(): array
     {
-        return array_values((array) config('wolfi.pillars', []));
+        return array_values($this->translatedArray('pillars', (array) config('wolfi.pillars', [])));
     }
 
     /**
@@ -25,7 +25,7 @@ class WolfiKnowledgeBase
      */
     public function quickActions(): array
     {
-        return array_values((array) config('wolfi.quick_actions', []));
+        return array_values($this->translatedArray('quick_actions', (array) config('wolfi.quick_actions', [])));
     }
 
     /**
@@ -33,10 +33,10 @@ class WolfiKnowledgeBase
      */
     public function pageGuide(string $page): array
     {
-        $guide = config("wolfi.pages.{$page}");
+        $guide = $this->translatedArray("pages.{$page}", (array) config("wolfi.pages.{$page}", []));
 
-        if (! is_array($guide)) {
-            $guide = (array) config('wolfi.pages.dashboard', []);
+        if ($guide === []) {
+            $guide = $this->translatedArray('pages.dashboard', (array) config('wolfi.pages.dashboard', []));
         }
 
         return $guide;
@@ -47,7 +47,15 @@ class WolfiKnowledgeBase
      */
     public function voiceMeta(): array
     {
-        return (array) config('wolfi.voice', []);
+        return $this->translatedArray('voice', (array) config('wolfi.voice', []));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function smartInsights(): array
+    {
+        return $this->translatedArray('smart_insights', (array) config('wolfi.smart_insights', []));
     }
 
     /**
@@ -58,7 +66,7 @@ class WolfiKnowledgeBase
         return [
             'email' => (string) config('wolforix.support.email'),
             'business_hours' => (string) config('wolforix.support.business_hours'),
-            'common_topics' => array_values((array) config('wolfi.support.common_topics', [])),
+            'common_topics' => array_values($this->translatedArray('support.common_topics', (array) config('wolfi.support.common_topics', []))),
         ];
     }
 
@@ -72,7 +80,7 @@ class WolfiKnowledgeBase
      */
     public function passFailItems(): array
     {
-        return array_values((array) config('wolfi.rules.pass_fail_items', []));
+        return array_values($this->translatedArray('rules.pass_fail_items', (array) config('wolfi.rules.pass_fail_items', [])));
     }
 
     /**
@@ -101,20 +109,38 @@ class WolfiKnowledgeBase
         return [
             [
                 'key' => 'dashboard',
-                'label' => 'Overview',
+                'label' => (string) __('site.dashboard.nav.overview'),
             ],
             [
                 'key' => 'dashboard.accounts',
-                'label' => 'Accounts',
+                'label' => (string) __('site.dashboard.nav.accounts'),
             ],
             [
                 'key' => 'dashboard.payouts',
-                'label' => 'Payouts',
+                'label' => (string) __('site.dashboard.nav.payouts'),
+            ],
+            [
+                'key' => 'dashboard.wolfi',
+                'label' => (string) __('site.dashboard.nav.wolfi_hub'),
             ],
             [
                 'key' => 'dashboard.settings',
-                'label' => 'Settings',
+                'label' => (string) __('site.dashboard.nav.settings'),
             ],
         ];
+    }
+
+    /**
+     * @return array<string|int, mixed>
+     */
+    private function translatedArray(string $key, array $fallback): array
+    {
+        $translated = trans("site.dashboard.wolfi.{$key}");
+
+        if (! is_array($translated)) {
+            return $fallback;
+        }
+
+        return array_replace_recursive($fallback, $translated);
     }
 }

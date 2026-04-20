@@ -32,7 +32,7 @@ return [
         'name' => 'Wolfi',
         'eyebrow' => 'Wolfi Assistent',
         'title' => 'Sprich mit Wolfi',
-        'description' => 'Erhalte sofort Antworten zu Drawdown-Regeln, Profit-Splits und Challenge-Anforderungen.',
+        'description' => 'Lass dich von Wolfi durch Regeln, Auszahlungen, MT5-Zugang und den richtigen nächsten Schritt auf der Plattform führen.',
         'multi_language' => 'Spricht deine Sprache sofort',
         'start_chat' => 'Jetzt Wolfi testen',
         'floating_label' => 'Wolfi öffnen',
@@ -44,7 +44,7 @@ return [
         'preview_badge' => '24/7',
         'preview_copy' => 'Öffne den Assistenten für schnelle Antworten zu Regeln, News-Trading, Drawdown-Limits, Auszahlungszeiten und dem passenden Challenge-Modell.',
         'visual_title' => 'Immer aktiv. Immer bereit.',
-        'visual_copy' => 'Greife auf Regeln, Auszahlungen und Trading-Hinweise zu, ohne deinen Bildschirm zu verlassen.',
+        'visual_copy' => 'Nutze Wolfi als sichtbaren Guide für Regeln, Auszahlungen, MT5-Zugang und Plattformfragen.',
         'visual_response_label' => 'Live-Antwort',
         'visual_response_preview' => 'Dein maximaler Drawdown beträgt auf diesem Konto 5 %.',
         'visual_response_hint' => 'Regeln und Kontohinweise in Echtzeit.',
@@ -104,7 +104,7 @@ return [
         'hero_panel' => [
             'title' => 'Zentrale Regelstruktur',
             'caption' => 'Gold bleibt auf wichtige Markenmomente, Aktionen und kritische Kontosignale beschränkt, damit die Oberfläche professionell und nicht wie ein Poster wirkt.',
-            'status' => 'Zuerst cTrader',
+            'status' => 'MT5-Workflow',
             'items' => [
                 '1-Step: 10 % Ziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust.',
                 '2-Step Phase 1: 10 % Ziel, 5 % Tagesverlust, 10 % Gesamtverlust und 1:100 Hebel.',
@@ -667,7 +667,7 @@ return [
         'plan' => 'Challenge-Plan',
         'select_plan' => 'Plan auswählen',
         'platform' => 'Plattform',
-        'platform_value' => 'cTrader in Phase 1, MT4/MT5 später',
+        'platform_value' => 'MT5',
         'agreement' => 'Fuer den Checkout muessen die AGB akzeptiert, das aktuelle Wohnsitzland bestaetigt und die Stornierungs- und Rueckerstattungsrichtlinie akzeptiert werden.',
         'confirmation_title' => 'Erforderliche Bestaetigungen',
         'confirmations' => [
@@ -1466,7 +1466,7 @@ return [
         'live_chat_button' => 'Live-Chat starten',
         'live_chat_subject' => 'Support-Anfrage aus dem Live-Chat',
         'voice_title' => 'Wolfi AI-Assistent',
-        'voice_copy' => 'Stelle Wolfi eine Frage per Sprache oder Text. Wolfi antwortet mit Inhalten aus der Wolforix-FAQ, den Regeln, Auszahlungen, Rabatten und Support-Hinweisen.',
+        'voice_copy' => 'Stelle Wolfi eine Frage per Sprache oder Text. Wolfi führt dich durch Wolforix mit FAQ-Inhalten, Challenge-Regeln, Auszahlungen, Rabatten, MT5-Zugang und Support-Hinweisen.',
         'voice_ready' => 'Wolfi ist bereit.',
         'voice_listening' => 'Ich höre zu... tippe erneut zum Stoppen.',
         'voice_unsupported' => 'Spracheingabe wird in diesem Browser nicht unterstützt. Du kannst deine Frage trotzdem eintippen.',
@@ -1483,7 +1483,7 @@ return [
         'voice_rules_fallback' => 'Beim 1-Step gelten 10 % Gewinnziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust. Beim 2-Step gelten 10 % und 5 % Gewinnziel, 5 % maximaler Tagesverlust, 10 % maximaler Gesamtverlust und mindestens 3 Handelstage pro Phase.',
         'voice_checkout_fallback' => 'Klicke im gewählten Challenge-Modell auf Plan sichern und melde dich danach an oder erstelle ein Konto, bevor du zum Checkout gehst. Wolforix führt dich anschließend wieder zurück zum richtigen Plan.',
         'voice_discount_fallback' => 'Öffne das Launch-Popup und klicke auf Rabatt sichern, um das 20-%-Angebot für die aktuelle Sitzung zu aktivieren. Wenn du es ignorierst, bleibt der reguläre Preis bestehen.',
-        'voice_general_fallback' => 'Ich bin am stärksten bei Wolforix-Modellen, Demo-Zugang, Auszahlungen, Regeln, Kontozugang, Checkout und cTrader-Hinweisen. Wenn deine Frage breiter ist, helfe ich dir kurz so gut ich kann oder verweise dich auf die passende Wolforix-Seite.',
+        'voice_general_fallback' => 'Ich bin am stärksten bei Wolforix-Modellen, Demo-Zugang, Auszahlungen, Regeln, Kontozugang, Checkout und MT5-Hinweisen. Wenn deine Frage breiter ist, helfe ich dir kurz so gut ich kann oder verweise dich auf die passende Wolforix-Seite.',
         'voice_input_label' => 'Frage stellen',
         'voice_input_placeholder' => 'Beispiel: Wann kann ich meine erste Auszahlung anfordern?',
         'voice_suggestions_label' => 'Vorgeschlagene Fragen',
@@ -1894,6 +1894,7 @@ return [
             'overview' => 'Übersicht',
             'accounts' => 'Konten',
             'payouts' => 'Auszahlungen',
+            'wolfi_hub' => 'Wolfi Hub',
             'settings' => 'Einstellungen',
         ],
         'cards' => [
@@ -1939,7 +1940,7 @@ return [
         ],
         'overview' => [
             'snapshot_title' => 'Konten-Snapshot',
-            'snapshot_copy' => 'Dieser Bereich ist für zukünftige cTrader-, MT4- und MT5-Sync-Verbindungen vorbereitet. Meilenstein 1 verwendet bewusst nur Demo-Werte.',
+            'snapshot_copy' => 'Dieser Bereich folgt jetzt dem MT5-Challenge-Workspace; Live-Kontokennzahlen erscheinen, sobald MT5-Sync-Daten verfügbar sind.',
             'rules_title' => 'Regelstruktur',
             'rules_copy' => 'Die Vorschau unten ist am finalen 2-Step-Launch-Modell ausgerichtet, damit Ziele, Risikogrenzen, Hebel und Auszahlungszeitpunkt nahe an den Kontokennzahlen sichtbar bleiben.',
             'payout_title' => 'Auszahlungsbereich',
@@ -1966,6 +1967,257 @@ return [
         'settings_page' => [
             'title' => 'Einstellungen',
             'subtitle' => 'Profil-, Lokalisierungs- und Compliance-Struktur vorbereitet für künftige Benutzerverwaltung.',
+        ],
+        'wolfi_hub_page' => [
+            'title' => 'Wolfi Hub',
+            'subtitle' => 'Kontobezogener Support, Plattformhilfe und Wolfi-Kontext leben hier, ohne den Trading-Workspace zu überladen.',
+            'empty_title' => 'Wolfi bereitet deinen Workspace vor',
+            'empty_copy' => 'Sobald dein Dashboard-Kontext geladen ist, erklärt Wolfi Hub die aktuelle Seite, Kontostatus, Regeln, Auszahlungen und Support-Wege.',
+        ],
+        'mt5' => [
+            'title' => 'MT5 Live-Sync',
+            'heading' => 'MT5-Sync und Kontozugang',
+            'copy' => 'Wolforix richtet den Trader-Workflow jetzt auf MT5-Kontodaten, Sync-Aktualität und sichere Zugangsdaten aus.',
+        ],
+        'wolfi' => [
+            'entry_eyebrow' => 'Wolfi Support',
+            'entry_title' => 'Brauchst du Kontext? Öffne Wolfi Hub.',
+            'entry_copy' => 'Wolfi kann dein ausgewähltes Konto, Regeln, Auszahlungsbereitschaft und den aktuellen Workspace erklären, ohne die Trading-Ansicht zu verdecken.',
+            'entry_hint' => 'Das Haupt-Dashboard fokussiert Kontodaten; der vollständige Assistent lebt im Wolfi Hub.',
+            'open_hub' => 'Wolfi Hub öffnen',
+            'fallbacks' => [
+                'dashboard_workspace' => 'Dashboard-Workspace',
+            ],
+            'welcome' => [
+                'title' => 'Persönliche Kontoerklärung',
+                'account_message' => 'Ich lese dein :plan-Konto in :page, damit ich Status, Regeln, Auszahlungsbereitschaft und MT5-Daten klar erklären kann.',
+                'account_bullets' => [
+                    'status' => 'Aktueller Status: :status mit :progress Fortschritt zum Gewinnziel.',
+                    'balance' => 'Kontostand: :balance, Equity: :equity, Floating P&L: :pnl.',
+                    'trading_days' => 'Handelstage-Fortschritt: :days für die aktive Phase.',
+                ],
+                'empty_message' => 'Ich kann :page, Challenge-Regeln, Auszahlungen und Support-Schritte erklären, während Wolforix auf ein aktives MT5-Konto in diesem Profil wartet.',
+                'empty_bullets' => [
+                    'Nutze Wolfi Hub für den vollständigen kontobezogenen Assistenten.',
+                    'Das Haupt-Dashboard hält Trading-Workspace und Kontodaten an erster Stelle.',
+                    'Sobald MT5-Sync-Daten erscheinen, ergänzt Wolfi hier persönliche Kontoerklärungen.',
+                ],
+            ],
+            'stat_labels' => [
+                'status' => 'Status',
+                'balance' => 'Kontostand',
+                'equity' => 'Equity',
+                'page' => 'Seite',
+                'rules' => 'Regeln',
+                'support' => 'Support',
+            ],
+            'stat_values' => [
+                'structured' => 'Strukturiert',
+                'ready' => 'Bereit',
+            ],
+            'assistant' => [
+                'name' => 'Wolfi',
+                'eyebrow' => 'Kontosupport-Assistent',
+                'title' => 'Wolfi unterstützt deinen Trading-Workspace',
+                'description' => 'Nutze Wolfi Hub für kontobezogene Hilfe zu MT5-Sync, Challenge-Regeln, Auszahlungszeiten, Performance-Metriken und häufigen Supportfragen, ohne den Dashboard-Workspace zu ersetzen.',
+                'sources_title' => 'Auf Wolforix-Daten gestützt',
+                'sources_copy' => 'Wolfi antwortet aus Dashboard-Struktur, Challenge-Regeln, Auszahlungslogik, Kontokontext und Support-Hinweisen statt mit generischem Chatbot-Text.',
+                'response_label' => 'Live-Antwort',
+                'response_hint' => 'Regelbewusst, metrikbewusst und bereit für spätere Sprachwiedergabe.',
+                'status_idle' => 'Bereit für deinen nächsten Schritt',
+                'status_thinking' => 'Wolfi prüft deinen Kontokontext',
+                'status_error' => 'Wolfi hatte kurz ein Problem. Bitte versuche es erneut.',
+                'input_placeholder' => 'Frage zu deinem MT5-Konto, Regeln, Auszahlungen, Metriken oder Support...',
+                'submit_label' => 'Wolfi fragen',
+                'input_help' => 'Wolfi nutzt deine aktuelle Dashboard-Seite und das ausgewählte Konto, sobald diese Daten verfügbar sind.',
+                'voice_label' => 'Sprachbereich bereit',
+                'voice_copy' => 'Reserviert für zukünftige freigegebene Sprachsamples und Wiedergabesteuerung.',
+            ],
+            'pillars' => [
+                [
+                    'title' => 'Plattformhilfe',
+                    'description' => 'Schrittweise Hilfe für Übersicht, Konten, Auszahlungen, Wolfi Hub und Einstellungen.',
+                ],
+                [
+                    'title' => 'Challenge-Regeln',
+                    'description' => 'Erklärt Drawdown, Handelstage, Konsistenz und Bestehen- oder Scheitern-Logik.',
+                ],
+                [
+                    'title' => 'Performance-Einblicke',
+                    'description' => 'Übersetzt Kontostand, Equity, Floating P&L, Drawdown-Auslastung und Auszahlungsbereitschaft.',
+                ],
+                [
+                    'title' => 'Support-Assistent',
+                    'description' => 'Beantwortet operative Fragen und führt Trader zum richtigen Wolforix-Ablauf.',
+                ],
+            ],
+            'quick_actions' => [
+                [
+                    'key' => 'dashboard',
+                    'label' => 'Mein Dashboard erklären',
+                    'prompt' => 'Mein Dashboard erklären',
+                ],
+                [
+                    'key' => 'rules',
+                    'label' => 'Welche Challenge-Regeln gelten?',
+                    'prompt' => 'Welche Challenge-Regeln gelten?',
+                ],
+                [
+                    'key' => 'metrics',
+                    'label' => 'Meine Metriken erklären',
+                    'prompt' => 'Meine Metriken erklären',
+                ],
+                [
+                    'key' => 'payouts',
+                    'label' => 'Wie funktionieren Auszahlungen?',
+                    'prompt' => 'Wie funktionieren Auszahlungen?',
+                ],
+                [
+                    'key' => 'consistency',
+                    'label' => 'Was ist die Konsistenzregel?',
+                    'prompt' => 'Was ist die Konsistenzregel?',
+                ],
+            ],
+            'smart_insights' => [
+                'title' => 'Smart Insights',
+                'description' => 'Wolfi beobachtet deinen Live-Kontokontext und hebt wichtige Signale hervor, bevor du danach fragst.',
+            ],
+            'pages' => [
+                'dashboard' => [
+                    'title' => 'Übersichts-Workspace',
+                    'summary' => 'Nutze diese Seite für Kontoübersicht, Challenge-Fortschritt, Auszahlungsbereitschaft, Analysen, Tagesaktivität, Trade-Details und den direkten Wolfi-Hub-Zugang.',
+                    'sections' => [
+                        [
+                            'title' => 'Kontoübersicht',
+                            'description' => 'Der obere Bereich zeigt Plan, Phase, MT5-Sync-Aktualität, Kontostand, Equity und Fortschritt zum Ziel.',
+                        ],
+                        [
+                            'title' => 'Command Center',
+                            'description' => 'Prüfe Gewinnquote, ersten Trade, gehandelte Symbole und Kontostand-Kontext mit Wolfi im Ringzentrum.',
+                        ],
+                        [
+                            'title' => 'Wolfi-Zugang',
+                            'description' => 'Der kompakte Wolfi-Einstieg öffnet Wolfi Hub, während das Haupt-Dashboard Kontodaten und Workspace zuerst zeigt.',
+                        ],
+                    ],
+                ],
+                'dashboard.accounts' => [
+                    'title' => 'Konten-Workspace',
+                    'summary' => 'Nutze diese Seite für MT5-Sync-Status, verknüpfte Challenges, Rechnungen und Fortschritt pro Konto.',
+                    'sections' => [
+                        [
+                            'title' => 'MT5 Live-Sync',
+                            'description' => 'Der MT5-Kontostatus erklärt, ob Kontokennzahlen korrekt aktualisiert werden.',
+                        ],
+                        [
+                            'title' => 'Challenge-Bestand',
+                            'description' => 'Jede Kontokarte fasst Kontostand, Equity, Status, Fortschritt und wichtige Regelauslastung zusammen.',
+                        ],
+                        [
+                            'title' => 'Rechnungsdokumente',
+                            'description' => 'Rechnungen und Kaufhistorie bleiben im Dashboard dauerhaft herunterladbar.',
+                        ],
+                    ],
+                ],
+                'dashboard.payouts' => [
+                    'title' => 'Auszahlungs-Workspace',
+                    'summary' => 'Nutze diese Seite, um das nächste Auszahlungsfenster, aktuelle Berechtigung und offene Anforderungen zu verstehen.',
+                    'sections' => [
+                        [
+                            'title' => 'Berechtigungskarten',
+                            'description' => 'Die oberen Karten zeigen Auszahlungszeitpunkt, berechtigten Gewinn und aktuellen Status.',
+                        ],
+                        [
+                            'title' => 'Timing-Hinweise',
+                            'description' => 'Die Zeitleiste erklärt erste Auszahlung und wiederkehrenden Auszahlungszyklus.',
+                        ],
+                        [
+                            'title' => 'Anforderungen',
+                            'description' => 'Diese Liste hält Funded-Regeln und interne Prüfbedingungen vor Auszahlungsanfragen sichtbar.',
+                        ],
+                    ],
+                ],
+                'dashboard.wolfi' => [
+                    'title' => 'Wolfi Hub',
+                    'summary' => 'Nutze diese Seite für den vollständigen Wolfi-Assistenten, kontobezogene Erklärungen, Smart Insights, Support-Wege und Plattformhilfe.',
+                    'sections' => [
+                        [
+                            'title' => 'Persönliche Erklärung',
+                            'description' => 'Wolfi erklärt Kontostatus, MT5-Daten, Regeln, Fortschritt und Auszahlungskontext in klarer Sprache.',
+                        ],
+                        [
+                            'title' => 'Schnellfragen',
+                            'description' => 'Schnellaktionen helfen bei Fragen zu Dashboard, Regeln, Metriken, Auszahlungen und Konsistenz.',
+                        ],
+                        [
+                            'title' => 'Support-Kontext',
+                            'description' => 'Wolfi kann dich zu Abrechnung, Support, Navigation oder dem nächsten operativen Schritt führen.',
+                        ],
+                    ],
+                ],
+                'dashboard.settings' => [
+                    'title' => 'Einstellungs-Workspace',
+                    'summary' => 'Nutze diese Seite für Profil, Sprache, Zeitzone und die Roadmap für Präferenzen und Sicherheit.',
+                    'sections' => [
+                        [
+                            'title' => 'Profildetails',
+                            'description' => 'Schreibgeschützte Felder zeigen, was aktuell für dein Dashboard-Konto gespeichert ist.',
+                        ],
+                        [
+                            'title' => 'Präferenzen',
+                            'description' => 'Diese Karte zeigt, wo persönliche Plattformpräferenzen später erweitert werden.',
+                        ],
+                        [
+                            'title' => 'Sicherheit',
+                            'description' => 'Dieser Bereich ist für spätere Sicherheitskontrollen und Kontoschutz reserviert.',
+                        ],
+                    ],
+                ],
+            ],
+            'support' => [
+                'common_topics' => [
+                    'Rechnungsdaten bleiben im Dashboard und Rechnungen sind nach erfolgreichem Kauf herunterladbar.',
+                    'Auszahlungsfreigabe hängt von Funded-Status, Regelkonformität und Wolforix-Prüfung ab.',
+                    'Wenn Kontodaten fehlen, kann Wolfi trotzdem den Ablauf und den wahrscheinlichen nächsten Schritt erklären.',
+                ],
+            ],
+            'rules' => [
+                'pass_fail_items' => [
+                    'Bestehe die aktuelle Phase, indem du Gewinnziel und Mindesthandelstage erreichst, ohne aktive Verlustregeln zu brechen.',
+                    'Ein Fail entsteht, wenn Tagesverlust oder Max-Drawdown überschritten werden oder Wolforix das Konto nach einem Regelverstoß sperrt.',
+                ],
+            ],
+            'voice' => [
+                'action_label' => 'Sprachaktionen bald',
+                'action_note' => 'Layout und Antwortdaten reservieren bereits Platz für spätere Wiedergabesteuerung und freigegebene Sprachsamples.',
+            ],
+            'insights' => [
+                'risk_alert' => [
+                    'label' => 'Risikoalarm',
+                    'daily_message' => 'Die Tagesverlust-Auslastung ist hoch. Schütze das Konto vor dem nächsten Setup.',
+                    'max_message' => 'Die Max-Drawdown-Auslastung ist hoch. Reduziere Risiko und schütze die Challenge.',
+                    'meta' => 'Täglich :daily% · Max :max%',
+                    'prompt' => 'Erkläre mein Drawdown-Risiko und den verbleibenden Raum',
+                ],
+                'profit_progress' => [
+                    'label' => 'Gewinnfortschritt',
+                    'message' => 'Du bist nah am aktuellen Gewinnziel. Schütze Gewinne und vervollständige die Regeln.',
+                    'meta' => ':progress% des Ziels',
+                    'prompt' => 'Erkläre, was zum Bestehen dieser Phase fehlt',
+                ],
+                'consistency_warning' => [
+                    'label' => 'Konsistenzwarnung',
+                    'message' => 'Ein Handelstag trägt einen großen Gewinnanteil. Verteile Gewinne vor einer Auszahlungsanfrage.',
+                    'meta' => 'Bester-Tag-Verhältnis :ratio%',
+                    'prompt' => 'Erkläre meinen Status zur Konsistenzregel',
+                ],
+                'payout_readiness' => [
+                    'label' => 'Auszahlungsbereitschaft',
+                    'message' => 'Das Auszahlungsfenster wirkt offen. Prüfe Regelkonformität und bereite die Anfrage vor.',
+                    'meta' => 'Funded-Konto',
+                    'prompt' => 'Erkläre meine Auszahlungsbereitschaft',
+                ],
+            ],
         ],
         'payouts' => [
             'next_window' => 'Nächstes Auszahlungsfenster',

@@ -13,7 +13,7 @@ class WolfiDashboardAssistantTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_dashboard_layout_renders_embedded_wolfi_panel_with_bootstrap_config(): void
+    public function test_dashboard_renders_compact_wolfi_entry_and_hub_contains_full_panel(): void
     {
         $account = $this->createChallengeAccount('one_step', [
             'balance' => 10350,
@@ -31,7 +31,15 @@ class WolfiDashboardAssistantTest extends TestCase
         $this->actingAs($account->user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Wolfi lives inside your trading workspace')
+            ->assertSee('Need context? Open Wolfi Hub.')
+            ->assertSee('Open Wolfi Hub')
+            ->assertDontSee('Grounded in Wolforix data')
+            ->assertDontSee('dashboard\\/wolfi\\/respond', false);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.wolfi', ['account' => $account->id]))
+            ->assertOk()
+            ->assertSee('Wolfi supports your trading workspace')
             ->assertSee('dashboard\\/wolfi\\/respond', false)
             ->assertSee('Explain my dashboard')
             ->assertSee('Grounded in Wolforix data');
@@ -64,7 +72,7 @@ class WolfiDashboardAssistantTest extends TestCase
         ]);
 
         $this->actingAs($account->user)
-            ->get(route('dashboard'))
+            ->get(route('dashboard.wolfi', ['account' => $account->id]))
             ->assertOk()
             ->assertSee('Smart Insights')
             ->assertSee('Risk Alert')
@@ -81,6 +89,11 @@ class WolfiDashboardAssistantTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Smart Insights');
+
+        $this->actingAs($user)
+            ->get(route('dashboard.wolfi'))
             ->assertOk()
             ->assertDontSee('Smart Insights');
     }

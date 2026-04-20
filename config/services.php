@@ -79,6 +79,12 @@ return [
         'token' => env('MT5_INGESTION_TOKEN'),
     ],
 
+    'mt5_deactivation' => [
+        'endpoint' => env('MT5_DEACTIVATION_ENDPOINT'),
+        'token' => env('MT5_DEACTIVATION_TOKEN'),
+        'timeout' => (int) env('MT5_DEACTIVATION_TIMEOUT', 10),
+    ],
+
     'ctrader' => [
         'broker_name' => env('CTRADER_BROKER_NAME', 'IC Markets'),
         'auth_url' => env('CTRADER_AUTH_URL', 'https://id.ctrader.com/my/settings/openapi/grantingaccess/'),

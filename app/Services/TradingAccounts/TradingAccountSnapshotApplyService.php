@@ -9,9 +9,11 @@ use App\Services\TradingAccounts\TradingAccountConsistencyService;
 use App\Services\Challenge\ChallengeFinalStateMailer;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\Challenge\ChallengeProgressEngine;
+use App\Services\Mt5\Mt5AccountDeactivationService;
 use App\Support\TradingMetricsCalculator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TradingAccountSnapshotApplyService
 {
@@ -22,6 +24,7 @@ class TradingAccountSnapshotApplyService
         private readonly ChallengeFinalStateMailer $finalStateMailer,
         private readonly ChallengeLifecycleMailer $lifecycleMailer,
         private readonly ConsistencyAlertMailer $consistencyAlertMailer,
+        private readonly Mt5AccountDeactivationService $mt5AccountDeactivationService,
     ) {
     }
 
@@ -45,6 +48,41 @@ class TradingAccountSnapshotApplyService
 
             $previousStatus = $freshAccount->account_status;
             $previousPhaseIndex = (int) $freshAccount->phase_index;
+            $finalStateLockedAtStart = (bool) $freshAccount->final_state_locked
+                && in_array((string) $freshAccount->challenge_status, ['passed', 'failed'], true);
+
+            if ($finalStateLockedAtStart) {
+                if ($this->hasTradingActivity($snapshot)) {
+                    Log::warning('Ignored MT5 trading activity for a locked final-state account.', [
+                        'trading_account_id' => $freshAccount->id,
+                        'account_reference' => $freshAccount->account_reference,
+                        'challenge_status' => $freshAccount->challenge_status,
+                        'trade_count' => $snapshot['trade_count'] ?? null,
+                        'activity_count' => $snapshot['activity_count'] ?? null,
+                        'volume' => $snapshot['volume'] ?? null,
+                    ]);
+                }
+
+                $freshAccount->forceFill(array_merge(
+                    $this->blockedFinalStateSyncFill($snapshot),
+                    [
+                        'sync_status' => 'success',
+                        'sync_source' => $source,
+                        'synced_at' => $snapshotAt,
+                        'last_synced_at' => $snapshotAt,
+                        'last_sync_started_at' => $startedAt,
+                        'last_sync_completed_at' => $snapshotAt,
+                        'sync_error' => null,
+                        'sync_error_at' => null,
+                    ],
+                ))->save();
+
+                return $freshAccount->fresh([
+                    'challengePlan',
+                    'challengePurchase',
+                    'user',
+                ]) ?? $freshAccount;
+            }
 
             $metrics = $this->metricsCalculator->calculate($freshAccount, $snapshot);
             $workingCopy = $freshAccount->replicate();
@@ -156,6 +194,9 @@ class TradingAccountSnapshotApplyService
             ]) ?? $freshAccount;
         });
 
+        $updatedAccount = $this->mt5AccountDeactivationService->acknowledgeIfNeeded($updatedAccount, $snapshot);
+        $updatedAccount = $this->requestMt5PassDeactivationIfNeeded($updatedAccount);
+
         $this->finalStateMailer->sendIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPhaseProgressIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($updatedAccount);
@@ -189,6 +230,72 @@ class TradingAccountSnapshotApplyService
             'total_profit' => $snapshot['total_profit'] ?? null,
             'today_profit' => $snapshot['today_profit'] ?? null,
         ], static fn ($value) => $value !== null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return array<string, mixed>
+     */
+    private function blockedFinalStateSyncFill(array $snapshot): array
+    {
+        return array_filter([
+            'platform_account_id' => $snapshot['platform_account_id'] ?? null,
+            'platform_login' => $snapshot['platform_login'] ?? null,
+            'platform_environment' => $snapshot['platform_environment'] ?? null,
+        ], static fn ($value) => $value !== null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function hasTradingActivity(array $snapshot): bool
+    {
+        return (bool) ($snapshot['has_activity'] ?? false)
+            || (int) ($snapshot['trade_count'] ?? $snapshot['activity_count'] ?? 0) > 0
+            || (float) ($snapshot['volume'] ?? 0) > 0;
+    }
+
+    private function requestMt5PassDeactivationIfNeeded(TradingAccount $account): TradingAccount
+    {
+        if ($this->hasPhaseOnePass($account)) {
+            $account = $this->mt5AccountDeactivationService->requestForPass($account, 'phase_1_pass', [
+                'reason' => 'phase_1_passed',
+                'completed_phase' => 'Phase 1',
+            ]);
+        }
+
+        if ($account->challenge_status === 'passed') {
+            $account = $this->mt5AccountDeactivationService->requestForPass($account, 'challenge_pass', [
+                'reason' => 'challenge_passed',
+                'completed_phase' => $this->completedPhaseLabel($account),
+            ]);
+        }
+
+        return $account;
+    }
+
+    private function hasPhaseOnePass(TradingAccount $account): bool
+    {
+        if ($account->challenge_type !== 'two_step') {
+            return false;
+        }
+
+        foreach ((array) data_get($account->rule_state, 'phase_history', []) as $phase) {
+            if (is_array($phase) && (int) ($phase['phase_index'] ?? 0) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function completedPhaseLabel(TradingAccount $account): string
+    {
+        if ($account->challenge_type === 'one_step') {
+            return 'Single Phase';
+        }
+
+        return (int) $account->phase_index > 1 ? 'Phase 2' : 'Phase 1';
     }
 
     /**

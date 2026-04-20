@@ -48,7 +48,7 @@
             </div>
 
             <h2 class="mt-4 max-w-3xl text-3xl font-semibold text-white sm:text-[2.5rem]">
-                {{ $assistant['title'] ?? 'Wolfi lives inside your trading workspace' }}
+                {{ $assistant['title'] ?? 'Wolfi supports your trading workspace' }}
             </h2>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-[15px]">
                 {{ $assistant['description'] ?? '' }}

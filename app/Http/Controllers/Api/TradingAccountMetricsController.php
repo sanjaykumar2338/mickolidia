@@ -177,6 +177,9 @@ class TradingAccountMetricsController extends Controller
                 'trading_blocked' => (bool) $updatedAccount->trading_blocked,
                 'final_state_locked' => (bool) $updatedAccount->final_state_locked,
                 'close_positions_required' => $this->shouldRequestPositionClosure($updatedAccount),
+                'mt5_deactivation_required' => $this->mt5DeactivationRequired($updatedAccount),
+                'mt5_deactivation_event' => $this->mt5DeactivationEvent($updatedAccount, includeDisabled: true)['event'] ?? null,
+                'mt5_deactivation_status' => $this->mt5DeactivationEvent($updatedAccount, includeDisabled: true)['status'] ?? null,
                 'ea_action' => $this->eaAction($updatedAccount),
                 'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
             ]);
@@ -226,7 +229,8 @@ class TradingAccountMetricsController extends Controller
 
     private function shouldRequestPositionClosure(TradingAccount $account): bool
     {
-        return $account->challenge_status === 'failed';
+        return $account->challenge_status === 'failed'
+            || $this->mt5DeactivationRequired($account);
     }
 
     private function eaAction(TradingAccount $account): string
@@ -235,11 +239,53 @@ class TradingAccountMetricsController extends Controller
             return 'close_all_positions_and_block_trading';
         }
 
+        if ($this->mt5DeactivationRequired($account)) {
+            return 'close_all_positions_and_disable_account';
+        }
+
         if ((bool) $account->trading_blocked) {
             return 'block_trading';
         }
 
         return 'continue';
+    }
+
+    /**
+     * @return array{event:string,status:string}|null
+     */
+    private function mt5DeactivationEvent(TradingAccount $account, bool $includeDisabled = false): ?array
+    {
+        if ($account->platform_slug !== 'mt5') {
+            return null;
+        }
+
+        $events = (array) data_get($account->meta, 'mt5_deactivation.events', []);
+
+        foreach (['challenge_pass', 'phase_1_pass'] as $eventKey) {
+            $event = $events[$eventKey] ?? null;
+
+            if (! is_array($event)) {
+                continue;
+            }
+
+            $status = (string) ($event['status'] ?? '');
+
+            if ($status === '' || (! $includeDisabled && $status === 'disabled')) {
+                continue;
+            }
+
+            return [
+                'event' => $eventKey,
+                'status' => $status,
+            ];
+        }
+
+        return null;
+    }
+
+    private function mt5DeactivationRequired(TradingAccount $account): bool
+    {
+        return $this->mt5DeactivationEvent($account) !== null;
     }
 
     private function resolveAccount(string $accountIdentifier): TradingAccount

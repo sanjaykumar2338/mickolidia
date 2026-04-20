@@ -30,17 +30,16 @@ class WolfiInsightService
             $insights[] = [
                 'key' => 'risk_alert',
                 'icon' => '⚠',
-                'label' => 'Risk Alert',
+                'label' => __('site.dashboard.wolfi.insights.risk_alert.label'),
                 'message' => $focusesDaily
-                    ? 'Your account is approaching the daily drawdown limit.'
-                    : 'Your account is approaching the max drawdown limit.',
-                'meta' => sprintf(
-                    'Daily usage %s%% • Max usage %s%% • Floating P&L %s',
-                    $this->formatPercent($dailyUsage),
-                    $this->formatPercent($maxUsage),
-                    $account['floating_pnl'] ?? '$0.00',
-                ),
-                'prompt' => 'Explain my drawdown risk and remaining room',
+                    ? __('site.dashboard.wolfi.insights.risk_alert.daily_message')
+                    : __('site.dashboard.wolfi.insights.risk_alert.max_message'),
+                'meta' => __('site.dashboard.wolfi.insights.risk_alert.meta', [
+                    'daily' => $this->formatPercent($dailyUsage),
+                    'max' => $this->formatPercent($maxUsage),
+                    'pnl' => $account['floating_pnl'] ?? '$0.00',
+                ]),
+                'prompt' => __('site.dashboard.wolfi.insights.risk_alert.prompt'),
                 'tone' => 'rose',
             ];
         }
@@ -51,15 +50,14 @@ class WolfiInsightService
             $insights[] = [
                 'key' => 'profit_progress',
                 'icon' => '🎯',
-                'label' => 'Profit Progress',
-                'message' => 'You are close to reaching your profit target.',
-                'meta' => sprintf(
-                    'Progress %s%% • Realized profit %s • Balance %s',
-                    $this->formatPercent($targetProgress),
-                    $account['realized_profit'] ?? '$0.00',
-                    $account['balance'] ?? '$0.00',
-                ),
-                'prompt' => 'Explain my metrics and profit target progress',
+                'label' => __('site.dashboard.wolfi.insights.profit_progress.label'),
+                'message' => __('site.dashboard.wolfi.insights.profit_progress.message'),
+                'meta' => __('site.dashboard.wolfi.insights.profit_progress.meta', [
+                    'progress' => $this->formatPercent($targetProgress),
+                    'profit' => $account['realized_profit'] ?? '$0.00',
+                    'balance' => $account['balance'] ?? '$0.00',
+                ]),
+                'prompt' => __('site.dashboard.wolfi.insights.profit_progress.prompt'),
                 'tone' => 'amber',
             ];
         }
@@ -70,14 +68,13 @@ class WolfiInsightService
             $insights[] = [
                 'key' => 'consistency_warning',
                 'icon' => '📊',
-                'label' => 'Consistency Warning',
-                'message' => 'You are approaching the consistency rule limit.',
-                'meta' => sprintf(
-                    'Single-day ratio %s%% • Highest day profit %s',
-                    $this->formatPercent($consistencyRatio),
-                    $account['consistency_highest_day_profit'] ?? '$0.00',
-                ),
-                'prompt' => 'Explain my consistency warning',
+                'label' => __('site.dashboard.wolfi.insights.consistency_warning.label'),
+                'message' => __('site.dashboard.wolfi.insights.consistency_warning.message'),
+                'meta' => __('site.dashboard.wolfi.insights.consistency_warning.meta', [
+                    'ratio' => $this->formatPercent($consistencyRatio),
+                    'profit' => $account['consistency_highest_day_profit'] ?? '$0.00',
+                ]),
+                'prompt' => __('site.dashboard.wolfi.insights.consistency_warning.prompt'),
                 'tone' => 'sky',
             ];
         }
@@ -86,14 +83,13 @@ class WolfiInsightService
             $insights[] = [
                 'key' => 'payout_readiness',
                 'icon' => '💰',
-                'label' => 'Payout Readiness',
-                'message' => 'Your account may be eligible for payout.',
-                'meta' => sprintf(
-                    'Profit split %s%% • Next payout window %s',
-                    $this->formatPercent((float) ($account['profit_split_percent'] ?? 0)),
-                    $account['payout_eligible_at'] ?? 'Not available yet',
-                ),
-                'prompt' => 'Explain my payout readiness',
+                'label' => __('site.dashboard.wolfi.insights.payout_readiness.label'),
+                'message' => __('site.dashboard.wolfi.insights.payout_readiness.message'),
+                'meta' => __('site.dashboard.wolfi.insights.payout_readiness.meta', [
+                    'split' => $this->formatPercent((float) ($account['profit_split_percent'] ?? 0)),
+                    'window' => $account['payout_eligible_at'] ?? __('Not available yet'),
+                ]),
+                'prompt' => __('site.dashboard.wolfi.insights.payout_readiness.prompt'),
                 'tone' => 'emerald',
             ];
         }

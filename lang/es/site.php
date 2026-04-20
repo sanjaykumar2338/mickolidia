@@ -32,7 +32,7 @@ return [
         'name' => 'Wolfi',
         'eyebrow' => 'Asistente Wolfi',
         'title' => 'Habla con Wolfi',
-        'description' => 'Obtén respuestas instantáneas sobre reglas de drawdown, profit split y requisitos del challenge.',
+        'description' => 'Deja que Wolfi te guíe por reglas, payouts, acceso MT5 y el siguiente paso correcto en la plataforma.',
         'multi_language' => 'Habla tu idioma al instante',
         'start_chat' => 'Prueba Wolfi ahora',
         'floating_label' => 'Abrir Wolfi',
@@ -44,7 +44,7 @@ return [
         'preview_badge' => '24/7',
         'preview_copy' => 'Abre el asistente para obtener claridad inmediata sobre reglas, trading en noticias, límites de drawdown, tiempos de payout y el challenge que mejor encaja contigo.',
         'visual_title' => 'Siempre activo. Siempre listo.',
-        'visual_copy' => 'Accede a reglas, pagos y guía de trading sin salir de tu pantalla.',
+        'visual_copy' => 'Usa Wolfi como guía visible para reglas, payouts, acceso MT5 y preguntas de plataforma.',
         'visual_response_label' => 'Respuesta en directo',
         'visual_response_preview' => 'Tu drawdown máximo es del 5 % en esta cuenta.',
         'visual_response_hint' => 'Reglas y orientación de cuenta en tiempo real.',
@@ -104,7 +104,7 @@ return [
         'hero_panel' => [
             'title' => 'Conjunto principal de reglas',
             'caption' => 'El dorado se reserva para los momentos clave de marca, acciones importantes y señales críticas de cuenta para que la interfaz se mantenga profesional y no parezca un póster.',
-            'status' => 'cTrader primero',
+            'status' => 'Flujo MT5',
             'items' => [
                 '1-Step: objetivo del 10 %, pérdida diaria máxima del 4 % y pérdida total máxima del 8 %.',
                 '2-Step Fase 1: objetivo del 10 %, pérdida diaria del 5 %, pérdida total del 10 % y apalancamiento 1:100.',
@@ -667,7 +667,7 @@ return [
         'plan' => 'Plan de challenge',
         'select_plan' => 'Seleccionar un plan',
         'platform' => 'Plataforma',
-        'platform_value' => 'cTrader en la Fase 1, MT4/MT5 después',
+        'platform_value' => 'MT5',
         'agreement' => 'El checkout requiere aceptar los Terminos y Condiciones, confirmar tu pais de residencia actual y aceptar la Politica de Cancelacion y Reembolso.',
         'confirmation_title' => 'Confirmaciones obligatorias',
         'confirmations' => [
@@ -1466,7 +1466,7 @@ return [
         'live_chat_button' => 'Iniciar live chat',
         'live_chat_subject' => 'Solicitud de soporte desde live chat',
         'voice_title' => 'Asistente IA Wolfi',
-        'voice_copy' => 'Pregunta a Wolfi por voz o por texto. Wolfi responde usando la FAQ de Wolforix, las reglas, los payouts, el flujo de descuento y la guía de soporte.',
+        'voice_copy' => 'Pregunta a Wolfi por voz o por texto. Wolfi te guía por Wolforix usando la FAQ, reglas del challenge, payouts, descuentos, acceso MT5 y soporte.',
         'voice_ready' => 'Wolfi está listo.',
         'voice_listening' => 'Escuchando... toca otra vez para detener.',
         'voice_unsupported' => 'La entrada por voz no es compatible con este navegador. Aun puedes escribir tu pregunta.',
@@ -1483,7 +1483,7 @@ return [
         'voice_rules_fallback' => 'El 1-Step exige 10 % de objetivo, 4 % de pérdida diaria máxima y 8 % de pérdida total máxima. El 2-Step usa objetivos del 10 % y 5 %, con 5 % de pérdida diaria máxima, 10 % de pérdida total máxima y un mínimo de 3 días operados por fase.',
         'voice_checkout_fallback' => 'Haz clic en Obtener plan dentro del challenge elegido y después inicia sesión o crea tu cuenta antes del checkout. Wolforix te devuelve al plan correcto tras la autenticación.',
         'voice_discount_fallback' => 'Abre el popup de lanzamiento y pulsa Obtener descuento para activar la oferta del 20 % durante la sesión actual. Si lo ignoras, se mantiene el precio regular y el descuento no se aplica.',
-        'voice_general_fallback' => 'Estoy mejor preparado para ayudarte con planes de Wolforix, acceso demo, payouts, reglas, login, checkout y guía de cTrader. Si tu pregunta es más amplia, intentaré ayudarte brevemente o llevarte a la página correcta de Wolforix.',
+        'voice_general_fallback' => 'Estoy mejor preparado para ayudarte con planes de Wolforix, acceso demo, payouts, reglas, login, checkout y guía de MT5. Si tu pregunta es más amplia, intentaré ayudarte brevemente o llevarte a la página correcta de Wolforix.',
         'voice_input_label' => 'Haz una pregunta',
         'voice_input_placeholder' => 'Ejemplo: ¿Cuando puedo solicitar mi primer payout?',
         'voice_suggestions_label' => 'Preguntas sugeridas',
@@ -1894,6 +1894,7 @@ return [
             'overview' => 'Resumen',
             'accounts' => 'Cuentas',
             'payouts' => 'Payouts',
+            'wolfi_hub' => 'Wolfi Hub',
             'settings' => 'Ajustes',
         ],
         'cards' => [
@@ -1939,7 +1940,7 @@ return [
         ],
         'overview' => [
             'snapshot_title' => 'Resumen de cuenta',
-            'snapshot_copy' => 'Esta zona está preparada para futuras conexiones de sincronización con cTrader, MT4 y MT5. El hito 1 usa intencionadamente solo valores demo.',
+            'snapshot_copy' => 'Esta zona ahora sigue el workspace MT5 del challenge, con métricas reales de cuenta cuando la sincronización MT5 está disponible.',
             'rules_title' => 'Conjunto de reglas',
             'rules_copy' => 'La vista previa de abajo está alineada con el modelo final 2-Step para que objetivos, límites de riesgo, apalancamiento y tiempos de payout sigan visibles junto a las métricas de la cuenta.',
             'payout_title' => 'Sección de payout',
@@ -1966,6 +1967,257 @@ return [
         'settings_page' => [
             'title' => 'Ajustes',
             'subtitle' => 'Estructura de perfil, localización y cumplimiento preparada para la gestión futura de usuarios.',
+        ],
+        'wolfi_hub_page' => [
+            'title' => 'Wolfi Hub',
+            'subtitle' => 'Soporte basado en cuenta, guía de plataforma y contexto de Wolfi sin ocupar el workspace de trading.',
+            'empty_title' => 'Wolfi está preparando tu workspace',
+            'empty_copy' => 'Cuando cargue el contexto del dashboard, Wolfi Hub explicará la página actual, el estado de la cuenta, reglas, payouts y rutas de soporte.',
+        ],
+        'mt5' => [
+            'title' => 'Sync live MT5',
+            'heading' => 'Sincronización MT5 y acceso de cuenta',
+            'copy' => 'Wolforix ahora presenta el flujo del trader alrededor de datos de cuenta MT5, frescura de sincronización y detalles de acceso seguros.',
+        ],
+        'wolfi' => [
+            'entry_eyebrow' => 'Soporte Wolfi',
+            'entry_title' => '¿Necesitas contexto? Abre Wolfi Hub.',
+            'entry_copy' => 'Wolfi puede explicar tu cuenta seleccionada, reglas, estado de payout y workspace actual sin tapar la vista de trading.',
+            'entry_hint' => 'El dashboard principal prioriza los datos de cuenta; el asistente completo vive en Wolfi Hub.',
+            'open_hub' => 'Abrir Wolfi Hub',
+            'fallbacks' => [
+                'dashboard_workspace' => 'Workspace del dashboard',
+            ],
+            'welcome' => [
+                'title' => 'Resumen personalizado de cuenta',
+                'account_message' => 'Estoy leyendo tu cuenta :plan dentro de :page para explicar estado, reglas, preparación de payout y datos MT5 en lenguaje claro.',
+                'account_bullets' => [
+                    'status' => 'Estado actual: :status con :progress de progreso hacia el objetivo.',
+                    'balance' => 'El balance es :balance, la equity es :equity y el P&L flotante es :pnl.',
+                    'trading_days' => 'El progreso de días operados es :days para la fase activa.',
+                ],
+                'empty_message' => 'Puedo explicar :page, reglas del challenge, payouts y pasos de soporte mientras Wolforix espera una cuenta MT5 activa en este perfil.',
+                'empty_bullets' => [
+                    'Usa Wolfi Hub para el asistente completo con contexto de cuenta.',
+                    'El dashboard principal mantiene primero el workspace de trading y los datos de cuenta.',
+                    'Cuando aparezcan datos de sincronización MT5, Wolfi añadirá explicaciones personalizadas aquí.',
+                ],
+            ],
+            'stat_labels' => [
+                'status' => 'Estado',
+                'balance' => 'Balance',
+                'equity' => 'Equity',
+                'page' => 'Página',
+                'rules' => 'Reglas',
+                'support' => 'Soporte',
+            ],
+            'stat_values' => [
+                'structured' => 'Estructuradas',
+                'ready' => 'Listo',
+            ],
+            'assistant' => [
+                'name' => 'Wolfi',
+                'eyebrow' => 'Asistente de soporte de cuenta',
+                'title' => 'Wolfi apoya tu workspace de trading',
+                'description' => 'Usa Wolfi Hub para guía con contexto de cuenta sobre sincronización MT5, reglas del challenge, tiempos de payout, métricas de rendimiento y preguntas comunes de soporte sin reemplazar el dashboard.',
+                'sources_title' => 'Basado en datos de Wolforix',
+                'sources_copy' => 'Wolfi responde desde la estructura del dashboard, reglas del challenge, lógica de payout, contexto de cuenta y guía de soporte en vez de usar relleno genérico.',
+                'response_label' => 'Respuesta en vivo',
+                'response_hint' => 'Consciente de reglas, métricas y preparado para futura reproducción de voz.',
+                'status_idle' => 'Listo para apoyar tu siguiente paso',
+                'status_thinking' => 'Wolfi está revisando el contexto de tu cuenta',
+                'status_error' => 'Wolfi tuvo un problema temporal. Inténtalo de nuevo.',
+                'input_placeholder' => 'Pregunta sobre tu cuenta MT5, reglas, payouts, métricas o soporte...',
+                'submit_label' => 'Preguntar a Wolfi',
+                'input_help' => 'Wolfi usa tu página actual del dashboard y la cuenta seleccionada cuando esos datos están disponibles.',
+                'voice_label' => 'Espacio de voz listo',
+                'voice_copy' => 'Reservado para futuras muestras de voz aprobadas y controles de reproducción.',
+            ],
+            'pillars' => [
+                [
+                    'title' => 'Guía de plataforma',
+                    'description' => 'Ayuda paso a paso para resumen, cuentas, payouts, Wolfi Hub y ajustes.',
+                ],
+                [
+                    'title' => 'Reglas del challenge',
+                    'description' => 'Explica drawdown, días operados, consistencia y lógica de aprobado o fallido.',
+                ],
+                [
+                    'title' => 'Insights de rendimiento',
+                    'description' => 'Traduce balance, equity, P&L flotante, uso de drawdown y preparación de payout.',
+                ],
+                [
+                    'title' => 'Asistente de soporte',
+                    'description' => 'Responde preguntas operativas comunes y dirige al flujo correcto de Wolforix.',
+                ],
+            ],
+            'quick_actions' => [
+                [
+                    'key' => 'dashboard',
+                    'label' => 'Explica mi dashboard',
+                    'prompt' => 'Explica mi dashboard',
+                ],
+                [
+                    'key' => 'rules',
+                    'label' => '¿Cuáles son las reglas del challenge?',
+                    'prompt' => '¿Cuáles son las reglas del challenge?',
+                ],
+                [
+                    'key' => 'metrics',
+                    'label' => 'Explica mis métricas',
+                    'prompt' => 'Explica mis métricas',
+                ],
+                [
+                    'key' => 'payouts',
+                    'label' => '¿Cómo funcionan los payouts?',
+                    'prompt' => '¿Cómo funcionan los payouts?',
+                ],
+                [
+                    'key' => 'consistency',
+                    'label' => '¿Qué es la regla de consistencia?',
+                    'prompt' => '¿Qué es la regla de consistencia?',
+                ],
+            ],
+            'smart_insights' => [
+                'title' => 'Smart Insights',
+                'description' => 'Wolfi vigila el contexto de tu cuenta live y destaca señales importantes incluso antes de que preguntes.',
+            ],
+            'pages' => [
+                'dashboard' => [
+                    'title' => 'Workspace de resumen',
+                    'summary' => 'Usa esta página para revisar resumen de cuenta, progreso, preparación de payout, analítica, actividad diaria, detalles de trades y acceso directo a Wolfi Hub.',
+                    'sections' => [
+                        [
+                            'title' => 'Resumen de cuenta',
+                            'description' => 'La sección principal muestra plan, fase, frescura de sync MT5, balance, equity y progreso hacia el objetivo.',
+                        ],
+                        [
+                            'title' => 'Command center',
+                            'description' => 'Revisa win ratio, primer trade, símbolos operados y contexto de balance con Wolfi centrado dentro del aro.',
+                        ],
+                        [
+                            'title' => 'Acceso a Wolfi',
+                            'description' => 'La entrada compacta abre Wolfi Hub mientras el dashboard principal mantiene primero los datos de cuenta y el workspace.',
+                        ],
+                    ],
+                ],
+                'dashboard.accounts' => [
+                    'title' => 'Workspace de cuentas',
+                    'summary' => 'Usa esta página para revisar salud de sincronización MT5, challenges vinculados, facturación y progreso por cuenta.',
+                    'sections' => [
+                        [
+                            'title' => 'Sync live MT5',
+                            'description' => 'El estado de la cuenta MT5 explica si las métricas se están actualizando correctamente.',
+                        ],
+                        [
+                            'title' => 'Inventario de challenges',
+                            'description' => 'Cada tarjeta resume balance, equity, estado, progreso y los valores clave de uso de reglas.',
+                        ],
+                        [
+                            'title' => 'Documentos de facturación',
+                            'description' => 'Las facturas e historial de compras quedan vinculados al dashboard para descarga permanente.',
+                        ],
+                    ],
+                ],
+                'dashboard.payouts' => [
+                    'title' => 'Workspace de payouts',
+                    'summary' => 'Usa esta página para entender la próxima ventana de retiro, elegibilidad actual y requisitos pendientes.',
+                    'sections' => [
+                        [
+                            'title' => 'Tarjetas de elegibilidad',
+                            'description' => 'Las tarjetas superiores muestran timing de payout, beneficio elegible y estado actual.',
+                        ],
+                        [
+                            'title' => 'Notas de timing',
+                            'description' => 'La línea de tiempo explica el primer retiro y el ciclo recurrente de payouts.',
+                        ],
+                        [
+                            'title' => 'Requisitos',
+                            'description' => 'Esta lista mantiene visibles las reglas funded y condiciones internas antes de solicitar payout.',
+                        ],
+                    ],
+                ],
+                'dashboard.wolfi' => [
+                    'title' => 'Wolfi Hub',
+                    'summary' => 'Usa esta página para el asistente Wolfi completo, explicaciones con cuenta, Smart Insights, rutas de soporte y guía de plataforma.',
+                    'sections' => [
+                        [
+                            'title' => 'Resumen personal',
+                            'description' => 'Wolfi explica estado de cuenta, datos MT5, reglas, progreso y contexto de payout en lenguaje claro.',
+                        ],
+                        [
+                            'title' => 'Prompts rápidos',
+                            'description' => 'Las acciones rápidas ayudan a preguntar por dashboard, reglas, métricas, payouts y consistencia.',
+                        ],
+                        [
+                            'title' => 'Contexto de soporte',
+                            'description' => 'Wolfi puede dirigirte a facturación, soporte, navegación o el siguiente paso operativo.',
+                        ],
+                    ],
+                ],
+                'dashboard.settings' => [
+                    'title' => 'Workspace de ajustes',
+                    'summary' => 'Usa esta página para confirmar perfil, idioma, zona horaria y la hoja de ruta de preferencias y seguridad.',
+                    'sections' => [
+                        [
+                            'title' => 'Datos de perfil',
+                            'description' => 'Los campos de solo lectura muestran lo guardado actualmente para tu cuenta del dashboard.',
+                        ],
+                        [
+                            'title' => 'Preferencias',
+                            'description' => 'Esta tarjeta anticipa dónde crecerán las preferencias personales de plataforma.',
+                        ],
+                        [
+                            'title' => 'Seguridad',
+                            'description' => 'Esta área queda reservada para futuros controles de seguridad y protección de cuenta.',
+                        ],
+                    ],
+                ],
+            ],
+            'support' => [
+                'common_topics' => [
+                    'Los registros de facturación permanecen en el dashboard y las facturas se pueden descargar después de una compra correcta.',
+                    'La aprobación de payout depende del estado funded, cumplimiento de reglas y revisión de Wolforix.',
+                    'Si faltan datos de cuenta, Wolfi aún puede explicar el flujo y el siguiente paso operativo probable.',
+                ],
+            ],
+            'rules' => [
+                'pass_fail_items' => [
+                    'Aprueba la fase actual alcanzando el objetivo y los días mínimos sin romper las reglas de pérdida activas.',
+                    'Falla si se rompe la pérdida diaria o el drawdown máximo, o si Wolforix bloquea la cuenta tras una infracción.',
+                ],
+            ],
+            'voice' => [
+                'action_label' => 'Acciones de voz pronto',
+                'action_note' => 'El layout y las respuestas ya reservan un espacio limpio para futuros controles de reproducción y muestras de voz aprobadas.',
+            ],
+            'insights' => [
+                'risk_alert' => [
+                    'label' => 'Alerta de riesgo',
+                    'daily_message' => 'El uso de pérdida diaria está alto. Protege la cuenta antes de tomar otra entrada.',
+                    'max_message' => 'El uso de drawdown máximo está alto. Reduce riesgo y protege el challenge.',
+                    'meta' => 'Diaria :daily% · Máx :max%',
+                    'prompt' => 'Explica mi riesgo de drawdown y margen restante',
+                ],
+                'profit_progress' => [
+                    'label' => 'Progreso de beneficio',
+                    'message' => 'Estás cerca del objetivo actual. Enfócate en proteger ganancias y completar reglas.',
+                    'meta' => ':progress% del objetivo',
+                    'prompt' => 'Explica qué falta para aprobar esta fase',
+                ],
+                'consistency_warning' => [
+                    'label' => 'Advertencia de consistencia',
+                    'message' => 'Un solo día concentra una parte grande del beneficio. Distribuye ganancias antes de solicitar payout.',
+                    'meta' => 'Ratio del mejor día :ratio%',
+                    'prompt' => 'Explica mi estado de regla de consistencia',
+                ],
+                'payout_readiness' => [
+                    'label' => 'Preparación de payout',
+                    'message' => 'La ventana de payout parece abierta. Confirma cumplimiento y prepara la solicitud.',
+                    'meta' => 'Cuenta funded',
+                    'prompt' => 'Explica mi preparación de payout',
+                ],
+            ],
         ],
         'payouts' => [
             'next_window' => 'Próxima ventana de payout',

@@ -42,6 +42,10 @@
             @include('dashboard.partials.overview-hero', ['hero' => $dashboardHero, 'primaryAccount' => $primaryAccount, 'mt5Access' => $mt5Access, 'insights' => $dashboardInsights])
             @include('dashboard.partials.command-center', ['mt5Access' => $mt5Access, 'insights' => $dashboardInsights])
 
+            @if (! empty($wolfiPanel))
+                @include('dashboard.partials.wolfi-entry', ['wolfiPanel' => $wolfiPanel, 'primaryAccount' => $primaryAccount])
+            @endif
+
             <div class="grid gap-6 2xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.94fr)]">
                 @include('dashboard.partials.performance-chart', ['performanceChart' => $performanceChart])
 

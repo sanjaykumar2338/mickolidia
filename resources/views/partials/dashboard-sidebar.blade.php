@@ -25,6 +25,11 @@
             'label' => __('site.dashboard.nav.payouts'),
         ],
         [
+            'route' => route('dashboard.wolfi'),
+            'active' => request()->routeIs('dashboard.wolfi'),
+            'label' => __('site.dashboard.nav.wolfi_hub'),
+        ],
+        [
             'route' => route('dashboard.settings'),
             'active' => request()->routeIs('dashboard.settings'),
             'label' => __('site.dashboard.nav.settings'),

@@ -19,6 +19,19 @@
                 loading="eager"
                 decoding="async"
             >
+            <video
+                data-wolfi-fab-video
+                class="assistant-fab-avatar-video"
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                poster="{{ asset('newfolder/IMG_8542.png') }}"
+                aria-hidden="true"
+                disablepictureinpicture
+            >
+                <source src="{{ asset('2136dfb8-85de-461a-9b2b-0d60c39ad04e.mp4') }}" type="video/mp4">
+            </video>
         </span>
         <span class="assistant-fab-ping"></span>
     </span>

@@ -18,113 +18,54 @@
             </div>
         @endif
 
-        @if (($primaryAccount['platform_slug'] ?? null) === 'mt5')
-            @php
-                $primarySyncToneClasses = match ($primaryAccount['sync_freshness_tone'] ?? 'slate') {
-                    'emerald' => 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
-                    'amber' => 'border-amber-400/20 bg-amber-500/10 text-amber-100',
-                    'rose' => 'border-rose-400/20 bg-rose-500/10 text-rose-100',
-                    default => 'border-white/10 bg-white/5 text-slate-200',
-                };
-            @endphp
-            <div class="surface-panel rounded-[2rem] p-6">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('MT5 live sync') }}</p>
-                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('Near real-time challenge metrics') }}</h2>
-                        <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-                            {{ __('Open trades, floating P&L, balance changes, and challenge rule usage refresh from MT5 trade events with a timer fallback if an event-triggered update is missed.') }}
-                        </p>
-                    </div>
-                    <span class="rounded-full border px-4 py-2 text-sm font-semibold {{ $primarySyncToneClasses }}">
-                        {{ $primaryAccount['sync_freshness'] }}
-                    </span>
+        @php
+            $primarySyncToneClasses = match ($primaryAccount['sync_freshness_tone'] ?? 'slate') {
+                'emerald' => 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
+                'amber' => 'border-amber-400/20 bg-amber-500/10 text-amber-100',
+                'rose' => 'border-rose-400/20 bg-rose-500/10 text-rose-100',
+                default => 'border-white/10 bg-white/5 text-slate-200',
+            };
+        @endphp
+        <div class="surface-panel rounded-[2rem] p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.dashboard.mt5.title') }}</p>
+                    <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('site.dashboard.mt5.heading') }}</h2>
+                    <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
+                        {{ __('site.dashboard.mt5.copy') }}
+                    </p>
                 </div>
-
-                <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync status') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_status'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Last synced') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['last_synced_at'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync freshness') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_freshness'] }}</dd>
-                        <p class="mt-2 text-sm leading-6 text-slate-400">{{ $primaryAccount['sync_freshness_hint'] }}</p>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Data source') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_source'] }}</dd>
-                    </div>
-                </dl>
-
-                @if ($primaryAccount['sync_error'])
-                    <div class="mt-4 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
-                        {{ $primaryAccount['sync_error'] }}
-                    </div>
-                @endif
+                <span class="rounded-full border px-4 py-2 text-sm font-semibold {{ $primarySyncToneClasses }}">
+                    {{ $primaryAccount['sync_freshness'] ?? __('Awaiting sync') }}
+                </span>
             </div>
-        @else
-            <div class="surface-panel rounded-[2rem] p-6">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('cTrader connection') }}</p>
-                        <h2 class="mt-3 text-2xl font-semibold text-white">
-                            {{ $ctraderConnection['is_connected'] ? __('Connected and ready to sync') : __('Connect your cTrader account') }}
-                        </h2>
-                        <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-                            {{ $ctraderConnection['is_connected']
-                                ? __('Wolforix can now read the authorized :broker cTrader accounts linked to your cTID and sync challenge metrics into the dashboard.', ['broker' => $ctraderConnection['broker_name']])
-                                : __('Authorize Wolforix with :broker cTrader to link your challenge account, fetch live balance/equity data, and keep rule monitoring up to date.', ['broker' => $ctraderConnection['broker_name']]) }}
-                        </p>
-                    </div>
-                    <a href="{{ $ctraderConnection['connect_url'] }}" class="rounded-full border border-amber-400/30 bg-amber-400/12 px-5 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-300/40 hover:bg-amber-400/18">
-                        {{ $ctraderConnection['is_connected'] ? __('Reconnect cTrader') : __('Connect cTrader') }}
-                    </a>
+
+            <dl class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync status') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_status'] ?? __('Pending') }}</dd>
                 </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Last synced') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['last_synced_at'] ?? __('Not synced yet') }}</dd>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync freshness') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_freshness'] ?? __('Awaiting sync') }}</dd>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">{{ $primaryAccount['sync_freshness_hint'] ?? __('The first successful MT5 update will mark this account as live.') }}</p>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Data source') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_source'] ?? __('MT5') }}</dd>
+                </div>
+            </dl>
 
-                <dl class="mt-6 grid gap-4 md:grid-cols-3">
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Broker') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['broker_name'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Authorized accounts') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['authorized_accounts_count'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5 md:col-span-2">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Last authorized') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['last_authorized_at'] }}</dd>
-                    </div>
-                    <div class="surface-card rounded-[1.6rem] p-5 md:col-span-3">
-                        <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Account list sync') }}</dt>
-                        <dd class="mt-3 text-lg font-semibold text-white">{{ $ctraderConnection['last_synced_accounts_at'] }}</dd>
-                    </div>
-                </dl>
-
-                @if ($ctraderConnection['last_error'])
-                    <div class="mt-4 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
-                        {{ $ctraderConnection['last_error'] }}
-                    </div>
-                @endif
-
-                @if (! empty($ctraderConnection['authorized_accounts']))
-                    <div class="mt-4 rounded-[1.5rem] border border-white/8 bg-black/15 px-4 py-4 text-sm text-slate-300">
-                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ __('Authorized cTrader accounts') }}</p>
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach ($ctraderConnection['authorized_accounts'] as $authorizedAccount)
-                                <span class="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs font-semibold text-white">
-                                    {{ $authorizedAccount['label'] }} • {{ $authorizedAccount['broker'] }}
-                                </span>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            </div>
-        @endif
+            @if (! empty($primaryAccount['sync_error']))
+                <div class="mt-4 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
+                    {{ $primaryAccount['sync_error'] }}
+                </div>
+            @endif
+        </div>
 
         <x-consistency-banner :title="$consistencyBanner['title']" :message="$consistencyBanner['message']" :meta="$consistencyBanner['meta']" />
 
@@ -344,6 +285,12 @@
                                         <dt class="text-slate-400">{{ __('Connection') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['platform_status'] }}</dd>
                                     </div>
+                                    @if ($account['mt5_deactivation_status'])
+                                        <div class="flex items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
+                                            <dt class="text-amber-100">{{ __('MT5 disable status') }}</dt>
+                                            <dd class="font-semibold text-white">{{ $account['mt5_deactivation_status'] }}</dd>
+                                        </div>
+                                    @endif
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                         <dt class="text-slate-400">{{ __('Last evaluated') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['last_evaluated_at'] }}</dd>
@@ -360,27 +307,6 @@
                             </div>
                         @endif
 
-                        @if ($account['needs_linking'] && ! empty($ctraderConnection['authorized_accounts']))
-                            <div class="mt-4 surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Link authorized cTrader account') }}</p>
-                                <div class="mt-4">
-                                    <form method="POST" action="{{ $ctraderConnection['link_url'] }}" class="flex flex-col gap-3 sm:flex-row">
-                                        @csrf
-                                        <input type="hidden" name="trading_account_id" value="{{ $account['id'] }}">
-                                        <select name="platform_account_id" class="min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-amber-300/40 focus:outline-none">
-                                            @foreach ($ctraderConnection['authorized_accounts'] as $authorizedAccount)
-                                                <option value="{{ $authorizedAccount['id'] }}">
-                                                    {{ $authorizedAccount['label'] }} • {{ $authorizedAccount['broker'] }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <button type="submit" class="rounded-full border border-amber-400/30 bg-amber-400/12 px-5 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-300/40 hover:bg-amber-400/18">
-                                            {{ __('Link account') }}
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        @endif
                     </article>
                 @endforeach
             </div>

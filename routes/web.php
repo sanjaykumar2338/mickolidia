@@ -79,6 +79,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/accounts', [DashboardController::class, 'accounts'])->name('dashboard.accounts');
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
+    Route::get('/wolfi', [DashboardController::class, 'wolfi'])->name('dashboard.wolfi');
     Route::post('/wolfi/respond', DashboardWolfiController::class)
         ->middleware('throttle:30,1')
         ->name('dashboard.wolfi.respond');

@@ -3,6 +3,7 @@
 namespace App\Services\Challenge;
 
 use App\Mail\ChallengeAccountDetailsMail;
+use App\Mail\ChallengePhasePassSupportNotificationMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
@@ -140,14 +141,24 @@ class ChallengeLifecycleMailer
 
             $shouldSendPhaseOne = $freshAccount->phase_one_pass_email_sent_at === null;
             $shouldSendPhaseTwoCredentials = $freshAccount->phase_two_credentials_email_sent_at === null;
+            $meta = is_array($freshAccount->meta) ? $freshAccount->meta : [];
+            $shouldNotifySupport = blank(Arr::get($meta, 'support_notifications.phase_1_pass.notified_at'));
 
-            if (! $shouldSendPhaseOne && ! $shouldSendPhaseTwoCredentials) {
+            if (! $shouldSendPhaseOne && ! $shouldSendPhaseTwoCredentials && ! $shouldNotifySupport) {
                 return null;
             }
 
+            $sentAt = now();
+
+            if ($shouldNotifySupport) {
+                Arr::set($meta, 'support_notifications.phase_1_pass.notified_at', $sentAt->toIso8601String());
+                Arr::set($meta, 'support_notifications.phase_1_pass.completed_phase', 'Phase 1');
+            }
+
             $freshAccount->forceFill(array_filter([
-                'phase_one_pass_email_sent_at' => $shouldSendPhaseOne ? now() : null,
-                'phase_two_credentials_email_sent_at' => $shouldSendPhaseTwoCredentials ? now() : null,
+                'phase_one_pass_email_sent_at' => $shouldSendPhaseOne ? $sentAt : null,
+                'phase_two_credentials_email_sent_at' => $shouldSendPhaseTwoCredentials ? $sentAt : null,
+                'meta' => $shouldNotifySupport ? $meta : null,
             ], static fn ($value) => $value !== null))->save();
 
             return [
@@ -158,6 +169,8 @@ class ChallengeLifecycleMailer
                 'credentials' => $this->credentialDetails($freshAccount),
                 'send_phase_one' => $shouldSendPhaseOne,
                 'send_phase_two_credentials' => $shouldSendPhaseTwoCredentials,
+                'send_support' => $shouldNotifySupport,
+                'support_details' => $this->supportDetails($freshAccount, $sentAt, 'Phase 1'),
             ];
         });
 
@@ -178,6 +191,14 @@ class ChallengeLifecycleMailer
                 traderName: $payload['trader_name'],
                 tradingAccount: $payload['account'],
                 details: $payload['credentials'],
+            ));
+        }
+
+        if ($payload['send_support'] && $payload['account']->user instanceof User) {
+            Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
+                user: $payload['account']->user,
+                tradingAccount: $payload['account'],
+                details: $payload['support_details'],
             ));
         }
     }
@@ -285,6 +306,27 @@ class ChallengeLifecycleMailer
     }
 
     /**
+     * @return array<string, string>
+     */
+    private function supportDetails(TradingAccount $account, \DateTimeInterface $sentAt, string $completedPhase): array
+    {
+        $user = $account->user;
+
+        return [
+            'client_name' => (string) ($user?->name ?: 'Trader'),
+            'client_email' => (string) ($user?->email ?: 'Not available'),
+            'account_reference' => (string) ($account->account_reference ?: 'N/A'),
+            'account_id' => (string) $account->id,
+            'challenge_type' => $this->challengeTypeLabel($account),
+            'completed_phase' => $completedPhase,
+            'current_status' => $this->humanize((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
+            'pass_timestamp' => $sentAt->format('Y-m-d H:i:s'),
+            'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
+            'mt5_deactivation_status' => (string) (data_get($account->meta, 'mt5_deactivation.events.phase_1_pass.status') ?: 'requested'),
+        ];
+    }
+
+    /**
      * @param  list<string>  $keys
      */
     private function metadataValue(TradingAccount $account, array $keys): ?string
@@ -354,6 +396,13 @@ class ChallengeLifecycleMailer
         );
 
         return trim('Wolforix Challenge - '.$typeLabel.' '.$this->money((float) ($account->account_size ?: $account->starting_balance ?: 0)));
+    }
+
+    private function challengeTypeLabel(TradingAccount $account): string
+    {
+        $challengeType = (string) ($account->challenge_type ?: 'challenge');
+
+        return (string) (config("wolforix.challenge_catalog.{$challengeType}.label") ?: str($challengeType)->replace('_', ' ')->title());
     }
 
     private function money(float $value): string

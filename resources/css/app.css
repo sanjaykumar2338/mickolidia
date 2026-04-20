@@ -1117,7 +1117,7 @@ h6 {
 .assistant-mascot-stage {
     position: relative;
     display: flex;
-    min-height: 18.5rem;
+    min-height: 22.5rem;
     align-items: center;
     justify-content: center;
     padding: 1.25rem 0 0.5rem;
@@ -1145,7 +1145,7 @@ h6 {
     position: relative;
     z-index: 2;
     width: 100%;
-    max-height: 21rem;
+    max-height: 24.5rem;
     aspect-ratio: 16 / 10;
     object-fit: contain;
     object-position: center;
@@ -1413,8 +1413,8 @@ h6 {
 .assistant-fab-button {
     position: fixed;
     display: inline-flex;
-    height: 4.35rem;
-    width: 4.35rem;
+    height: 4.85rem;
+    width: 4.85rem;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
@@ -1463,8 +1463,8 @@ h6 {
     position: relative;
     z-index: 1;
     display: inline-flex;
-    height: 4rem;
-    width: 4rem;
+    height: 4.5rem;
+    width: 4.5rem;
     flex: none;
     align-items: center;
     justify-content: center;
@@ -1510,12 +1510,12 @@ h6 {
 
 .assistant-fab-orbit-left {
     --wolfi-orbit-start: 0deg;
-    --wolfi-orbit-distance: -1.72rem;
+    --wolfi-orbit-distance: -1.96rem;
 }
 
 .assistant-fab-orbit-right {
     --wolfi-orbit-start: 180deg;
-    --wolfi-orbit-distance: -1.98rem;
+    --wolfi-orbit-distance: -2.26rem;
     opacity: 0.34;
     animation-delay: -5s;
 }
@@ -1529,8 +1529,8 @@ h6 {
     position: relative;
     z-index: 1;
     display: inline-flex;
-    height: 3.38rem;
-    width: 3.38rem;
+    height: 3.95rem;
+    width: 3.95rem;
     overflow: hidden;
     align-items: center;
     justify-content: center;
@@ -1549,7 +1549,8 @@ h6 {
         filter 0.28s ease;
 }
 
-.assistant-fab-avatar {
+.assistant-fab-avatar,
+.assistant-fab-avatar-video {
     position: relative;
     z-index: 1;
     height: 100%;
@@ -1562,6 +1563,14 @@ h6 {
         transform 0.35s ease,
         filter 0.28s ease,
         opacity 0.24s ease;
+}
+
+.assistant-fab-avatar-video {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .assistant-fab-ping {
@@ -1609,7 +1618,8 @@ h6 {
 
 .assistant-fab-button.is-open,
 .assistant-fab-button.is-speaking,
-.assistant-fab-button.is-listening {
+.assistant-fab-button.is-listening,
+.assistant-fab-button.is-rendering {
     border-color: rgba(244, 183, 74, 0.3);
     box-shadow:
         0 34px 78px rgba(2, 6, 23, 0.46),
@@ -1622,17 +1632,32 @@ h6 {
 }
 
 .assistant-fab-button.is-speaking .assistant-fab-halo,
-.assistant-fab-button.is-listening .assistant-fab-halo {
+.assistant-fab-button.is-listening .assistant-fab-halo,
+.assistant-fab-button.is-rendering .assistant-fab-halo {
     opacity: 1;
     animation-duration: 2.1s;
 }
 
 .assistant-fab-button.is-speaking .assistant-fab-core,
-.assistant-fab-button.is-listening .assistant-fab-core {
+.assistant-fab-button.is-listening .assistant-fab-core,
+.assistant-fab-button.is-rendering .assistant-fab-core {
     transform: scale(1.06);
     box-shadow:
         0 20px 40px rgba(244, 183, 74, 0.36),
         0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.assistant-fab-button.is-speaking .assistant-fab-avatar,
+.assistant-fab-button.is-listening .assistant-fab-avatar,
+.assistant-fab-button.is-rendering .assistant-fab-avatar {
+    opacity: 0;
+}
+
+.assistant-fab-button.is-speaking .assistant-fab-avatar-video,
+.assistant-fab-button.is-listening .assistant-fab-avatar-video,
+.assistant-fab-button.is-rendering .assistant-fab-avatar-video {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
 .assistant-fab-button.is-listening .assistant-fab-halo {
@@ -1780,9 +1805,9 @@ h6 {
 }
 
 .wolfi-modal .wolfi-avatar-shell {
-    height: 6rem;
-    width: 6rem;
-    border-radius: 1.8rem;
+    height: 7.2rem;
+    width: 7.2rem;
+    border-radius: 2rem;
 }
 
 .wolfi-modal .wolfi-assistant-panel {
@@ -2948,6 +2973,7 @@ h6 {
     .assistant-fab-shimmer,
     .assistant-fab-halo,
     .assistant-fab-orbit,
+    .assistant-fab-avatar-video,
     .assistant-fab-ping,
     .assistant-core-breath-back,
     .assistant-core-breath-front,
@@ -3024,18 +3050,18 @@ h6 {
     }
 
     .assistant-fab-button {
-        height: 4.3rem;
-        width: 4.3rem;
+        height: 5.35rem;
+        width: 5.35rem;
     }
 
     .assistant-fab-avatar-wrap {
-        height: 3.95rem;
-        width: 3.95rem;
+        height: 4.95rem;
+        width: 4.95rem;
     }
 
     .assistant-fab-core {
-        height: 3.35rem;
-        width: 3.35rem;
+        height: 4.35rem;
+        width: 4.35rem;
     }
 
     .wolfi-modal {
@@ -3085,17 +3111,17 @@ h6 {
     }
 
     .wolfi-modal .wolfi-avatar-shell {
-        height: 4.9rem;
-        width: 4.9rem;
+        height: 5.55rem;
+        width: 5.55rem;
     }
 
     .assistant-fab-button {
-        height: 3.85rem;
-        width: 3.85rem;
+        height: 4.35rem;
+        width: 4.35rem;
     }
 
     .assistant-mascot-stage {
-        min-height: 14.5rem;
+        min-height: 16.25rem;
         padding-top: 0.75rem;
     }
 
@@ -3115,13 +3141,13 @@ h6 {
     }
 
     .assistant-fab-avatar-wrap {
-        height: 3.55rem;
-        width: 3.55rem;
+        height: 4rem;
+        width: 4rem;
     }
 
     .assistant-fab-core {
-        height: 3rem;
-        width: 3rem;
+        height: 3.45rem;
+        width: 3.45rem;
     }
 
     .assistant-fab {
@@ -3261,6 +3287,50 @@ h6 {
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.08),
         0 18px 36px rgba(2, 6, 23, 0.45);
+}
+
+.dashboard-wolfi-entry {
+    border: 1px solid rgba(244, 183, 74, 0.12);
+    background:
+        radial-gradient(circle at top left, rgba(244, 183, 74, 0.1), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(10, 17, 29, 0.96) 0%, rgba(5, 10, 18, 0.94) 100%);
+}
+
+.dashboard-wolfi-entry-orbit {
+    display: grid;
+    width: min(100%, 8rem);
+    place-items: center;
+}
+
+.dashboard-wolfi-entry-avatar {
+    width: min(100%, 7.4rem);
+    min-width: 7.4rem;
+}
+
+.dashboard-wolfi-ring-avatar {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    width: min(46%, 5rem);
+    aspect-ratio: 1;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 1px solid rgba(244, 183, 74, 0.28);
+    background:
+        radial-gradient(circle at 40% 22%, rgba(244, 183, 74, 0.18), transparent 48%),
+        rgba(4, 8, 15, 0.92);
+    box-shadow:
+        0 16px 34px rgba(2, 6, 23, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    animation: wolfiDashboardBreath 5.8s ease-in-out infinite;
+}
+
+.dashboard-wolfi-ring-avatar img {
+    border-radius: inherit;
+    transform: scale(1.07);
 }
 
 .wolfi-dashboard-shell.is-thinking .wolfi-dashboard-avatar-shell,
@@ -3613,11 +3683,21 @@ h6 {
     .wolfi-dashboard-avatar-shell {
         width: min(100%, 13rem);
     }
+
+    .dashboard-wolfi-entry-orbit {
+        width: 100%;
+    }
+
+    .dashboard-wolfi-entry-avatar {
+        min-width: 6.4rem;
+        width: 6.4rem;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .wolfi-dashboard-avatar-shell,
     .wolfi-dashboard-avatar-ring-outer,
+    .dashboard-wolfi-ring-avatar,
     .wolfi-dashboard-status-dot,
     .wolfi-dashboard-chip {
         animation: none !important;

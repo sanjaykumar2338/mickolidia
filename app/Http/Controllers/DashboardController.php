@@ -42,6 +42,11 @@ class DashboardController extends Controller
         return view('dashboard.settings', $this->dashboardViewData($request, $pricingService));
     }
 
+    public function wolfi(Request $request, ChallengePricingService $pricingService): View
+    {
+        return view('dashboard.wolfi', $this->dashboardViewData($request, $pricingService));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -58,7 +63,6 @@ class DashboardController extends Controller
 
         $user->loadMissing([
             'profile',
-            'ctraderConnection',
             'challengeTradingAccounts.challengePlan',
             'challengePurchases.order.invoice',
         ]);
@@ -97,7 +101,6 @@ class DashboardController extends Controller
             'tradesPanel' => $this->tradesPanel($primaryAccount),
             'accounts' => $accounts->map(fn (TradingAccount $account): array => $this->accountCardPayload($account))->all(),
             'payoutSummary' => $this->payoutSummary($primaryAccount),
-            'ctraderConnection' => $this->ctraderConnectionPayload($user),
             'profile' => [
                 'name' => $user->name,
                 'email' => $user->email,
@@ -140,7 +143,6 @@ class DashboardController extends Controller
             'tradesPanel' => $this->tradesPanel(null),
             'accounts' => [],
             'payoutSummary' => $this->payoutSummary(null),
-            'ctraderConnection' => $this->ctraderConnectionPayload(null),
             'profile' => [
                 'name' => '',
                 'email' => '',
@@ -173,6 +175,7 @@ class DashboardController extends Controller
         $challengeStartingBalance = (float) $challengeMetrics['challenge_starting_balance'];
 
         return [
+            'id' => $account->id,
             'reference' => $account->account_reference ?? __('N/A'),
             'plan' => $this->planLabel((string) $account->challenge_type, (int) $account->account_size),
             'challenge_type' => $this->challengeTypeLabel((string) $account->challenge_type),
@@ -685,6 +688,41 @@ class DashboardController extends Controller
         $accountLogin = filled($account->platform_login)
             ? (string) $account->platform_login
             : (filled($account->platform_account_id) ? (string) $account->platform_account_id : null);
+        $platformStatus = $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'));
+        $mt5DisableStatus = $this->mt5DeactivationStatusLabel($account);
+
+        if ($this->mt5AccessIsLocked($account)) {
+            return [
+                'is_available' => true,
+                'title' => __('MT5 access locked'),
+                'message' => $account->challenge_status === 'passed'
+                    ? __('This account has passed. Trading access is locked while MT5 disablement is confirmed and the next step is reviewed.')
+                    : __('This MT5 login is locked for the current account state. Support will confirm when trading access can resume.'),
+                'fields' => [
+                    [
+                        'label' => __('Lock status'),
+                        'value' => (bool) $account->trading_blocked ? __('Trading blocked') : $platformStatus,
+                        'hint' => __('Trading cannot continue on this MT5 account while the lock is active.'),
+                    ],
+                    [
+                        'label' => __('MT5 disable status'),
+                        'value' => $mt5DisableStatus ?: $platformStatus,
+                        'hint' => __('Latest disablement state recorded from the MT5 workflow.'),
+                    ],
+                    [
+                        'label' => __('MT5 account login'),
+                        'value' => $accountLogin ?: __('Link pending'),
+                        'hint' => __('Login associated with the locked MT5 account.'),
+                    ],
+                    [
+                        'label' => __('Account reference'),
+                        'value' => $account->account_reference ?: __('N/A'),
+                        'hint' => __('Internal Wolforix challenge reference.'),
+                    ],
+                ],
+                'privacy_note' => __('Trading credentials stay hidden while this MT5 account is locked or pending disable confirmation.'),
+            ];
+        }
 
         return [
             'is_available' => true,
@@ -1061,7 +1099,7 @@ class DashboardController extends Controller
                     : __('Purchase a challenge to create your first tracked trading account.'),
                 'meta' => [
                     __('Paid challenges: :count', ['count' => $purchaseCount]),
-                    __('Platform: :value', ['value' => 'cTrader']),
+                    __('Platform: :value', ['value' => 'MT5']),
                     __('Sync status: waiting for account link'),
                 ],
             ];
@@ -1089,6 +1127,7 @@ class DashboardController extends Controller
                     __('Passed at: :value', ['value' => $this->formatDateTime($account->passed_at)]),
                     __('Profit target: :value', ['value' => $this->formatMoney($this->profitTargetAmount($account))]),
                     __('Trading blocked: :value', ['value' => (bool) $account->trading_blocked ? __('Yes') : __('No')]),
+                    __('MT5 disable status: :value', ['value' => $this->mt5DeactivationStatusLabel($account) ?: $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'))]),
                 ],
             ];
         }
@@ -1181,6 +1220,7 @@ class DashboardController extends Controller
             'platform_environment' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')),
             'platform_account_id' => $account->platform_account_id ?: __('Link pending'),
             'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'trading_blocked' => (bool) $account->trading_blocked,
@@ -1188,7 +1228,6 @@ class DashboardController extends Controller
             'state_notice' => $this->stateNotice($account),
             'certificate_url' => $this->certificateUrl($account),
             'consistency' => $consistency,
-            'needs_linking' => $account->platform_slug === 'ctrader' && blank($account->platform_account_id),
             'dashboard_url' => route('dashboard', ['account' => $account->id]),
         ];
     }
@@ -1214,6 +1253,54 @@ class DashboardController extends Controller
             'last_triggered_threshold_percent' => $consistency['last_triggered_threshold_percent'] ?? $account->consistency_last_trigger_threshold,
             'triggered_at' => $consistency['triggered_at'] ?? optional($account->consistency_triggered_at)->toIso8601String(),
         ];
+    }
+
+    private function mt5AccessIsLocked(TradingAccount $account): bool
+    {
+        $platformStatus = (string) $account->platform_status;
+
+        return (bool) $account->trading_blocked
+            || in_array((string) $account->challenge_status, ['passed', 'failed'], true)
+            || in_array($platformStatus, ['disabled_pending_ack', 'disabled', 'disable_failed'], true)
+            || $this->mt5DeactivationStatusLabel($account) !== null;
+    }
+
+    private function mt5DeactivationStatusLabel(TradingAccount $account): ?string
+    {
+        if ($account->platform_slug !== 'mt5') {
+            return null;
+        }
+
+        $events = (array) data_get($account->meta, 'mt5_deactivation.events', []);
+
+        foreach (['challenge_pass', 'phase_1_pass'] as $eventKey) {
+            $event = $events[$eventKey] ?? null;
+
+            if (! is_array($event)) {
+                continue;
+            }
+
+            $status = (string) ($event['status'] ?? '');
+
+            if ($status === '') {
+                continue;
+            }
+
+            return match ($status) {
+                'pending' => __('Sending disable request'),
+                'pending_ea_ack' => __('Pending MT5 acknowledgement'),
+                'requested' => __('Disable requested'),
+                'disabled' => __('Disabled'),
+                'failed' => __('Disable request failed'),
+                default => $this->humanizeStatus($status),
+            };
+        }
+
+        if (in_array((string) $account->platform_status, ['disabled_pending_ack', 'disabled', 'disable_failed'], true)) {
+            return $this->humanizeStatus((string) $account->platform_status);
+        }
+
+        return null;
     }
 
     /**
@@ -2400,7 +2487,7 @@ class DashboardController extends Controller
     {
         return match ($source) {
             'mt5_ea' => 'MT5 EA',
-            'ctrader_api' => 'cTrader API',
+            'ctrader_api' => __('Legacy platform API'),
             'platform_sync' => __('Platform Sync'),
             default => $this->humanizeStatus($source),
         };
@@ -2415,37 +2502,4 @@ class DashboardController extends Controller
         return __('Not synced yet');
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function ctraderConnectionPayload(?User $user): array
-    {
-        $connection = $user?->ctraderConnection;
-
-        return [
-            'is_connected' => $connection !== null && filled($connection->access_token),
-            'broker_name' => (string) config('services.ctrader.broker_name', 'IC Markets'),
-            'authorized_accounts_count' => is_array($connection?->authorized_accounts) ? count($connection->authorized_accounts) : 0,
-            'authorized_accounts' => collect($connection?->authorized_accounts ?? [])
-                ->filter(fn ($row): bool => is_array($row))
-                ->map(fn (array $row): array => [
-                    'id' => (string) ($row['ctid_trader_account_id'] ?? ''),
-                    'label' => trim(sprintf(
-                        '%s%s%s',
-                        (string) ($row['trader_login'] ?? __('Account')),
-                        filled($row['trader_login'] ?? null) ? ' / ' : '',
-                        strtoupper((string) ($row['environment'] ?? 'demo'))
-                    )),
-                    'broker' => (string) ($row['broker_title_short'] ?? config('services.ctrader.broker_name', 'IC Markets')),
-                ])
-                ->filter(fn (array $row): bool => $row['id'] !== '')
-                ->values()
-                ->all(),
-            'last_authorized_at' => $this->formatDateTime($connection?->last_authorized_at),
-            'last_synced_accounts_at' => $this->formatDateTime($connection?->last_synced_accounts_at),
-            'last_error' => $connection?->last_error,
-            'connect_url' => route('ctrader.auth.connect'),
-            'link_url' => route('ctrader.auth.link-account'),
-        ];
-    }
 }
