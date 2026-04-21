@@ -31,18 +31,25 @@ class WolfiDashboardAssistantTest extends TestCase
         $this->actingAs($account->user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Need context? Open Wolfi Hub.')
+            ->assertSee('Wolfi supports your')
+            ->assertSee('Trading workspace')
             ->assertSee('Open Wolfi Hub')
+            ->assertSee('wolfy-image/Dashboard.jpeg', false)
+            ->assertSee('dashboard-wolfi-ring-avatar', false)
             ->assertDontSee('Grounded in Wolforix data')
             ->assertDontSee('dashboard\\/wolfi\\/respond', false);
 
         $this->actingAs($account->user)
             ->get(route('dashboard.wolfi', ['account' => $account->id]))
             ->assertOk()
-            ->assertSee('Wolfi supports your trading workspace')
+            ->assertSee('Wolfi supports your')
+            ->assertSee('Trading workspace')
             ->assertSee('dashboard\\/wolfi\\/respond', false)
             ->assertSee('Explain my dashboard')
-            ->assertSee('Grounded in Wolforix data');
+            ->assertSee('Live response')
+            ->assertSee('Rule-aware')
+            ->assertSee('wolfi-dashboard-avatar-image-poster', false)
+            ->assertSee('wolfy-image/Dashboard.jpeg', false);
     }
 
     public function test_dashboard_renders_smart_insight_cards_when_account_crosses_thresholds(): void

@@ -1280,6 +1280,72 @@ h6 {
     z-index: 1;
 }
 
+.assistant-mascot-visual-home {
+    width: min(100%, 25rem);
+    --wolfi-core-x: 50%;
+    --wolfi-core-y: 47%;
+}
+
+.assistant-portrait-frame {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 24rem);
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 2.2rem;
+    border: 1px solid rgba(244, 183, 74, 0.18);
+    background:
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.12), transparent 44%),
+        linear-gradient(180deg, rgba(8, 13, 23, 0.96) 0%, rgba(4, 8, 15, 0.98) 100%);
+    box-shadow:
+        0 28px 60px rgba(2, 6, 23, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.assistant-portrait-frame::before,
+.assistant-portrait-frame::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+}
+
+.assistant-portrait-frame::before {
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    opacity: 0.72;
+}
+
+.assistant-portrait-frame::after {
+    inset: auto 10% 6% 10%;
+    height: 34%;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(244, 183, 74, 0.18), rgba(244, 183, 74, 0) 72%);
+    filter: blur(26px);
+    opacity: 0.78;
+}
+
+.assistant-portrait-image {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--wolfi-position-x, 50%) var(--wolfi-position-y, 28%);
+    transform: scale(var(--wolfi-zoom, 1.15));
+    filter:
+        saturate(1.04)
+        contrast(1.03)
+        drop-shadow(0 28px 56px rgba(2, 6, 23, 0.34))
+        drop-shadow(0 0 38px rgba(244, 183, 74, 0.12));
+}
+
+.assistant-portrait-image-home {
+    --wolfi-position-x: 50%;
+    --wolfi-position-y: 29%;
+    --wolfi-zoom: 1.16;
+}
+
 .assistant-support-strip {
     position: relative;
 }
@@ -1808,6 +1874,336 @@ h6 {
     height: 7.2rem;
     width: 7.2rem;
     border-radius: 2rem;
+}
+
+.wolfi-live-scene {
+    position: relative;
+    background:
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.12), transparent 26%),
+        radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.1), transparent 30%),
+        linear-gradient(180deg, rgba(9, 16, 28, 0.98) 0%, rgba(5, 10, 18, 0.96) 100%);
+    box-shadow:
+        0 28px 72px rgba(2, 6, 23, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.wolfi-live-scene-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 100%);
+    opacity: 0.7;
+}
+
+.wolfi-live-scene-glow {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(72px);
+    opacity: 0.26;
+    pointer-events: none;
+}
+
+.wolfi-live-scene-glow-gold {
+    top: -4rem;
+    right: -3rem;
+    height: 14rem;
+    width: 14rem;
+    background: rgba(244, 183, 74, 0.4);
+}
+
+.wolfi-live-scene-glow-blue {
+    bottom: -5rem;
+    left: -3rem;
+    height: 15rem;
+    width: 15rem;
+    background: rgba(56, 189, 248, 0.22);
+}
+
+.wolfi-live-avatar-wrap {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(100%, 22rem);
+    margin-inline: auto;
+}
+
+.wolfi-live-avatar-shell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(100%, 18.5rem);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 1px solid rgba(244, 183, 74, 0.22);
+    background:
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), transparent 48%),
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.18), transparent 52%),
+        rgba(4, 8, 15, 0.92);
+    box-shadow:
+        0 28px 60px rgba(2, 6, 23, 0.46),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.wolfi-modal .wolfi-live-avatar-shell {
+    width: min(100%, 18.5rem);
+    height: auto;
+    border-radius: 999px;
+}
+
+.wolfi-live-avatar-ring {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+}
+
+.wolfi-live-avatar-ring-outer {
+    inset: -0.95rem;
+    border: 1px solid rgba(244, 183, 74, 0.26);
+    animation: wolfiTalkOrbit 4.8s ease-in-out infinite;
+}
+
+.wolfi-live-avatar-ring-inner {
+    inset: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wolfi-live-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 36%;
+    transform: scale(1.34);
+    filter:
+        saturate(1.06)
+        contrast(1.04)
+        drop-shadow(0 24px 48px rgba(2, 6, 23, 0.32));
+}
+
+.wolfi-modal.is-speaking .wolfi-live-avatar-image,
+.wolfi-modal.is-listening .wolfi-live-avatar-image,
+.wolfi-modal.is-rendering .wolfi-live-avatar-image {
+    transform: scale(1.34);
+}
+
+.wolfi-live-wave {
+    position: absolute;
+    top: 50%;
+    width: min(5.8rem, 25vw);
+    height: 1.35rem;
+    border-radius: 999px;
+    opacity: 0.22;
+    transform: translateY(-50%) scaleX(0.86);
+    background:
+        linear-gradient(180deg, transparent 0%, rgba(244, 183, 74, 0.88) 45%, rgba(255, 241, 190, 1) 50%, rgba(244, 183, 74, 0.88) 55%, transparent 100%);
+    mask-image: repeating-linear-gradient(90deg, transparent 0 7px, #000 7px 11px, transparent 11px 15px);
+    filter: drop-shadow(0 0 14px rgba(244, 183, 74, 0.34));
+    transition:
+        opacity 0.24s ease,
+        transform 0.28s ease;
+}
+
+.wolfi-live-wave-left {
+    left: -0.5rem;
+    animation: wolfiTalkWave 2s ease-in-out infinite;
+}
+
+.wolfi-live-wave-right {
+    right: -0.5rem;
+    animation: wolfiTalkWave 2s ease-in-out infinite -1s;
+}
+
+.wolfi-live-presence {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.18);
+    padding: 0.5rem 0.95rem;
+    color: rgba(255, 243, 214, 0.96);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    backdrop-filter: blur(14px);
+}
+
+.wolfi-live-presence-dot {
+    display: inline-flex;
+    height: 0.7rem;
+    width: 0.7rem;
+    border-radius: 999px;
+    background: #22c55e;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.42);
+    animation: wolfiPresencePulse 1.9s ease-in-out infinite;
+}
+
+.wolfi-live-status {
+    min-height: 3.5rem;
+    text-wrap: balance;
+}
+
+.wolfi-live-control {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 22px 48px rgba(2, 6, 23, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    transition:
+        transform 0.24s ease,
+        box-shadow 0.24s ease,
+        border-color 0.24s ease,
+        background-color 0.24s ease,
+        color 0.24s ease;
+}
+
+.wolfi-live-control::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.wolfi-live-control:hover,
+.wolfi-live-control:focus-visible {
+    transform: translateY(-1px);
+}
+
+.wolfi-live-control:focus-visible {
+    outline: 2px solid rgba(248, 218, 134, 0.82);
+    outline-offset: 4px;
+}
+
+.wolfi-live-control-icon {
+    display: inline-flex;
+    height: 2.35rem;
+    width: 2.35rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.wolfi-live-control.is-active {
+    border-color: rgba(244, 183, 74, 0.36);
+    background: rgba(244, 183, 74, 0.16);
+    color: #fff9e8;
+    box-shadow:
+        0 26px 58px rgba(2, 6, 23, 0.34),
+        0 0 0 1px rgba(244, 183, 74, 0.08) inset;
+}
+
+.wolfi-live-control.is-thinking {
+    border-color: rgba(103, 154, 225, 0.34);
+    background: rgba(103, 154, 225, 0.12);
+}
+
+.wolfi-modal.is-speaking .wolfi-live-avatar-shell,
+.wolfi-modal.is-listening .wolfi-live-avatar-shell,
+.wolfi-modal.is-rendering .wolfi-live-avatar-shell {
+    box-shadow:
+        0 28px 66px rgba(2, 6, 23, 0.48),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.wolfi-modal.is-speaking .wolfi-live-avatar-ring-outer {
+    border-color: rgba(244, 183, 74, 0.34);
+    animation-duration: 1.6s;
+}
+
+.wolfi-modal.is-listening .wolfi-live-avatar-ring-outer {
+    border-color: rgba(103, 154, 225, 0.36);
+    animation-duration: 1.4s;
+}
+
+.wolfi-modal.is-rendering .wolfi-live-avatar-ring-outer {
+    border-color: rgba(148, 163, 184, 0.28);
+    animation-duration: 2s;
+}
+
+.wolfi-modal.is-listening .wolfi-live-wave,
+.wolfi-modal.is-speaking .wolfi-live-wave,
+.wolfi-modal.is-rendering .wolfi-live-wave {
+    opacity: 0.96;
+    transform: translateY(-50%) scaleX(1);
+}
+
+.wolfi-modal.is-listening .wolfi-live-wave {
+    background:
+        linear-gradient(180deg, transparent 0%, rgba(103, 154, 225, 0.88) 45%, rgba(219, 236, 255, 1) 50%, rgba(103, 154, 225, 0.88) 55%, transparent 100%);
+    filter: drop-shadow(0 0 14px rgba(103, 154, 225, 0.28));
+    animation-duration: 1.15s;
+}
+
+.wolfi-modal.is-speaking .wolfi-live-wave {
+    animation-duration: 0.9s;
+}
+
+.wolfi-modal.is-rendering .wolfi-live-wave {
+    opacity: 0.5;
+    animation-duration: 2.4s;
+}
+
+.wolfi-modal.is-listening .wolfi-live-presence-dot {
+    background: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.38);
+}
+
+.wolfi-modal.is-speaking .wolfi-live-presence-dot {
+    background: #f4b74a;
+    box-shadow: 0 0 12px rgba(244, 183, 74, 0.4);
+}
+
+.wolfi-modal.is-rendering .wolfi-live-presence-dot {
+    background: #94a3b8;
+    box-shadow: 0 0 12px rgba(148, 163, 184, 0.28);
+}
+
+@keyframes wolfiTalkOrbit {
+    0%,
+    100% {
+        opacity: 0.38;
+        transform: scale(0.97);
+    }
+
+    50% {
+        opacity: 0.92;
+        transform: scale(1.04);
+    }
+}
+
+@keyframes wolfiTalkWave {
+    0%,
+    100% {
+        opacity: 0.32;
+        transform: translateY(-50%) scaleX(0.86);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateY(-50%) scaleX(1.05);
+    }
+}
+
+@keyframes wolfiPresencePulse {
+    0%,
+    100% {
+        transform: scale(0.92);
+        opacity: 0.88;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
 }
 
 .wolfi-modal .wolfi-assistant-panel {
@@ -3242,6 +3638,24 @@ h6 {
     box-shadow: 0 22px 56px rgba(2, 6, 23, 0.22);
 }
 
+.wolfi-dashboard-avatar-card {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(11, 18, 30, 0.92) 0%, rgba(6, 10, 18, 0.88) 100%);
+}
+
+.wolfi-dashboard-avatar-card::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    opacity: 0.66;
+    pointer-events: none;
+}
+
 .wolfi-dashboard-avatar-shell {
     position: relative;
     display: grid;
@@ -3257,6 +3671,14 @@ h6 {
     border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
     animation: wolfiDashboardBreath 6.2s ease-in-out infinite;
+}
+
+.wolfi-dashboard-avatar-shell-poster {
+    width: min(100%, 18rem);
+    background:
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), transparent 46%),
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.18), transparent 48%),
+        rgba(4, 8, 15, 0.88);
 }
 
 .wolfi-dashboard-avatar-ring {
@@ -3289,6 +3711,15 @@ h6 {
         0 18px 36px rgba(2, 6, 23, 0.45);
 }
 
+.wolfi-dashboard-avatar-image-poster {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    object-fit: cover;
+    object-position: 50% 30%;
+    transform: scale(1.34);
+}
+
 .dashboard-wolfi-entry {
     border: 1px solid rgba(244, 183, 74, 0.12);
     background:
@@ -3299,20 +3730,21 @@ h6 {
 
 .dashboard-wolfi-entry-orbit {
     display: grid;
-    width: min(100%, 8rem);
+    width: min(100%, 9rem);
     place-items: center;
+    gap: 1rem;
 }
 
 .dashboard-wolfi-entry-avatar {
-    width: min(100%, 7.4rem);
-    min-width: 7.4rem;
+    width: min(100%, 8.2rem);
+    min-width: 8.2rem;
 }
 
 .dashboard-wolfi-ring-avatar {
     position: relative;
     z-index: 1;
     display: inline-flex;
-    width: min(46%, 5rem);
+    width: 100%;
     aspect-ratio: 1;
     align-items: center;
     justify-content: center;
@@ -3329,8 +3761,12 @@ h6 {
 }
 
 .dashboard-wolfi-ring-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
     border-radius: inherit;
-    transform: scale(1.07);
+    transform: scale(1.36);
 }
 
 .wolfi-dashboard-shell.is-thinking .wolfi-dashboard-avatar-shell,
@@ -3676,6 +4112,36 @@ h6 {
 }
 
 @media (max-width: 640px) {
+    .assistant-promo-stat-top {
+        position: static;
+        display: inline-flex;
+        margin-bottom: 0.5rem;
+        align-self: flex-start;
+    }
+
+    .assistant-mascot-stage {
+        min-height: 19rem;
+        padding-top: 0.5rem;
+    }
+
+    .assistant-portrait-frame {
+        width: min(100%, 18rem);
+        border-radius: 1.8rem;
+    }
+
+    .wolfi-live-avatar-shell {
+        width: min(100%, 15rem);
+    }
+
+    .wolfi-modal .wolfi-live-avatar-shell {
+        width: min(100%, 15rem);
+        height: auto;
+    }
+
+    .wolfi-live-wave {
+        width: 3.25rem;
+    }
+
     .wolfi-dashboard-message-user {
         max-width: 100%;
     }
@@ -3695,6 +4161,10 @@ h6 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .assistant-core-breath,
+    .wolfi-live-avatar-ring-outer,
+    .wolfi-live-wave,
+    .wolfi-live-presence-dot,
     .wolfi-dashboard-avatar-shell,
     .wolfi-dashboard-avatar-ring-outer,
     .dashboard-wolfi-ring-avatar,

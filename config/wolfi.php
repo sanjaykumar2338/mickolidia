@@ -1,14 +1,23 @@
 <?php
 
+$images = [
+    'homepage' => 'wolfy-image/Homepage.webp',
+    'dashboard' => 'wolfy-image/Dashboard.jpeg',
+    'talk' => 'wolfy-image/Talk with Wolfi.jpeg',
+    'shortcut' => 'wolfy-image/wolfy-short.jpeg',
+];
+
 return [
+    'images' => $images,
+
     'assistant' => [
         'name' => 'Wolfi',
-        'eyebrow' => 'AI desk assistant',
-        'title' => 'Wolfi supports your trading workspace',
-        'description' => 'Ask Wolfi about MT5 sync, dashboard navigation, challenge rules, payout timing, performance metrics, and common support questions from the dedicated Wolfi Hub.',
-        'avatar_asset' => 'newfolder/IMG_8542.png',
-        'sources_title' => 'Grounded in Wolforix data',
-        'sources_copy' => 'Wolfi answers from stored dashboard structure, challenge rules, payout logic, and support guidance instead of generic chatbot filler.',
+        'eyebrow' => 'Wolfi supports your',
+        'title' => 'Trading workspace',
+        'description' => 'Ready to support your next step inside Wolfi Hub without taking over the dashboard workspace.',
+        'avatar_asset' => $images['dashboard'],
+        'sources_title' => 'Live response',
+        'sources_copy' => 'Rule-aware, metric-aware, and ready for future voice playback.',
         'response_label' => 'Live response',
         'response_hint' => 'Rule-aware, metric-aware, and ready for future voice playback.',
         'status_idle' => 'Ready to guide your next step',
@@ -23,20 +32,20 @@ return [
 
     'pillars' => [
         [
-            'title' => 'Platform guidance',
-            'description' => 'Step-by-step help for overview, accounts, payouts, Wolfi Hub, and settings.',
+            'title' => 'Rule-aware',
+            'description' => 'Guidance based on platform rules.',
         ],
         [
-            'title' => 'Challenge rules',
-            'description' => 'Explain drawdown, trading-day requirements, consistency, and pass or fail logic.',
+            'title' => 'Metric-aware',
+            'description' => 'Insights that track what matters.',
         ],
         [
-            'title' => 'Performance insights',
-            'description' => 'Translate balance, equity, floating P&L, drawdown usage, and payout readiness.',
+            'title' => 'Payout timing',
+            'description' => 'Stay on track with payout schedules.',
         ],
         [
-            'title' => 'Support assistant',
-            'description' => 'Handle common operational questions and point users to the right Wolforix flow.',
+            'title' => 'Always ready',
+            'description' => 'Get instant support when you need it.',
         ],
     ],
 

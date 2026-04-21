@@ -1,5 +1,6 @@
 @php
     $authUser = request()->user();
+    $footerBrandMark = asset('IMG_8543.png');
     $socialLinks = collect(config('wolforix.social_links', []))
         ->filter(fn (array $link): bool => filled($link['url'] ?? null))
         ->all();
@@ -94,6 +95,28 @@
                 @endforeach
             </nav>
         @endif
+
+        <div class="mt-6 flex justify-center">
+            <a
+                href="{{ route('home') }}"
+                data-footer-brand
+                aria-label="{{ __('site.meta.brand') }}"
+                class="inline-flex items-center justify-center gap-4 rounded-full px-4 py-2 text-amber-300 transition hover:text-amber-200"
+            >
+                <img
+                    src="{{ $footerBrandMark }}"
+                    alt=""
+                    aria-hidden="true"
+                    class="h-16 w-16 object-contain sm:h-20 sm:w-20"
+                    loading="lazy"
+                    decoding="async"
+                >
+                <span class="inline-flex items-start text-[1.75rem] font-semibold tracking-[0.16em] sm:text-[2rem]">
+                    <span>{{ strtoupper(__('site.meta.brand')) }}</span>
+                    <span class="ml-1 text-[0.48em] leading-none tracking-normal text-amber-200">®</span>
+                </span>
+            </a>
+        </div>
     </div>
 
     <div class="border-t border-white/5">

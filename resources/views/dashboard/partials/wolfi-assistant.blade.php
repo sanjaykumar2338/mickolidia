@@ -22,6 +22,7 @@
     $messageStats = $welcome['stats'] ?? [];
     $messageBullets = $welcome['bullets'] ?? [];
     $promptButtonsDataAttribute = 'data-wolfi-prompt';
+    $dashboardWolfiImage = asset((string) config('wolfi.images.dashboard'));
 @endphp
 
 <section
@@ -47,37 +48,46 @@
                 </span>
             </div>
 
-            <h2 class="mt-4 max-w-3xl text-3xl font-semibold text-white sm:text-[2.5rem]">
-                {{ $assistant['title'] ?? 'Wolfi supports your trading workspace' }}
+            <h2 class="mt-4 max-w-3xl text-3xl font-semibold text-white sm:text-[2.8rem]">
+                {{ $assistant['title'] ?? 'Trading workspace' }}
             </h2>
             <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-[15px]">
                 {{ $assistant['description'] ?? '' }}
             </p>
 
-            <div class="wolfi-dashboard-avatar-card max-w-[22rem] rounded-[1.9rem] border border-white/10 bg-black/20 px-5 pt-5 pb-4 sm:px-6 sm:pt-6 sm:pb-5 xl:max-w-none">
-                <div class="wolfi-dashboard-avatar-shell mx-auto" data-wolfi-avatar>
-                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer"></span>
-                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-inner"></span>
+            <div class="wolfi-dashboard-avatar-card rounded-[1.9rem] border border-white/10 bg-black/20 p-5 sm:p-6">
+                <div class="wolfi-dashboard-avatar-shell wolfi-dashboard-avatar-shell-poster">
+                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer" aria-hidden="true"></span>
+                    <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-inner" aria-hidden="true"></span>
                     <img
-                        src="{{ asset($assistant['avatar_asset'] ?? 'newfolder/IMG_8542.png') }}"
+                        src="{{ $dashboardWolfiImage }}"
                         alt="{{ $assistant['name'] ?? 'Wolfi' }}"
-                        class="wolfi-dashboard-avatar-image"
+                        class="wolfi-dashboard-avatar-image wolfi-dashboard-avatar-image-poster"
                         loading="eager"
                         decoding="async"
                     >
                 </div>
 
-                <div class="mt-4 text-center">
-                    <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
+                <div class="mt-5 flex flex-wrap justify-center gap-3">
+                    <span class="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-100">
                         {{ $assistant['response_label'] ?? 'Live response' }}
-                    </p>
-                    <p class="mt-3 text-lg font-semibold text-white" data-wolfi-live-label>
-                        {{ $assistant['status_idle'] ?? 'Ready to guide your next step' }}
-                    </p>
-                    <p class="mt-3 text-sm leading-6 text-slate-400">
-                        {{ $assistant['response_hint'] ?? '' }}
-                    </p>
+                    </span>
+                    <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
+                        {{ $wolfiPanel['page']['title'] ?? __('site.dashboard.nav.wolfi_hub') }}
+                    </span>
                 </div>
+            </div>
+
+            <div class="rounded-[1.7rem] border border-amber-300/14 bg-amber-300/8 p-5">
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
+                    {{ $assistant['response_label'] ?? 'Live response' }}
+                </p>
+                <p class="mt-3 text-lg font-semibold text-white" data-wolfi-live-label>
+                    {{ $assistant['status_idle'] ?? 'Ready to guide your next step' }}
+                </p>
+                <p class="mt-3 text-sm leading-6 text-slate-300">
+                    {{ $assistant['response_hint'] ?? '' }}
+                </p>
             </div>
         </div>
 
@@ -97,7 +107,7 @@
             <div class="flex flex-col gap-4 {{ $showVoicePlaceholder ? 'sm:flex-row sm:items-start sm:justify-between' : '' }}">
                 <div>
                     <p class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-300">
-                        {{ $assistant['sources_title'] ?? 'Grounded in Wolforix data' }}
+                        {{ $assistant['sources_title'] ?? 'Live response' }}
                     </p>
                     <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
                         {{ $assistant['sources_copy'] ?? '' }}

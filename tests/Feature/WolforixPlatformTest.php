@@ -84,6 +84,7 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('home'))
             ->assertOk()
+            ->assertSee('data-footer-brand', false)
             ->assertSee('https://www.facebook.com/share/1JQhTJwzJq/', false)
             ->assertSee('https://www.instagram.com/wolforix', false)
             ->assertSee('https://t.me/wolforix', false)
@@ -100,7 +101,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Contact Us')
             ->assertSee(config('wolforix.support.email'))
             ->assertSee('Live chat')
-            ->assertSee('Wolfi AI assistant')
+            ->assertSee('Talk with Wolfi')
+            ->assertSee('Your trading assistant is ready to help.')
+            ->assertSee('Tap to talk')
+            ->assertSee('wolfy-image/wolfy-short.jpeg', false)
+            ->assertSee('data-wolfi-live-scene', false)
+            ->assertSee('data-wolfi-talk-control', false)
             ->assertSee('Wolfi\'s answer')
             ->assertSee('Play answer')
             ->assertSee('Suggested prompts')
@@ -123,7 +129,7 @@ class WolforixPlatformTest extends TestCase
         ])->get(route('contact'))
             ->assertOk()
             ->assertSee('Support, Live-Chat und FAQ-Sprachhilfe an einem Ort.')
-            ->assertSee('Wolfi AI-Assistent')
+            ->assertSee('Sprich mit Wolfi')
             ->assertSee('Wolfis Antwort')
             ->assertSee('Ich höre zu... tippe erneut zum Stoppen.')
             ->assertSee('Ich will sicherstellen, dass ich die richtige Frage beantworte.')
@@ -138,7 +144,8 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Assistant Wolfi')
             ->assertSee('Parlez avec Wolfi')
-            ->assertSee('Posez vos questions à Wolfi avant d’acheter')
+            ->assertSee('WOLFI')
+            ->assertSee('Disponible 24/7')
             ->assertDontSee('Parlez à votre Assistant IA');
     }
 
@@ -150,14 +157,15 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Asistente Wolfi')
             ->assertSee('Habla con Wolfi')
-            ->assertSee('Pregunta a Wolfi antes de comprar')
+            ->assertSee('WOLFI')
+            ->assertSee('Disponible 24/7')
             ->assertDontSee('Habla con tu Asistente IA');
     }
 
     public function test_hindi_italian_and_portuguese_locales_render_core_homepage_copy(): void
     {
         foreach ([
-            'hi' => ['मुफ़्त ट्रायल', 'मुद्रा', 'वुल्फी से बात करें'],
+            'hi' => ['मुफ़्त ट्रायल', 'मुद्रा', 'Wolfi से बात करें'],
             'it' => ['Prova Gratuita', 'Valuta', 'Parla con Wolfi'],
             'pt' => ['Teste Gratuito', 'Moeda', 'Fale com Wolfi'],
         ] as $locale => $expectations) {
@@ -583,9 +591,16 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Open live market news')
             ->assertSee('View full calendar')
             ->assertSee('Economic News Calendar')
+            ->assertSee('WOLFI')
+            ->assertSee('Always on. Always ready.')
+            ->assertSee('Let Wolfi guide you.')
+            ->assertSee('24/7 available')
+            ->assertSee('wolfy-image/Homepage.webp', false)
+            ->assertSee('assistant-portrait-image-home', false)
+            ->assertSee('wolfy-image/wolfy-short.jpeg', false)
             ->assertSee('Talk with Wolfi')
             ->assertSee('Open Wolfi')
-            ->assertSee('Ask Wolfi before you buy')
+            ->assertSee('Ask Wolfi')
             ->assertSee('Can I trade during news?')
             ->assertSee('Wolfi Assistant')
             ->assertSee('Contact & Support')

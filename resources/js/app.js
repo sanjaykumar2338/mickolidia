@@ -3981,8 +3981,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
         const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
         const modalController = modalAssistant?.__wolfiController ?? null;
+        const modalStatus = modalAssistant?.querySelector('[data-voice-status]');
+        const modalMicButton = modalAssistant?.querySelector('[data-voice-mic]');
+        const modalPlayButton = modalAssistant?.querySelector('[data-voice-play]');
         const wolfiAvatarShell = wolfiModal.querySelector('.wolfi-avatar-shell');
         const wolfiAvatarVideo = wolfiModal.querySelector('[data-wolfi-avatar-video]');
+        const wolfiHeroTitle = wolfiModal.querySelector('[data-wolfi-hero-title]');
+        const wolfiHeroStatus = wolfiModal.querySelector('[data-wolfi-hero-status]');
+        const wolfiTalkControl = wolfiModal.querySelector('[data-wolfi-talk-control]');
+        const wolfiTalkControlLabel = wolfiTalkControl?.querySelector('[data-wolfi-talk-control-label]');
         const modalMotionQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(prefers-reduced-motion: reduce)')
             : null;
@@ -4081,6 +4088,64 @@ document.addEventListener('DOMContentLoaded', () => {
             syncWolfiFabPlayback(open && (speaking || listening || rendering));
         };
 
+        const syncWolfiHeroState = ({
+            open = modalIsOpen,
+            speaking = wolfiModal.classList.contains('is-speaking'),
+            listening = wolfiModal.classList.contains('is-listening'),
+            rendering = wolfiModal.classList.contains('is-rendering'),
+        } = {}) => {
+            const nextState = listening
+                ? 'listening'
+                : (speaking ? 'speaking' : (rendering ? 'rendering' : 'idle'));
+
+            if (wolfiHeroTitle instanceof HTMLElement) {
+                const nextTitle = wolfiHeroTitle.dataset[nextState] ?? '';
+
+                if (nextTitle !== '') {
+                    wolfiHeroTitle.textContent = nextTitle;
+                }
+            }
+
+            if (wolfiHeroStatus instanceof HTMLElement) {
+                const nextStatus = modalStatus instanceof HTMLElement && modalStatus.textContent?.trim() !== ''
+                    ? modalStatus.textContent.trim()
+                    : (wolfiHeroStatus.dataset.default ?? wolfiHeroStatus.textContent ?? '');
+
+                wolfiHeroStatus.textContent = nextStatus;
+            }
+
+            if (wolfiTalkControl instanceof HTMLButtonElement) {
+                const nextLabel = speaking
+                    ? (wolfiTalkControl.dataset.speakingLabel ?? '')
+                    : (listening
+                        ? (wolfiTalkControl.dataset.listeningLabel ?? '')
+                        : (rendering
+                            ? (wolfiTalkControl.dataset.renderingLabel ?? '')
+                            : (wolfiTalkControl.dataset.idleLabel ?? '')));
+
+                if (wolfiTalkControlLabel instanceof HTMLElement && nextLabel !== '') {
+                    wolfiTalkControlLabel.textContent = nextLabel;
+                }
+
+                wolfiTalkControl.classList.toggle('is-active', open && (speaking || listening));
+                wolfiTalkControl.classList.toggle('is-thinking', open && rendering);
+                wolfiTalkControl.disabled = !open;
+                wolfiTalkControl.setAttribute('aria-pressed', (speaking || listening) ? 'true' : 'false');
+            }
+        };
+
+        if (modalStatus instanceof HTMLElement && typeof MutationObserver !== 'undefined') {
+            const wolfiStatusObserver = new MutationObserver(() => {
+                syncWolfiHeroState();
+            });
+
+            wolfiStatusObserver.observe(modalStatus, {
+                characterData: true,
+                childList: true,
+                subtree: true,
+            });
+        }
+
         const scheduleWolfiModalHide = () => {
             clearWolfiModalHideTimeout();
 
@@ -4137,6 +4202,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     listening: false,
                     rendering: false,
                 });
+                syncWolfiHeroState({
+                    open: true,
+                    speaking: false,
+                    listening: false,
+                    rendering: false,
+                });
 
                 window.requestAnimationFrame(() => {
                     wolfiModal.classList.add('is-open');
@@ -4169,6 +4240,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 listening: false,
                 rendering: false,
             });
+            syncWolfiHeroState({
+                open: false,
+                speaking: false,
+                listening: false,
+                rendering: false,
+            });
             syncWolfiAvatarPlayback({
                 active: false,
             });
@@ -4189,12 +4266,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 listening: Boolean(event.detail?.listening),
                 rendering: Boolean(event.detail?.rendering),
             });
+            syncWolfiHeroState({
+                open: modalIsOpen,
+                speaking: Boolean(event.detail?.speaking),
+                listening: Boolean(event.detail?.listening),
+                rendering: Boolean(event.detail?.rendering),
+            });
             syncWolfiAvatarPlayback({
                 active: Boolean(event.detail?.speaking)
                     || Boolean(event.detail?.listening)
                     || Boolean(event.detail?.rendering),
             });
         });
+
+        if (wolfiTalkControl instanceof HTMLButtonElement) {
+            wolfiTalkControl.addEventListener('click', () => {
+                if (!modalIsOpen) {
+                    return;
+                }
+
+                if (wolfiModal.classList.contains('is-speaking') && modalPlayButton instanceof HTMLButtonElement) {
+                    modalPlayButton.click();
+                    return;
+                }
+
+                if (modalMicButton instanceof HTMLButtonElement) {
+                    modalMicButton.click();
+                    return;
+                }
+
+                modalController?.focusInput?.();
+            });
+        }
 
         wolfiLaunchButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
@@ -4210,6 +4313,13 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', () => {
                 setWolfiModalState(false);
             });
+        });
+
+        syncWolfiHeroState({
+            open: false,
+            speaking: false,
+            listening: false,
+            rendering: false,
         });
 
         document.addEventListener('keydown', (event) => {
