@@ -72,9 +72,6 @@
                     <span class="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-100">
                         {{ $assistant['response_label'] ?? 'Live response' }}
                     </span>
-                    <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200">
-                        {{ $wolfiPanel['page']['title'] ?? __('site.dashboard.nav.wolfi_hub') }}
-                    </span>
                 </div>
             </div>
 

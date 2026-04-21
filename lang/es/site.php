@@ -150,9 +150,9 @@ return [
         ],
         'hero_visual' => [
             'label' => 'Vista previa del trading desk',
-            'platform' => 'Workspace oscuro de ejecución',
+            'platform' => 'Espacio de ejecución oscuro',
             'card_title' => 'Enfocado en gráficos. Reglas visibles. Diseñado como funded.',
-            'card_copy' => 'La homepage ahora abre con una visual limpia de trading para que la marca se sienta más como un workspace serio de prop firm que como una tarjeta promocional decorativa.',
+            'card_copy' => 'La homepage ahora abre con una visual limpia de trading para que la marca se sienta más como un espacio serio de prop firm que como una tarjeta promocional decorativa.',
             'image_alt' => 'Interfaz de trading estilo laptop con gráfico y paneles de mercado',
         ],
         'challenge_selector' => [
@@ -1945,7 +1945,7 @@ return [
         ],
         'overview' => [
             'snapshot_title' => 'Resumen de cuenta',
-            'snapshot_copy' => 'Esta zona ahora sigue el workspace MT5 del challenge, con métricas reales de cuenta cuando la sincronización MT5 está disponible.',
+            'snapshot_copy' => 'Esta zona ahora sigue el espacio MT5 del challenge, con métricas reales de cuenta cuando la sincronización MT5 está disponible.',
             'rules_title' => 'Conjunto de reglas',
             'rules_copy' => 'La vista previa de abajo está alineada con el modelo final 2-Step para que objetivos, límites de riesgo, apalancamiento y tiempos de payout sigan visibles junto a las métricas de la cuenta.',
             'payout_title' => 'Sección de payout',
@@ -1975,8 +1975,8 @@ return [
         ],
         'wolfi_hub_page' => [
             'title' => 'Wolfi Hub',
-            'subtitle' => 'Soporte basado en cuenta, guía de plataforma y contexto de Wolfi sin ocupar el workspace de trading.',
-            'empty_title' => 'Wolfi está preparando tu workspace',
+            'subtitle' => 'Soporte basado en cuenta, guía de plataforma y contexto de Wolfi sin ocupar el espacio de trading.',
+            'empty_title' => 'Wolfi está preparando tu espacio',
             'empty_copy' => 'Cuando cargue el contexto del dashboard, Wolfi Hub explicará la página actual, el estado de la cuenta, reglas, payouts y rutas de soporte.',
         ],
         'mt5' => [
@@ -1986,12 +1986,12 @@ return [
         ],
         'wolfi' => [
             'entry_eyebrow' => 'Wolfi apoya tu',
-            'entry_title' => 'workspace de trading',
+            'entry_title' => 'Espacio de trading',
             'entry_copy' => 'Listo para apoyar tu siguiente paso sobre reglas, métricas, timing de payout y contexto MT5.',
             'entry_hint' => 'El dashboard principal prioriza los datos de cuenta; el asistente completo vive en Wolfi Hub.',
             'open_hub' => 'Abrir Wolfi Hub',
             'fallbacks' => [
-                'dashboard_workspace' => 'Workspace del dashboard',
+                'dashboard_workspace' => 'Espacio del dashboard',
             ],
             'welcome' => [
                 'title' => 'Resumen personalizado de cuenta',
@@ -2004,7 +2004,7 @@ return [
                 'empty_message' => 'Puedo explicar :page, reglas del challenge, payouts y pasos de soporte mientras Wolforix espera una cuenta MT5 activa en este perfil.',
                 'empty_bullets' => [
                     'Usa Wolfi Hub para el asistente completo con contexto de cuenta.',
-                    'El dashboard principal mantiene primero el workspace de trading y los datos de cuenta.',
+                    'El dashboard principal mantiene primero el espacio de trading y los datos de cuenta.',
                     'Cuando aparezcan datos de sincronización MT5, Wolfi añadirá explicaciones personalizadas aquí.',
                 ],
             ],
@@ -2023,7 +2023,7 @@ return [
             'assistant' => [
                 'name' => 'Wolfi',
                 'eyebrow' => 'Wolfi apoya tu',
-                'title' => 'workspace de trading',
+                'title' => 'Espacio de trading',
                 'description' => 'Listo para apoyar tu siguiente paso con guía consciente de reglas y métricas dentro de Wolfi Hub.',
                 'sources_title' => 'Respuesta en vivo',
                 'sources_copy' => 'Consciente de reglas, métricas y preparado para futura reproducción de voz.',
@@ -2089,7 +2089,7 @@ return [
             ],
             'pages' => [
                 'dashboard' => [
-                    'title' => 'Workspace de resumen',
+                    'title' => 'Resumen',
                     'summary' => 'Usa esta página para revisar resumen de cuenta, progreso, preparación de payout, analítica, actividad diaria, detalles de trades y acceso directo a Wolfi Hub.',
                     'sections' => [
                         [
@@ -2102,12 +2102,12 @@ return [
                         ],
                         [
                             'title' => 'Acceso a Wolfi',
-                            'description' => 'La entrada compacta abre Wolfi Hub mientras el dashboard principal mantiene primero los datos de cuenta y el workspace.',
+                            'description' => 'La entrada compacta abre Wolfi Hub mientras el dashboard principal mantiene primero los datos de cuenta y el espacio principal.',
                         ],
                     ],
                 ],
                 'dashboard.accounts' => [
-                    'title' => 'Workspace de cuentas',
+                    'title' => 'Espacio de cuentas',
                     'summary' => 'Usa esta página para revisar salud de sincronización MT5, challenges vinculados, facturación y progreso por cuenta.',
                     'sections' => [
                         [
@@ -2125,7 +2125,7 @@ return [
                     ],
                 ],
                 'dashboard.payouts' => [
-                    'title' => 'Workspace de payouts',
+                    'title' => 'Espacio de payouts',
                     'summary' => 'Usa esta página para entender la próxima ventana de retiro, elegibilidad actual y requisitos pendientes.',
                     'sections' => [
                         [
@@ -2161,7 +2161,7 @@ return [
                     ],
                 ],
                 'dashboard.settings' => [
-                    'title' => 'Workspace de ajustes',
+                    'title' => 'Espacio de ajustes',
                     'summary' => 'Usa esta página para confirmar perfil, idioma, zona horaria y la hoja de ruta de preferencias y seguridad.',
                     'sections' => [
                         [
