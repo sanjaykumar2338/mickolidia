@@ -689,25 +689,36 @@ class DashboardController extends Controller
             ? (string) $account->platform_login
             : (filled($account->platform_account_id) ? (string) $account->platform_account_id : null);
         $platformStatus = $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'));
+        $disableStatusKey = $this->mt5DeactivationStatusKey($account);
         $mt5DisableStatus = $this->mt5DeactivationStatusLabel($account);
 
         if ($this->mt5AccessIsLocked($account)) {
             return [
                 'is_available' => true,
-                'title' => __('MT5 access locked'),
-                'message' => $account->challenge_status === 'passed'
-                    ? __('This account has passed. Trading access is locked while MT5 disablement is confirmed and the next step is reviewed.')
-                    : __('This MT5 login is locked for the current account state. Support will confirm when trading access can resume.'),
+                'title' => match ($disableStatusKey) {
+                    'disabled' => __('MT5 disabled'),
+                    'disable_requested' => __('MT5 disable requested'),
+                    'disable_pending_ack' => __('MT5 disable pending acknowledgement'),
+                    'disable_failed' => __('MT5 disable failed'),
+                    default => __('MT5 final-state lock'),
+                },
+                'message' => match ($disableStatusKey) {
+                    'disabled' => __('This account is in a final locked state and MT5 disablement has been confirmed.'),
+                    'disable_requested' => __('This account is in a final locked state. MT5 disablement has been requested and confirmation is still pending.'),
+                    'disable_pending_ack' => __('This account is in a final locked state. MT5 disablement is waiting for EA acknowledgement.'),
+                    'disable_failed' => __('This account is in a final locked state, but the latest MT5 disable attempt failed and needs attention.'),
+                    default => __('This account is in a final locked state. Review the MT5 disable status before assuming trading access is fully closed.'),
+                },
                 'fields' => [
                     [
-                        'label' => __('Lock status'),
-                        'value' => (bool) $account->trading_blocked ? __('Trading blocked') : $platformStatus,
-                        'hint' => __('Trading cannot continue on this MT5 account while the lock is active.'),
+                        'label' => __('Final state'),
+                        'value' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'locked')),
+                        'hint' => __('Business outcome is locked locally and will not reopen from later MT5 snapshots.'),
                     ],
                     [
                         'label' => __('MT5 disable status'),
                         'value' => $mt5DisableStatus ?: $platformStatus,
-                        'hint' => __('Latest disablement state recorded from the MT5 workflow.'),
+                        'hint' => __('Only the disabled state confirms MT5 trading access has been fully invalidated.'),
                     ],
                     [
                         'label' => __('MT5 account login'),
@@ -1111,10 +1122,11 @@ class DashboardController extends Controller
             if ($account->challenge_status === 'failed') {
                 return [
                     'title' => __('Challenge failed - trading blocked'),
-                    'message' => __('This account has breached a challenge rule. Trading is blocked and the account is inactive.'),
+                    'message' => __('This account has breached a challenge rule. Local trading is locked while MT5 disable status is tracked.'),
                     'meta' => [
                         __('Reason: :value', ['value' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : __('Rule breach')]),
                         __('Trading blocked: :value', ['value' => (bool) $account->trading_blocked ? __('Yes') : __('No')]),
+                        __('MT5 disable status: :value', ['value' => $this->mt5DeactivationStatusLabel($account) ?: $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'))]),
                         __('Last evaluation: :value', ['value' => $this->formatDateTime($account->last_evaluated_at)]),
                     ],
                 ];
@@ -1122,7 +1134,7 @@ class DashboardController extends Controller
 
             return [
                 'title' => __('Challenge passed'),
-                'message' => __('This challenge has reached the required target and is locked for review and next steps.'),
+                'message' => __('This challenge has reached the required target. Local trading is locked while MT5 disable status is tracked for the next step.'),
                 'meta' => [
                     __('Passed at: :value', ['value' => $this->formatDateTime($account->passed_at)]),
                     __('Profit target: :value', ['value' => $this->formatMoney($this->profitTargetAmount($account))]),
@@ -1261,46 +1273,105 @@ class DashboardController extends Controller
 
         return (bool) $account->trading_blocked
             || in_array((string) $account->challenge_status, ['passed', 'failed'], true)
-            || in_array($platformStatus, ['disabled_pending_ack', 'disabled', 'disable_failed'], true)
-            || $this->mt5DeactivationStatusLabel($account) !== null;
+            || in_array($platformStatus, ['disable_requested', 'disable_pending_ack', 'disabled', 'disable_failed', 'disabled_pending_ack'], true)
+            || $this->mt5DeactivationStatusKey($account) !== null;
     }
 
-    private function mt5DeactivationStatusLabel(TradingAccount $account): ?string
+    private function mt5DeactivationStatusKey(TradingAccount $account): ?string
     {
         if ($account->platform_slug !== 'mt5') {
             return null;
         }
 
+        $current = data_get($account->meta, 'mt5_deactivation.current');
+
+        if (is_array($current) && filled($current['status'] ?? null)) {
+            return (string) $current['status'];
+        }
+
         $events = (array) data_get($account->meta, 'mt5_deactivation.events', []);
 
-        foreach (['challenge_pass', 'phase_1_pass'] as $eventKey) {
-            $event = $events[$eventKey] ?? null;
-
+        foreach ($events as $event) {
             if (! is_array($event)) {
                 continue;
             }
 
-            $status = (string) ($event['status'] ?? '');
-
-            if ($status === '') {
-                continue;
+            if (filled($event['status'] ?? null)) {
+                return (string) $event['status'];
             }
-
-            return match ($status) {
-                'pending' => __('Sending disable request'),
-                'pending_ea_ack' => __('Pending MT5 acknowledgement'),
-                'requested' => __('Disable requested'),
-                'disabled' => __('Disabled'),
-                'failed' => __('Disable request failed'),
-                default => $this->humanizeStatus($status),
-            };
         }
 
-        if (in_array((string) $account->platform_status, ['disabled_pending_ack', 'disabled', 'disable_failed'], true)) {
-            return $this->humanizeStatus((string) $account->platform_status);
+        if (in_array((string) $account->platform_status, ['disable_requested', 'disable_pending_ack', 'disabled', 'disable_failed', 'disabled_pending_ack'], true)) {
+            return (string) $account->platform_status;
         }
 
         return null;
+    }
+
+    private function mt5DeactivationStatusLabel(TradingAccount $account): ?string
+    {
+        $status = $this->mt5DeactivationStatusKey($account);
+
+        if ($status === null) {
+            return null;
+        }
+
+        return match ($status) {
+            'disable_requested', 'requested' => __('Disable requested'),
+            'disable_pending_ack', 'pending_ea_ack', 'disabled_pending_ack' => __('Pending MT5 acknowledgement'),
+            'disabled' => __('Disabled'),
+            'disable_failed', 'failed' => __('Disable request failed'),
+            'pending' => __('Sending disable request'),
+            default => $this->humanizeStatus($status),
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function mt5DeactivationStateCopy(TradingAccount $account): array
+    {
+        $status = $this->mt5DeactivationStatusLabel($account) ?: __('Pending status');
+
+        if ($account->challenge_status === 'failed') {
+            return [
+                'title' => __('Failed / final lock'),
+                'message' => __('Challenge failed. Local trading is locked. MT5 disable status: :status.', [
+                    'status' => $status,
+                ]),
+            ];
+        }
+
+        if ($account->challenge_status === 'passed') {
+            return [
+                'title' => __('Passed / final lock'),
+                'message' => __('Challenge target reached. Local trading is locked. MT5 disable status: :status.', [
+                    'status' => $status,
+                ]),
+            ];
+        }
+
+        return [
+            'title' => __('Trading blocked'),
+            'message' => __('Local trading is locked. MT5 disable status: :status.', [
+                'status' => $status,
+            ]),
+        ];
+    }
+
+    private function mt5DeactivationStatusDetail(TradingAccount $account): ?array
+    {
+        $current = data_get($account->meta, 'mt5_deactivation.current');
+
+        if (! is_array($current)) {
+            return null;
+        }
+
+        return [
+            'event' => (string) ($current['event'] ?? ''),
+            'reason' => (string) ($current['reason'] ?? ''),
+            'status' => (string) ($current['status'] ?? ''),
+        ];
     }
 
     /**
@@ -1427,28 +1498,32 @@ class DashboardController extends Controller
     private function stateNotice(TradingAccount $account): ?array
     {
         if ($account->challenge_status === 'failed') {
+            $copy = $this->mt5DeactivationStateCopy($account);
+
             return [
                 'tone' => 'rose',
-                'title' => __('Failed / inactive'),
-                'message' => __('Trading is blocked because this account breached :reason.', [
-                    'reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : __('a challenge rule'),
-                ]),
+                'title' => $copy['title'],
+                'message' => $copy['message'],
             ];
         }
 
         if ($account->challenge_status === 'passed') {
+            $copy = $this->mt5DeactivationStateCopy($account);
+
             return [
                 'tone' => 'emerald',
-                'title' => __('Passed'),
-                'message' => __('Challenge target reached. Trading is locked while the account is reviewed for next steps.'),
+                'title' => $copy['title'],
+                'message' => $copy['message'],
             ];
         }
 
         if ((bool) $account->trading_blocked) {
+            $copy = $this->mt5DeactivationStateCopy($account);
+
             return [
                 'tone' => 'amber',
-                'title' => __('Trading blocked'),
-                'message' => __('Trading is currently blocked for this account.'),
+                'title' => $copy['title'],
+                'message' => $copy['message'],
             ];
         }
 

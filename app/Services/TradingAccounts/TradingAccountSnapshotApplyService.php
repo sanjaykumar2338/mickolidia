@@ -195,7 +195,7 @@ class TradingAccountSnapshotApplyService
         });
 
         $updatedAccount = $this->mt5AccountDeactivationService->acknowledgeIfNeeded($updatedAccount, $snapshot);
-        $updatedAccount = $this->requestMt5PassDeactivationIfNeeded($updatedAccount);
+        $updatedAccount = $this->requestMt5FinalStateDeactivationIfNeeded($updatedAccount);
 
         $this->finalStateMailer->sendIfNeeded($updatedAccount);
         $this->lifecycleMailer->sendPhaseProgressIfNeeded($updatedAccount);
@@ -255,20 +255,38 @@ class TradingAccountSnapshotApplyService
             || (float) ($snapshot['volume'] ?? 0) > 0;
     }
 
-    private function requestMt5PassDeactivationIfNeeded(TradingAccount $account): TradingAccount
+    private function requestMt5FinalStateDeactivationIfNeeded(TradingAccount $account): TradingAccount
     {
         if ($this->hasPhaseOnePass($account)) {
-            $account = $this->mt5AccountDeactivationService->requestForPass($account, 'phase_1_pass', [
-                'reason' => 'phase_1_passed',
+            $account = $this->mt5AccountDeactivationService->requestForFinalState($account, 'phase_1_pass_finalized', [
+                'reason' => 'phase_passed',
                 'completed_phase' => 'Phase 1',
+                'final_status' => 'phase_passed',
+                'source' => 'challenge_phase_transition',
             ]);
         }
 
         if ($account->challenge_status === 'passed') {
-            $account = $this->mt5AccountDeactivationService->requestForPass($account, 'challenge_pass', [
+            $account = $this->mt5AccountDeactivationService->requestForFinalState($account, 'pass_finalized', [
                 'reason' => 'challenge_passed',
                 'completed_phase' => $this->completedPhaseLabel($account),
+                'final_status' => 'passed',
+                'source' => 'challenge_final_state',
             ]);
+        }
+
+        if ($account->challenge_status === 'failed' && (bool) $account->final_state_locked) {
+            $account = $this->mt5AccountDeactivationService->requestForFinalState(
+                $account,
+                $this->failedFinalStateEventKey($account),
+                [
+                    'reason' => (string) ($account->failure_reason ?: 'rule_violation'),
+                    'completed_phase' => $this->completedPhaseLabel($account),
+                    'final_status' => 'failed',
+                    'failure_reason' => $account->failure_reason,
+                    'source' => 'challenge_final_state',
+                ],
+            );
         }
 
         return $account;
@@ -296,6 +314,13 @@ class TradingAccountSnapshotApplyService
         }
 
         return (int) $account->phase_index > 1 ? 'Phase 2' : 'Phase 1';
+    }
+
+    private function failedFinalStateEventKey(TradingAccount $account): string
+    {
+        $reason = (string) ($account->failure_reason ?: 'rule_violation');
+
+        return 'fail_'.str($reason)->slug('_');
     }
 
     /**

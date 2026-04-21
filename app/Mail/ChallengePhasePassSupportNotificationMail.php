@@ -28,7 +28,7 @@ class ChallengePhasePassSupportNotificationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return $this->automatedEnvelope('Support Alert — Challenge Phase Passed');
+        return $this->automatedEnvelope('Support Alert — Challenge Final State');
     }
 
     public function content(): Content

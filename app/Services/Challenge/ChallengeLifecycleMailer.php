@@ -139,10 +139,11 @@ class ChallengeLifecycleMailer
                 return null;
             }
 
+            $eventKey = 'phase_1_pass_finalized';
             $shouldSendPhaseOne = $freshAccount->phase_one_pass_email_sent_at === null;
             $shouldSendPhaseTwoCredentials = $freshAccount->phase_two_credentials_email_sent_at === null;
             $meta = is_array($freshAccount->meta) ? $freshAccount->meta : [];
-            $shouldNotifySupport = blank(Arr::get($meta, 'support_notifications.phase_1_pass.notified_at'));
+            $shouldNotifySupport = blank(Arr::get($meta, "support_notifications.events.{$eventKey}.notified_at"));
 
             if (! $shouldSendPhaseOne && ! $shouldSendPhaseTwoCredentials && ! $shouldNotifySupport) {
                 return null;
@@ -151,8 +152,10 @@ class ChallengeLifecycleMailer
             $sentAt = now();
 
             if ($shouldNotifySupport) {
-                Arr::set($meta, 'support_notifications.phase_1_pass.notified_at', $sentAt->toIso8601String());
-                Arr::set($meta, 'support_notifications.phase_1_pass.completed_phase', 'Phase 1');
+                Arr::set($meta, "support_notifications.events.{$eventKey}.notified_at", $sentAt->toIso8601String());
+                Arr::set($meta, "support_notifications.events.{$eventKey}.final_status", 'phase_passed');
+                Arr::set($meta, "support_notifications.events.{$eventKey}.reason", 'phase_passed');
+                Arr::set($meta, "support_notifications.events.{$eventKey}.phase", 'Phase 1');
             }
 
             $freshAccount->forceFill(array_filter([
@@ -318,11 +321,12 @@ class ChallengeLifecycleMailer
             'account_reference' => (string) ($account->account_reference ?: 'N/A'),
             'account_id' => (string) $account->id,
             'challenge_type' => $this->challengeTypeLabel($account),
-            'completed_phase' => $completedPhase,
-            'current_status' => $this->humanize((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
-            'pass_timestamp' => $sentAt->format('Y-m-d H:i:s'),
+            'phase' => $completedPhase,
+            'final_status' => 'Phase Passed',
+            'reason' => 'Phase Passed',
+            'finalized_at' => $sentAt->format('Y-m-d H:i:s'),
             'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
-            'mt5_deactivation_status' => (string) (data_get($account->meta, 'mt5_deactivation.events.phase_1_pass.status') ?: 'requested'),
+            'mt5_deactivation_status' => (string) str((string) (data_get($account->meta, 'mt5_deactivation.current.status') ?: $account->platform_status ?: 'pending'))->replace('_', ' ')->title(),
         ];
     }
 

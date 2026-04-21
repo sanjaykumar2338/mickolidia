@@ -233,6 +233,7 @@ return [
     'support' => [
         'email' => env('SUPPORT_EMAIL', 'support@wolforix.com'),
         'business_hours' => env('SUPPORT_BUSINESS_HOURS', 'Mon-Fri, 09:00-18:00 UTC'),
+        'notify_failures' => filter_var(env('SUPPORT_NOTIFY_ON_CHALLENGE_FAILURE', false), FILTER_VALIDATE_BOOL),
     ],
 
     'social_links' => [

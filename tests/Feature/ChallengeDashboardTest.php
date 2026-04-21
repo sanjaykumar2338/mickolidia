@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -223,8 +224,8 @@ class ChallengeDashboardTest extends TestCase
             ->assertJsonPath('final_state_locked', true)
             ->assertJsonPath('close_positions_required', true)
             ->assertJsonPath('mt5_deactivation_required', true)
-            ->assertJsonPath('mt5_deactivation_event', 'challenge_pass')
-            ->assertJsonPath('mt5_deactivation_status', 'pending_ea_ack')
+            ->assertJsonPath('mt5_deactivation_event', 'pass_finalized')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
             ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
@@ -232,9 +233,9 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('passed', $account->challenge_status);
         $this->assertTrue((bool) $account->trading_blocked);
         $this->assertTrue((bool) $account->final_state_locked);
-        $this->assertSame('disabled_pending_ack', $account->platform_status);
-        $this->assertSame('pending_ea_ack', data_get($account->meta, 'mt5_deactivation.events.challenge_pass.status'));
-        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.challenge_pass.notified_at'));
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.pass_finalized.status'));
+        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.events.pass_finalized.notified_at'));
         $this->assertNotNull($account->passed_at);
         $this->assertNotNull($account->passed_email_sent_at);
         $this->assertNotNull($account->funded_pass_email_sent_at);
@@ -257,8 +258,9 @@ class ChallengeDashboardTest extends TestCase
             return $mail->hasTo((string) config('wolforix.support.email'))
                 && $mail->details['account_reference'] === $account->account_reference
                 && $mail->details['client_email'] === $account->user->email
-                && $mail->details['completed_phase'] === 'Single Phase'
-                && $mail->details['mt5_deactivation_status'] === 'pending_ea_ack';
+                && $mail->details['phase'] === 'Single Phase'
+                && $mail->details['reason'] === 'Passed'
+                && $mail->details['mt5_deactivation_status'] === 'Disable Pending Ack';
         });
 
         $this->assertSame('https://de.trustpilot.com/review/wolforix.com', config('wolforix.review_requests.trustpilot.url'));
@@ -302,13 +304,13 @@ class ChallengeDashboardTest extends TestCase
         $account->refresh();
 
         $this->assertSame('disabled', $account->platform_status);
-        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.challenge_pass.status'));
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.pass_finalized.status'));
 
         $this->actingAs($account->user)
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Challenge passed')
-            ->assertSee('MT5 access locked')
+            ->assertSee('MT5 disabled')
             ->assertSee('MT5 disable status')
             ->assertSee('Disabled');
 
@@ -365,7 +367,10 @@ class ChallengeDashboardTest extends TestCase
             ->assertJsonPath('trading_blocked', true)
             ->assertJsonPath('final_state_locked', true)
             ->assertJsonPath('close_positions_required', true)
-            ->assertJsonPath('ea_action', 'close_all_positions_and_block_trading');
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('mt5_deactivation_event', 'fail_daily_loss_breached')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
 
@@ -373,10 +378,13 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('daily_loss_breached', $account->failure_reason);
         $this->assertTrue((bool) $account->trading_blocked);
         $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
         $this->assertNotNull($account->failed_at);
         $this->assertNotNull($account->failed_email_sent_at);
         Mail::assertSent(ChallengeFailedMail::class, 1);
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
+        Mail::assertNotSent(ChallengePhasePassSupportNotificationMail::class);
         $this->assertNotEmpty(data_get($account->meta, 'trustpilot_review.initial_requested_at'));
     }
 
@@ -392,7 +400,98 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('max_drawdown_breached', $account->failure_reason);
         $this->assertTrue((bool) $account->trading_blocked);
         $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_max_drawdown_breached.status'));
         Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_failed_account_reaches_disabled_after_acknowledgement(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:20', 10000, 9500, [
+            'trade_count' => 0,
+            'trading_blocked_ack' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('MT5 disable status')
+            ->assertSee('Disabled');
+    }
+
+    public function test_failed_account_support_notification_can_be_enabled_without_duplicates(): void
+    {
+        config()->set('wolforix.support.notify_failures', true);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])->assertOk();
+
+        Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, function (ChallengePhasePassSupportNotificationMail $mail) use ($account): bool {
+            return $mail->hasTo((string) config('wolforix.support.email'))
+                && $mail->details['account_reference'] === $account->account_reference
+                && $mail->details['final_status'] === 'Failed'
+                && $mail->details['reason'] === 'Daily loss limit'
+                && $mail->details['mt5_deactivation_status'] === 'Disable Pending Ack';
+        });
+
+        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])->assertOk();
+
+        Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, 1);
+    }
+
+    public function test_configured_mt5_deactivation_bridge_is_called_for_final_pass(): void
+    {
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+        config()->set('services.mt5_deactivation.token', 'bridge-secret');
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10400, 10380, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-06 09:00:00', 10800, 10780, ['trade_count' => 1])->assertOk();
+        $this->pushMetrics($account, '2026-04-07 09:00:00', 11050, 11020, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'passed')
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.pass_finalized.status'));
+
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request->hasHeader('Authorization', 'Bearer bridge-secret')
+                && $request['action'] === 'close_all_positions_and_disable_account'
+                && $request['event'] === 'pass_finalized'
+                && $request['account_reference'] === $account->account_reference
+                && $request['final_status'] === 'passed';
+        });
     }
 
     public function test_final_state_emails_and_fail_actions_are_idempotent_on_repeated_sync(): void
@@ -401,22 +500,31 @@ class ChallengeDashboardTest extends TestCase
 
         $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
             ->assertOk()
-            ->assertJsonPath('ea_action', 'close_all_positions_and_block_trading');
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
         $failedAt = $account->failed_at?->toDateTimeString();
         $failedEmailSentAt = $account->failed_email_sent_at?->toDateTimeString();
+        $disableRequestedAt = (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at');
+        $lockedBalance = (string) $account->balance;
+        $lockedEquity = (string) $account->equity;
 
         $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])
             ->assertOk()
             ->assertJsonPath('challenge_status', 'failed')
             ->assertJsonPath('trading_blocked', true)
-            ->assertJsonPath('close_positions_required', true);
+            ->assertJsonPath('close_positions_required', true)
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('mt5_deactivation_event', 'fail_daily_loss_breached')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
 
         $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
         $this->assertSame($failedEmailSentAt, $account->failed_email_sent_at?->toDateTimeString());
+        $this->assertSame($disableRequestedAt, (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at'));
+        $this->assertSame($lockedBalance, (string) $account->balance);
+        $this->assertSame($lockedEquity, (string) $account->equity);
         Mail::assertSent(ChallengeFailedMail::class, 1);
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
     }
@@ -1262,17 +1370,17 @@ class ChallengeDashboardTest extends TestCase
             ->assertJsonPath('phase_index', 2)
             ->assertJsonPath('close_positions_required', true)
             ->assertJsonPath('mt5_deactivation_required', true)
-            ->assertJsonPath('mt5_deactivation_event', 'phase_1_pass')
-            ->assertJsonPath('mt5_deactivation_status', 'pending_ea_ack')
+            ->assertJsonPath('mt5_deactivation_event', 'phase_1_pass_finalized')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
             ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
 
         $this->assertSame('active', $account->challenge_status);
         $this->assertSame(2, (int) $account->phase_index);
-        $this->assertSame('disabled_pending_ack', $account->platform_status);
-        $this->assertSame('pending_ea_ack', data_get($account->meta, 'mt5_deactivation.events.phase_1_pass.status'));
-        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.phase_1_pass.notified_at'));
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.phase_1_pass_finalized.status'));
+        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.events.phase_1_pass_finalized.notified_at'));
         $this->assertSame('phase_2', (string) $account->account_phase);
         $this->assertSame(0, (int) $account->trading_days_completed);
         $this->assertSame('10000.00', (string) $account->phase_starting_balance);
@@ -1287,8 +1395,9 @@ class ChallengeDashboardTest extends TestCase
         Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, function (ChallengePhasePassSupportNotificationMail $mail) use ($account): bool {
             return $mail->hasTo((string) config('wolforix.support.email'))
                 && $mail->details['account_reference'] === $account->account_reference
-                && $mail->details['completed_phase'] === 'Phase 1'
-                && $mail->details['mt5_deactivation_status'] === 'pending_ea_ack';
+                && $mail->details['phase'] === 'Phase 1'
+                && $mail->details['reason'] === 'Phase Passed'
+                && $mail->details['mt5_deactivation_status'] === 'Disable Pending Ack';
         });
 
         $phaseOneSentAt = $account->phase_one_pass_email_sent_at?->toDateTimeString();
@@ -1301,7 +1410,7 @@ class ChallengeDashboardTest extends TestCase
 
         $account->refresh();
 
-        $this->assertSame('disabled_pending_ack', $account->platform_status);
+        $this->assertSame('disable_pending_ack', $account->platform_status);
         $this->assertSame($phaseOneSentAt, $account->phase_one_pass_email_sent_at?->toDateTimeString());
         $this->assertSame($phaseTwoCredentialsSentAt, $account->phase_two_credentials_email_sent_at?->toDateTimeString());
         Mail::assertSent(PhaseOnePassedMail::class, 1);
@@ -1326,16 +1435,16 @@ class ChallengeDashboardTest extends TestCase
             ->assertJsonPath('challenge_status', 'passed')
             ->assertJsonPath('trading_blocked', true)
             ->assertJsonPath('mt5_deactivation_required', true)
-            ->assertJsonPath('mt5_deactivation_event', 'challenge_pass')
-            ->assertJsonPath('mt5_deactivation_status', 'pending_ea_ack')
+            ->assertJsonPath('mt5_deactivation_event', 'pass_finalized')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
             ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
 
         $account->refresh();
 
         $this->assertSame('passed', $account->challenge_status);
         $this->assertSame(2, (int) $account->phase_index);
-        $this->assertSame('pending_ea_ack', data_get($account->meta, 'mt5_deactivation.events.challenge_pass.status'));
-        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.challenge_pass.notified_at'));
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.pass_finalized.status'));
+        $this->assertNotEmpty(data_get($account->meta, 'support_notifications.events.pass_finalized.notified_at'));
         $this->assertNotNull($account->passed_at);
         Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, 2);
     }

@@ -36,20 +36,42 @@ class ChallengeFinalStateMailer
                 return null;
             }
 
-            if ($freshAccount->challenge_status === 'failed' && $freshAccount->failed_email_sent_at === null) {
-                $freshAccount->forceFill(['failed_email_sent_at' => now()])->save();
+            $meta = is_array($freshAccount->meta) ? $freshAccount->meta : [];
+            $eventKey = $this->finalStateEventKey($freshAccount);
+
+            if ($freshAccount->challenge_status === 'failed') {
+                $shouldSendClient = $freshAccount->failed_email_sent_at === null;
+                $shouldNotifySupport = $this->shouldNotifySupportForFailure($freshAccount)
+                    && $this->supportNotificationMissing($meta, $eventKey);
+
+                if (! $shouldSendClient && ! $shouldNotifySupport) {
+                    return null;
+                }
+
+                $sentAt = now();
+
+                if ($shouldNotifySupport) {
+                    $this->markSupportNotification($meta, $eventKey, $sentAt, $freshAccount);
+                }
+
+                $freshAccount->forceFill(array_filter([
+                    'failed_email_sent_at' => $shouldSendClient ? $sentAt : null,
+                    'meta' => ($shouldNotifySupport || $meta !== ($freshAccount->meta ?? [])) ? $meta : null,
+                ], static fn (mixed $value): bool => $value !== null))->save();
 
                 return [
                     'type' => 'failed',
                     'user' => $freshAccount->user,
                     'account' => $freshAccount->fresh(['user', 'challengePlan', 'challengePurchase']) ?? $freshAccount,
                     'details' => $this->failedDetails($freshAccount),
+                    'send_client' => $shouldSendClient,
+                    'send_support' => $shouldNotifySupport,
+                    'support_details' => $this->supportDetails($freshAccount, $sentAt),
                 ];
             }
 
-            $meta = is_array($freshAccount->meta) ? $freshAccount->meta : [];
-            $supportNotifiedAt = Arr::get($meta, 'support_notifications.challenge_pass.notified_at');
-            $shouldNotifySupport = $freshAccount->challenge_status === 'passed' && blank($supportNotifiedAt);
+            $shouldNotifySupport = $freshAccount->challenge_status === 'passed'
+                && $this->supportNotificationMissing($meta, $eventKey);
             $fundedPassAlreadySent = $freshAccount->funded_pass_email_sent_at !== null
                 || $freshAccount->passed_email_sent_at !== null;
 
@@ -70,8 +92,7 @@ class ChallengeFinalStateMailer
                 $sentAt = now();
 
                 if ($shouldNotifySupport) {
-                    Arr::set($meta, 'support_notifications.challenge_pass.notified_at', $sentAt->toIso8601String());
-                    Arr::set($meta, 'support_notifications.challenge_pass.completed_phase', $this->completedPhaseLabel($freshAccount));
+                    $this->markSupportNotification($meta, $eventKey, $sentAt, $freshAccount);
                 }
 
                 $freshAccount->forceFill(array_filter([
@@ -88,7 +109,7 @@ class ChallengeFinalStateMailer
                     'certificate' => $certificate,
                     'send_client' => ! $fundedPassAlreadySent,
                     'send_support' => $shouldNotifySupport,
-                    'support_details' => $this->supportDetails($freshAccount, $sentAt, $this->completedPhaseLabel($freshAccount)),
+                    'support_details' => $this->supportDetails($freshAccount, $sentAt),
                 ];
             }
 
@@ -100,12 +121,22 @@ class ChallengeFinalStateMailer
         }
 
         if ($mailPayload['type'] === 'failed') {
-            Mail::to($mailPayload['user']->email)->send(new ChallengeFailedMail(
-                user: $mailPayload['user'],
-                tradingAccount: $mailPayload['account'],
-                details: $mailPayload['details'],
-            ));
-            $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
+            if ($mailPayload['send_client'] ?? true) {
+                Mail::to($mailPayload['user']->email)->send(new ChallengeFailedMail(
+                    user: $mailPayload['user'],
+                    tradingAccount: $mailPayload['account'],
+                    details: $mailPayload['details'],
+                ));
+                $this->reviewRequestMailer->sendInitialIfNeeded($mailPayload['account']);
+            }
+
+            if ($mailPayload['send_support'] ?? false) {
+                Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
+                    user: $mailPayload['user'],
+                    tradingAccount: $mailPayload['account'],
+                    details: $mailPayload['support_details'],
+                ));
+            }
 
             return;
         }
@@ -173,9 +204,12 @@ class ChallengeFinalStateMailer
     /**
      * @return array<string, string>
      */
-    private function supportDetails(TradingAccount $account, \DateTimeInterface $sentAt, string $completedPhase): array
+    private function supportDetails(TradingAccount $account, \DateTimeInterface $sentAt): array
     {
         $user = $account->user;
+        $timestamp = $account->challenge_status === 'failed'
+            ? (optional($account->failed_at)->toDateTimeString() ?: $sentAt->format('Y-m-d H:i:s'))
+            : (optional($account->passed_at)->toDateTimeString() ?: $sentAt->format('Y-m-d H:i:s'));
 
         return [
             'client_name' => (string) ($user?->name ?: 'Trader'),
@@ -183,11 +217,14 @@ class ChallengeFinalStateMailer
             'account_reference' => (string) ($account->account_reference ?: 'N/A'),
             'account_id' => (string) $account->id,
             'challenge_type' => $this->challengeTypeLabel($account),
-            'completed_phase' => $completedPhase,
-            'current_status' => $this->reasonLabel((string) ($account->challenge_status ?: $account->account_status ?: 'passed')),
-            'pass_timestamp' => optional($account->passed_at)->toDateTimeString() ?: $sentAt->format('Y-m-d H:i:s'),
+            'phase' => $this->completedPhaseLabel($account),
+            'final_status' => $this->reasonLabel((string) ($account->challenge_status ?: $account->account_status ?: 'locked')),
+            'reason' => $account->challenge_status === 'failed'
+                ? $this->reasonLabel((string) ($account->failure_reason ?: 'rule_violation'))
+                : __('Passed'),
+            'finalized_at' => $timestamp,
             'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
-            'mt5_deactivation_status' => (string) (data_get($account->meta, 'mt5_deactivation.events.challenge_pass.status') ?: 'requested'),
+            'mt5_deactivation_status' => $this->mt5DisableStatus($account),
         ];
     }
 
@@ -223,6 +260,57 @@ class ChallengeFinalStateMailer
         }
 
         return (int) $account->phase_index > 1 ? 'Phase 2' : 'Phase 1';
+    }
+
+    private function finalStateEventKey(TradingAccount $account): string
+    {
+        $currentEventKey = (string) data_get($account->meta, 'mt5_deactivation.current_event_key', '');
+
+        if ($currentEventKey !== '') {
+            return $currentEventKey;
+        }
+
+        if ($account->challenge_status === 'failed') {
+            $reason = (string) ($account->failure_reason ?: 'rule_violation');
+
+            return 'fail_'.str($reason)->slug('_');
+        }
+
+        return 'pass_finalized';
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     */
+    private function supportNotificationMissing(array $meta, string $eventKey): bool
+    {
+        return blank(Arr::get($meta, "support_notifications.events.{$eventKey}.notified_at"));
+    }
+
+    /**
+     * @param  array<string, mixed>  $meta
+     */
+    private function markSupportNotification(array &$meta, string $eventKey, \DateTimeInterface $sentAt, TradingAccount $account): void
+    {
+        Arr::set($meta, "support_notifications.events.{$eventKey}.notified_at", $sentAt->format(\DateTimeInterface::ATOM));
+        Arr::set($meta, "support_notifications.events.{$eventKey}.final_status", (string) ($account->challenge_status ?: $account->account_status ?: 'locked'));
+        Arr::set($meta, "support_notifications.events.{$eventKey}.reason", (string) ($account->failure_reason ?: ($account->challenge_status === 'passed' ? 'passed' : 'final_state')));
+        Arr::set($meta, "support_notifications.events.{$eventKey}.phase", $this->completedPhaseLabel($account));
+    }
+
+    private function shouldNotifySupportForFailure(TradingAccount $account): bool
+    {
+        return (bool) config('wolforix.support.notify_failures', false)
+            && $account->challenge_status === 'failed';
+    }
+
+    private function mt5DisableStatus(TradingAccount $account): string
+    {
+        $status = (string) data_get($account->meta, 'mt5_deactivation.current.status', '');
+
+        return $status !== ''
+            ? str($status)->replace('_', ' ')->title()->toString()
+            : str((string) ($account->platform_status ?: 'pending'))->replace('_', ' ')->title()->toString();
     }
 
     private function money(float $value): string

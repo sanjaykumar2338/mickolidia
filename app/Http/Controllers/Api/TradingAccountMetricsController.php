@@ -229,16 +229,11 @@ class TradingAccountMetricsController extends Controller
 
     private function shouldRequestPositionClosure(TradingAccount $account): bool
     {
-        return $account->challenge_status === 'failed'
-            || $this->mt5DeactivationRequired($account);
+        return $this->mt5DeactivationRequired($account);
     }
 
     private function eaAction(TradingAccount $account): string
     {
-        if ($account->challenge_status === 'failed') {
-            return 'close_all_positions_and_block_trading';
-        }
-
         if ($this->mt5DeactivationRequired($account)) {
             return 'close_all_positions_and_disable_account';
         }
@@ -259,11 +254,22 @@ class TradingAccountMetricsController extends Controller
             return null;
         }
 
+        $current = data_get($account->meta, 'mt5_deactivation.current');
+
+        if (is_array($current)) {
+            $status = (string) ($current['status'] ?? '');
+
+            if ($status !== '' && ($includeDisabled || $status !== 'disabled')) {
+                return [
+                    'event' => (string) ($current['event'] ?? ''),
+                    'status' => $status,
+                ];
+            }
+        }
+
         $events = (array) data_get($account->meta, 'mt5_deactivation.events', []);
 
-        foreach (['challenge_pass', 'phase_1_pass'] as $eventKey) {
-            $event = $events[$eventKey] ?? null;
-
+        foreach ($events as $eventKey => $event) {
             if (! is_array($event)) {
                 continue;
             }
@@ -275,7 +281,7 @@ class TradingAccountMetricsController extends Controller
             }
 
             return [
-                'event' => $eventKey,
+                'event' => (string) $eventKey,
                 'status' => $status,
             ];
         }
