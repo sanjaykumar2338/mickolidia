@@ -3888,10 +3888,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const activateIntro = ({
             userInitiated = false,
             force = false,
+            focusInputAfterRender = true,
         } = {}) => {
             if (!force && (hasConversation || hasPlayedIntro) && currentAnswerText.trim() !== '') {
                 revealSuggestionPrompts();
-                focusInput();
+                if (focusInputAfterRender) {
+                    focusInput();
+                }
                 return;
             }
 
@@ -3902,7 +3905,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 userInitiated,
                 statusMessage: status?.dataset.readyMessage ?? status?.textContent ?? '',
             });
-            focusInput();
+            if (focusInputAfterRender) {
+                focusInput();
+            }
         };
 
         let cleanupVoiceSession = () => {
@@ -4168,13 +4173,14 @@ document.addEventListener('DOMContentLoaded', () => {
         voiceAssistant.__wolfiController = {
             activateIntro,
             focusInput,
-            askQuestion: (question, { userInitiated = true } = {}) => {
+            askQuestion: (question, { userInitiated = true, focusInputAfterRender = true } = {}) => {
                 const nextQuestion = String(question ?? '').trim();
 
                 if (nextQuestion === '' || !(input instanceof HTMLInputElement)) {
                     activateIntro({
                         userInitiated,
                         force: true,
+                        focusInputAfterRender,
                     });
                     return;
                 }
@@ -4183,7 +4189,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderAnswer(nextQuestion, {
                     userInitiated,
                 });
-                focusInput();
+                if (focusInputAfterRender) {
+                    focusInput();
+                }
             },
             cleanup: () => {
                 cancelSpokenReply();
@@ -4431,11 +4439,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (triggerQuestion !== '') {
                     modalController?.askQuestion?.(triggerQuestion, {
                         userInitiated,
+                        focusInputAfterRender: false,
                     });
                 } else {
                     modalController?.activateIntro?.({
                         userInitiated,
                         force: true,
+                        focusInputAfterRender: false,
                     });
                 }
                 focusWolfiModalTopControl();
@@ -4481,11 +4491,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (triggerQuestion !== '') {
                     modalController?.askQuestion?.(triggerQuestion, {
                         userInitiated,
+                        focusInputAfterRender: false,
                     });
                 } else {
                     modalController?.activateIntro({
                         userInitiated,
                         force: true,
+                        focusInputAfterRender: false,
                     });
                 }
                 focusWolfiModalTopControl();
