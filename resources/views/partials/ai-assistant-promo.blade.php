@@ -3,6 +3,7 @@
     $assistantCopy = trans('site.ai_assistant');
     $supportEmail = config('wolforix.support.email');
     $homepageWolfiImage = asset((string) config('wolfi.images.homepage'));
+    $homepageWolfiRightImage = asset((string) config('wolfi.images.homepage_right', config('wolfi.images.homepage')));
     $isHomepage = request()->routeIs('home');
 @endphp
 
@@ -73,7 +74,7 @@
                                 <div class="assistant-home-visual-glow" aria-hidden="true"></div>
                                 <div class="assistant-home-visual-image-wrap">
                                     <img
-                                        src="{{ $homepageWolfiImage }}"
+                                        src="{{ $homepageWolfiRightImage }}"
                                         alt="{{ __('site.ai_assistant.home_visual_alt') }}"
                                         class="assistant-home-visual-image"
                                         loading="lazy"
