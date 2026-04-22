@@ -2,7 +2,7 @@
 
 $images = [
     'homepage' => 'wolfy-image/Homepage.webp',
-    'dashboard' => 'wolfy-image/Dashboard.jpeg',
+    'dashboard' => 'wolfy-image/dashboard-2.webp',
     'talk' => 'wolfy-image/Talk with Wolfi.jpeg',
     'shortcut' => 'wolfy-image/wolfy-short.jpeg',
 ];
