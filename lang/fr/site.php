@@ -30,6 +30,8 @@ return array_replace_recursive($en, [
         'eyebrow' => 'Assistant Wolfi',
         'title' => 'WOLFI',
         'description' => 'Laissez Wolfi vous guider. Votre assistant expert pour les règles, les payouts, l’accès MT5 et la bonne prochaine étape sur la plateforme.',
+        'home_headline' => 'Laissez Wolfi vous guider.',
+        'home_description' => 'Votre assistant expert pour les règles, les payouts, l’accès MT5 et la bonne prochaine étape sur la plateforme.',
         'multi_language' => 'Disponible 24/7',
         'start_chat' => 'Parlez avec Wolfi',
         'floating_label' => 'Ouvrir Wolfi',
@@ -47,6 +49,7 @@ return array_replace_recursive($en, [
         'visual_response_hint' => 'Règles et guidage compte en temps réel.',
         'visual_cta_hint' => 'Demandez à Wolfi avant votre prochain trade.',
         'visual_alt' => 'Illustration lumineuse de la mascotte Wolfi',
+        'home_visual_alt' => 'Aperçu validé de la homepage Wolfi affiché dans un format mobile',
         'example_questions' => [
             'Puis-je trader pendant les news ?',
             'Que se passe-t-il si j’atteins le drawdown maximal ?',

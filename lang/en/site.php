@@ -33,6 +33,8 @@ return [
         'eyebrow' => 'Wolfi Assistant',
         'title' => 'WOLFI',
         'description' => 'Let Wolfi guide you. Your expert assistant for rules, payouts, MT5 access, and the right next step across the platform.',
+        'home_headline' => 'Let Wolfi guide you.',
+        'home_description' => 'Your expert assistant for rules, payouts, MT5 access, and the right next step across the platform.',
         'multi_language' => '24/7 available',
         'start_chat' => 'Talk with Wolfi',
         'floating_label' => 'Open Wolfi',
@@ -50,6 +52,7 @@ return [
         'visual_response_hint' => 'Real-time rules and account guidance.',
         'visual_cta_hint' => 'Ask Wolfi before your next trade.',
         'visual_alt' => 'Glowing illustration of the Wolfi mascot',
+        'home_visual_alt' => 'Approved Wolfi homepage preview shown on a mobile-style screen',
         'example_questions' => [
             'Can I trade during news?',
             'What happens if I hit max drawdown?',

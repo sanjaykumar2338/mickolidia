@@ -33,6 +33,8 @@ return [
         'eyebrow' => 'Wolfi Assistent',
         'title' => 'WOLFI',
         'description' => 'Lass dich von Wolfi leiten. Dein Experten-Assistent für Regeln, Auszahlungen, MT5-Zugang und den richtigen nächsten Schritt auf der Plattform.',
+        'home_headline' => 'Lass dich von Wolfi leiten.',
+        'home_description' => 'Dein Experten-Assistent für Regeln, Auszahlungen, MT5-Zugang und den richtigen nächsten Schritt auf der Plattform.',
         'multi_language' => '24/7 verfügbar',
         'start_chat' => 'Sprich mit Wolfi',
         'floating_label' => 'Wolfi öffnen',
@@ -50,6 +52,7 @@ return [
         'visual_response_hint' => 'Regeln und Kontohinweise in Echtzeit.',
         'visual_cta_hint' => 'Frage Wolfi vor deinem nächsten Trade.',
         'visual_alt' => 'Leuchtende Illustration des Wolfi-Maskottchens',
+        'home_visual_alt' => 'Freigegebene Wolfi-Homepage-Vorschau in einer mobilen Darstellung',
         'example_questions' => [
             'Kann ich während News traden?',
             'Was passiert, wenn ich den maximalen Drawdown erreiche?',

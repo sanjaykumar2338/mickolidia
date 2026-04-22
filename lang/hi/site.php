@@ -30,6 +30,8 @@ return array_replace_recursive($en, [
         'eyebrow' => 'वुल्फी असिस्टेंट',
         'title' => 'WOLFI',
         'description' => 'Wolfi को आपका guide बनने दें। Rules, payouts, MT5 access और platform के सही next step के लिए यह आपका expert assistant है।',
+        'home_headline' => 'Wolfi को आपका guide बनने दें।',
+        'home_description' => 'Rules, payouts, MT5 access और platform के सही next step के लिए यह आपका expert assistant है।',
         'multi_language' => '24/7 available',
         'start_chat' => 'Wolfi से बात करें',
         'floating_label' => 'वुल्फी खोलें',
@@ -47,6 +49,7 @@ return array_replace_recursive($en, [
         'visual_response_hint' => 'नियम और अकाउंट गाइडेंस रियल टाइम में।',
         'visual_cta_hint' => 'अगले ट्रेड से पहले Wolfi से पूछें।',
         'visual_alt' => 'वुल्फी मैस्कॉट की चमकदार इलस्ट्रेशन',
+        'home_visual_alt' => 'मोबाइल-स्टाइल स्क्रीन पर दिखाया गया स्वीकृत Wolfi homepage preview',
         'example_questions' => [
             'क्या मैं न्यूज़ के दौरान ट्रेड कर सकता हूँ?',
             'अगर मैं मैक्स ड्रॉडाउन हिट कर दूँ तो क्या होगा?',
