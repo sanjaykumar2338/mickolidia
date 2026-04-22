@@ -65,7 +65,34 @@
         ],
     ])
 
-    <p style="margin:0; color:#d5deea; font-size:14px; line-height:1.8;">
-        We will continue with challenge-account provisioning and the next onboarding steps. If your MT5 credentials are already available, you will receive them in a follow-up email with the same Wolforix format.
-    </p>
+    @if (is_array($accountAccessDetails) && $accountAccessDetails !== [])
+        <div style="height:22px; line-height:22px;">&nbsp;</div>
+
+        <p style="margin:0; color:#f4b74a; font-size:12px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;">Account Access Details</p>
+        <p style="margin:12px 0 0 0; color:#ffffff; font-size:24px; font-weight:700; line-height:1.3;">
+            {{ $credentialsReady ? 'Your login details are included below' : 'Your account record is created and the access section is ready below' }}
+        </p>
+
+        @include('emails.partials.details-table', [
+            'rows' => array_values(array_filter([
+                ['label' => 'Platform', 'value' => (string) ($accountAccessDetails['platform'] ?? 'Trading Account')],
+                ['label' => 'Login ID', 'value' => (string) ($accountAccessDetails['login_id'] ?? 'Pending provisioning')],
+                ['label' => 'Password', 'value' => (string) ($accountAccessDetails['password'] ?? 'Pending provisioning')],
+                ['label' => 'Server', 'value' => (string) ($accountAccessDetails['server'] ?? 'Pending provisioning')],
+                ['label' => 'Account Type', 'value' => (string) ($accountAccessDetails['account_type'] ?? '')],
+                ['label' => 'Account Size', 'value' => (string) ($accountAccessDetails['account_size'] ?? '')],
+                $accountReference ? ['label' => 'Wolforix Reference', 'value' => (string) $accountReference] : null,
+            ])),
+        ])
+
+        <p style="margin:0; color:#d5deea; font-size:14px; line-height:1.8;">
+            {{ $credentialsReady
+                ? 'Use these account login details to access your purchased challenge account immediately, and keep them secure.'
+                : 'If any login field still shows pending or provisional information, the final trading credentials will follow automatically as soon as provisioning is completed.' }}
+        </p>
+    @else
+        <p style="margin:0; color:#d5deea; font-size:14px; line-height:1.8;">
+            We will continue with challenge-account provisioning and the next onboarding steps. Your account access details will be delivered automatically as soon as they are available.
+        </p>
+    @endif
 </x-emails.layout>

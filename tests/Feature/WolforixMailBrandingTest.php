@@ -13,6 +13,7 @@ use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\WelcomeMail;
+use App\Models\ChallengePurchase;
 use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\Order;
 use App\Models\TradingAccount;
@@ -131,5 +132,56 @@ class WolforixMailBrandingTest extends TestCase
         $this->assertStringContainsString($supportEmail, $passwordResetHtml, WolforixResetPasswordNotification::class);
         $this->assertSame(['noreply@wolforix.com', 'Wolforix Notifications'], $passwordResetMail->from);
         $this->assertEmpty($passwordResetMail->replyTo);
+    }
+
+    public function test_purchase_confirmation_mail_renders_account_login_details_when_available(): void
+    {
+        $order = new Order([
+            'order_number' => 'WFX-ORD-TEST-LOGIN-001',
+            'email' => 'mail-trader@example.com',
+            'full_name' => 'Mail Trader',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'usd',
+            'final_price' => 99,
+            'payment_provider' => 'stripe',
+        ]);
+
+        $purchase = new ChallengePurchase([
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'usd',
+        ]);
+
+        $account = new TradingAccount([
+            'account_reference' => 'WFX-MT5-LOGIN-001',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => '105381073',
+            'platform_account_id' => '105381073',
+            'platform_environment' => 'demo',
+            'meta' => [
+                'credentials' => [
+                    'server' => 'Wolforix-Demo',
+                    'password' => 'secret-pass',
+                ],
+            ],
+        ]);
+
+        $purchase->setRelation('tradingAccounts', collect([$account]));
+        $order->setRelation('challengePurchase', $purchase);
+
+        $mail = new ChallengePurchaseConfirmationMail($order);
+        $html = $mail->render();
+
+        $this->assertTrue($mail->credentialsReady);
+        $this->assertSame('WFX-MT5-LOGIN-001', $mail->accountReference);
+        $this->assertSame('105381073', $mail->accountAccessDetails['login_id']);
+        $this->assertStringContainsString('Account Access Details', $html);
+        $this->assertStringContainsString('105381073', $html);
+        $this->assertStringContainsString('Wolforix-Demo', $html);
+        $this->assertStringContainsString('secret-pass', $html);
     }
 }

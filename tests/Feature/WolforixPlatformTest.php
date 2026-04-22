@@ -1167,6 +1167,13 @@ class WolforixPlatformTest extends TestCase
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
         Mail::assertNotSent(ChallengeAccountDetailsMail::class);
 
+        $purchaseMail = new ChallengePurchaseConfirmationMail($order->fresh(['challengePurchase.tradingAccounts']) ?? $order);
+
+        $this->assertSame($account->account_reference, $purchaseMail->accountReference);
+        $this->assertIsArray($purchaseMail->accountAccessDetails);
+        $this->assertSame('cTrader', $purchaseMail->accountAccessDetails['platform']);
+        $this->assertSame('Pending provisioning', $purchaseMail->accountAccessDetails['login_id']);
+
         $this->actingAs($user)
             ->get(route('dashboard.accounts'))
             ->assertOk()
