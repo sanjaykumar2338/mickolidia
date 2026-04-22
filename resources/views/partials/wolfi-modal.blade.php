@@ -1,5 +1,6 @@
 @php
     $wolfiFabImage = asset((string) config('wolfi.images.shortcut'));
+    $wolfiAvatarVideo = asset('2136dfb8-85de-461a-9b2b-0d60c39ad04e.mp4');
 @endphp
 
 <div
@@ -44,6 +45,9 @@
                     <div class="wolfi-live-avatar-shell wolfi-avatar-shell">
                         <span class="wolfi-live-avatar-ring wolfi-live-avatar-ring-outer" aria-hidden="true"></span>
                         <span class="wolfi-live-avatar-ring wolfi-live-avatar-ring-inner" aria-hidden="true"></span>
+                        <span class="wolfi-live-avatar-aura" aria-hidden="true"></span>
+                        <span class="wolfi-live-avatar-chest-glow" aria-hidden="true"></span>
+                        <span class="wolfi-live-avatar-mouth-signal" aria-hidden="true"></span>
                         <img
                             src="{{ $wolfiFabImage }}"
                             alt="{{ __('site.contact.voice_title') }}"
@@ -51,6 +55,20 @@
                             loading="eager"
                             decoding="async"
                         >
+                        <video
+                            data-wolfi-avatar-video
+                            class="wolfi-live-avatar-video wolfi-avatar-video"
+                            muted
+                            loop
+                            playsinline
+                            preload="metadata"
+                            poster="{{ $wolfiFabImage }}"
+                            aria-hidden="true"
+                            disablepictureinpicture
+                        >
+                            <source src="{{ $wolfiAvatarVideo }}" type="video/mp4">
+                        </video>
+                        <span class="wolfi-live-avatar-scan" aria-hidden="true"></span>
                     </div>
                 </div>
 

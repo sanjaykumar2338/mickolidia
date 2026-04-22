@@ -1,6 +1,5 @@
 @php
     $assistantQuestions = trans('site.ai_assistant.example_questions');
-    $assistantCopy = trans('site.ai_assistant');
     $supportEmail = config('wolforix.support.email');
     $homepageWolfiImage = asset((string) config('wolfi.images.homepage'));
     $homepageWolfiRightImage = asset((string) config('wolfi.images.homepage_right', config('wolfi.images.homepage')));
@@ -24,19 +23,36 @@
                         <p class="assistant-home-description mx-auto mt-4 max-w-2xl lg:mx-0">
                             {{ __('site.ai_assistant.home_description') }}
                         </p>
+                    </div>
 
-                        <div class="assistant-home-availability mx-auto mt-6 inline-flex items-center gap-3 rounded-full px-4 py-2.5 lg:mx-0">
-                            <span class="assistant-home-availability-dot" aria-hidden="true"></span>
-                            <span>{{ __('site.ai_assistant.multi_language') }}</span>
-                        </div>
+                    <div class="assistant-home-visual">
+                        <div class="assistant-home-visual-stack">
+                            <div class="assistant-home-availability inline-flex items-center gap-3 rounded-full px-4 py-2.5">
+                                <span class="assistant-home-availability-dot" aria-hidden="true"></span>
+                                <span>{{ __('site.ai_assistant.multi_language') }}</span>
+                            </div>
 
-                        <div class="assistant-home-actions mt-7 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center lg:justify-start">
+                            <div class="assistant-home-visual-card">
+                                <div class="assistant-home-visual-frame">
+                                    <div class="assistant-home-visual-glow" aria-hidden="true"></div>
+                                    <div class="assistant-home-visual-image-wrap">
+                                        <img
+                                            src="{{ $homepageWolfiRightImage }}"
+                                            alt="{{ __('site.ai_assistant.home_visual_alt') }}"
+                                            class="assistant-home-visual-image"
+                                            loading="lazy"
+                                            decoding="async"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
                             <button
                                 type="button"
                                 data-wolfi-launch
                                 aria-controls="wolfi-modal"
                                 aria-expanded="false"
-                                class="assistant-home-cta assistant-home-cta-primary"
+                                class="assistant-home-cta assistant-home-cta-primary assistant-home-visual-cta"
                             >
                                 <span>{{ __('site.ai_assistant.start_chat') }}</span>
                                 <span class="assistant-home-cta-primary-icon" aria-hidden="true">
@@ -45,43 +61,6 @@
                                     </svg>
                                 </span>
                             </button>
-
-                            <button
-                                type="button"
-                                data-wolfi-launch
-                                aria-controls="wolfi-modal"
-                                aria-expanded="false"
-                                class="assistant-home-cta assistant-home-cta-secondary"
-                            >
-                                <span class="assistant-home-cta-secondary-icon" aria-hidden="true">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 9.75h9m-9 3h5.25" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.47 19.03 4.5 20.25a.38.38 0 0 1-.58-.32v-11.18A2.25 2.25 0 0 1 6.17 6.5h11.66a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25H8.2l-1.73.53Z" />
-                                    </svg>
-                                </span>
-                                <span>{{ __('site.ai_assistant.floating_cta') }}</span>
-                            </button>
-                        </div>
-
-                        <p class="assistant-home-note mx-auto mt-4 text-sm leading-7 text-slate-400 lg:mx-0">
-                            {{ data_get($assistantCopy, 'visual_cta_hint') }}
-                        </p>
-                    </div>
-
-                    <div class="assistant-home-visual">
-                        <div class="assistant-home-visual-card">
-                            <div class="assistant-home-visual-frame">
-                                <div class="assistant-home-visual-glow" aria-hidden="true"></div>
-                                <div class="assistant-home-visual-image-wrap">
-                                    <img
-                                        src="{{ $homepageWolfiRightImage }}"
-                                        alt="{{ __('site.ai_assistant.home_visual_alt') }}"
-                                        class="assistant-home-visual-image"
-                                        loading="lazy"
-                                        decoding="async"
-                                    >
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

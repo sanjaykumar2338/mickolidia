@@ -2307,6 +2307,206 @@ document.addEventListener('DOMContentLoaded', () => {
         const canUseBrowserSpeech = () => 'speechSynthesis' in window;
         const canUseServerSpeech = () => ttsAvailable && ttsEndpoint !== '';
         const canPlayVoiceReplies = () => canUseServerSpeech() || canUseBrowserSpeech();
+        let wolfiVoiceLevel = 0;
+        let wolfiVoiceLevelAnimationFrameId = null;
+        let wolfiVoicePulseTimeoutId = null;
+        let wolfiVoiceFallbackIntervalId = null;
+        let wolfiVoiceAudioContext = null;
+        let wolfiVoiceAudioSource = null;
+        let wolfiVoiceAnalyser = null;
+        let wolfiVoiceUsesDynamicLevel = false;
+
+        const setWolfiVoiceLevel = (level) => {
+            const normalizedLevel = Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0));
+            wolfiVoiceLevel = normalizedLevel;
+
+            if (modalRoot instanceof HTMLElement) {
+                modalRoot.style.setProperty('--wolfi-voice-level', normalizedLevel.toFixed(3));
+            }
+        };
+
+        const clearWolfiVoicePulseTimeout = () => {
+            if (wolfiVoicePulseTimeoutId !== null) {
+                window.clearTimeout(wolfiVoicePulseTimeoutId);
+                wolfiVoicePulseTimeoutId = null;
+            }
+        };
+
+        const clearWolfiVoiceFallbackInterval = () => {
+            if (wolfiVoiceFallbackIntervalId !== null) {
+                window.clearInterval(wolfiVoiceFallbackIntervalId);
+                wolfiVoiceFallbackIntervalId = null;
+            }
+        };
+
+        const disconnectWolfiVoiceAnalyser = () => {
+            if (wolfiVoiceLevelAnimationFrameId !== null) {
+                window.cancelAnimationFrame(wolfiVoiceLevelAnimationFrameId);
+                wolfiVoiceLevelAnimationFrameId = null;
+            }
+
+            try {
+                wolfiVoiceAudioSource?.disconnect?.();
+            } catch (error) {
+                // Ignore disconnection failures while resetting reactive playback visuals.
+            }
+
+            try {
+                wolfiVoiceAnalyser?.disconnect?.();
+            } catch (error) {
+                // Ignore analyser disconnect failures while resetting reactive playback visuals.
+            }
+
+            if (wolfiVoiceAudioContext && typeof wolfiVoiceAudioContext.close === 'function' && wolfiVoiceAudioContext.state !== 'closed') {
+                wolfiVoiceAudioContext.close().catch(() => {});
+            }
+
+            wolfiVoiceAudioContext = null;
+            wolfiVoiceAudioSource = null;
+            wolfiVoiceAnalyser = null;
+        };
+
+        const syncWolfiAmbientVoiceLevel = () => {
+            if (wolfiVoiceUsesDynamicLevel) {
+                return;
+            }
+
+            if (!(modalRoot instanceof HTMLElement) || prefersReducedMotion()) {
+                setWolfiVoiceLevel(0);
+                return;
+            }
+
+            if (isListening) {
+                setWolfiVoiceLevel(0.54);
+                return;
+            }
+
+            if (isRenderingResponse) {
+                setWolfiVoiceLevel(0.22);
+                return;
+            }
+
+            if (isSpeakingReply) {
+                setWolfiVoiceLevel(0.18);
+                return;
+            }
+
+            setWolfiVoiceLevel(0);
+        };
+
+        const stopWolfiVoiceReactivity = ({ keepAmbient = true } = {}) => {
+            clearWolfiVoicePulseTimeout();
+            clearWolfiVoiceFallbackInterval();
+            disconnectWolfiVoiceAnalyser();
+            wolfiVoiceUsesDynamicLevel = false;
+
+            if (keepAmbient) {
+                syncWolfiAmbientVoiceLevel();
+                return;
+            }
+
+            setWolfiVoiceLevel(0);
+        };
+
+        const pulseWolfiVoiceLevel = (level = 0.72, holdMs = 170) => {
+            if (prefersReducedMotion()) {
+                return;
+            }
+
+            wolfiVoiceUsesDynamicLevel = true;
+            setWolfiVoiceLevel(level);
+            clearWolfiVoicePulseTimeout();
+            wolfiVoicePulseTimeoutId = window.setTimeout(() => {
+                wolfiVoicePulseTimeoutId = null;
+                wolfiVoiceUsesDynamicLevel = false;
+                syncWolfiAmbientVoiceLevel();
+            }, holdMs);
+        };
+
+        const startWolfiSpeechFallbackPulse = () => {
+            if (prefersReducedMotion()) {
+                syncWolfiAmbientVoiceLevel();
+                return;
+            }
+
+            clearWolfiVoiceFallbackInterval();
+            clearWolfiVoicePulseTimeout();
+            wolfiVoiceUsesDynamicLevel = true;
+
+            const tick = () => {
+                setWolfiVoiceLevel(0.26 + Math.random() * 0.36);
+            };
+
+            tick();
+            wolfiVoiceFallbackIntervalId = window.setInterval(tick, 170);
+        };
+
+        const startWolfiAudioReactivity = async (audioElement) => {
+            stopWolfiVoiceReactivity({
+                keepAmbient: false,
+            });
+
+            if (!(audioElement instanceof HTMLAudioElement) || prefersReducedMotion()) {
+                startWolfiSpeechFallbackPulse();
+                return;
+            }
+
+            const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+
+            if (!(AudioContextConstructor instanceof Function)) {
+                startWolfiSpeechFallbackPulse();
+                return;
+            }
+
+            try {
+                const audioContext = new AudioContextConstructor();
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.76;
+
+                const source = audioContext.createMediaElementSource(audioElement);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+
+                if (audioContext.state === 'suspended' && typeof audioContext.resume === 'function') {
+                    await audioContext.resume();
+                }
+
+                wolfiVoiceAudioContext = audioContext;
+                wolfiVoiceAudioSource = source;
+                wolfiVoiceAnalyser = analyser;
+                wolfiVoiceUsesDynamicLevel = true;
+
+                const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+                const updateVoiceLevel = () => {
+                    if (activeReplyAudio !== audioElement || audioElement.paused || audioElement.ended) {
+                        stopWolfiVoiceReactivity();
+                        return;
+                    }
+
+                    analyser.getByteFrequencyData(frequencyData);
+
+                    let weightedEnergy = 0;
+                    const sampleCount = Math.min(frequencyData.length, 32);
+
+                    for (let index = 0; index < sampleCount; index += 1) {
+                        weightedEnergy += frequencyData[index] * (index < 10 ? 1.25 : 1);
+                    }
+
+                    const normalizedLevel = Math.min(1, (weightedEnergy / sampleCount) / 118);
+                    setWolfiVoiceLevel(0.12 + (normalizedLevel * 0.88));
+                    wolfiVoiceLevelAnimationFrameId = window.requestAnimationFrame(updateVoiceLevel);
+                };
+
+                updateVoiceLevel();
+            } catch (error) {
+                voiceDebug('wolfi voice visualization fallback', {
+                    message: error instanceof Error ? error.message : String(error),
+                });
+                startWolfiSpeechFallbackPulse();
+            }
+        };
 
         const getPreferredAssistantLocales = (query = '') => {
             const rawQuery = String(query ?? '');
@@ -2357,6 +2557,7 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceAssistant.classList.toggle('is-speaking', isSpeakingReply);
             voiceAssistant.classList.toggle('is-listening', isListening);
             voiceAssistant.classList.toggle('is-rendering', isRenderingResponse);
+            syncWolfiAmbientVoiceLevel();
 
             if (modalRoot instanceof HTMLElement) {
                 modalRoot.classList.toggle('is-speaking', isSpeakingReply);
@@ -2367,6 +2568,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         speaking: isSpeakingReply,
                         listening: isListening,
                         rendering: isRenderingResponse,
+                        voiceLevel: wolfiVoiceLevel,
                     },
                     bubbles: true,
                 }));
@@ -2827,6 +3029,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const clearReplyAudioElement = () => {
+            stopWolfiVoiceReactivity();
+
             if (activeReplyAudio instanceof HTMLAudioElement) {
                 activeReplyAudio.pause();
                 activeReplyAudio.removeAttribute('src');
@@ -2869,6 +3073,9 @@ document.addEventListener('DOMContentLoaded', () => {
             speechVoiceRequestToken += 1;
             clearPendingReplyPlayback();
             activeReplyUtterance = null;
+            stopWolfiVoiceReactivity({
+                keepAmbient: false,
+            });
             abortReplyAudioRequest();
             clearReplyAudioElement();
 
@@ -3007,6 +3214,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (activeReplyAudio !== audio) {
                         return;
                     }
+
+                    startWolfiAudioReactivity(audio);
 
                     if (status instanceof HTMLElement) {
                         status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
@@ -3165,11 +3374,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                startWolfiSpeechFallbackPulse();
+
                 if (status instanceof HTMLElement) {
                     status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
                 }
 
                 setPlayButtonState(true);
+            });
+
+            utterance.addEventListener('boundary', () => {
+                if (activeReplyUtterance !== utterance) {
+                    return;
+                }
+
+                pulseWolfiVoiceLevel(0.76, 120);
             });
 
             utterance.addEventListener('end', () => {
@@ -3179,6 +3398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 clearPendingReplyPlayback();
                 activeReplyUtterance = null;
+                stopWolfiVoiceReactivity();
                 setPlayButtonState(false, true);
 
                 if (status instanceof HTMLElement) {
@@ -3193,6 +3413,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 clearPendingReplyPlayback();
                 activeReplyUtterance = null;
+                stopWolfiVoiceReactivity();
                 setPlayButtonState(false, true);
 
                 if (status instanceof HTMLElement) {
@@ -3225,6 +3446,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (activeReplyUtterance === utterance) {
                         clearPendingReplyPlayback();
                         activeReplyUtterance = null;
+                        stopWolfiVoiceReactivity();
                         setPlayButtonState(false, true);
                     }
 
