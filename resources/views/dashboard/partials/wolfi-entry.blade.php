@@ -2,7 +2,7 @@
     $hubUrl = route('dashboard.wolfi', array_filter([
         'account' => $wolfiPanel['account_id'] ?? null,
     ]));
-    $dashboardWolfiImage = asset((string) config('wolfi.images.dashboard'));
+    $dashboardWolfiImage = asset('wolfy-image/dashboard-2.webp');
 @endphp
 
 <section class="dashboard-wolfi-entry surface-card overflow-hidden rounded-[2rem] p-5 sm:p-6">
