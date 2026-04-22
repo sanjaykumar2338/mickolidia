@@ -4201,6 +4201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wolfiModal instanceof HTMLElement) {
         const closeButtons = wolfiModal.querySelectorAll('[data-wolfi-close]');
+        const wolfiModalCard = wolfiModal.querySelector('[data-wolfi-card]');
         const modalAssistant = wolfiModal.querySelector('[data-voice-assistant]');
         const modalController = modalAssistant?.__wolfiController ?? null;
         const modalStatus = modalAssistant?.querySelector('[data-voice-status]');
@@ -4227,6 +4228,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.clearTimeout(modalHideTimeoutId);
                 modalHideTimeoutId = null;
             }
+        };
+
+        const scrollWolfiModalToTop = () => {
+            if (!(wolfiModalCard instanceof HTMLElement)) {
+                return;
+            }
+
+            if (typeof wolfiModalCard.scrollTo === 'function') {
+                wolfiModalCard.scrollTo({
+                    top: 0,
+                    behavior: 'auto',
+                });
+                return;
+            }
+
+            wolfiModalCard.scrollTop = 0;
+        };
+
+        const focusWolfiModalTopControl = () => {
+            const focusTarget = wolfiTalkControl instanceof HTMLButtonElement
+                ? wolfiTalkControl
+                : (closeButtons[0] instanceof HTMLElement ? closeButtons[0] : null);
+
+            if (!(focusTarget instanceof HTMLElement)) {
+                return;
+            }
+
+            window.requestAnimationFrame(() => {
+                try {
+                    focusTarget.focus({
+                        preventScroll: true,
+                    });
+                } catch (error) {
+                    focusTarget.focus();
+                }
+            });
         };
 
         const syncWolfiAvatarPlayback = ({
@@ -4389,6 +4426,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '';
 
             if (open && modalIsOpen) {
+                scrollWolfiModalToTop();
+
                 if (triggerQuestion !== '') {
                     modalController?.askQuestion?.(triggerQuestion, {
                         userInitiated,
@@ -4399,7 +4438,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         force: true,
                     });
                 }
-                modalController?.focusInput?.();
+                focusWolfiModalTopControl();
                 return;
             }
 
@@ -4415,6 +4454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     lastWolfiTrigger = triggerButton;
                 }
 
+                scrollWolfiModalToTop();
                 wolfiModal.classList.remove('hidden');
                 wolfiModal.classList.add('flex', 'is-mounted');
                 wolfiModal.setAttribute('aria-hidden', 'false');
@@ -4448,7 +4488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         force: true,
                     });
                 }
-                modalController?.focusInput?.();
+                focusWolfiModalTopControl();
                 return;
             }
 
