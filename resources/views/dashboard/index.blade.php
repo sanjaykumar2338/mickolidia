@@ -15,10 +15,17 @@
         ];
         $linkedAccounts = collect($accounts)->skip(1)->values();
         $latestInvoicePurchase = $purchasedChallenges->first(fn ($purchase): bool => ! empty($purchase['invoice_download_url']));
+        $paidChallenges = $purchasedChallenges->count();
     @endphp
 
     <div class="space-y-6">
-        <x-consistency-banner :title="$consistencyBanner['title']" :message="$consistencyBanner['message']" :meta="$consistencyBanner['meta']" />
+        <x-consistency-banner
+            :title="$consistencyBanner['title']"
+            :message="$consistencyBanner['message']"
+            :meta="$consistencyBanner['meta']"
+            :cta-href="$paidChallenges == 0 ? route('challenges.index') : null"
+            :cta-label="$paidChallenges == 0 ? __('Start Challenge') : null"
+        />
 
         @if ($latestInvoicePurchase)
             <section class="surface-panel rounded-[2rem] p-5 sm:p-6">

@@ -56,6 +56,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::get('/', [PublicPageController::class, 'home'])->name('home');
+Route::get('/challenges', static fn () => redirect()->to(route('home').'#plans'))->name('challenges.index');
 Route::get('/about', [PublicPageController::class, 'about'])->name('about');
 Route::get('/security', [PublicPageController::class, 'security'])->name('security');
 Route::get('/contact', [PublicPageController::class, 'contact'])->name('contact');
