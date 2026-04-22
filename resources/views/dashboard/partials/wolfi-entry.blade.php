@@ -38,10 +38,14 @@
                 <p class="max-w-3xl text-xs leading-5 text-slate-500">
                     {{ __('site.dashboard.wolfi.entry_hint') }}
                 </p>
-                <a href="{{ $hubUrl }}" class="inline-flex w-full items-center justify-center rounded-full border border-amber-300/28 bg-amber-300/14 px-5 py-3 text-sm font-semibold text-amber-50 transition hover:border-amber-200/50 hover:bg-amber-300/20 sm:w-auto sm:min-w-[12rem]">
-                    {{ __('site.dashboard.wolfi.open_hub') }}
-                </a>
+                <div class="w-full sm:w-auto sm:min-w-[22rem]">
+                    <x-talk-with-wolfi-button class="w-full" />
+                </div>
             </div>
+
+            <a href="{{ $hubUrl }}" class="mt-4 inline-flex text-sm font-semibold text-amber-100 transition hover:text-amber-50">
+                {{ __('site.dashboard.wolfi.open_hub') }}
+            </a>
         </div>
     </div>
 </section>

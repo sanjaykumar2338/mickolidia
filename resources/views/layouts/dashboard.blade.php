@@ -31,5 +31,7 @@
             </main>
         </div>
     </div>
+
+    @include('partials.wolfi-modal')
 </body>
 </html>

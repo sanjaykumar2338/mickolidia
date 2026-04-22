@@ -55,6 +55,10 @@
                 {{ $assistant['description'] ?? '' }}
             </p>
 
+            <div class="max-w-3xl">
+                <x-talk-with-wolfi-button class="w-full sm:max-w-[28rem]" />
+            </div>
+
             <div class="wolfi-dashboard-avatar-card rounded-[1.9rem] border border-white/10 bg-black/20 p-5 sm:p-6">
                 <div class="wolfi-dashboard-avatar-shell wolfi-dashboard-avatar-shell-poster">
                     <span class="wolfi-dashboard-avatar-ring wolfi-dashboard-avatar-ring-outer" aria-hidden="true"></span>
