@@ -81,16 +81,19 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
     Route::get('/wolfi', [DashboardController::class, 'wolfi'])->name('dashboard.wolfi');
-    Route::get('/wolfi/voices', [DashboardController::class, 'wolfiVoices'])->name('dashboard.wolfi.voices');
-    Route::post('/wolfi/voices', [DashboardController::class, 'updateWolfiVoice'])->name('dashboard.wolfi.voices.update');
-    Route::post('/wolfi/voices/preview', [DashboardController::class, 'previewWolfiVoice'])
-        ->middleware('throttle:20,1')
-        ->name('dashboard.wolfi.voices.preview');
     Route::post('/wolfi/respond', DashboardWolfiController::class)
         ->middleware('throttle:30,1')
         ->name('dashboard.wolfi.respond');
     Route::get('/certificates/{account}/download', DashboardCertificateController::class)->name('dashboard.certificates.download');
     Route::get('/invoices/{invoice}/download', DashboardInvoiceController::class)->name('dashboard.invoices.download');
+});
+
+Route::prefix('dashboard/wolfi')->middleware('admin.basic')->group(function (): void {
+    Route::get('/voices', [DashboardController::class, 'wolfiVoices'])->name('dashboard.wolfi.voices');
+    Route::post('/voices', [DashboardController::class, 'updateWolfiVoice'])->name('dashboard.wolfi.voices.update');
+    Route::post('/voices/preview', [DashboardController::class, 'previewWolfiVoice'])
+        ->middleware('throttle:20,1')
+        ->name('dashboard.wolfi.voices.preview');
 });
 
 Route::middleware('trial.session')->prefix('trial')->group(function (): void {
@@ -105,6 +108,11 @@ Route::prefix('admin')->group(function (): void {
     Route::middleware('admin.basic')->group(function (): void {
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('admin.logout');
         Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
+        Route::get('/wolfi/voices', [DashboardController::class, 'wolfiVoices'])->name('admin.wolfi.voices');
+        Route::post('/wolfi/voices', [DashboardController::class, 'updateWolfiVoice'])->name('admin.wolfi.voices.update');
+        Route::post('/wolfi/voices/preview', [DashboardController::class, 'previewWolfiVoice'])
+            ->middleware('throttle:20,1')
+            ->name('admin.wolfi.voices.preview');
         Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
         Route::post('/client/{user}/credentials', [AdminClientController::class, 'updateCredentials'])->name('admin.clients.credentials');
         Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');

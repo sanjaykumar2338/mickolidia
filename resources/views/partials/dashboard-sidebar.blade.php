@@ -1,4 +1,6 @@
 @php
+    $isAdminAuthenticated = \App\Http\Middleware\AdminBasicAuth::isAuthenticated(request());
+
     $sidebarRules = ! empty($primaryAccount)
         ? [
             ['label' => __('site.dashboard.labels.target'), 'value' => $primaryAccount['profit_target_percent']],
@@ -30,16 +32,22 @@
             'label' => __('site.dashboard.nav.wolfi_hub'),
         ],
         [
-            'route' => route('dashboard.wolfi.voices'),
-            'active' => request()->routeIs('dashboard.wolfi.voices') || request()->routeIs('dashboard.wolfi.voices.*'),
-            'label' => __('Wolfi Voices'),
-        ],
-        [
             'route' => route('dashboard.settings'),
             'active' => request()->routeIs('dashboard.settings'),
             'label' => __('site.dashboard.nav.settings'),
         ],
     ];
+
+    if ($isAdminAuthenticated) {
+        $dashboardNavLinks = [
+            ...$dashboardNavLinks,
+            [
+                'route' => route('dashboard.wolfi.voices'),
+                'active' => request()->routeIs('dashboard.wolfi.voices') || request()->routeIs('dashboard.wolfi.voices.*'),
+                'label' => __('Wolfi Voices'),
+            ],
+        ];
+    }
 @endphp
 
 <aside class="dashboard-scrollbar border-b border-white/6 bg-slate-950/86 px-4 py-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-5">

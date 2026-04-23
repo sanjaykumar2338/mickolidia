@@ -61,15 +61,32 @@ class DashboardController extends Controller
         WolfiVoiceSettings $wolfiVoiceSettings,
         OpenAiTextToSpeechService $speechService,
     ): View {
-        $viewData = $this->dashboardViewData($request, $pricingService);
+        $isAdminRoute = $request->routeIs('admin.*');
         $selectedVoice = $wolfiVoiceSettings->selectedVoice();
 
-        $viewData['voiceOptions'] = $wolfiVoiceSettings->voiceOptions();
-        $viewData['selectedVoiceId'] = (string) ($selectedVoice['id'] ?? $wolfiVoiceSettings->selectedVoiceId());
-        $viewData['selectedVoice'] = $selectedVoice;
-        $viewData['voiceSampleText'] = $wolfiVoiceSettings->sampleText();
-        $viewData['voicePreviewEndpoint'] = route('dashboard.wolfi.voices.preview');
-        $viewData['ttsConfigured'] = $speechService->isConfigured();
+        $voiceViewData = [
+            'voiceOptions' => $wolfiVoiceSettings->voiceOptions(),
+            'selectedVoiceId' => (string) ($selectedVoice['id'] ?? $wolfiVoiceSettings->selectedVoiceId()),
+            'selectedVoice' => $selectedVoice,
+            'voiceSampleText' => $wolfiVoiceSettings->sampleText(),
+            'voicePreviewEndpoint' => route($isAdminRoute ? 'admin.wolfi.voices.preview' : 'dashboard.wolfi.voices.preview', [], false),
+            'voiceUpdateEndpoint' => route($isAdminRoute ? 'admin.wolfi.voices.update' : 'dashboard.wolfi.voices.update', [], false),
+            'voiceBackEndpoint' => $isAdminRoute
+                ? route('admin.clients.index', [], false)
+                : route('dashboard.wolfi', [], false),
+            'voiceBackLabel' => $isAdminRoute ? __('Back to Clients') : __('Back to Wolfi Hub'),
+            'showVoicePageFlash' => ! $isAdminRoute,
+        ];
+        $voiceViewData['ttsConfigured'] = $speechService->isConfigured($voiceViewData['selectedVoiceId']);
+
+        if ($isAdminRoute) {
+            return view('admin.wolfi-voices', $voiceViewData);
+        }
+
+        $viewData = array_merge(
+            $this->dashboardViewData($request, $pricingService),
+            $voiceViewData,
+        );
 
         return view('dashboard.wolfi-voices', $viewData);
     }
@@ -84,8 +101,12 @@ class DashboardController extends Controller
         $voice = $wolfiVoiceSettings->voiceById($voiceId);
         $voiceName = (string) ($voice['name'] ?? $voiceId);
 
+        $redirectRoute = $request->routeIs('admin.*')
+            ? 'admin.wolfi.voices'
+            : 'dashboard.wolfi.voices';
+
         return redirect()
-            ->route('dashboard.wolfi.voices')
+            ->route($redirectRoute)
             ->with('status', __("Wolfi voice updated to :voice.", ['voice' => $voiceName]));
     }
 
@@ -100,7 +121,7 @@ class DashboardController extends Controller
             'locale' => ['nullable', 'string', 'max:16'],
         ]);
 
-        if (! $speechService->isConfigured()) {
+        if (! $speechService->isConfigured((string) $validated['voice_id'])) {
             return response()->json([
                 'message' => __('site.contact.voice_audio_unavailable'),
             ], 503);
@@ -133,7 +154,7 @@ class DashboardController extends Controller
         return response($speech['audio'], 200, [
             'Content-Type' => $speech['content_type'],
             'Cache-Control' => 'no-store, max-age=0',
-            'X-Wolfi-TTS-Provider' => 'openai',
+            'X-Wolfi-TTS-Provider' => $speech['provider'],
             'X-Wolfi-TTS-Voice' => $speech['voice'],
             'X-Wolfi-TTS-Model' => $speech['model'],
             'X-Wolfi-TTS-Locale' => $speech['locale'],

@@ -43,7 +43,7 @@ class VoiceAssistantSpeechController extends Controller
         return response($speech['audio'], 200, [
             'Content-Type' => $speech['content_type'],
             'Cache-Control' => 'no-store, max-age=0',
-            'X-Wolfi-TTS-Provider' => 'openai',
+            'X-Wolfi-TTS-Provider' => $speech['provider'],
             'X-Wolfi-TTS-Voice' => $speech['voice'],
             'X-Wolfi-TTS-Model' => $speech['model'],
             'X-Wolfi-TTS-Locale' => $speech['locale'],

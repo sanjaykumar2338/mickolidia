@@ -21,8 +21,7 @@
         ->implode(', ');
     $firstPayoutDays = (int) config('wolforix.challenge_models.one_step.funded.first_withdrawal_days', 21);
     $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
-    $voiceTtsAvailable = (bool) config('services.openai.tts.enabled', true)
-        && filled(config('services.openai.api_key'));
+    $voiceTtsAvailable = app(\App\Services\Voice\OpenAiTextToSpeechService::class)->isConfigured();
 
     $faqVoiceIndex = app(\App\Support\PublicContentIndex::class)->voiceAssistantIndex($voiceLocales, $voiceLocaleMap);
 
@@ -133,7 +132,7 @@
             'email' => config('wolforix.support.email'),
         ]),
         'tts_available' => $voiceTtsAvailable,
-        'tts_endpoint' => route('assistant.speech'),
+        'tts_endpoint' => route('assistant.speech', [], false),
     ];
 @endphp
 

@@ -15,13 +15,15 @@ class WolfiSpeechTest extends TestCase
 
         config()->set('session.driver', 'array');
         config()->set('cache.default', 'array');
+        $this->withoutVite();
         $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
     public function test_contact_page_exposes_the_voice_disclosure_and_tts_endpoint(): void
     {
-        config()->set('services.openai.api_key', 'test-openai-key');
-        config()->set('services.openai.tts.enabled', true);
+        config()->set('wolfi.voices.default', 'google-neural2-d');
+        config()->set('services.google_tts.enabled', true);
+        config()->set('services.google_tts.api_key', 'google-test-key');
 
         $this->get(route('contact'))
             ->assertOk()
@@ -30,21 +32,19 @@ class WolfiSpeechTest extends TestCase
             ->assertSee('"tts_available":true', false);
     }
 
-    public function test_assistant_speech_endpoint_returns_openai_audio_when_configured(): void
+    public function test_assistant_speech_endpoint_returns_google_audio_when_configured(): void
     {
-        config()->set('services.openai.api_key', 'test-openai-key');
-        config()->set('services.openai.base_url', 'https://api.openai.com/v1');
-        config()->set('services.openai.timeout', 20);
-        config()->set('services.openai.tts.enabled', true);
-        config()->set('services.openai.tts.model', 'gpt-4o-mini-tts');
-        config()->set('services.openai.tts.voice', 'onyx');
-        config()->set('services.openai.tts.format', 'mp3');
-        config()->set('services.openai.tts.speed', 0.94);
+        config()->set('wolfi.voices.default', 'google-neural2-d');
+        config()->set('services.google_tts.enabled', true);
+        config()->set('services.google_tts.api_key', 'google-test-key');
+        config()->set('services.google_tts.base_url', 'https://texttospeech.googleapis.com');
+        config()->set('services.google_tts.timeout', 20);
+        config()->set('services.google_tts.audio_encoding', 'MP3');
 
         Http::fake([
-            'https://api.openai.com/v1/audio/speech' => Http::response('fake-mp3-audio', 200, [
-                'Content-Type' => 'audio/mpeg',
-            ]),
+            'https://texttospeech.googleapis.com/v1/text:synthesize*' => Http::response([
+                'audioContent' => base64_encode('fake-google-audio'),
+            ], 200),
         ]);
 
         $response = $this->post(route('assistant.speech'), [
@@ -54,25 +54,23 @@ class WolfiSpeechTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'audio/mpeg');
-        $response->assertHeader('X-Wolfi-TTS-Provider', 'openai');
-        $response->assertHeader('X-Wolfi-TTS-Voice', 'onyx');
-        $this->assertSame('fake-mp3-audio', $response->getContent());
+        $response->assertHeader('X-Wolfi-TTS-Provider', 'google_cloud');
+        $response->assertHeader('X-Wolfi-TTS-Voice', 'google-neural2-d');
+        $this->assertSame('fake-google-audio', $response->getContent());
 
         Http::assertSent(function ($request): bool {
-            return $request->url() === 'https://api.openai.com/v1/audio/speech'
-                && $request['model'] === 'gpt-4o-mini-tts'
-                && $request['voice'] === 'onyx'
-                && $request['response_format'] === 'mp3'
-                && (float) $request['speed'] === 0.94
-                && Str::contains((string) $request['instructions'], 'young male voice')
-                && Str::contains((string) $request['instructions'], 'Speak entirely in Spanish');
+            return Str::startsWith($request->url(), 'https://texttospeech.googleapis.com/v1/text:synthesize?key=')
+                && data_get($request->data(), 'voice.languageCode') === 'es-ES'
+                && data_get($request->data(), 'voice.name') === 'es-ES-Neural2-B'
+                && data_get($request->data(), 'audioConfig.audioEncoding') === 'MP3';
         });
     }
 
-    public function test_assistant_speech_endpoint_returns_service_unavailable_without_openai_configuration(): void
+    public function test_assistant_speech_endpoint_returns_service_unavailable_without_provider_configuration(): void
     {
-        config()->set('services.openai.api_key', null);
-        config()->set('services.openai.tts.enabled', true);
+        config()->set('wolfi.voices.default', 'google-neural2-d');
+        config()->set('services.google_tts.enabled', true);
+        config()->set('services.google_tts.api_key', null);
 
         Http::fake();
 

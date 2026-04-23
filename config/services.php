@@ -75,6 +75,34 @@ return [
         ],
     ],
 
+    'elevenlabs' => [
+        'api_key' => env('ELEVENLABS_API_KEY'),
+        'base_url' => env('ELEVENLABS_BASE_URL', 'https://api.elevenlabs.io'),
+        'timeout' => (int) env('ELEVENLABS_TIMEOUT', 20),
+        'tts' => [
+            'enabled' => filter_var(env('ELEVENLABS_TTS_ENABLED', true), FILTER_VALIDATE_BOOL),
+            'model' => env('ELEVENLABS_TTS_MODEL', 'eleven_multilingual_v2'),
+            'output_format' => env('ELEVENLABS_TTS_OUTPUT_FORMAT', 'mp3_44100_128'),
+        ],
+    ],
+
+    'google_tts' => [
+        'enabled' => filter_var(env('GOOGLE_TTS_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'api_key' => env('GOOGLE_TTS_API_KEY'),
+        'base_url' => env('GOOGLE_TTS_BASE_URL', 'https://texttospeech.googleapis.com'),
+        'timeout' => (int) env('GOOGLE_TTS_TIMEOUT', 20),
+        'audio_encoding' => env('GOOGLE_TTS_AUDIO_ENCODING', 'MP3'),
+    ],
+
+    'azure_tts' => [
+        'enabled' => filter_var(env('AZURE_TTS_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'api_key' => env('AZURE_TTS_API_KEY'),
+        'region' => env('AZURE_TTS_REGION'),
+        'endpoint' => env('AZURE_TTS_ENDPOINT'),
+        'timeout' => (int) env('AZURE_TTS_TIMEOUT', 20),
+        'output_format' => env('AZURE_TTS_OUTPUT_FORMAT', 'audio-24khz-96kbitrate-mono-mp3'),
+    ],
+
     'mt5_ingestion' => [
         'token' => env('MT5_INGESTION_TOKEN'),
     ],

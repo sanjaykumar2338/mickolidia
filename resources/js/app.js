@@ -4608,8 +4608,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const previewText = voiceLab.dataset.previewText ?? '';
         const unavailableMessage = voiceLab.dataset.previewUnavailableMessage ?? 'Voice preview is unavailable right now.';
         const readyMessage = voiceLab.dataset.previewReadyMessage ?? 'Preview ready.';
+        const generatingMessage = voiceLab.dataset.previewGeneratingMessage ?? 'Generating preview audio...';
+        const sessionMessage = voiceLab.dataset.previewSessionMessage ?? 'Your admin session expired. Please sign in again.';
+        const autoplayMessage = voiceLab.dataset.previewAutoplayMessage ?? 'Audio playback was blocked by the browser. Click Play Preview again.';
+        const playingTemplate = voiceLab.dataset.previewPlayingTemplate ?? 'Playing __VOICE__ preview...';
+        const browserFallbackMessage = voiceLab.dataset.previewBrowserFallbackMessage ?? 'Using browser voice preview.';
+        const browserUnavailableMessage = voiceLab.dataset.previewBrowserUnavailableMessage ?? 'Browser voice preview is not available on this device.';
         const statusNode = voiceLab.querySelector('[data-wolfi-voice-status]');
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            ?? voiceLab.querySelector('input[name="_token"]')?.value
+            ?? '';
         const cardNodes = [...voiceLab.querySelectorAll('[data-wolfi-voice-card]')];
         const previewButtons = [...voiceLab.querySelectorAll('[data-wolfi-voice-preview]')];
         const voiceChoices = [...voiceLab.querySelectorAll('[data-wolfi-voice-choice]')];
@@ -4619,6 +4627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let activeAudioUrl = '';
         let activeButton = null;
         let activeRequestController = null;
+        let activeUtterance = null;
 
         const setStatusMessage = (message) => {
             if (!(statusNode instanceof HTMLElement)) {
@@ -4640,6 +4649,100 @@ document.addEventListener('DOMContentLoaded', () => {
             button.classList.toggle('bg-amber-300/20', playing);
         };
 
+        const isAudioResponse = (response) => {
+            const contentType = String(response.headers.get('Content-Type') ?? '').toLowerCase();
+
+            return contentType.startsWith('audio/');
+        };
+
+        const canUseBrowserSpeech = () => (
+            'speechSynthesis' in window
+            && typeof window.SpeechSynthesisUtterance === 'function'
+        );
+
+        const browserVoices = () => {
+            if (!canUseBrowserSpeech()) {
+                return [];
+            }
+
+            return window.speechSynthesis.getVoices() ?? [];
+        };
+
+        const normalizeVoiceKey = (value) => String(value ?? '')
+            .toLowerCase()
+            .trim();
+
+        const hashString = (value) => {
+            let hash = 0;
+
+            for (let index = 0; index < value.length; index += 1) {
+                hash = ((hash << 5) - hash) + value.charCodeAt(index);
+                hash |= 0;
+            }
+
+            return Math.abs(hash);
+        };
+
+        const selectBrowserVoice = (voiceId) => {
+            const allVoices = browserVoices();
+
+            if (allVoices.length === 0) {
+                return null;
+            }
+
+            const localeTag = String(document.documentElement.lang ?? 'en').toLowerCase();
+            const localeBase = localeTag.split(/[-_]/)[0];
+            const localeVoices = allVoices.filter((voice) => {
+                const voiceLocale = String(voice.lang ?? '').toLowerCase();
+                const voiceLocaleBase = voiceLocale.split(/[-_]/)[0];
+
+                return voiceLocale === localeTag || voiceLocaleBase === localeBase;
+            });
+            const voicePool = localeVoices.length > 0 ? localeVoices : allVoices;
+            const voiceNeedle = normalizeVoiceKey(voiceId);
+
+            const directMatch = voicePool.find((voice) => {
+                const key = normalizeVoiceKey(`${voice.name ?? ''} ${voice.voiceURI ?? ''}`);
+
+                return key.includes(voiceNeedle);
+            });
+
+            if (directMatch) {
+                return directMatch;
+            }
+
+            const index = hashString(voiceNeedle || 'wolfi') % voicePool.length;
+
+            return voicePool[index] ?? voicePool[0] ?? null;
+        };
+
+        const resolveFailureMessage = async (response) => {
+            if (response.redirected && /\/login\b|\/admin\/login\b/.test(response.url)) {
+                return sessionMessage;
+            }
+
+            const contentType = String(response.headers.get('Content-Type') ?? '').toLowerCase();
+
+            if (contentType.includes('application/json')) {
+                try {
+                    const payload = await response.json();
+                    const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
+
+                    if (message !== '') {
+                        return message;
+                    }
+                } catch (error) {
+                    // Ignore parsing errors and continue fallback resolution.
+                }
+            }
+
+            if (contentType.includes('text/html')) {
+                return sessionMessage;
+            }
+
+            return unavailableMessage;
+        };
+
         const clearActiveAudio = () => {
             if (activeAudio instanceof HTMLAudioElement) {
                 activeAudio.pause();
@@ -4655,6 +4758,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const clearBrowserSpeech = () => {
+            if (!canUseBrowserSpeech()) {
+                activeUtterance = null;
+                return;
+            }
+
+            try {
+                window.speechSynthesis.cancel();
+            } catch (error) {
+                // Ignore browser speech cancellation errors.
+            }
+
+            activeUtterance = null;
+        };
+
         const stopActivePreview = ({ keepStatus = false } = {}) => {
             if (activeRequestController instanceof AbortController) {
                 activeRequestController.abort();
@@ -4662,6 +4780,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             activeRequestController = null;
             clearActiveAudio();
+            clearBrowserSpeech();
 
             if (activeButton instanceof HTMLButtonElement) {
                 setPreviewButtonState(activeButton, false);
@@ -4672,6 +4791,73 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!keepStatus) {
                 setStatusMessage(readyMessage);
             }
+        };
+
+        const playBrowserPreview = async (voiceId, button) => {
+            if (!canUseBrowserSpeech()) {
+                throw new Error(browserUnavailableMessage);
+            }
+
+            const speechText = String(previewText ?? '').trim();
+
+            if (speechText === '') {
+                throw new Error(unavailableMessage);
+            }
+
+            const utterance = new window.SpeechSynthesisUtterance(speechText);
+            const voice = selectBrowserVoice(voiceId);
+
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang ?? utterance.lang;
+            } else {
+                utterance.lang = String(document.documentElement.lang ?? 'en');
+            }
+
+            utterance.rate = 0.95;
+            utterance.pitch = 0.92;
+            utterance.volume = 1;
+
+            activeUtterance = utterance;
+            activeButton = button;
+            setPreviewButtonState(button, true);
+            setStatusMessage(browserFallbackMessage);
+
+            return new Promise((resolve, reject) => {
+                utterance.onstart = () => {
+                    const playingLabel = playingTemplate.replace('__VOICE__', voiceId);
+                    setStatusMessage(playingLabel);
+                };
+
+                utterance.onend = () => {
+                    if (activeUtterance !== utterance) {
+                        resolve();
+                        return;
+                    }
+
+                    stopActivePreview();
+                    resolve();
+                };
+
+                utterance.onerror = () => {
+                    if (activeUtterance !== utterance) {
+                        resolve();
+                        return;
+                    }
+
+                    stopActivePreview({
+                        keepStatus: true,
+                    });
+                    reject(new Error(browserUnavailableMessage));
+                };
+
+                try {
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.speak(utterance);
+                } catch (error) {
+                    reject(error instanceof Error ? error : new Error(browserUnavailableMessage));
+                }
+            });
         };
 
         const syncSelectedCards = () => {
@@ -4715,7 +4901,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             button.addEventListener('click', async () => {
-                if (button.disabled || previewUrl === '') {
+                if (previewUrl === '') {
                     setStatusMessage(unavailableMessage);
                     return;
                 }
@@ -4732,13 +4918,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                if (activeButton === button && activeUtterance !== null) {
+                    stopActivePreview();
+                    return;
+                }
+
                 stopActivePreview({
                     keepStatus: true,
                 });
 
                 setPreviewButtonState(button, true);
                 activeButton = button;
-                setStatusMessage('Generating preview audio...');
+                setStatusMessage(generatingMessage);
 
                 const controller = new AbortController();
                 activeRequestController = controller;
@@ -4765,18 +4956,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
 
-                    if (!response.ok) {
-                        let failureMessage = unavailableMessage;
-
-                        try {
-                            const payload = await response.json();
-                            if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
-                                failureMessage = payload.message;
-                            }
-                        } catch (error) {
-                            // Ignore JSON parsing failures and keep fallback message.
-                        }
-
+                    if (!response.ok || !isAudioResponse(response)) {
+                        const failureMessage = await resolveFailureMessage(response);
                         throw new Error(failureMessage);
                     }
 
@@ -4813,7 +4994,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     await audio.play();
-                    setStatusMessage(`Playing ${voiceId} preview...`);
+                    setStatusMessage(playingTemplate.replace('__VOICE__', voiceId));
                 } catch (error) {
                     const aborted = error instanceof DOMException && error.name === 'AbortError';
 
@@ -4822,9 +5003,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     if (!aborted) {
-                        const message = error instanceof Error && error.message.trim() !== ''
-                            ? error.message
-                            : unavailableMessage;
+                        const isPlaybackPermissionIssue = error instanceof DOMException
+                            && error.name === 'NotAllowedError';
+                        const looksLikeProviderFailure = error instanceof Error
+                            && error.message.toLowerCase().includes('unavailable');
+
+                        if (looksLikeProviderFailure) {
+                            try {
+                                await playBrowserPreview(voiceId, button);
+                                return;
+                            } catch (browserError) {
+                                const browserMessage = browserError instanceof Error && browserError.message.trim() !== ''
+                                    ? browserError.message
+                                    : browserUnavailableMessage;
+                                setStatusMessage(browserMessage);
+                                return;
+                            }
+                        }
+
+                        const message = isPlaybackPermissionIssue
+                            ? autoplayMessage
+                            : (error instanceof Error && error.message.trim() !== ''
+                                ? error.message
+                                : unavailableMessage);
                         setStatusMessage(message);
                     }
                 } finally {
