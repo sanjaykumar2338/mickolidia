@@ -332,6 +332,7 @@ class Mt5AccountPoolSpreadsheetParser
         return match ($normalized) {
             'login', 'account login' => 'login',
             'password', 'trading password' => 'password',
+            'investor password', 'investor pass', 'readonly password', 'read only password', 'read-only password' => 'investor_password',
             'server', 'mt5 server' => 'server',
             'account size', 'size' => 'account_size',
             'status', 'available' => 'source_status',

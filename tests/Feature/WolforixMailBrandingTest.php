@@ -57,6 +57,7 @@ class WolforixMailBrandingTest extends TestCase
                 'platform' => 'MT5',
                 'login_id' => '105381073',
                 'password' => 'secret-pass',
+                'investor_password' => 'investor-secret-pass',
                 'server' => 'Wolforix-Demo',
                 'account_type' => '1-Step Instant',
                 'account_size' => '5K',
@@ -70,6 +71,7 @@ class WolforixMailBrandingTest extends TestCase
                 'platform' => 'MT5',
                 'login_id' => '205381073',
                 'password' => 'phase-two-pass',
+                'investor_password' => 'phase-two-investor-pass',
                 'server' => 'Wolforix-Demo',
             ]),
             new ChallengeFailedMail($user, $account, [
@@ -166,6 +168,7 @@ class WolforixMailBrandingTest extends TestCase
                 'credentials' => [
                     'server' => 'Wolforix-Demo',
                     'password' => 'secret-pass',
+                    'investor_password' => 'investor-secret-pass',
                 ],
             ],
         ]);
@@ -179,9 +182,11 @@ class WolforixMailBrandingTest extends TestCase
         $this->assertTrue($mail->credentialsReady);
         $this->assertSame('WFX-MT5-LOGIN-001', $mail->accountReference);
         $this->assertSame('105381073', $mail->accountAccessDetails['login_id']);
+        $this->assertSame('investor-secret-pass', $mail->accountAccessDetails['investor_password']);
         $this->assertStringContainsString('Account Access Details', $html);
         $this->assertStringContainsString('105381073', $html);
         $this->assertStringContainsString('Wolforix-Demo', $html);
         $this->assertStringContainsString('secret-pass', $html);
+        $this->assertStringContainsString('investor-secret-pass', $html);
     }
 }

@@ -267,6 +267,7 @@ class ChallengeLifecycleMailer
             'platform' => (string) ($account->platform ?: 'MT5'),
             'login_id' => $login,
             'password' => $password,
+            'investor_password' => $this->accountInvestorPassword($account) ?: 'Investor password pending',
             'server' => $server,
             'account_type' => $this->planLabel($account),
             'account_size' => $this->money((float) ($account->account_size ?: $account->starting_balance ?: 0)),
@@ -290,6 +291,7 @@ class ChallengeLifecycleMailer
             'platform' => (string) ($account->platform ?: 'MT5'),
             'login_id' => $login,
             'password' => $password,
+            'investor_password' => $this->accountInvestorPassword($account) ?: 'Investor password pending',
             'server' => $server,
             'account_type' => $this->planLabel($account),
             'account_size' => $this->money((float) ($account->account_size ?: $account->starting_balance ?: 0)),
@@ -388,6 +390,20 @@ class ChallengeLifecycleMailer
             'credentials.password',
             'credentials.trading_password',
             'credentials.mt5_password',
+        ]);
+    }
+
+    private function accountInvestorPassword(TradingAccount $account): ?string
+    {
+        return $this->metadataValue($account, [
+            'investor_password',
+            'readonly_password',
+            'read_only_password',
+            'mt5_investor_password',
+            'credentials.investor_password',
+            'credentials.readonly_password',
+            'credentials.read_only_password',
+            'credentials.mt5_investor_password',
         ]);
     }
 

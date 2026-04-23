@@ -27,7 +27,7 @@
                             <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ $field['label'] }}</p>
                             <p class="mt-2 break-words text-base font-semibold {{ ! empty($field['is_secret']) ? 'text-amber-100' : 'text-white' }}">{{ $field['value'] }}</p>
                         </div>
-                        @if (empty($field['is_secret']) && filled($field['value']))
+                        @if ((empty($field['is_secret']) || ! empty($field['copyable'])) && filled($field['value']))
                             <button type="button" data-dashboard-copy="{{ $field['value'] }}" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:border-amber-300/30 hover:bg-amber-300/10 hover:text-white">
                                 <span class="sr-only">{{ __('Copy') }}</span>
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">

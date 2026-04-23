@@ -17,6 +17,7 @@ class Mt5AccountPoolEntryFactory extends Factory
         return [
             'login' => (string) fake()->unique()->numerify('52######'),
             'password' => fake()->password(14, 18),
+            'investor_password' => fake()->password(14, 18),
             'server' => 'ICMarketsEU-Demo',
             'account_size' => fake()->randomElement([5000, 10000, 25000, 50000, 100000]),
             'currency_code' => 'USD',

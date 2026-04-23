@@ -19,6 +19,7 @@ class Mt5AccountPoolEntry extends Model
     protected $fillable = [
         'login',
         'password',
+        'investor_password',
         'server',
         'account_size',
         'currency_code',
@@ -43,6 +44,7 @@ class Mt5AccountPoolEntry extends Model
     {
         return [
             'password' => 'encrypted',
+            'investor_password' => 'encrypted',
             'account_size' => 'integer',
             'source_created_at' => 'date',
             'allocated_at' => 'datetime',

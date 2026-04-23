@@ -267,6 +267,10 @@
                 || filled(data_get($selectedAccount->meta ?? [], 'credentials.trading_password'))
                 || filled(data_get($selectedAccount->meta ?? [], 'trading_password'))
                 || filled(data_get($selectedAccount->meta ?? [], 'mt5_password'));
+            $hasStoredInvestorPassword = filled(data_get($selectedAccount->meta ?? [], 'credentials.investor_password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'credentials.readonly_password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'investor_password'))
+                || filled(data_get($selectedAccount->meta ?? [], 'mt5_investor_password'));
         @endphp
 
         <section class="mt-8 surface-panel rounded-[2rem] p-6">
@@ -299,6 +303,10 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('Trading password') }}</dt>
                             <dd class="mt-2 font-semibold text-white">{{ $hasStoredPassword ? 'Stored securely for delivery' : 'Not saved yet' }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">{{ __('Investor password') }}</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $hasStoredInvestorPassword ? 'Stored securely for dashboard access' : 'Not saved yet' }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">{{ __('Credential email') }}</dt>
@@ -355,6 +363,18 @@
                                 placeholder="{{ $hasStoredPassword ? 'Leave blank to keep the current password' : 'Enter the MT5 trading password' }}"
                             >
                             <p class="mt-2 text-xs leading-6 text-slate-400">{{ __('Leave this blank to keep the existing stored password.') }}</p>
+                        </label>
+
+                        <label class="block sm:col-span-2">
+                            <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{{ __('Investor password') }}</span>
+                            <input
+                                type="password"
+                                name="investor_password"
+                                value=""
+                                class="mt-2 w-full rounded-lg border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-0"
+                                placeholder="{{ $hasStoredInvestorPassword ? 'Leave blank to keep the current investor password' : 'Enter the MT5 investor password' }}"
+                            >
+                            <p class="mt-2 text-xs leading-6 text-slate-400">{{ __('Leave this blank to keep the existing stored investor password.') }}</p>
                         </label>
                     </div>
 

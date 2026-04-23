@@ -27,12 +27,12 @@ class Mt5AccountPoolImportTest extends TestCase
         ]);
 
         $path = $this->createOds([
-            ['Login', 'Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date', '', ''],
-            ['770001', 'pass-1', 'ICMarketsEU-Demo', '10000', '$', 'available', '16.04.26'],
-            ['770001', 'pass-duplicate', 'ICMarketsEU-Demo', '10000', '$', 'available', '16.04.26'],
-            ['770002', 'pass-2', '', '25000', '€', 'available', '16.04.26'],
-            ['770003', 'pass-3', 'ICMarketsEU-Demo', '5000', '$', 'available', '16.04.26'],
-            ['770004', 'pass-4', 'PepperstoneUK-Demo', '50000', '€', 'available', '16.04.26'],
+            ['Login', 'Password', 'Investor Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date', '', ''],
+            ['770001', 'pass-1', 'investor-1', 'ICMarketsEU-Demo', '10000', '$', 'available', '16.04.26'],
+            ['770001', 'pass-duplicate', 'investor-duplicate', 'ICMarketsEU-Demo', '10000', '$', 'available', '16.04.26'],
+            ['770002', 'pass-2', 'investor-2', '', '25000', '€', 'available', '16.04.26'],
+            ['770003', 'pass-3', 'investor-3', 'ICMarketsEU-Demo', '5000', '$', 'available', '16.04.26'],
+            ['770004', 'pass-4', 'investor-4', 'PepperstoneUK-Demo', '50000', '€', 'available', '16.04.26'],
         ]);
 
         $report = app(Mt5AccountPoolImportService::class)->import(
@@ -48,12 +48,14 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame(2, $report['duplicates']);
         $this->assertSame('Login', $report['column_map'][0]['label']);
         $this->assertSame('login', $report['column_map'][0]['field']);
-        $this->assertSame('C', $report['column_map'][4]['label']);
-        $this->assertSame('currency_symbol', $report['column_map'][4]['field']);
-        $this->assertSame('Created Date', $report['column_map'][6]['label']);
-        $this->assertSame('source_created_at', $report['column_map'][6]['field']);
-        $this->assertSame('', $report['column_map'][7]['label']);
-        $this->assertNull($report['column_map'][7]['field']);
+        $this->assertSame('Investor Password', $report['column_map'][2]['label']);
+        $this->assertSame('investor_password', $report['column_map'][2]['field']);
+        $this->assertSame('C', $report['column_map'][5]['label']);
+        $this->assertSame('currency_symbol', $report['column_map'][5]['field']);
+        $this->assertSame('Created Date', $report['column_map'][7]['label']);
+        $this->assertSame('source_created_at', $report['column_map'][7]['field']);
+        $this->assertSame('', $report['column_map'][8]['label']);
+        $this->assertNull($report['column_map'][8]['field']);
         $this->assertSame(1, $report['skipped_reasons']['duplicate_in_file']);
         $this->assertSame(1, $report['skipped_reasons']['missing_server']);
         $this->assertSame(1, $report['skipped_reasons']['duplicate_existing_other_pool']);
@@ -68,6 +70,10 @@ class Mt5AccountPoolImportTest extends TestCase
             'source_batch' => 'batch-client-test',
             'is_available' => true,
         ]);
+        $this->assertSame('investor-1', Mt5AccountPoolEntry::query()
+            ->where('login', '770001')
+            ->where('server', 'ICMarketsEU-Demo')
+            ->value('investor_password'));
         $this->assertDatabaseHas('mt5_account_pool_entries', [
             'login' => '770004',
             'server' => 'PepperstoneUK-Demo',
@@ -196,6 +202,7 @@ class Mt5AccountPoolImportTest extends TestCase
         $clientEntry = Mt5AccountPoolEntry::factory()->create([
             'login' => '990001',
             'password' => 'client-pass',
+            'investor_password' => 'client-investor-pass',
             'server' => 'PepperstoneUK-Demo',
             'account_size' => 25000,
         ]);
@@ -209,6 +216,7 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame('990001', $activatedAccount->platform_account_id);
         $this->assertSame('PepperstoneUK-Demo', data_get($activatedAccount->meta, 'credentials.server'));
         $this->assertSame('client-pass', data_get($activatedAccount->meta, 'credentials.password'));
+        $this->assertSame('client-investor-pass', data_get($activatedAccount->meta, 'credentials.investor_password'));
         $this->assertSame(Mt5AccountPoolEntry::SOURCE_POOL_CLIENT, data_get($activatedAccount->meta, 'mt5_pool_entry.source_pool'));
         $this->assertSame($account->id, $clientEntry->allocated_trading_account_id);
         $this->assertFalse((bool) $clientEntry->is_available);

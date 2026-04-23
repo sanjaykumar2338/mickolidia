@@ -60,6 +60,7 @@
             ['label' => 'Platform', 'value' => (string) $details['platform']],
             ['label' => 'Login ID', 'value' => (string) $details['login_id']],
             ['label' => 'Password', 'value' => (string) $details['password']],
+            ['label' => 'Investor Password', 'value' => (string) ($details['investor_password'] ?? 'Investor password pending')],
             ['label' => 'Server', 'value' => (string) $details['server']],
             ['label' => 'Account Type', 'value' => (string) $details['account_type']],
             ['label' => 'Account Size', 'value' => (string) $details['account_size']],

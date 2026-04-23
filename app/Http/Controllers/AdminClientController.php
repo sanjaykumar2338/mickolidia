@@ -200,6 +200,7 @@ class AdminClientController extends Controller
             'platform_account_id' => ['nullable', 'string', 'max:255'],
             'server_name' => ['nullable', 'string', 'max:255'],
             'trading_password' => ['nullable', 'string', 'max:255'],
+            'investor_password' => ['nullable', 'string', 'max:255'],
         ]);
 
         /** @var TradingAccount $account */
@@ -224,6 +225,7 @@ class AdminClientController extends Controller
 
         $serverName = trim((string) ($validated['server_name'] ?? ''));
         $tradingPassword = trim((string) ($validated['trading_password'] ?? ''));
+        $investorPassword = trim((string) ($validated['investor_password'] ?? ''));
 
         if ($serverName !== '') {
             $credentials['server'] = $serverName;
@@ -236,7 +238,12 @@ class AdminClientController extends Controller
             $credentials['trading_password'] = $tradingPassword;
         }
 
-        if ($serverName !== '' || $tradingPassword !== '') {
+        if ($investorPassword !== '') {
+            $credentials['investor_password'] = $investorPassword;
+            $credentials['readonly_password'] = $investorPassword;
+        }
+
+        if ($serverName !== '' || $tradingPassword !== '' || $investorPassword !== '') {
             $credentials['last_updated_at'] = now()->toIso8601String();
             $meta['credentials'] = $credentials;
         }

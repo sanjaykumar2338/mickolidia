@@ -103,6 +103,7 @@ class Mt5AccountPoolImportService
             Mt5AccountPoolEntry::query()->create([
                 'login' => $login,
                 'password' => (string) $values['password'],
+                'investor_password' => filled($values['investor_password'] ?? null) ? (string) $values['investor_password'] : null,
                 'server' => $server,
                 'account_size' => $this->parseAccountSize((string) $values['account_size']),
                 'currency_code' => $this->currencyCode($values['currency_symbol'] ?? null),

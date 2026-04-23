@@ -62,6 +62,12 @@ class Mt5AccountAllocator
         $credentials['mt5_server'] = $entry->server;
         $credentials['password'] = $entry->password;
         $credentials['trading_password'] = $entry->password;
+
+        if (filled($entry->investor_password)) {
+            $credentials['investor_password'] = $entry->investor_password;
+            $credentials['readonly_password'] = $entry->investor_password;
+        }
+
         $credentials['last_updated_at'] = now()->toIso8601String();
 
         $meta['credentials'] = $credentials;
@@ -93,6 +99,8 @@ class Mt5AccountAllocator
             || filled($account->platform_account_id)
             || filled(Arr::get($credentials, 'server'))
             || filled(Arr::get($credentials, 'password'))
-            || filled(Arr::get($credentials, 'trading_password'));
+            || filled(Arr::get($credentials, 'trading_password'))
+            || filled(Arr::get($credentials, 'investor_password'))
+            || filled(Arr::get($credentials, 'readonly_password'));
     }
 }

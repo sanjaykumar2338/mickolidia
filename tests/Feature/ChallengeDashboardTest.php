@@ -805,6 +805,10 @@ class ChallengeDashboardTest extends TestCase
                 'last_synced_at' => now()->subMinutes(5),
                 'meta' => [
                     'mt5_server' => 'Wolforix-Demo',
+                    'credentials' => [
+                        'password' => 'trade-pass-889900',
+                        'investor_password' => 'investor-pass-889900',
+                    ],
                 ],
             ]);
 
@@ -902,7 +906,9 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('MT5 account login')
                 ->assertSee('889900')
                 ->assertSee('Wolforix-Demo')
-                ->assertSee('Secure disclosure not enabled')
+                ->assertSee('trade-pass-889900')
+                ->assertSee('investor-pass-889900')
+                ->assertDontSee('Secure disclosure not enabled')
                 ->assertSee('Rule monitoring')
                 ->assertSee('Statistics')
                 ->assertSee('Average win')

@@ -2498,6 +2498,7 @@ class WolforixPlatformTest extends TestCase
             'platform_account_id' => '105381073',
             'server_name' => 'Wolforix-Demo',
             'trading_password' => 'secret-pass',
+            'investor_password' => 'investor-secret-pass',
         ])->assertRedirect(route('admin.clients.show', ['user' => $user, 'account' => $account->id]));
 
         $account->refresh();
@@ -2506,13 +2507,15 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('105381073', $account->platform_account_id);
         $this->assertSame('Wolforix-Demo', data_get($account->meta, 'credentials.server'));
         $this->assertSame('secret-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertSame('investor-secret-pass', data_get($account->meta, 'credentials.investor_password'));
         $this->assertNotNull($account->challenge_purchase_email_sent_at);
 
         Mail::assertSent(ChallengeAccountDetailsMail::class, function (ChallengeAccountDetailsMail $mail) use ($user): bool {
             return $mail->hasTo($user->email)
                 && $mail->details['login_id'] === '105381073'
                 && $mail->details['server'] === 'Wolforix-Demo'
-                && $mail->details['password'] === 'secret-pass';
+                && $mail->details['password'] === 'secret-pass'
+                && $mail->details['investor_password'] === 'investor-secret-pass';
         });
 
         $this->post(route('admin.clients.credentials', $user), [
@@ -2521,6 +2524,7 @@ class WolforixPlatformTest extends TestCase
             'platform_account_id' => '105381073',
             'server_name' => 'Wolforix-Demo',
             'trading_password' => '',
+            'investor_password' => '',
         ])->assertRedirect(route('admin.clients.show', ['user' => $user, 'account' => $account->id]));
 
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);

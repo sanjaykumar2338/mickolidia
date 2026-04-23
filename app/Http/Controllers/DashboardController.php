@@ -688,6 +688,25 @@ class DashboardController extends Controller
         $accountLogin = filled($account->platform_login)
             ? (string) $account->platform_login
             : (filled($account->platform_account_id) ? (string) $account->platform_account_id : null);
+        $tradingPassword = $this->accountMetadataValue($account, [
+            'trading_password',
+            'password',
+            'mt5_password',
+            'platform_password',
+            'credentials.password',
+            'credentials.trading_password',
+            'credentials.mt5_password',
+        ]);
+        $investorPassword = $this->accountMetadataValue($account, [
+            'investor_password',
+            'readonly_password',
+            'read_only_password',
+            'mt5_investor_password',
+            'credentials.investor_password',
+            'credentials.readonly_password',
+            'credentials.read_only_password',
+            'credentials.mt5_investor_password',
+        ]);
         $platformStatus = $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'));
         $disableStatusKey = $this->mt5DeactivationStatusKey($account);
         $mt5DisableStatus = $this->mt5DeactivationStatusLabel($account);
@@ -752,15 +771,21 @@ class DashboardController extends Controller
                 ],
                 [
                     'label' => __('Trading password'),
-                    'value' => __('Secure disclosure not enabled'),
-                    'hint' => __('Passwords stay hidden in this dashboard and are delivered through controlled channels only.'),
+                    'value' => $tradingPassword ?: __('Password delivery pending'),
+                    'hint' => $tradingPassword
+                        ? __('Trading password stored for this MT5 account.')
+                        : __('Trading password is not stored on this account yet.'),
                     'is_secret' => true,
+                    'copyable' => filled($tradingPassword),
                 ],
                 [
                     'label' => __('Investor password'),
-                    'value' => __('Secure disclosure not enabled'),
-                    'hint' => __('Investor credentials can be wired later through controlled disclosure.'),
+                    'value' => $investorPassword ?: __('Investor password pending'),
+                    'hint' => $investorPassword
+                        ? __('Investor password stored for read-only MT5 access.')
+                        : __('Investor password is not stored on this account yet.'),
                     'is_secret' => true,
+                    'copyable' => filled($investorPassword),
                 ],
                 [
                     'label' => __('Account reference'),
@@ -768,7 +793,7 @@ class DashboardController extends Controller
                     'hint' => __('Internal Wolforix challenge reference.'),
                 ],
             ],
-            'privacy_note' => __('Password fields stay hidden in the dashboard even when MT5 credentials are managed for this account.'),
+            'privacy_note' => __('Stored MT5 credentials are visible only inside this authenticated dashboard. Keep passwords private and do not share them outside Wolforix support channels.'),
         ];
     }
 
