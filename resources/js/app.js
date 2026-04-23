@@ -4603,6 +4603,239 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    document.querySelectorAll('[data-wolfi-voice-lab]').forEach((voiceLab) => {
+        const previewUrl = voiceLab.dataset.previewUrl ?? '';
+        const previewText = voiceLab.dataset.previewText ?? '';
+        const unavailableMessage = voiceLab.dataset.previewUnavailableMessage ?? 'Voice preview is unavailable right now.';
+        const readyMessage = voiceLab.dataset.previewReadyMessage ?? 'Preview ready.';
+        const statusNode = voiceLab.querySelector('[data-wolfi-voice-status]');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const cardNodes = [...voiceLab.querySelectorAll('[data-wolfi-voice-card]')];
+        const previewButtons = [...voiceLab.querySelectorAll('[data-wolfi-voice-preview]')];
+        const voiceChoices = [...voiceLab.querySelectorAll('[data-wolfi-voice-choice]')];
+        const activeClasses = ['border-amber-400/35', 'bg-amber-400/10', 'shadow-[0_20px_60px_rgba(251,191,36,0.14)]'];
+        const idleClasses = ['border-white/10', 'bg-slate-950/72'];
+        let activeAudio = null;
+        let activeAudioUrl = '';
+        let activeButton = null;
+        let activeRequestController = null;
+
+        const setStatusMessage = (message) => {
+            if (!(statusNode instanceof HTMLElement)) {
+                return;
+            }
+
+            statusNode.textContent = message;
+        };
+
+        const setPreviewButtonState = (button, playing) => {
+            if (!(button instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const playLabel = button.dataset.playLabel ?? 'Play Preview';
+            const stopLabel = button.dataset.stopLabel ?? 'Stop Preview';
+            button.textContent = playing ? stopLabel : playLabel;
+            button.classList.toggle('border-amber-200/50', playing);
+            button.classList.toggle('bg-amber-300/20', playing);
+        };
+
+        const clearActiveAudio = () => {
+            if (activeAudio instanceof HTMLAudioElement) {
+                activeAudio.pause();
+                activeAudio.removeAttribute('src');
+                activeAudio.load();
+            }
+
+            activeAudio = null;
+
+            if (activeAudioUrl !== '') {
+                URL.revokeObjectURL(activeAudioUrl);
+                activeAudioUrl = '';
+            }
+        };
+
+        const stopActivePreview = ({ keepStatus = false } = {}) => {
+            if (activeRequestController instanceof AbortController) {
+                activeRequestController.abort();
+            }
+
+            activeRequestController = null;
+            clearActiveAudio();
+
+            if (activeButton instanceof HTMLButtonElement) {
+                setPreviewButtonState(activeButton, false);
+            }
+
+            activeButton = null;
+
+            if (!keepStatus) {
+                setStatusMessage(readyMessage);
+            }
+        };
+
+        const syncSelectedCards = () => {
+            cardNodes.forEach((cardNode) => {
+                if (!(cardNode instanceof HTMLElement)) {
+                    return;
+                }
+
+                const choice = cardNode.querySelector('[data-wolfi-voice-choice]');
+                const indicator = cardNode.querySelector('[data-wolfi-selected-indicator]');
+                const selected = choice instanceof HTMLInputElement && choice.checked;
+
+                cardNode.classList.remove(...activeClasses, ...idleClasses);
+                cardNode.classList.add(...(selected ? activeClasses : idleClasses));
+
+                if (indicator instanceof HTMLElement) {
+                    indicator.classList.toggle('hidden', !selected);
+                }
+            });
+        };
+
+        voiceChoices.forEach((choice) => {
+            if (!(choice instanceof HTMLInputElement)) {
+                return;
+            }
+
+            choice.addEventListener('change', syncSelectedCards);
+        });
+
+        syncSelectedCards();
+
+        voiceLab.addEventListener('submit', () => {
+            stopActivePreview({
+                keepStatus: true,
+            });
+        });
+
+        previewButtons.forEach((button) => {
+            if (!(button instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            button.addEventListener('click', async () => {
+                if (button.disabled || previewUrl === '') {
+                    setStatusMessage(unavailableMessage);
+                    return;
+                }
+
+                const voiceId = button.dataset.voiceId ?? '';
+
+                if (voiceId === '') {
+                    setStatusMessage(unavailableMessage);
+                    return;
+                }
+
+                if (activeButton === button && activeAudio instanceof HTMLAudioElement && !activeAudio.paused) {
+                    stopActivePreview();
+                    return;
+                }
+
+                stopActivePreview({
+                    keepStatus: true,
+                });
+
+                setPreviewButtonState(button, true);
+                activeButton = button;
+                setStatusMessage('Generating preview audio...');
+
+                const controller = new AbortController();
+                activeRequestController = controller;
+
+                try {
+                    const response = await fetch(previewUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'audio/mpeg',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            voice_id: voiceId,
+                            text: previewText,
+                            locale: document.documentElement.lang ?? 'en',
+                        }),
+                        signal: controller.signal,
+                    });
+
+                    if (activeRequestController !== controller) {
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        let failureMessage = unavailableMessage;
+
+                        try {
+                            const payload = await response.json();
+                            if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
+                                failureMessage = payload.message;
+                            }
+                        } catch (error) {
+                            // Ignore JSON parsing failures and keep fallback message.
+                        }
+
+                        throw new Error(failureMessage);
+                    }
+
+                    const audioBlob = await response.blob();
+
+                    if (audioBlob.size === 0) {
+                        throw new Error(unavailableMessage);
+                    }
+
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.preload = 'auto';
+                    activeAudio = audio;
+                    activeAudioUrl = audioUrl;
+                    activeRequestController = null;
+
+                    audio.addEventListener('ended', () => {
+                        if (activeAudio !== audio) {
+                            return;
+                        }
+
+                        stopActivePreview();
+                    });
+
+                    audio.addEventListener('error', () => {
+                        if (activeAudio !== audio) {
+                            return;
+                        }
+
+                        stopActivePreview({
+                            keepStatus: true,
+                        });
+                        setStatusMessage(unavailableMessage);
+                    });
+
+                    await audio.play();
+                    setStatusMessage(`Playing ${voiceId} preview...`);
+                } catch (error) {
+                    const aborted = error instanceof DOMException && error.name === 'AbortError';
+
+                    stopActivePreview({
+                        keepStatus: true,
+                    });
+
+                    if (!aborted) {
+                        const message = error instanceof Error && error.message.trim() !== ''
+                            ? error.message
+                            : unavailableMessage;
+                        setStatusMessage(message);
+                    }
+                } finally {
+                    if (activeRequestController === controller) {
+                        activeRequestController = null;
+                    }
+                }
+            });
+        });
+    });
+
     document.querySelectorAll('[data-flash]').forEach((flash) => {
         window.setTimeout(() => {
             flash.classList.add('opacity-0', 'translate-y-2');

@@ -30,6 +30,11 @@
             'label' => __('site.dashboard.nav.wolfi_hub'),
         ],
         [
+            'route' => route('dashboard.wolfi.voices'),
+            'active' => request()->routeIs('dashboard.wolfi.voices') || request()->routeIs('dashboard.wolfi.voices.*'),
+            'label' => __('Wolfi Voices'),
+        ],
+        [
             'route' => route('dashboard.settings'),
             'active' => request()->routeIs('dashboard.settings'),
             'label' => __('site.dashboard.nav.settings'),

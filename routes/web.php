@@ -81,6 +81,11 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/payouts', [DashboardController::class, 'payouts'])->name('dashboard.payouts');
     Route::get('/settings', [DashboardController::class, 'settings'])->name('dashboard.settings');
     Route::get('/wolfi', [DashboardController::class, 'wolfi'])->name('dashboard.wolfi');
+    Route::get('/wolfi/voices', [DashboardController::class, 'wolfiVoices'])->name('dashboard.wolfi.voices');
+    Route::post('/wolfi/voices', [DashboardController::class, 'updateWolfiVoice'])->name('dashboard.wolfi.voices.update');
+    Route::post('/wolfi/voices/preview', [DashboardController::class, 'previewWolfiVoice'])
+        ->middleware('throttle:20,1')
+        ->name('dashboard.wolfi.voices.preview');
     Route::post('/wolfi/respond', DashboardWolfiController::class)
         ->middleware('throttle:30,1')
         ->name('dashboard.wolfi.respond');

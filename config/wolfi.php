@@ -169,6 +169,24 @@ return [
                 ],
             ],
         ],
+        'dashboard.wolfi.voices' => [
+            'title' => 'Wolfi Voices',
+            'summary' => 'Use this page to compare Wolfi voices, play the same sample phrase, and save one platform voice for future speech playback.',
+            'sections' => [
+                [
+                    'title' => 'Voice comparison cards',
+                    'description' => 'Each voice card includes a short profile and one-click preview playback.',
+                ],
+                [
+                    'title' => 'Single platform selection',
+                    'description' => 'Only one voice can be active at a time and the selected card is highlighted.',
+                ],
+                [
+                    'title' => 'Saved for platform speech',
+                    'description' => 'The selected voice is stored in platform settings and used as the default for Wolfi TTS generation.',
+                ],
+            ],
+        ],
         'dashboard.settings' => [
             'title' => 'Settings workspace',
             'summary' => 'Use this page to confirm profile details, preferred language and timezone, and the roadmap for account preferences and security actions.',
@@ -211,5 +229,73 @@ return [
         'placeholder_enabled' => false,
         'action_label' => 'Voice actions soon',
         'action_note' => 'The layout and response payloads already reserve a clean place for future playback controls and approved voice samples.',
+    ],
+
+    'voices' => [
+        'provider' => 'openai',
+        'default' => env('WOLFI_TTS_VOICE', env('OPENAI_TTS_VOICE', 'onyx')),
+        'sample_text' => "Hello, I'm Wolfi. I can help guide you through your dashboard, rules, payouts, and next steps.",
+        'options' => [
+            [
+                'id' => 'alloy',
+                'name' => 'Alloy',
+                'label' => 'Balanced guide',
+                'description' => 'Balanced and neutral with steady pacing for clear instructions.',
+            ],
+            [
+                'id' => 'ash',
+                'name' => 'Ash',
+                'label' => 'Confident analyst',
+                'description' => 'Lower and more assertive delivery for direct, decisive guidance.',
+            ],
+            [
+                'id' => 'ballad',
+                'name' => 'Ballad',
+                'label' => 'Calm narrator',
+                'description' => 'Softer cadence for reassuring walkthroughs and onboarding steps.',
+            ],
+            [
+                'id' => 'coral',
+                'name' => 'Coral',
+                'label' => 'Friendly explainer',
+                'description' => 'Warm tone with conversational rhythm for quick explanations.',
+            ],
+            [
+                'id' => 'echo',
+                'name' => 'Echo',
+                'label' => 'Crisp presenter',
+                'description' => 'Clear, bright articulation that keeps responses easy to follow.',
+            ],
+            [
+                'id' => 'fable',
+                'name' => 'Fable',
+                'label' => 'Storyline coach',
+                'description' => 'Narrative-driven delivery that works well for guided next steps.',
+            ],
+            [
+                'id' => 'nova',
+                'name' => 'Nova',
+                'label' => 'Energetic host',
+                'description' => 'Lively tone suitable for alerts, updates, and action prompts.',
+            ],
+            [
+                'id' => 'onyx',
+                'name' => 'Onyx',
+                'label' => 'Focused strategist',
+                'description' => 'Deep and measured tone tuned for premium assistant interactions.',
+            ],
+            [
+                'id' => 'sage',
+                'name' => 'Sage',
+                'label' => 'Calm mentor',
+                'description' => 'Even and composed voice for risk and rule-focused guidance.',
+            ],
+            [
+                'id' => 'shimmer',
+                'name' => 'Shimmer',
+                'label' => 'Bright companion',
+                'description' => 'Lighter modern tone for friendly, high-clarity dashboard support.',
+            ],
+        ],
     ],
 ];

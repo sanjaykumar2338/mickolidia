@@ -6,14 +6,22 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Pricing\ChallengePricingService;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
+use App\Services\Voice\OpenAiTextToSpeechService;
 use App\Services\Wolfi\WolfiAssistantService;
+use App\Services\Wolfi\WolfiVoiceSettings;
 use App\Support\ChallengeAccountMetrics;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class DashboardController extends Controller
 {
@@ -45,6 +53,91 @@ class DashboardController extends Controller
     public function wolfi(Request $request, ChallengePricingService $pricingService): View
     {
         return view('dashboard.wolfi', $this->dashboardViewData($request, $pricingService));
+    }
+
+    public function wolfiVoices(
+        Request $request,
+        ChallengePricingService $pricingService,
+        WolfiVoiceSettings $wolfiVoiceSettings,
+        OpenAiTextToSpeechService $speechService,
+    ): View {
+        $viewData = $this->dashboardViewData($request, $pricingService);
+        $selectedVoice = $wolfiVoiceSettings->selectedVoice();
+
+        $viewData['voiceOptions'] = $wolfiVoiceSettings->voiceOptions();
+        $viewData['selectedVoiceId'] = (string) ($selectedVoice['id'] ?? $wolfiVoiceSettings->selectedVoiceId());
+        $viewData['selectedVoice'] = $selectedVoice;
+        $viewData['voiceSampleText'] = $wolfiVoiceSettings->sampleText();
+        $viewData['voicePreviewEndpoint'] = route('dashboard.wolfi.voices.preview');
+        $viewData['ttsConfigured'] = $speechService->isConfigured();
+
+        return view('dashboard.wolfi-voices', $viewData);
+    }
+
+    public function updateWolfiVoice(Request $request, WolfiVoiceSettings $wolfiVoiceSettings): RedirectResponse
+    {
+        $validated = $request->validate([
+            'voice_id' => ['required', 'string', Rule::in($wolfiVoiceSettings->voiceIds())],
+        ]);
+
+        $voiceId = $wolfiVoiceSettings->saveSelectedVoiceId((string) $validated['voice_id']);
+        $voice = $wolfiVoiceSettings->voiceById($voiceId);
+        $voiceName = (string) ($voice['name'] ?? $voiceId);
+
+        return redirect()
+            ->route('dashboard.wolfi.voices')
+            ->with('status', __("Wolfi voice updated to :voice.", ['voice' => $voiceName]));
+    }
+
+    public function previewWolfiVoice(
+        Request $request,
+        WolfiVoiceSettings $wolfiVoiceSettings,
+        OpenAiTextToSpeechService $speechService,
+    ): Response|JsonResponse {
+        $validated = $request->validate([
+            'voice_id' => ['required', 'string', Rule::in($wolfiVoiceSettings->voiceIds())],
+            'text' => ['nullable', 'string', 'max:300'],
+            'locale' => ['nullable', 'string', 'max:16'],
+        ]);
+
+        if (! $speechService->isConfigured()) {
+            return response()->json([
+                'message' => __('site.contact.voice_audio_unavailable'),
+            ], 503);
+        }
+
+        $sampleText = trim((string) ($validated['text'] ?? ''));
+
+        if ($sampleText === '') {
+            $sampleText = $wolfiVoiceSettings->sampleText();
+        }
+
+        try {
+            $speech = $speechService->synthesize(
+                $sampleText,
+                (string) ($validated['locale'] ?? ''),
+                (string) $validated['voice_id'],
+            );
+        } catch (Throwable $error) {
+            Log::warning('Wolfi voice preview synthesis failed.', [
+                'voice_id' => $validated['voice_id'] ?? null,
+                'locale' => $validated['locale'] ?? null,
+                'message' => $error->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => __('site.contact.voice_audio_unavailable'),
+            ], 502);
+        }
+
+        return response($speech['audio'], 200, [
+            'Content-Type' => $speech['content_type'],
+            'Cache-Control' => 'no-store, max-age=0',
+            'X-Wolfi-TTS-Provider' => 'openai',
+            'X-Wolfi-TTS-Voice' => $speech['voice'],
+            'X-Wolfi-TTS-Model' => $speech['model'],
+            'X-Wolfi-TTS-Locale' => $speech['locale'],
+        ]);
     }
 
     /**

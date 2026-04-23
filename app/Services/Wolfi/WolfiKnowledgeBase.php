@@ -124,6 +124,10 @@ class WolfiKnowledgeBase
                 'label' => (string) __('site.dashboard.nav.wolfi_hub'),
             ],
             [
+                'key' => 'dashboard.wolfi.voices',
+                'label' => 'Wolfi Voices',
+            ],
+            [
                 'key' => 'dashboard.settings',
                 'label' => (string) __('site.dashboard.nav.settings'),
             ],

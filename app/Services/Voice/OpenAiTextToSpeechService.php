@@ -2,11 +2,16 @@
 
 namespace App\Services\Voice;
 
+use App\Services\Wolfi\WolfiVoiceSettings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class OpenAiTextToSpeechService
 {
+    public function __construct(
+        private readonly WolfiVoiceSettings $wolfiVoiceSettings,
+    ) {}
+
     public function isConfigured(): bool
     {
         return (bool) config('services.openai.tts.enabled', true)
@@ -16,10 +21,10 @@ class OpenAiTextToSpeechService
     /**
      * @return array{audio: string, content_type: string, locale: string, voice: string, model: string}
      */
-    public function synthesize(string $text, ?string $locale = null): array
+    public function synthesize(string $text, ?string $locale = null, ?string $voiceId = null): array
     {
         $localeBase = $this->normalizeLocale($locale);
-        $voice = (string) config('services.openai.tts.voice', 'onyx');
+        $voice = $this->wolfiVoiceSettings->resolveVoiceId($voiceId);
         $model = (string) config('services.openai.tts.model', 'gpt-4o-mini-tts');
         $format = (string) config('services.openai.tts.format', 'mp3');
         $speed = (float) config('services.openai.tts.speed', 0.94);
