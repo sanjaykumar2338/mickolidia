@@ -5,10 +5,8 @@ namespace App\Services\Voice;
 use App\Services\Wolfi\WolfiVoiceSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Throwable;
 
 class OpenAiTextToSpeechService
 {
@@ -58,35 +56,11 @@ class OpenAiTextToSpeechService
             return $callback();
         }
 
-        $cacheKey = $this->speechCacheKey($text, $locale, $voice);
-        $cacheStore = (string) config('wolfi.speech_cache.store', 'file');
-        $cacheTtl = now()->addSeconds((int) config('wolfi.speech_cache.ttl', 86400));
-
-        try {
-            $cached = Cache::store($cacheStore)->get($cacheKey);
-
-            if (is_array($cached) && isset($cached['audio'])) {
-                return $cached;
-            }
-        } catch (Throwable $error) {
-            Log::warning('Wolfi speech cache read failed.', [
-                'store' => $cacheStore,
-                'message' => $error->getMessage(),
-            ]);
-        }
-
-        $speech = $callback();
-
-        try {
-            Cache::store($cacheStore)->put($cacheKey, $speech, $cacheTtl);
-        } catch (Throwable $error) {
-            Log::warning('Wolfi speech cache write failed.', [
-                'store' => $cacheStore,
-                'message' => $error->getMessage(),
-            ]);
-        }
-
-        return $speech;
+        return Cache::remember(
+            $this->speechCacheKey($text, $locale, $voice),
+            now()->addSeconds((int) config('wolfi.speech_cache.ttl', 86400)),
+            $callback,
+        );
     }
 
     /**
