@@ -34,7 +34,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertSee('Wolfi supports your')
             ->assertSee('Trading workspace')
             ->assertSee('Open Wolfi Hub')
-            ->assertSee('wolfy-image/Dashboard.jpeg', false)
+            ->assertSee('newphoto.jpeg', false)
             ->assertSee('dashboard-wolfi-ring-avatar', false)
             ->assertDontSee('Grounded in Wolforix data')
             ->assertDontSee('dashboard\\/wolfi\\/respond', false);
@@ -49,7 +49,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertSee('Live response')
             ->assertSee('Rule-aware')
             ->assertSee('wolfi-dashboard-avatar-image-poster', false)
-            ->assertSee('wolfy-image/Dashboard.jpeg', false);
+            ->assertSee('wolfy-image/dashboard-2.webp', false);
     }
 
     public function test_dashboard_renders_smart_insight_cards_when_account_crosses_thresholds(): void

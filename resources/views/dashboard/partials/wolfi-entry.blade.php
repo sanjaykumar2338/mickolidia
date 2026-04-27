@@ -2,7 +2,7 @@
     $hubUrl = route('dashboard.wolfi', array_filter([
         'account' => $wolfiPanel['account_id'] ?? null,
     ]));
-    $dashboardWolfiImage = asset('wolfy-image/dashboard-2.webp');
+    $dashboardWolfiImage = asset('newphoto.jpeg');
 @endphp
 
 <section class="dashboard-wolfi-entry surface-card overflow-hidden rounded-[2rem] p-5 sm:p-6">
@@ -13,7 +13,7 @@
                     <img
                         src="{{ $dashboardWolfiImage }}"
                         alt="{{ __('site.dashboard.nav.wolfi_hub') }}"
-                        class="h-full w-full object-cover object-[50%_30%]"
+                        class="h-full w-full object-contain"
                         loading="lazy"
                         decoding="async"
                     >
