@@ -16,6 +16,10 @@ class Mt5AccountPoolEntry extends Model
 
     public const SOURCE_POOL_INTERNAL = 'internal_only';
 
+    public const BROKER_FUSION_MARKETS = 'FusionMarkets';
+
+    public const PLATFORM_MT5 = 'MT5';
+
     protected $fillable = [
         'login',
         'password',

@@ -822,6 +822,13 @@ class DashboardController extends Controller
             'credentials.mt5_investor_password',
         ]);
         $platformStatus = $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link'));
+        $brokerName = $this->accountMetadataValue($account, [
+            'broker',
+            'provider',
+            'mt5_pool_entry.broker',
+            'credentials.broker',
+            'credentials.provider',
+        ]) ?: 'FusionMarkets';
         $disableStatusKey = $this->mt5DeactivationStatusKey($account);
         $mt5DisableStatus = $this->mt5DeactivationStatusLabel($account);
 
@@ -882,6 +889,11 @@ class DashboardController extends Controller
                     'label' => __('Server name'),
                     'value' => $serverName ?: ($account->platform_environment ? $this->humanizeStatus((string) $account->platform_environment) : __('Not provided yet')),
                     'hint' => $serverName ? __('Broker server supplied for this account.') : __('Server value is not stored on this account yet.'),
+                ],
+                [
+                    'label' => __('Broker'),
+                    'value' => $brokerName,
+                    'hint' => __('Broker/provider assigned to this MT5 account.'),
                 ],
                 [
                     'label' => __('Trading password'),

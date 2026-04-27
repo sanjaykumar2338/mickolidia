@@ -126,6 +126,7 @@ class TradingAccountSnapshotApplyService
                 $metrics,
                 $evaluation,
                 [
+                    'platform_status' => $snapshot['platform_status'] ?? 'connected',
                     'activated_at' => $workingCopy->activated_at,
                     'sync_status' => 'success',
                     'sync_source' => $source,
@@ -135,6 +136,7 @@ class TradingAccountSnapshotApplyService
                     'last_sync_completed_at' => $snapshotAt,
                     'sync_error' => null,
                     'sync_error_at' => null,
+                    'meta' => $this->connectedMeta($freshAccount, $snapshot, $snapshotAt),
                 ],
             ))->save();
 
@@ -230,6 +232,29 @@ class TradingAccountSnapshotApplyService
             'total_profit' => $snapshot['total_profit'] ?? null,
             'today_profit' => $snapshot['today_profit'] ?? null,
         ], static fn ($value) => $value !== null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return array<string, mixed>
+     */
+    private function connectedMeta(TradingAccount $account, array $snapshot, Carbon $snapshotAt): array
+    {
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
+
+        $syncMeta['status'] = 'connected';
+        $syncMeta['last_synced_at'] = $snapshotAt->toIso8601String();
+
+        foreach (['platform_login', 'platform_account_id', 'platform_environment'] as $field) {
+            if (filled($snapshot[$field] ?? null)) {
+                $syncMeta[$field] = (string) $snapshot[$field];
+            }
+        }
+
+        $meta['mt5_sync'] = $syncMeta;
+
+        return $meta;
     }
 
     /**

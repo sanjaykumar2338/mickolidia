@@ -3180,6 +3180,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         status: response.status,
                     });
 
+                    if (status instanceof HTMLElement && playButton?.dataset.fallbackMessage) {
+                        status.textContent = playButton.dataset.fallbackMessage;
+                    }
+
                     return {
                         status: 'failed',
                     };
@@ -3303,16 +3307,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (serverPlayback.status === 'played' || serverPlayback.status === 'aborted') {
-                return;
-            }
-
-            if (canUseServerSpeech()) {
-                setPlayButtonState(false, currentAnswerText.trim() !== '');
-
-                if (status instanceof HTMLElement) {
-                    status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
-                }
-
                 return;
             }
 
@@ -4970,7 +4964,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (!response.ok || !isAudioResponse(response)) {
                         const failureMessage = await resolveFailureMessage(response);
-                        throw new Error(failureMessage);
+                        const failureError = new Error(failureMessage);
+                        failureError.isProviderFailure = true;
+                        throw failureError;
                     }
 
                     const audioBlob = await response.blob();
@@ -5017,12 +5013,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!aborted) {
                         const isPlaybackPermissionIssue = error instanceof DOMException
                             && error.name === 'NotAllowedError';
-                        const looksLikeProviderFailure = error instanceof Error
-                            && error.message.toLowerCase().includes('unavailable');
+                        const looksLikeProviderFailure = error?.isProviderFailure === true
+                            || (error instanceof Error
+                                && error.message.toLowerCase().includes('unavailable'));
 
-                        if (looksLikeProviderFailure && voiceProvider === 'web_speech') {
+                        if (looksLikeProviderFailure) {
                             try {
-                                await playBrowserPreview(voiceId, button);
+                                await playBrowserPreview(
+                                    voiceProvider === 'web_speech' ? voiceId : 'webspeech-en-guide',
+                                    button,
+                                );
                                 return;
                             } catch (browserError) {
                                 const browserMessage = browserError instanceof Error && browserError.message.trim() !== ''

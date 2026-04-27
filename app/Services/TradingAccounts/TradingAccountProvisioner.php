@@ -6,11 +6,17 @@ use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Order;
 use App\Models\TradingAccount;
+use App\Services\Mt5\Mt5AccountAllocator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TradingAccountProvisioner
 {
+    public function __construct(
+        private readonly Mt5AccountAllocator $mt5AccountAllocator,
+    ) {
+    }
+
     public function provision(Order $order, ChallengePurchase $purchase, ?ChallengePlan $plan = null): TradingAccount
     {
         /** @var TradingAccount $account */
@@ -22,7 +28,7 @@ class TradingAccountProvisioner
         $startingBalance = (float) ($order->account_size ?: $plan?->account_size ?: 0);
         $challengeType = (string) $purchase->challenge_type;
         $phaseLabel = $challengeType === 'two_step' ? 'Challenge Step 1' : 'Challenge Step 1';
-        $platformEnvironment = (string) config('services.ctrader.environment', 'demo');
+        $platformEnvironment = (string) config('wolforix.mt5_account_pool.fusionmarkets.server', 'FusionMarkets-Demo');
 
         $profitTargetPercent = (float) ($plan?->profit_target ?? 0);
         $dailyLossLimitPercent = (float) ($plan?->daily_loss_limit ?? 0);
@@ -36,10 +42,10 @@ class TradingAccountProvisioner
             'challenge_type' => $challengeType,
             'account_size' => $purchase->account_size,
             'account_reference' => $account->account_reference ?: $this->reference($purchase),
-            'platform' => 'cTrader',
-            'platform_slug' => 'ctrader',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
             'platform_environment' => $platformEnvironment,
-            'platform_status' => $account->platform_status ?: 'pending_link',
+            'platform_status' => $account->platform_status ?: 'waiting_for_first_sync',
             'stage' => $phaseLabel,
             'status' => 'Pending Activation',
             'account_type' => 'challenge',
@@ -92,9 +98,11 @@ class TradingAccountProvisioner
                 'account_status' => 'pending_activation',
                 'meta' => array_merge($purchase->meta ?? [], [
                     'trading_account_id' => $account->id,
-                    'platform' => 'ctrader',
+                    'platform' => 'mt5',
                 ]),
             ])->save();
+
+            $this->mt5AccountAllocator->allocate($account);
 
             if ($account->wasRecentlyCreated) {
                 $account->statusHistories()->create([
@@ -112,11 +120,11 @@ class TradingAccountProvisioner
             }
         });
 
-        return $account;
+        return $account->fresh(['challengePlan', 'challengePurchase']) ?? $account;
     }
 
     private function reference(ChallengePurchase $purchase): string
     {
-        return 'WFX-CT-'.str_pad((string) $purchase->id, 5, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(4));
+        return 'WFX-MT5-'.str_pad((string) $purchase->id, 5, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(4));
     }
 }

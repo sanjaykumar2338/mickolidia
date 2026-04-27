@@ -28,6 +28,9 @@ class Mt5AccountAllocator
         /** @var Mt5AccountPoolEntry|null $entry */
         $entry = Mt5AccountPoolEntry::query()
             ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
+            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo.ods')))
+            ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
+            ->where('meta->platform', (string) config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5))
             ->where('is_available', true)
             ->whereNull('allocated_at')
             ->whereNull('allocated_trading_account_id')
@@ -72,12 +75,24 @@ class Mt5AccountAllocator
 
         $meta['credentials'] = $credentials;
         $meta['mt5_server'] = $entry->server;
+        $meta['broker'] = data_get($entry->meta, 'broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS);
+        $meta['provider'] = data_get($entry->meta, 'provider', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS);
+        $meta['platform'] = data_get($entry->meta, 'platform', Mt5AccountPoolEntry::PLATFORM_MT5);
+        $meta['mt5_sync'] = array_filter([
+            'identifier' => $entry->login,
+            'account_reference' => $account->account_reference,
+            'server' => $entry->server,
+            'broker' => data_get($entry->meta, 'broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS),
+            'status' => $account->last_synced_at ? 'connected' : 'waiting_for_first_sync',
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
         $meta['mt5_pool_entry'] = array_filter([
             'id' => $entry->id,
             'source_pool' => $entry->source_pool,
             'source_file' => $entry->source_file,
             'source_batch' => $entry->source_batch,
             'source_status' => $entry->source_status,
+            'broker' => data_get($entry->meta, 'broker'),
+            'platform' => data_get($entry->meta, 'platform'),
             'source_created_at' => optional($entry->source_created_at)->toDateString(),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
@@ -86,6 +101,8 @@ class Mt5AccountAllocator
             'platform_slug' => 'mt5',
             'platform_login' => $entry->login,
             'platform_account_id' => $entry->login,
+            'platform_environment' => $entry->server,
+            'platform_status' => $account->last_synced_at ? 'connected' : 'waiting_for_first_sync',
             'meta' => $meta,
         ])->save();
     }

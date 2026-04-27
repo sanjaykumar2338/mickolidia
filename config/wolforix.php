@@ -270,8 +270,16 @@ return [
     ],
 
     'mt5_account_pool' => [
-        'default_client_source' => env('WOLFORIX_MT5_CLIENT_POOL_SOURCE', 'public/Accounts List 2 Wolforix.ods'),
+        'default_client_source' => env('WOLFORIX_MT5_CLIENT_POOL_SOURCE', 'public/Account List FusionMarkets-Demo.ods'),
         'default_pool' => env('WOLFORIX_MT5_DEFAULT_POOL', 'client_pool'),
+        'active_broker' => env('WOLFORIX_MT5_ACTIVE_BROKER', 'FusionMarkets'),
+        'active_platform' => env('WOLFORIX_MT5_ACTIVE_PLATFORM', 'MT5'),
+        'fusionmarkets' => [
+            'source' => env('WOLFORIX_MT5_FUSIONMARKETS_SOURCE', 'public/Account List FusionMarkets-Demo.ods'),
+            'broker' => env('WOLFORIX_MT5_FUSIONMARKETS_BROKER', 'FusionMarkets'),
+            'server' => env('WOLFORIX_MT5_FUSIONMARKETS_SERVER', 'FusionMarkets-Demo'),
+            'platform' => 'MT5',
+        ],
     ],
 
     'admin_auth' => [

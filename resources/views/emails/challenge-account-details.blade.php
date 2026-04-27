@@ -58,6 +58,7 @@
     @include('emails.partials.details-table', [
         'rows' => [
             ['label' => 'Platform', 'value' => (string) $details['platform']],
+            ['label' => 'Broker', 'value' => (string) ($details['broker'] ?? '')],
             ['label' => 'Login ID', 'value' => (string) $details['login_id']],
             ['label' => 'Password', 'value' => (string) $details['password']],
             ['label' => 'Investor Password', 'value' => (string) ($details['investor_password'] ?? 'Investor password pending')],

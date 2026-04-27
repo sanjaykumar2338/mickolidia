@@ -76,6 +76,7 @@
         @include('emails.partials.details-table', [
             'rows' => array_values(array_filter([
                 ['label' => 'Platform', 'value' => (string) ($accountAccessDetails['platform'] ?? 'Trading Account')],
+                ['label' => 'Broker', 'value' => (string) ($accountAccessDetails['broker'] ?? '')],
                 ['label' => 'Login ID', 'value' => (string) ($accountAccessDetails['login_id'] ?? 'Pending provisioning')],
                 ['label' => 'Password', 'value' => (string) ($accountAccessDetails['password'] ?? 'Pending provisioning')],
                 ['label' => 'Investor Password', 'value' => (string) ($accountAccessDetails['investor_password'] ?? 'Investor password pending')],

@@ -101,6 +101,76 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame('ICMarketsEU-Demo', $inspection['rows'][0]['values']['server']);
     }
 
+    public function test_fusionmarkets_import_requires_both_passwords_updates_safely_and_disables_old_unassigned_entries(): void
+    {
+        $oldEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '770010',
+            'server' => 'ICMarketsEU-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Accounts List 2 Wolforix.ods',
+        ]);
+
+        $path = $this->createOds([
+            ['Login', 'Password', 'Investor Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date'],
+            ['335374', 'fusion-main-1', 'fusion-investor-1', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26'],
+            ['335382', 'fusion-main-2', '', 'FusionMarkets-Demo', '5000', '$', 'available', '23.04.26'],
+        ]);
+
+        $report = app(Mt5AccountPoolImportService::class)->import(
+            path: $path,
+            pool: Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            batch: 'fusion-test-batch',
+            options: [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'update_existing' => true,
+                'require_investor_password' => true,
+                'deactivate_other_client_entries' => true,
+            ],
+        );
+
+        $this->assertSame(1, $report['created']);
+        $this->assertSame(0, $report['updated']);
+        $this->assertSame(1, $report['invalid']);
+        $this->assertSame(1, $report['deactivated_old_entries']);
+        $this->assertSame(1, $report['skipped_reasons']['missing_investor_password']);
+
+        $fusionEntry = Mt5AccountPoolEntry::query()
+            ->where('login', '335374')
+            ->where('server', 'FusionMarkets-Demo')
+            ->firstOrFail();
+
+        $this->assertSame('fusion-main-1', $fusionEntry->password);
+        $this->assertSame('fusion-investor-1', $fusionEntry->investor_password);
+        $this->assertSame(Mt5AccountPoolEntry::BROKER_FUSION_MARKETS, data_get($fusionEntry->meta, 'broker'));
+        $this->assertSame(Mt5AccountPoolEntry::PLATFORM_MT5, data_get($fusionEntry->meta, 'platform'));
+        $this->assertFalse((bool) $oldEntry->fresh()->is_available);
+
+        $updatedPath = $this->createOds([
+            ['Login', 'Password', 'Investor Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date'],
+            ['335374', 'fusion-main-updated', 'fusion-investor-updated', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26'],
+        ]);
+
+        $secondReport = app(Mt5AccountPoolImportService::class)->import(
+            path: $updatedPath,
+            pool: Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            batch: 'fusion-test-batch-2',
+            options: [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'update_existing' => true,
+                'require_investor_password' => true,
+                'deactivate_other_client_entries' => true,
+            ],
+        );
+
+        $this->assertSame(0, $secondReport['created']);
+        $this->assertSame(1, $secondReport['updated']);
+        $this->assertSame(2, Mt5AccountPoolEntry::query()->count());
+        $this->assertSame('fusion-main-updated', $fusionEntry->fresh()->password);
+        $this->assertSame('fusion-investor-updated', $fusionEntry->fresh()->investor_password);
+    }
+
     public function test_admin_activation_allocates_from_client_pool_only_and_ignores_internal_pool_entries(): void
     {
         $user = User::factory()->create([
@@ -199,29 +269,47 @@ class Mt5AccountPoolImportTest extends TestCase
             'account_size' => 25000,
         ]);
 
+        $oldClientEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '990000',
+            'password' => 'old-client-pass',
+            'server' => 'PepperstoneUK-Demo',
+            'account_size' => 25000,
+            'source_file' => 'Accounts List 2 Wolforix.ods',
+        ]);
+
         $clientEntry = Mt5AccountPoolEntry::factory()->create([
             'login' => '990001',
             'password' => 'client-pass',
             'investor_password' => 'client-investor-pass',
-            'server' => 'PepperstoneUK-Demo',
+            'server' => 'FusionMarkets-Demo',
             'account_size' => 25000,
+            'source_file' => 'Account List FusionMarkets-Demo.ods',
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
         ]);
 
         $activatedAccount = app(AdminChallengeActivationService::class)->activate($user);
         $activatedAccount->refresh();
         $clientEntry->refresh();
         $internalEntry->refresh();
+        $oldClientEntry->refresh();
 
         $this->assertSame('990001', $activatedAccount->platform_login);
         $this->assertSame('990001', $activatedAccount->platform_account_id);
-        $this->assertSame('PepperstoneUK-Demo', data_get($activatedAccount->meta, 'credentials.server'));
+        $this->assertSame('FusionMarkets-Demo', data_get($activatedAccount->meta, 'credentials.server'));
         $this->assertSame('client-pass', data_get($activatedAccount->meta, 'credentials.password'));
         $this->assertSame('client-investor-pass', data_get($activatedAccount->meta, 'credentials.investor_password'));
         $this->assertSame(Mt5AccountPoolEntry::SOURCE_POOL_CLIENT, data_get($activatedAccount->meta, 'mt5_pool_entry.source_pool'));
+        $this->assertSame(Mt5AccountPoolEntry::BROKER_FUSION_MARKETS, data_get($activatedAccount->meta, 'broker'));
         $this->assertSame($account->id, $clientEntry->allocated_trading_account_id);
         $this->assertFalse((bool) $clientEntry->is_available);
         $this->assertNull($internalEntry->allocated_at);
         $this->assertTrue((bool) $internalEntry->is_available);
+        $this->assertNull($oldClientEntry->allocated_at);
+        $this->assertTrue((bool) $oldClientEntry->is_available);
         $this->assertSame('880001', $internalEntry->login);
         $this->assertSame($account->id, $activatedAccount->id);
     }

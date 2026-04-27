@@ -265,6 +265,7 @@ class ChallengeLifecycleMailer
 
         return [
             'platform' => (string) ($account->platform ?: 'MT5'),
+            'broker' => $this->accountBroker($account) ?: 'FusionMarkets',
             'login_id' => $login,
             'password' => $password,
             'investor_password' => $this->accountInvestorPassword($account) ?: 'Investor password pending',
@@ -289,6 +290,7 @@ class ChallengeLifecycleMailer
 
         return [
             'platform' => (string) ($account->platform ?: 'MT5'),
+            'broker' => $this->accountBroker($account) ?: 'FusionMarkets',
             'login_id' => $login,
             'password' => $password,
             'investor_password' => $this->accountInvestorPassword($account) ?: 'Investor password pending',
@@ -377,6 +379,17 @@ class ChallengeLifecycleMailer
             'broker_server',
             'credentials.server',
             'credentials.mt5_server',
+        ]);
+    }
+
+    private function accountBroker(TradingAccount $account): ?string
+    {
+        return $this->metadataValue($account, [
+            'broker',
+            'provider',
+            'mt5_pool_entry.broker',
+            'credentials.broker',
+            'credentials.provider',
         ]);
     }
 

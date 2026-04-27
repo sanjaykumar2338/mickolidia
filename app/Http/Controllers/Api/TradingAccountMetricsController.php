@@ -117,7 +117,7 @@ class TradingAccountMetricsController extends Controller
             'raw' => ['nullable', 'array'],
         ])->validate();
 
-        $account = $this->resolveAccount($accountIdentifier);
+        $account = $this->resolveAccount($accountIdentifier, $validated);
         $startedAt = now();
         $syncTrigger = (string) ($validated['sync_trigger'] ?? 'timer');
 
@@ -294,7 +294,10 @@ class TradingAccountMetricsController extends Controller
         return $this->mt5DeactivationEvent($account) !== null;
     }
 
-    private function resolveAccount(string $accountIdentifier): TradingAccount
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveAccount(string $accountIdentifier, array $payload = []): TradingAccount
     {
         $account = TradingAccount::query()
             ->where('platform_account_id', $accountIdentifier)
@@ -304,6 +307,26 @@ class TradingAccountMetricsController extends Controller
                 $query->orWhere('id', (int) $accountIdentifier);
             })
             ->first();
+
+        if (! $account instanceof TradingAccount) {
+            $payloadIdentifiers = array_values(array_unique(array_filter([
+                $payload['platform_login'] ?? null,
+                $payload['platform_account_id'] ?? null,
+            ], static fn (mixed $value): bool => is_scalar($value) && filled((string) $value))));
+
+            if ($payloadIdentifiers !== []) {
+                $account = TradingAccount::query()
+                    ->where(function ($query) use ($payloadIdentifiers): void {
+                        foreach ($payloadIdentifiers as $identifier) {
+                            $identifier = (string) $identifier;
+
+                            $query->orWhere('platform_account_id', $identifier)
+                                ->orWhere('platform_login', $identifier);
+                        }
+                    })
+                    ->first();
+            }
+        }
 
         if (! $account instanceof TradingAccount) {
             throw ValidationException::withMessages([

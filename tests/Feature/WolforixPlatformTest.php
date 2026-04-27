@@ -12,6 +12,7 @@ use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Invoice;
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\TradingAccount;
@@ -1111,6 +1112,22 @@ class WolforixPlatformTest extends TestCase
             'email' => 'account-owner@example.com',
         ]);
 
+        $poolEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335411',
+            'password' => 'fusion-trading-pass',
+            'investor_password' => 'fusion-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 25000,
+            'source_file' => 'Account List FusionMarkets-Demo.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_available' => true,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
         $this->actingAs($user)->post(route('checkout.store'), [
             'full_name' => 'Paid Trader',
             'email' => 'billing-paid@example.com',
@@ -1150,11 +1167,12 @@ class WolforixPlatformTest extends TestCase
             'challenge_purchase_id' => ChallengePurchase::query()->where('order_id', $order->id)->value('id'),
             'challenge_type' => 'one_step',
             'account_size' => 25000,
-            'platform_slug' => 'ctrader',
+            'platform_slug' => 'mt5',
             'account_status' => 'pending_activation',
         ]);
 
         $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $poolEntry->refresh();
         $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
 
         $this->assertSame('WF-000001', $invoice->invoice_number);
@@ -1163,16 +1181,26 @@ class WolforixPlatformTest extends TestCase
         $this->assertNotNull($invoice->pdf_generated_at);
         Storage::disk('public')->assertExists((string) $invoice->pdf_path);
         $this->assertStringStartsWith('%PDF-1.4', Storage::disk('public')->get((string) $invoice->pdf_path));
-        $this->assertNull($account->challenge_purchase_email_sent_at);
+        $this->assertSame('335411', $account->platform_login);
+        $this->assertSame('FusionMarkets-Demo', data_get($account->meta, 'credentials.server'));
+        $this->assertSame('fusion-trading-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertSame('fusion-investor-pass', data_get($account->meta, 'credentials.investor_password'));
+        $this->assertSame($account->id, $poolEntry->allocated_trading_account_id);
+        $this->assertFalse((bool) $poolEntry->is_available);
+        $this->assertNotNull($account->challenge_purchase_email_sent_at);
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
-        Mail::assertNotSent(ChallengeAccountDetailsMail::class);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
 
         $purchaseMail = new ChallengePurchaseConfirmationMail($order->fresh(['challengePurchase.tradingAccounts']) ?? $order);
 
         $this->assertSame($account->account_reference, $purchaseMail->accountReference);
         $this->assertIsArray($purchaseMail->accountAccessDetails);
-        $this->assertSame('cTrader', $purchaseMail->accountAccessDetails['platform']);
-        $this->assertSame('Pending provisioning', $purchaseMail->accountAccessDetails['login_id']);
+        $this->assertSame('MT5', $purchaseMail->accountAccessDetails['platform']);
+        $this->assertSame('FusionMarkets', $purchaseMail->accountAccessDetails['broker']);
+        $this->assertSame('335411', $purchaseMail->accountAccessDetails['login_id']);
+        $this->assertSame('FusionMarkets-Demo', $purchaseMail->accountAccessDetails['server']);
+        $this->assertSame('fusion-trading-pass', $purchaseMail->accountAccessDetails['password']);
+        $this->assertSame('fusion-investor-pass', $purchaseMail->accountAccessDetails['investor_password']);
 
         $this->actingAs($user)
             ->get(route('dashboard.accounts'))
@@ -1184,6 +1212,11 @@ class WolforixPlatformTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Invoice ready')
+            ->assertSee('335411')
+            ->assertSee('FusionMarkets-Demo')
+            ->assertSee('fusion-trading-pass')
+            ->assertSee('fusion-investor-pass')
+            ->assertDontSee('Secure disclosure not enabled')
             ->assertSee('Download Invoice')
             ->assertSee($invoice->invoice_number);
 
@@ -1199,7 +1232,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
         $this->assertSame($invoice->pdf_path, $invoice->fresh()->pdf_path);
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
-        Mail::assertNotSent(ChallengeAccountDetailsMail::class);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
     }
 
     public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void

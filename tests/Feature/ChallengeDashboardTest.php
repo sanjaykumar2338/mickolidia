@@ -99,6 +99,65 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('active', $account->challenge_status);
     }
 
+    public function test_metrics_endpoint_maps_fusionmarkets_login_to_the_linked_user_account(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_size' => 25000,
+            'starting_balance' => 25000,
+            'phase_starting_balance' => 25000,
+            'phase_reference_balance' => 25000,
+            'balance' => 25000,
+            'equity' => 25000,
+            'highest_equity_today' => 25000,
+            'profit_target_amount' => 2500,
+            'daily_drawdown_limit_amount' => 1000,
+            'max_drawdown_limit_amount' => 2000,
+            'account_reference' => 'WFX-MT5-FUSION-25000',
+            'platform_account_id' => '335411',
+            'platform_login' => '335411',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'waiting_for_first_sync',
+            'meta' => [
+                'broker' => 'FusionMarkets',
+                'mt5_sync' => [
+                    'identifier' => '335411',
+                    'status' => 'waiting_for_first_sync',
+                ],
+            ],
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer integration-secret',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => '335411',
+        ]), [
+            'balance' => 25080,
+            'equity' => 25110,
+            'open_profit' => 30,
+            'trade_count' => 2,
+            'trading_days' => 1,
+            'platform_login' => '335411',
+            'platform_account_id' => '335411',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'server_time' => '2026.04.23 14:15:16',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_id', $account->id)
+            ->assertJsonPath('account_reference', 'WFX-MT5-FUSION-25000');
+
+        $account->refresh();
+
+        $this->assertSame('success', $account->sync_status);
+        $this->assertSame('connected', $account->platform_status);
+        $this->assertSame('mt5_ea', $account->sync_source);
+        $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+        $this->assertSame(1, (int) $account->trading_days_completed);
+        $this->assertSame(25080.00, (float) $account->balance);
+        $this->assertSame(25110.00, (float) $account->equity);
+    }
+
     public function test_metrics_endpoint_accepts_mt5_dotted_server_time_format(): void
     {
         $account = $this->createChallengeAccount('one_step', [
