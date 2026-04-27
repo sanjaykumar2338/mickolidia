@@ -4090,14 +4090,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const access = await requestMicrophoneAccess();
-
-                if (!access.ok) {
-                    setMicState(false);
-                    setStatusMessage(access.message || status?.dataset.emptyState || '');
-                    return;
-                }
-
                 pendingStatusMessage = status?.dataset.emptyState ?? status?.textContent ?? '';
 
                 try {
@@ -4202,6 +4194,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (focusInputAfterRender) {
                     focusInput();
                 }
+            },
+            startListening: () => {
+                if (micButton instanceof HTMLButtonElement && !micButton.disabled) {
+                    micButton.click();
+                    return true;
+                }
+
+                focusInput();
+                return false;
             },
             cleanup: () => {
                 cancelSpokenReply();
@@ -4575,7 +4576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (modalMicButton instanceof HTMLButtonElement) {
-                    modalMicButton.click();
+                    modalController?.startListening?.() || modalMicButton.click();
                     return;
                 }
 
