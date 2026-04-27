@@ -3,7 +3,6 @@
 namespace App\Services\Voice;
 
 use App\Services\Wolfi\WolfiVoiceSettings;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -44,23 +43,13 @@ class OpenAiTextToSpeechService
             throw new RuntimeException('Voice preview unavailable: selected provider is not configured.');
         }
 
-        $callback = fn (): array => match ($voice['provider']) {
+        return match ($voice['provider']) {
             'openai' => $this->synthesizeWithOpenAi($text, $locale, $voice),
             'elevenlabs' => $this->synthesizeWithElevenLabs($text, $locale, $voice),
             'google_cloud' => $this->synthesizeWithGoogleCloud($text, $locale, $voice),
             'azure_speech' => $this->synthesizeWithAzure($text, $locale, $voice),
             default => throw new RuntimeException('Voice preview unavailable for the selected provider.'),
         };
-
-        if (! (bool) config('wolfi.speech_cache.enabled', true)) {
-            return $callback();
-        }
-
-        return Cache::remember(
-            $this->speechCacheKey($text, $locale, $voice),
-            now()->addSeconds((int) config('wolfi.speech_cache.ttl', 86400)),
-            $callback,
-        );
     }
 
     /**
@@ -247,39 +236,6 @@ class OpenAiTextToSpeechService
         }
 
         return $fallbackLocale;
-    }
-
-    /**
-     * @param array{id: string, provider: string, provider_voice_id: string} $voice
-     */
-    private function speechCacheKey(string $text, ?string $locale, array $voice): string
-    {
-        $payload = [
-            'text' => trim(Str::limit($text, 2000, '')),
-            'locale' => $this->speechLocale($this->normalizeLocale($locale)),
-            'user_id' => auth()->id() ?: 'guest',
-            'voice' => $voice,
-            'provider_settings' => match ($voice['provider']) {
-                'openai' => [
-                    'model' => config('services.openai.tts.model', 'gpt-4o-mini-tts'),
-                    'format' => config('services.openai.tts.format', 'mp3'),
-                    'speed' => config('services.openai.tts.speed', 0.94),
-                ],
-                'elevenlabs' => [
-                    'model' => config('services.elevenlabs.tts.model', 'eleven_multilingual_v2'),
-                    'output_format' => config('services.elevenlabs.tts.output_format', 'mp3_44100_128'),
-                ],
-                'google_cloud' => [
-                    'audio_encoding' => config('services.google_tts.audio_encoding', 'MP3'),
-                ],
-                'azure_speech' => [
-                    'output_format' => config('services.azure_tts.output_format', 'audio-24khz-96kbitrate-mono-mp3'),
-                ],
-                default => [],
-            },
-        ];
-
-        return 'wolfi:speech:'.hash('sha256', json_encode($payload));
     }
 
     private function normalizeLocale(?string $locale): string

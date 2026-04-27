@@ -2265,7 +2265,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let activeReplyAudio = null;
         let activeReplyAudioUrl = '';
         let activeReplyAudioAbortController = null;
-        let replyAudioBlobCache = new Map();
         let queuedReplyPlayback = null;
         let microphonePermissionState = 'prompt';
         let permissionListenerBound = false;
@@ -2277,7 +2276,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let answerQuestionTimeoutId = null;
         let speechVoiceRequestToken = 0;
         let pendingSpeechVoiceResolvers = [];
-        const replyAudioBlobCacheLimit = 8;
         const reducedMotionQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(prefers-reduced-motion: reduce)')
             : null;
@@ -3097,104 +3095,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const replyAudioCacheKey = (spokenText, locale) => `${locale}\u0000${spokenText}`;
-
-        const rememberReplyAudioBlob = (cacheKey, audioBlob) => {
-            if (!(audioBlob instanceof Blob) || audioBlob.size === 0) {
-                return;
-            }
-
-            if (replyAudioBlobCache.has(cacheKey)) {
-                replyAudioBlobCache.delete(cacheKey);
-            }
-
-            replyAudioBlobCache.set(cacheKey, audioBlob);
-
-            while (replyAudioBlobCache.size > replyAudioBlobCacheLimit) {
-                const oldestKey = replyAudioBlobCache.keys().next().value;
-                replyAudioBlobCache.delete(oldestKey);
-            }
-        };
-
-        const playReplyAudioBlob = async (
-            audioBlob,
-            locale,
-            {
-                playbackRequestToken,
-                cacheSource = 'network',
-            } = {},
-        ) => {
-            if (!(audioBlob instanceof Blob) || audioBlob.size === 0) {
-                return {
-                    status: 'failed',
-                };
-            }
-
-            if (playbackRequestToken !== speechVoiceRequestToken) {
-                return {
-                    status: 'aborted',
-                };
-            }
-
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.preload = 'auto';
-            activeReplyAudio = audio;
-            activeReplyAudioUrl = audioUrl;
-            activeReplyAudioAbortController = null;
-
-            audio.addEventListener('play', () => {
-                if (activeReplyAudio !== audio) {
-                    return;
-                }
-
-                startWolfiAudioReactivity(audio);
-
-                if (status instanceof HTMLElement) {
-                    status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
-                }
-
-                setPlayButtonState(true, true);
-            });
-
-            audio.addEventListener('ended', () => {
-                if (activeReplyAudio !== audio) {
-                    return;
-                }
-
-                clearReplyAudioElement();
-                setPlayButtonState(false, true);
-
-                if (status instanceof HTMLElement) {
-                    status.textContent = status.dataset.readyMessage ?? status.textContent ?? '';
-                }
-            });
-
-            audio.addEventListener('error', () => {
-                if (activeReplyAudio !== audio) {
-                    return;
-                }
-
-                clearReplyAudioElement();
-                setPlayButtonState(false, true);
-
-                if (status instanceof HTMLElement) {
-                    status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
-                }
-            });
-
-            await audio.play();
-
-            voiceDebug('server voice playback started', {
-                locale,
-                cacheSource,
-            });
-
-            return {
-                status: 'played',
-            };
-        };
-
         const focusInput = () => {
             if (!(input instanceof HTMLInputElement)) {
                 return;
@@ -3237,21 +3137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             clearReplyAudioElement();
             clearPendingReplyPlayback();
             setPlayButtonState(true, true);
-
-            const audioCacheKey = replyAudioCacheKey(spokenText, locale);
-            const cachedAudioBlob = replyAudioBlobCache.get(audioCacheKey);
-
-            if (cachedAudioBlob instanceof Blob && cachedAudioBlob.size > 0) {
-                voiceDebug('using cached server voice', {
-                    locale,
-                    textLength: spokenText.length,
-                });
-
-                return playReplyAudioBlob(cachedAudioBlob, locale, {
-                    playbackRequestToken,
-                    cacheSource: 'memory',
-                });
-            }
 
             if (status instanceof HTMLElement) {
                 status.textContent = playButton?.dataset.generating ?? status.textContent ?? '';
@@ -3318,11 +3203,63 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
 
-                rememberReplyAudioBlob(audioCacheKey, audioBlob);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.preload = 'auto';
+                activeReplyAudio = audio;
+                activeReplyAudioUrl = audioUrl;
+                activeReplyAudioAbortController = null;
 
-                return playReplyAudioBlob(audioBlob, locale, {
-                    playbackRequestToken,
+                audio.addEventListener('play', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    startWolfiAudioReactivity(audio);
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = playButton?.dataset.speaking ?? status.textContent ?? '';
+                    }
+
+                    setPlayButtonState(true, true);
                 });
+
+                audio.addEventListener('ended', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    clearReplyAudioElement();
+                    setPlayButtonState(false, true);
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = status.dataset.readyMessage ?? status.textContent ?? '';
+                    }
+                });
+
+                audio.addEventListener('error', () => {
+                    if (activeReplyAudio !== audio) {
+                        return;
+                    }
+
+                    clearReplyAudioElement();
+                    setPlayButtonState(false, true);
+
+                    if (status instanceof HTMLElement) {
+                        status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
+                    }
+                });
+
+                await audio.play();
+
+                voiceDebug('server voice playback started', {
+                    locale,
+                    provider: 'openai',
+                });
+
+                return {
+                    status: 'played',
+                };
             } catch (error) {
                 const aborted = error instanceof DOMException && error.name === 'AbortError';
 
