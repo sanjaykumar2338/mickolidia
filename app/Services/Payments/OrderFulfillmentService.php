@@ -99,6 +99,7 @@ class OrderFulfillmentService
 
         if ($account !== null) {
             $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($account);
+            $this->lifecycleMailer->sendPurchaseSupportNotificationIfNeeded($fulfilledOrder, $account);
         }
 
         return ChallengePurchase::query()->findOrFail($result['purchase_id']);

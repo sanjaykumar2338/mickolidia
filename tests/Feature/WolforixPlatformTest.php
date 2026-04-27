@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
+use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
@@ -1188,8 +1189,22 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame($account->id, $poolEntry->allocated_trading_account_id);
         $this->assertFalse((bool) $poolEntry->is_available);
         $this->assertNotNull($account->challenge_purchase_email_sent_at);
+        $this->assertNotNull(data_get($order->fresh()->metadata, 'emails.support_purchase_notification_sent_at'));
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+        Mail::assertSent(ChallengePurchaseSupportNotificationMail::class, 1);
+        Mail::assertSent(ChallengePurchaseSupportNotificationMail::class, function (ChallengePurchaseSupportNotificationMail $mail) use ($account): bool {
+            return $mail->hasTo((string) config('wolforix.support.email'))
+                && $mail->details['client_name'] === 'Paid Trader'
+                && $mail->details['client_email'] === 'billing-paid@example.com'
+                && $mail->details['account_size'] === '$25,000.00'
+                && $mail->details['mt5_login'] === '335411'
+                && $mail->details['mt5_server'] === 'FusionMarkets-Demo'
+                && $mail->details['broker'] === 'FusionMarkets'
+                && $mail->details['account_reference'] === $account->account_reference
+                && $mail->details['remaining_same_size'] === '0'
+                && $mail->details['remaining_total'] === '0';
+        });
 
         $purchaseMail = new ChallengePurchaseConfirmationMail($order->fresh(['challengePurchase.tradingAccounts']) ?? $order);
 
@@ -1233,6 +1248,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame($invoice->pdf_path, $invoice->fresh()->pdf_path);
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+        Mail::assertSent(ChallengePurchaseSupportNotificationMail::class, 1);
     }
 
     public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void

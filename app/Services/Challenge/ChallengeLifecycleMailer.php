@@ -5,8 +5,10 @@ namespace App\Services\Challenge;
 use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePhasePassSupportNotificationMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
+use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
@@ -108,6 +110,66 @@ class ChallengeLifecycleMailer
             traderName: $payload['trader_name'],
             tradingAccount: $payload['account'],
             order: $payload['order'],
+            details: $payload['details'],
+        ));
+
+        return true;
+    }
+
+    public function sendPurchaseSupportNotificationIfNeeded(Order $order, TradingAccount $account): bool
+    {
+        $payload = DB::transaction(function () use ($order, $account): ?array {
+            /** @var Order|null $freshOrder */
+            $freshOrder = Order::query()
+                ->with(['challengePurchase', 'user'])
+                ->lockForUpdate()
+                ->find($order->id);
+
+            /** @var TradingAccount|null $freshAccount */
+            $freshAccount = TradingAccount::query()
+                ->with(['user', 'order', 'challengePlan', 'challengePurchase'])
+                ->lockForUpdate()
+                ->find($account->id);
+
+            if (! $freshOrder instanceof Order || ! $freshAccount instanceof TradingAccount || $freshAccount->is_trial) {
+                return null;
+            }
+
+            $supportEmail = trim((string) config('wolforix.support.email'));
+
+            if ($supportEmail === '') {
+                return null;
+            }
+
+            $metadata = $freshOrder->metadata ?? [];
+
+            if (Arr::has($metadata, 'emails.support_purchase_notification_sent_at')) {
+                return null;
+            }
+
+            Arr::set($metadata, 'emails.support_purchase_notification_sent_at', now()->toIso8601String());
+
+            $freshOrder->forceFill([
+                'metadata' => $metadata,
+            ])->save();
+
+            return [
+                'email' => $supportEmail,
+                'user' => $freshAccount->user,
+                'order' => $freshOrder->fresh(['challengePurchase', 'user']) ?? $freshOrder,
+                'account' => $freshAccount->fresh(['user', 'order', 'challengePlan', 'challengePurchase']) ?? $freshAccount,
+                'details' => $this->purchaseSupportDetails($freshOrder, $freshAccount),
+            ];
+        });
+
+        if ($payload === null) {
+            return false;
+        }
+
+        Mail::to($payload['email'])->send(new ChallengePurchaseSupportNotificationMail(
+            user: $payload['user'],
+            order: $payload['order'],
+            tradingAccount: $payload['account'],
             details: $payload['details'],
         ));
 
@@ -332,6 +394,46 @@ class ChallengeLifecycleMailer
             'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
             'mt5_deactivation_status' => (string) str((string) (data_get($account->meta, 'mt5_deactivation.current.status') ?: $account->platform_status ?: 'pending'))->replace('_', ' ')->title(),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function purchaseSupportDetails(Order $order, TradingAccount $account): array
+    {
+        $user = $account->user ?: $order->user;
+        $broker = $this->accountBroker($account) ?: (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS);
+        $accountSize = (int) ($account->account_size ?: $account->starting_balance ?: $order->account_size ?: 0);
+
+        return [
+            'client_name' => (string) ($order->full_name ?: $user?->name ?: 'Trader'),
+            'client_email' => (string) ($order->email ?: $user?->email ?: 'Not available'),
+            'purchased_plan' => $this->planLabel($account),
+            'account_size' => $this->money((float) $accountSize),
+            'order_number' => (string) ($order->order_number ?: 'N/A'),
+            'payment_reference' => (string) ($order->external_payment_id ?: $order->external_checkout_id ?: $order->order_number ?: 'N/A'),
+            'mt5_login' => (string) ($this->accountLogin($account) ?: 'Pending provisioning'),
+            'broker' => $broker,
+            'mt5_server' => (string) ($this->accountServer($account) ?: 'Pending provisioning'),
+            'account_reference' => (string) ($account->account_reference ?: 'N/A'),
+            'purchased_at' => ($order->updated_at ?: now())->format('Y-m-d H:i:s'),
+            'remaining_same_size' => (string) $this->remainingFusionMarketsAccounts($accountSize),
+            'remaining_total' => (string) $this->remainingFusionMarketsAccounts(),
+        ];
+    }
+
+    private function remainingFusionMarketsAccounts(?int $accountSize = null): int
+    {
+        return Mt5AccountPoolEntry::query()
+            ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
+            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo.ods')))
+            ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
+            ->where('meta->platform', (string) config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5))
+            ->where('is_available', true)
+            ->whereNull('allocated_at')
+            ->whereNull('allocated_trading_account_id')
+            ->when($accountSize !== null && $accountSize > 0, fn ($query) => $query->where('account_size', $accountSize))
+            ->count();
     }
 
     /**

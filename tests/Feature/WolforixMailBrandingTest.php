@@ -6,6 +6,7 @@ use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengeFailedMail;
 use App\Mail\ChallengePassedMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
+use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
@@ -31,6 +32,7 @@ class WolforixMailBrandingTest extends TestCase
             'name' => 'Mail Trader',
             'email' => 'mail-trader@example.com',
         ]);
+        $user->id = 42;
 
         $order = new Order([
             'order_number' => 'WFX-ORD-TEST-001',
@@ -61,6 +63,21 @@ class WolforixMailBrandingTest extends TestCase
                 'server' => 'Wolforix-Demo',
                 'account_type' => '1-Step Instant',
                 'account_size' => '5K',
+            ]),
+            new ChallengePurchaseSupportNotificationMail($user, $order, $account, [
+                'client_name' => 'Mail Trader',
+                'client_email' => 'mail-trader@example.com',
+                'purchased_plan' => 'Wolforix Challenge - 1-Step Instant $5,000.00',
+                'account_size' => '$5,000.00',
+                'order_number' => 'WFX-ORD-TEST-001',
+                'payment_reference' => 'pi_test_123',
+                'mt5_login' => '105381073',
+                'broker' => 'FusionMarkets',
+                'mt5_server' => 'FusionMarkets-Demo',
+                'account_reference' => 'WFX-CT-TEST-001',
+                'purchased_at' => '2026-04-27 12:00:00',
+                'remaining_same_size' => '4',
+                'remaining_total' => '9',
             ]),
             new PhaseOnePassedMail('Mail Trader', $account, [
                 'plan' => '2-Step Pro / 5K',
