@@ -15,6 +15,7 @@ class WolfiSpeechTest extends TestCase
 
         config()->set('session.driver', 'array');
         config()->set('cache.default', 'array');
+        config()->set('wolfi.speech_cache.store', 'array');
         $this->withoutVite();
         $this->withoutMiddleware(ValidateCsrfToken::class);
     }

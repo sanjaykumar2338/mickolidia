@@ -233,6 +233,7 @@ return [
 
     'speech_cache' => [
         'enabled' => filter_var(env('WOLFI_SPEECH_CACHE_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'store' => env('WOLFI_SPEECH_CACHE_STORE', 'file'),
         'ttl' => (int) env('WOLFI_SPEECH_CACHE_TTL', 86400),
     ],
 
