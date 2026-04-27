@@ -103,6 +103,38 @@ class WolfiSpeechTest extends TestCase
         });
     }
 
+    public function test_assistant_speech_endpoint_caches_matching_elevenlabs_audio_requests(): void
+    {
+        config()->set('wolfi.voices.default', 'elevenlabs-david');
+        config()->set('services.elevenlabs.tts.enabled', true);
+        config()->set('services.elevenlabs.api_key', 'elevenlabs-test-key');
+        config()->set('services.elevenlabs.voice_id', 'id7LQ3n0ft94moeTT1ER');
+        config()->set('services.elevenlabs.base_url', 'https://api.elevenlabs.io');
+        config()->set('services.elevenlabs.tts.model', 'eleven_multilingual_v2');
+        config()->set('services.elevenlabs.tts.output_format', 'mp3_44100_128');
+
+        Http::fake([
+            'https://api.elevenlabs.io/v1/text-to-speech/*' => Http::response('cached-elevenlabs-audio', 200, [
+                'Content-Type' => 'audio/mpeg',
+            ]),
+        ]);
+
+        $payload = [
+            'text' => 'Hello from Wolfi using cached ElevenLabs audio.',
+            'locale' => 'en-US',
+        ];
+
+        $this->post(route('assistant.speech'), $payload)
+            ->assertOk()
+            ->assertHeader('X-Wolfi-TTS-Provider', 'elevenlabs');
+
+        $this->post(route('assistant.speech'), $payload)
+            ->assertOk()
+            ->assertHeader('X-Wolfi-TTS-Provider', 'elevenlabs');
+
+        Http::assertSentCount(1);
+    }
+
     public function test_assistant_speech_retries_elevenlabs_fallback_voice_when_david_requires_paid_plan(): void
     {
         config()->set('wolfi.voices.default', 'elevenlabs-david');

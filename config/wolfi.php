@@ -231,6 +231,11 @@ return [
         'action_note' => 'The layout and response payloads already reserve a clean place for future playback controls and approved voice samples.',
     ],
 
+    'speech_cache' => [
+        'enabled' => filter_var(env('WOLFI_SPEECH_CACHE_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'ttl' => (int) env('WOLFI_SPEECH_CACHE_TTL', 86400),
+    ],
+
     'voices' => [
         'provider' => env('WOLFI_TTS_PROVIDER', 'elevenlabs'),
         'default' => env('WOLFI_TTS_VOICE', 'elevenlabs-david'),
