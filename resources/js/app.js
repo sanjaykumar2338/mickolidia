@@ -3306,6 +3306,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (canUseServerSpeech()) {
+                setPlayButtonState(false, currentAnswerText.trim() !== '');
+
+                if (status instanceof HTMLElement) {
+                    status.textContent = playButton?.dataset.unavailableMessage ?? status.textContent ?? '';
+                }
+
+                return;
+            }
+
             if (!canUseBrowserSpeech()) {
                 setPlayButtonState(false, currentAnswerText.trim() !== '');
 
@@ -4907,6 +4917,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const voiceId = button.dataset.voiceId ?? '';
+                const voiceProvider = button.dataset.voiceProvider ?? '';
 
                 if (voiceId === '') {
                     setStatusMessage(unavailableMessage);
@@ -5008,7 +5019,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const looksLikeProviderFailure = error instanceof Error
                             && error.message.toLowerCase().includes('unavailable');
 
-                        if (looksLikeProviderFailure) {
+                        if (looksLikeProviderFailure && voiceProvider === 'web_speech') {
                             try {
                                 await playBrowserPreview(voiceId, button);
                                 return;

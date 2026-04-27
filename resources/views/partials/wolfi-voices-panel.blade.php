@@ -117,6 +117,7 @@
                             type="button"
                             data-wolfi-voice-preview
                             data-voice-id="{{ $voiceId }}"
+                            data-voice-provider="{{ $voice['provider'] ?? '' }}"
                             data-play-label="{{ __('Play Preview') }}"
                             data-stop-label="{{ __('Stop Preview') }}"
                             class="inline-flex items-center justify-center rounded-full border border-amber-300/28 bg-amber-300/12 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:border-amber-200/40 hover:bg-amber-300/20 disabled:cursor-not-allowed disabled:opacity-45"

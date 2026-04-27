@@ -212,6 +212,17 @@ class WolfiVoiceSettings
             return $legacyConfigured;
         }
 
+        $provider = trim((string) config('wolfi.voices.provider', ''));
+
+        if ($provider !== '') {
+            $providerDefault = collect($this->voiceOptions())
+                ->first(fn (array $voice): bool => $voice['provider'] === $provider);
+
+            if (is_array($providerDefault)) {
+                return $providerDefault['id'];
+            }
+        }
+
         return $this->voiceOptions()[0]['id'] ?? 'webspeech-en-guide';
     }
 

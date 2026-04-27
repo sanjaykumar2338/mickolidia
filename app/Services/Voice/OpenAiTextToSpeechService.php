@@ -11,6 +11,7 @@ class OpenAiTextToSpeechService
 {
     public function __construct(
         private readonly WolfiVoiceSettings $wolfiVoiceSettings,
+        private readonly ElevenLabsTextToSpeechService $elevenLabsTextToSpeechService,
     ) {}
 
     public function isConfigured(?string $voiceId = null): bool
@@ -95,34 +96,12 @@ class OpenAiTextToSpeechService
      */
     private function synthesizeWithElevenLabs(string $text, ?string $locale, array $voice): array
     {
-        $localeBase = $this->normalizeLocale($locale);
-        $speechLocale = $this->speechLocale($localeBase);
-        $input = trim(Str::limit($text, 2000, ''));
-        $model = (string) config('services.elevenlabs.tts.model', 'eleven_multilingual_v2');
-        $outputFormat = (string) config('services.elevenlabs.tts.output_format', 'mp3_44100_128');
-
-        $response = Http::baseUrl((string) config('services.elevenlabs.base_url', 'https://api.elevenlabs.io'))
-            ->withHeaders([
-                'xi-api-key' => (string) config('services.elevenlabs.api_key'),
-                'Accept' => 'audio/mpeg',
-            ])
-            ->timeout((int) config('services.elevenlabs.timeout', 20))
-            ->asJson()
-            ->post('v1/text-to-speech/'.rawurlencode($voice['provider_voice_id']), [
-                'text' => $input,
-                'model_id' => $model,
-                'output_format' => $outputFormat,
-            ])
-            ->throw();
-
-        return [
-            'audio' => $response->body(),
-            'content_type' => $response->header('Content-Type') ?: 'audio/mpeg',
-            'locale' => $speechLocale,
-            'voice' => $voice['id'],
-            'model' => $model,
-            'provider' => 'elevenlabs',
-        ];
+        return $this->elevenLabsTextToSpeechService->synthesize(
+            $text,
+            $locale,
+            $voice['provider_voice_id'],
+            $voice['id'],
+        );
     }
 
     /**

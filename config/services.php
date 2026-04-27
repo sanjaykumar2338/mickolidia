@@ -77,11 +77,13 @@ return [
 
     'elevenlabs' => [
         'api_key' => env('ELEVENLABS_API_KEY'),
+        'voice_id' => env('ELEVENLABS_VOICE_ID', 'id7LQ3n0ft94moeTT1ER'),
+        'fallback_voice_id' => env('ELEVENLABS_FALLBACK_VOICE_ID', 'IKne3meq5aSn9XLyUdCD'),
         'base_url' => env('ELEVENLABS_BASE_URL', 'https://api.elevenlabs.io'),
         'timeout' => (int) env('ELEVENLABS_TIMEOUT', 20),
         'tts' => [
             'enabled' => filter_var(env('ELEVENLABS_TTS_ENABLED', true), FILTER_VALIDATE_BOOL),
-            'model' => env('ELEVENLABS_TTS_MODEL', 'eleven_multilingual_v2'),
+            'model' => env('ELEVENLABS_MODEL_ID', env('ELEVENLABS_TTS_MODEL', 'eleven_multilingual_v2')),
             'output_format' => env('ELEVENLABS_TTS_OUTPUT_FORMAT', 'mp3_44100_128'),
         ],
     ],

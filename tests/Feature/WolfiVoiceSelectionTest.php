@@ -34,6 +34,7 @@ class WolfiVoiceSelectionTest extends TestCase
             ->get(route('dashboard.wolfi.voices'))
             ->assertOk()
             ->assertSee('Select Wolfi Voice')
+            ->assertSee('David - Intense, Rapid, and Expressive')
             ->assertSee('Web Speech Guide')
             ->assertSee('Play Preview')
             ->assertSee('Save Selected Voice');
@@ -93,12 +94,13 @@ class WolfiVoiceSelectionTest extends TestCase
         });
     }
 
-    public function test_dashboard_voice_preview_endpoint_uses_requested_voice_for_elevenlabs(): void
+    public function test_dashboard_voice_preview_endpoint_uses_requested_david_voice_for_elevenlabs(): void
     {
         $user = User::factory()->create();
 
         config()->set('services.elevenlabs.tts.enabled', true);
         config()->set('services.elevenlabs.api_key', 'elevenlabs-test-key');
+        config()->set('services.elevenlabs.voice_id', 'id7LQ3n0ft94moeTT1ER');
         config()->set('services.elevenlabs.base_url', 'https://api.elevenlabs.io');
         config()->set('services.elevenlabs.timeout', 20);
         config()->set('services.elevenlabs.tts.model', 'eleven_multilingual_v2');
@@ -113,17 +115,17 @@ class WolfiVoiceSelectionTest extends TestCase
         $response = $this->actingAs($user)
             ->withSession($this->adminSessionState())
             ->post(route('dashboard.wolfi.voices.preview'), [
-                'voice_id' => 'elevenlabs-adam',
+                'voice_id' => 'elevenlabs-david',
                 'text' => 'Preview voice sample.',
                 'locale' => 'en-US',
             ]);
 
         $response->assertOk();
         $response->assertHeader('X-Wolfi-TTS-Provider', 'elevenlabs');
-        $response->assertHeader('X-Wolfi-TTS-Voice', 'elevenlabs-adam');
+        $response->assertHeader('X-Wolfi-TTS-Voice', 'elevenlabs-david');
 
         Http::assertSent(function ($request): bool {
-            return $request->url() === 'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB'
+            return $request->url() === 'https://api.elevenlabs.io/v1/text-to-speech/id7LQ3n0ft94moeTT1ER?output_format=mp3_44100_128'
                 && data_get($request->data(), 'model_id') === 'eleven_multilingual_v2'
                 && data_get($request->data(), 'text') === 'Preview voice sample.';
         });
