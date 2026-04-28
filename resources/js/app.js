@@ -4695,10 +4695,103 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        const wolfiLaunchGestures = new WeakMap();
+        const wolfiLaunchTapMovementLimit = 12;
+
+        const getWolfiPointerPoint = (event) => {
+            if ('clientX' in event && 'clientY' in event) {
+                return {
+                    x: event.clientX,
+                    y: event.clientY,
+                };
+            }
+
+            const touch = event.touches?.[0] ?? event.changedTouches?.[0] ?? null;
+
+            if (touch) {
+                return {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                };
+            }
+
+            return null;
+        };
+
+        const startWolfiLaunchGesture = (button, event) => {
+            const point = getWolfiPointerPoint(event);
+
+            if (!point) {
+                return;
+            }
+
+            wolfiLaunchGestures.set(button, {
+                startX: point.x,
+                startY: point.y,
+                moved: false,
+            });
+        };
+
+        const updateWolfiLaunchGesture = (button, event) => {
+            const state = wolfiLaunchGestures.get(button);
+            const point = getWolfiPointerPoint(event);
+
+            if (!state || !point) {
+                return;
+            }
+
+            const movedX = Math.abs(point.x - state.startX);
+            const movedY = Math.abs(point.y - state.startY);
+
+            if (movedX > wolfiLaunchTapMovementLimit || movedY > wolfiLaunchTapMovementLimit) {
+                state.moved = true;
+            }
+        };
+
+        const shouldIgnoreWolfiLaunchClick = (button) => {
+            const state = wolfiLaunchGestures.get(button);
+
+            if (!state?.moved) {
+                return false;
+            }
+
+            wolfiLaunchGestures.delete(button);
+            return true;
+        };
+
         wolfiLaunchButtons.forEach((button) => {
+            button.addEventListener('pointerdown', (event) => {
+                startWolfiLaunchGesture(button, event);
+            }, { passive: true });
+
+            button.addEventListener('pointermove', (event) => {
+                updateWolfiLaunchGesture(button, event);
+            }, { passive: true });
+
+            button.addEventListener('pointercancel', () => {
+                wolfiLaunchGestures.delete(button);
+            }, { passive: true });
+
+            button.addEventListener('touchstart', (event) => {
+                startWolfiLaunchGesture(button, event);
+            }, { passive: true });
+
+            button.addEventListener('touchmove', (event) => {
+                updateWolfiLaunchGesture(button, event);
+            }, { passive: true });
+
+            button.addEventListener('touchcancel', () => {
+                wolfiLaunchGestures.delete(button);
+            }, { passive: true });
+
             button.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
+
+                if (shouldIgnoreWolfiLaunchClick(button)) {
+                    return;
+                }
+
                 setWolfiModalState(true, {
                     userInitiated: true,
                     triggerButton: button,
