@@ -3492,6 +3492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const buildAssistantResponse = ({
             localeBase = pageLocaleBase,
             question = assistantConfig.assistant_name ?? '',
+            userQuestion = '',
             answer = '',
             source = 'fallback',
             intent = 'default',
@@ -3500,6 +3501,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 locale: localeBase,
                 speech_locale: speechLocaleMap[localeBase] ?? activeSpeechLocale,
                 question,
+                user_question: userQuestion || question,
                 answer,
                 source,
                 intent,
@@ -3514,70 +3516,78 @@ document.addEventListener('DOMContentLoaded', () => {
             intent: 'intro',
         });
 
-        const buildSupportFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildSupportFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.support_fallback ?? '',
             source: 'fallback',
             intent: 'support',
         });
 
-        const buildPlanFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildPlanFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.plan_fallback ?? '',
             source: 'fallback',
             intent: 'plans',
         });
 
-        const buildTrialFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildTrialFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.trial_fallback ?? '',
             source: 'fallback',
             intent: 'trial',
         });
 
-        const buildPayoutFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildPayoutFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.payout_fallback ?? '',
             source: 'fallback',
             intent: 'payout',
         });
 
-        const buildRulesFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildRulesFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.rules_fallback ?? '',
             source: 'fallback',
             intent: 'rules',
         });
 
-        const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.checkout_fallback ?? '',
             source: 'fallback',
             intent: 'checkout',
         });
 
-        const buildDiscountFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildDiscountFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.discount_fallback ?? '',
             source: 'fallback',
             intent: 'discount',
         });
 
-        const buildGeneralFallbackResponse = (localeBase = pageLocaleBase) => buildAssistantResponse({
+        const buildGeneralFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
-            question: assistantConfig.assistant_name ?? '',
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
             answer: assistantConfig.general_fallback ?? '',
             source: 'fallback',
             intent: 'default',
         });
-        const buildClarificationResponse = (localeBase = pageLocaleBase, suggestions = []) => {
+        const buildClarificationResponse = (localeBase = pageLocaleBase, suggestions = [], userQuestion = '') => {
             const normalizedSuggestions = uniqueValues(suggestions.map((suggestion) => String(suggestion ?? '').trim()).filter(Boolean)).slice(0, 3);
             const fallbackSuggestions = Array.isArray(assistantConfig.example_questions)
                 ? assistantConfig.example_questions.filter(Boolean).slice(0, 3)
@@ -3590,7 +3600,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return buildAssistantResponse({
                 localeBase,
-                question: assistantConfig.clarify_title ?? assistantConfig.assistant_name ?? '',
+                question: userQuestion || (assistantConfig.clarify_title ?? assistantConfig.assistant_name ?? ''),
+                userQuestion,
                 answer,
                 source: 'clarify',
                 intent: 'default',
@@ -3741,45 +3752,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 )
                 || (
                     meaningfulTokens.length <= 2
-                    && bestMatch.score >= 44
-                    && bestMatch.matchedMeaningfulTokensCount >= 1
+                    && bestMatch.score >= 68
+                    && bestMatch.coverage >= 1
+                    && (
+                        bestMatch.questionNormalized === normalizedQuery
+                        || bestMatch.questionNormalized.includes(normalizedQuery)
+                        || bestMatch.matchedPhraseTermsCount > 0
+                    )
                 )
             );
 
             if (hasStrongFaqMatch) {
                 return {
                     ...bestMatch,
+                    user_question: query,
                     source: 'faq',
                     intent: intents[0] ?? 'default',
                 };
             }
 
             if (intents.includes('payout') && String(assistantConfig.payout_fallback ?? '').trim() !== '') {
-                return buildPayoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildPayoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if (intents.includes('trial') && String(assistantConfig.trial_fallback ?? '').trim() !== '') {
-                return buildTrialFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildTrialFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if (intents.includes('rules') && String(assistantConfig.rules_fallback ?? '').trim() !== '') {
-                return buildRulesFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildRulesFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if (intents.includes('plans') && String(assistantConfig.plan_fallback ?? '').trim() !== '') {
-                return buildPlanFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildPlanFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if ((intents.includes('checkout') || intents.includes('login')) && String(assistantConfig.checkout_fallback ?? '').trim() !== '') {
-                return buildCheckoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildCheckoutFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if (intents.includes('discount') && String(assistantConfig.discount_fallback ?? '').trim() !== '') {
-                return buildDiscountFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildDiscountFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             if ((intents.includes('support') || intents.includes('login')) && String(assistantConfig.support_fallback ?? '').trim() !== '') {
-                return buildSupportFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildSupportFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             const clarificationCandidates = positiveMatches
@@ -3788,11 +3805,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 .map((item) => item.question);
 
             if (clarificationCandidates.length > 0) {
-                return buildClarificationResponse(preferredLocales[0] ?? pageLocaleBase, clarificationCandidates);
+                return buildClarificationResponse(preferredLocales[0] ?? pageLocaleBase, clarificationCandidates, query);
             }
 
             if (String(assistantConfig.general_fallback ?? '').trim() !== '') {
-                return buildGeneralFallbackResponse(preferredLocales[0] ?? pageLocaleBase);
+                return buildGeneralFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             return null;
@@ -3832,7 +3849,7 @@ document.addEventListener('DOMContentLoaded', () => {
             syncConversationLocale(enhancedResponse.locale ?? pageLocaleBase);
             rememberResolvedContext(enhancedResponse);
 
-            animateAnswerQuestion(enhancedResponse.question ?? '');
+            animateAnswerQuestion(enhancedResponse.user_question ?? enhancedResponse.question ?? '');
             revealAnswerText(enhancedResponse.answer ?? '');
             currentAnswerText = enhancedResponse.answer ?? '';
             setRenderingState(true, {

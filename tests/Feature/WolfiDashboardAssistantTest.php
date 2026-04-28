@@ -166,6 +166,25 @@ class WolfiDashboardAssistantTest extends TestCase
             ]);
     }
 
+    public function test_wolfi_endpoint_asks_for_clarification_when_message_does_not_match_a_wolforix_topic(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson(route('dashboard.wolfi.respond'), [
+                'message' => 'What is the weather in London tomorrow?',
+                'page' => 'dashboard',
+            ])
+            ->assertOk()
+            ->assertJsonPath('group', 'clarification')
+            ->assertJsonPath('intent', 'clarification')
+            ->assertJsonPath('question', 'What is the weather in London tomorrow?')
+            ->assertJsonFragment([
+                'label' => 'Status',
+                'value' => 'Needs detail',
+            ]);
+    }
+
     public function test_wolfi_endpoint_does_not_expose_other_users_accounts(): void
     {
         $otherAccount = $this->createChallengeAccount('one_step', [

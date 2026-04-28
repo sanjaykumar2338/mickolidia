@@ -166,6 +166,8 @@ export const initWolfiDashboard = () => {
         const statusNode = root.querySelector('[data-wolfi-status]');
         const liveLabel = root.querySelector('[data-wolfi-live-label]');
         const submitButton = form?.querySelector('button[type="submit"]');
+        let activeRequestId = 0;
+        let activeAbortController = null;
 
         if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement) || !(thread instanceof HTMLElement)) {
             return;
@@ -210,6 +212,15 @@ export const initWolfiDashboard = () => {
                 return;
             }
 
+            activeRequestId += 1;
+            const requestId = activeRequestId;
+
+            if (activeAbortController instanceof AbortController) {
+                activeAbortController.abort();
+            }
+
+            activeAbortController = new AbortController();
+
             thread.append(buildUserMessage(trimmedPrompt));
             thread.scrollTo({
                 top: thread.scrollHeight,
@@ -234,9 +245,14 @@ export const initWolfiDashboard = () => {
                         page: config.page ?? 'dashboard',
                         account_id: config.account_id ?? null,
                     }),
+                    signal: activeAbortController.signal,
                 });
 
                 const payload = await response.json().catch(() => ({}));
+
+                if (requestId !== activeRequestId) {
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(payload.message ?? config.status_error ?? 'Wolfi hit a temporary issue. Please try again.');
@@ -247,6 +263,14 @@ export const initWolfiDashboard = () => {
                 setStatus(payload.title ?? config.status_idle ?? 'Ready to guide your next step');
                 setLiveLabel(payload.title ?? config.status_idle ?? 'Ready to guide your next step');
             } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return;
+                }
+
+                if (requestId !== activeRequestId) {
+                    return;
+                }
+
                 appendAssistantMessage({
                     title: 'Temporary issue',
                     message: error instanceof Error
@@ -258,8 +282,11 @@ export const initWolfiDashboard = () => {
                 setStatus(config.status_error ?? 'Wolfi hit a temporary issue. Please try again.');
                 setLiveLabel(config.status_error ?? 'Wolfi hit a temporary issue. Please try again.');
             } finally {
-                setPending(false);
-                input.focus();
+                if (requestId === activeRequestId) {
+                    activeAbortController = null;
+                    setPending(false);
+                    input.focus();
+                }
             }
         };
 

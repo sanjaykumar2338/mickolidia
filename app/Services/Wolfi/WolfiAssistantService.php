@@ -48,12 +48,15 @@ class WolfiAssistantService
             'performance_insights' => $this->performanceInsightsResponse($context),
             'payouts' => $this->payoutResponse($context),
             'support' => $this->supportResponse($context),
+            'greeting' => $this->welcomeResponse($context),
+            'clarification' => $this->clarificationResponse($message, $context),
             default => $this->platformGuidanceResponse($context),
         };
 
         return [
             ...$response,
             'intent' => $intent,
+            'question' => $message,
             'voice' => [
                 'placeholder_enabled' => (bool) data_get($context, 'voice.placeholder_enabled', true),
                 'action_label' => (string) data_get($context, 'voice.action_label', 'Voice actions soon'),
@@ -149,7 +152,12 @@ class WolfiAssistantService
     {
         $normalized = $this->normalize($message);
 
+        if ($normalized === '') {
+            return 'greeting';
+        }
+
         $intentKeywords = [
+            'greeting' => ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
             'consistency' => ['consistency', 'consisten', 'single day', '40%', '40 percent'],
             'payouts' => ['payout', 'withdraw', 'withdrawal', 'profit split', 'paid', 'eligible profit'],
             'performance_insights' => ['metric', 'metrics', 'balance', 'equity', 'floating', 'p&l', 'pnl', 'drawdown', 'win ratio', 'performance'],
@@ -166,7 +174,7 @@ class WolfiAssistantService
             }
         }
 
-        return 'platform_guidance';
+        return 'clarification';
     }
 
     /**
@@ -614,6 +622,42 @@ class WolfiAssistantService
                 ],
             ],
             'suggestions' => $this->suggestionsFor('support'),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    private function clarificationResponse(string $message, array $context): array
+    {
+        $pageTitle = (string) data_get($context, 'page.title', 'dashboard');
+
+        return [
+            'group' => 'clarification',
+            'title' => 'Let me answer the right question',
+            'message' => sprintf(
+                'I received "%s", but I could not map it confidently to a Wolforix topic. Ask about rules, payouts, metrics, account status, invoices, MT5 access, or where to find something on the %s page.',
+                str($message)->limit(140)->toString(),
+                $pageTitle,
+            ),
+            'bullets' => [
+                'Try naming the exact topic, such as payout timing, daily loss, max drawdown, MT5 login, invoice, or account metrics.',
+                'If this is account-specific, include the account or challenge detail you want me to explain.',
+            ],
+            'stats' => [
+                [
+                    'label' => 'Status',
+                    'value' => 'Needs detail',
+                    'tone' => 'amber',
+                ],
+                [
+                    'label' => 'Page',
+                    'value' => $pageTitle,
+                    'tone' => 'sky',
+                ],
+            ],
+            'suggestions' => $this->suggestionsFor('platform_guidance'),
         ];
     }
 
