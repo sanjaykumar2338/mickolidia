@@ -722,6 +722,27 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('$39');
     }
 
+    public function test_launch_offer_ignore_can_be_saved_without_redirect_for_popup_close(): void
+    {
+        $this->postJson(route('launch-offer.update'), [
+            'decision' => 'ignore',
+            'redirect_to' => route('home'),
+        ])
+            ->assertOk()
+            ->assertJson([
+                'decision' => 'ignore',
+                'applied' => false,
+                'promo_code' => null,
+                'redirect_to' => route('home'),
+            ])
+            ->assertSessionHas('launch_offer', function (array $launchOffer): bool {
+                return ($launchOffer['decision'] ?? null) === 'ignore'
+                    && ($launchOffer['applied'] ?? null) === false
+                    && array_key_exists('promo_code', $launchOffer)
+                    && $launchOffer['promo_code'] === null;
+            });
+    }
+
     public function test_dashboard_routes_require_authentication(): void
     {
         foreach ([

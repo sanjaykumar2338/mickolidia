@@ -7,6 +7,8 @@
 <div
     data-launch-popup
     data-launch-popup-delay="10000"
+    data-launch-popup-endpoint="{{ route('launch-offer.update') }}"
+    data-launch-popup-decision="ignore"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
     role="dialog"
     aria-modal="true"
@@ -15,16 +17,14 @@
     style="display: none;"
 >
     <button
-        type="submit"
-        form="launch-offer-ignore-form"
+        type="button"
         data-launch-popup-close
         class="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
         aria-label="{{ __('site.launch_popup.close') }}"
     ></button>
     <div class="launch-popup-card relative w-full max-w-[34rem] overflow-hidden rounded-[2rem] border border-white/12 bg-[radial-gradient(circle_at_top,rgba(56,88,168,0.28),transparent_34%),linear-gradient(180deg,rgba(7,14,29,0.98),rgba(5,10,18,0.98))] px-5 py-6 shadow-[0_34px_110px_rgba(2,6,23,0.78)] sm:px-6 sm:py-7">
         <button
-            type="submit"
-            form="launch-offer-ignore-form"
+            type="button"
             data-launch-popup-close
             class="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
             aria-label="{{ __('site.launch_popup.close') }}"
@@ -69,7 +69,7 @@
                 >
                     {{ __('site.launch_popup.primary_action') }}
                 </button>
-                <button type="submit" form="launch-offer-ignore-form" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                <button type="button" data-launch-popup-close class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                     {{ __('site.launch_popup.secondary_action') }}
                 </button>
             </div>

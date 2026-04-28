@@ -551,19 +551,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const launchPopup = document.querySelector('[data-launch-popup]');
 
     if (launchPopup instanceof HTMLElement) {
-        const ignoreForm = document.getElementById('launch-offer-ignore-form');
         const closeButtons = launchPopup.querySelectorAll('[data-launch-popup-close]');
         const popupDelay = Number.parseInt(launchPopup.dataset.launchPopupDelay ?? '10000', 10);
         const resolvedPopupDelay = Number.isFinite(popupDelay) && popupDelay >= 0 ? popupDelay : 10000;
+        const popupEndpoint = launchPopup.dataset.launchPopupEndpoint ?? '';
+        const popupDecision = launchPopup.dataset.launchPopupDecision ?? 'ignore';
+        let launchPopupTimer = null;
+        let launchPopupClosed = false;
+
         const showLaunchPopup = () => {
+            if (launchPopupClosed) {
+                return;
+            }
+
             launchPopup.style.display = 'flex';
             launchPopup.setAttribute('aria-hidden', 'false');
         };
         const isLaunchPopupVisible = () => launchPopup.style.display !== 'none';
-        const launchPopupTimer = window.setTimeout(showLaunchPopup, resolvedPopupDelay);
+
+        const hideLaunchPopup = () => {
+            launchPopupClosed = true;
+            launchPopup.style.display = 'none';
+            launchPopup.setAttribute('aria-hidden', 'true');
+
+            if (launchPopupTimer !== null) {
+                window.clearTimeout(launchPopupTimer);
+                launchPopupTimer = null;
+            }
+        };
+
+        const persistLaunchPopupDecision = () => {
+            if (popupEndpoint === '') {
+                return;
+            }
+
+            const formData = new FormData();
+            const launchPopupCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            formData.set('decision', popupDecision);
+            formData.set('redirect_to', window.location.href);
+
+            window.fetch(popupEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': launchPopupCsrfToken,
+                },
+                body: formData,
+                keepalive: true,
+            }).catch(() => {});
+        };
+
+        const scheduleLaunchPopup = () => {
+            launchPopupTimer = window.setTimeout(showLaunchPopup, resolvedPopupDelay);
+        };
+
+        if (document.readyState === 'complete') {
+            scheduleLaunchPopup();
+        } else {
+            window.addEventListener('load', scheduleLaunchPopup, { once: true });
+        }
 
         window.addEventListener('pagehide', () => {
-            window.clearTimeout(launchPopupTimer);
+            if (launchPopupTimer !== null) {
+                window.clearTimeout(launchPopupTimer);
+            }
         }, { once: true });
 
         closeButtons.forEach((button) => {
@@ -572,18 +623,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             button.addEventListener('click', (event) => {
-                if (!(ignoreForm instanceof HTMLFormElement)) {
-                    return;
-                }
-
                 event.preventDefault();
-                ignoreForm.requestSubmit();
+                event.stopPropagation();
+                hideLaunchPopup();
+                persistLaunchPopupDecision();
             });
         });
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && isLaunchPopupVisible() && ignoreForm instanceof HTMLFormElement) {
-                ignoreForm.requestSubmit();
+            if (event.key === 'Escape' && isLaunchPopupVisible()) {
+                event.preventDefault();
+                hideLaunchPopup();
+                persistLaunchPopupDecision();
             }
         });
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Calendar\EconomicCalendarServiceInterface;
 use App\Services\Pricing\ChallengePricingService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -72,7 +73,7 @@ class PublicPageController extends Controller
         ]);
     }
 
-    public function updateLaunchOffer(Request $request, ChallengePricingService $pricingService): RedirectResponse
+    public function updateLaunchOffer(Request $request, ChallengePricingService $pricingService): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'decision' => ['required', 'in:apply,ignore'],
@@ -96,7 +97,18 @@ class PublicPageController extends Controller
             ]);
         }
 
-        return redirect()->to($this->sanitizeInternalRedirect((string) ($validated['redirect_to'] ?? route('home'))));
+        $redirectTo = $this->sanitizeInternalRedirect((string) ($validated['redirect_to'] ?? route('home')));
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'decision' => $decision,
+                'applied' => $decision === 'apply' && $promoCode !== '',
+                'promo_code' => $decision === 'apply' && $promoCode !== '' ? $promoCode : null,
+                'redirect_to' => $redirectTo,
+            ]);
+        }
+
+        return redirect()->to($redirectTo);
     }
 
     public function about(): View
