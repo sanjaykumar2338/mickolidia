@@ -4393,6 +4393,52 @@ h6 {
     border-radius: inherit;
 }
 
+.dashboard-command-wolfi-avatar {
+    position: relative;
+    display: inline-flex;
+    width: 6.6rem;
+    max-width: 100%;
+    aspect-ratio: 513 / 562;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 1.45rem;
+    border: 1px solid rgba(244, 183, 74, 0.24);
+    background:
+        radial-gradient(circle at 50% 54%, rgba(244, 183, 74, 0.16), transparent 52%),
+        rgba(4, 8, 15, 0.92);
+    box-shadow:
+        0 14px 30px rgba(2, 6, 23, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dashboard-command-wolfi-image {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    border-radius: inherit;
+}
+
+.dashboard-command-wolfi-core {
+    position: absolute;
+    z-index: 2;
+    left: 47.4%;
+    top: 60.8%;
+    width: 0.72rem;
+    height: 0.72rem;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.98) 0%, rgba(255, 226, 142, 0.9) 38%, rgba(244, 183, 74, 0.18) 74%, rgba(244, 183, 74, 0) 78%);
+    box-shadow:
+        0 0 16px rgba(255, 231, 155, 0.56),
+        0 0 30px rgba(244, 183, 74, 0.36);
+    mix-blend-mode: screen;
+    animation: wolfiCorePulse 2.1s ease-in-out infinite;
+}
+
 .talk-with-wolfi-button {
     position: relative;
     isolation: isolate;

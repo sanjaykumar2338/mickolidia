@@ -95,14 +95,15 @@
                     aria-hidden="true"
                 >
                     <div class="grid h-full w-full place-items-center rounded-full border border-white/8 bg-slate-950 text-center">
-                        <span class="dashboard-wolfi-ring-avatar">
+                        <span class="dashboard-command-wolfi-avatar">
                             <img
-                                src="{{ asset('newfolder/IMG_8542.png') }}"
+                                src="{{ asset('wolfy-mobile.webp') }}"
                                 alt=""
-                                class="h-full w-full object-cover"
+                                class="dashboard-command-wolfi-image"
                                 loading="lazy"
                                 decoding="async"
                             >
+                            <span class="dashboard-command-wolfi-core" aria-hidden="true"></span>
                         </span>
                     </div>
                 </div>

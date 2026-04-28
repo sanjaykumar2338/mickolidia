@@ -35,7 +35,9 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertSee('Trading workspace')
             ->assertSee('Open Wolfi Hub')
             ->assertSee('newphoto.jpeg', false)
+            ->assertSee('wolfy-mobile.webp', false)
             ->assertSee('dashboard-wolfi-ring-avatar', false)
+            ->assertSee('dashboard-command-wolfi-avatar', false)
             ->assertDontSee('Grounded in Wolforix data')
             ->assertDontSee('dashboard\\/wolfi\\/respond', false);
 
