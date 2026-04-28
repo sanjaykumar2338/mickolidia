@@ -4297,6 +4297,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const modalMotionQuery = typeof window.matchMedia === 'function'
             ? window.matchMedia('(prefers-reduced-motion: reduce)')
             : null;
+        const coarsePointerQuery = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(pointer: coarse)')
+            : null;
         let modalIsOpen = false;
         let modalHideTimeoutId = null;
         let lastWolfiTrigger = null;
@@ -4304,6 +4307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let wolfiScrollLocked = false;
 
         const prefersReducedMotion = () => modalMotionQuery?.matches ?? false;
+        const isLikelyTouchDevice = () => (coarsePointerQuery?.matches ?? false) || (window.navigator.maxTouchPoints ?? 0) > 0;
         const getWolfiTransitionDuration = () => (prefersReducedMotion() ? 20 : 360);
 
         const clearWolfiModalHideTimeout = () => {
@@ -4383,7 +4387,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         preventScroll: true,
                     });
                 } catch (error) {
-                    focusTarget.focus();
+                    if (!isLikelyTouchDevice()) {
+                        focusTarget.focus();
+                    }
                 }
             });
         };
@@ -4427,6 +4433,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const syncWolfiFabPlayback = (active) => {
+            if (isLikelyTouchDevice()) {
+                wolfiFabVideos.forEach((video) => {
+                    video.pause();
+                });
+                return;
+            }
+
             wolfiFabVideos.forEach((video) => {
                 if (!active) {
                     video.pause();
@@ -4552,12 +4565,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (triggerQuestion !== '') {
                     modalController?.askQuestion?.(triggerQuestion, {
-                        userInitiated,
+                        userInitiated: false,
                         focusInputAfterRender: false,
                     });
                 } else {
                     modalController?.activateIntro?.({
-                        userInitiated,
+                        userInitiated: false,
                         force: true,
                         focusInputAfterRender: false,
                     });
@@ -4605,12 +4618,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (triggerQuestion !== '') {
                     modalController?.askQuestion?.(triggerQuestion, {
-                        userInitiated,
+                        userInitiated: false,
                         focusInputAfterRender: false,
                     });
                 } else {
                     modalController?.activateIntro({
-                        userInitiated,
+                        userInitiated: false,
                         force: true,
                         focusInputAfterRender: false,
                     });
@@ -4649,7 +4662,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             preventScroll: true,
                         });
                     } catch (error) {
-                        triggerToFocus.focus();
+                        if (!isLikelyTouchDevice()) {
+                            triggerToFocus.focus();
+                        }
                     }
                 }, prefersReducedMotion() ? 0 : 140);
             }
@@ -4696,7 +4711,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const wolfiLaunchGestures = new WeakMap();
-        const wolfiLaunchTapMovementLimit = 12;
+        const wolfiLaunchTapMovementLimit = 14;
+        const wolfiLaunchSyntheticClickWindow = 700;
 
         const getWolfiPointerPoint = (event) => {
             if ('clientX' in event && 'clientY' in event) {
@@ -4718,21 +4734,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         };
 
-        const startWolfiLaunchGesture = (button, event) => {
+        const getWolfiLaunchGesture = (button) => wolfiLaunchGestures.get(button) ?? {
+            startX: 0,
+            startY: 0,
+            moved: false,
+            handledClickUntil: 0,
+            ignoreClickUntil: 0,
+        };
+
+        const setWolfiLaunchGesture = (button, nextState) => {
+            wolfiLaunchGestures.set(button, {
+                ...getWolfiLaunchGesture(button),
+                ...nextState,
+            });
+        };
+
+        const beginWolfiLaunchGesture = (button, event) => {
             const point = getWolfiPointerPoint(event);
 
             if (!point) {
                 return;
             }
 
-            wolfiLaunchGestures.set(button, {
+            setWolfiLaunchGesture(button, {
                 startX: point.x,
                 startY: point.y,
                 moved: false,
             });
         };
 
-        const updateWolfiLaunchGesture = (button, event) => {
+        const trackWolfiLaunchGesture = (button, event) => {
             const state = wolfiLaunchGestures.get(button);
             const point = getWolfiPointerPoint(event);
 
@@ -4748,54 +4779,79 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const shouldIgnoreWolfiLaunchClick = (button) => {
-            const state = wolfiLaunchGestures.get(button);
-
-            if (!state?.moved) {
-                return false;
-            }
-
-            wolfiLaunchGestures.delete(button);
-            return true;
+        const openWolfiFromLaunchButton = (button, event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setWolfiModalState(true, {
+                userInitiated: true,
+                triggerButton: button,
+            });
         };
 
         wolfiLaunchButtons.forEach((button) => {
             button.addEventListener('pointerdown', (event) => {
-                startWolfiLaunchGesture(button, event);
+                beginWolfiLaunchGesture(button, event);
             }, { passive: true });
 
             button.addEventListener('pointermove', (event) => {
-                updateWolfiLaunchGesture(button, event);
+                trackWolfiLaunchGesture(button, event);
             }, { passive: true });
 
             button.addEventListener('pointercancel', () => {
-                wolfiLaunchGestures.delete(button);
+                setWolfiLaunchGesture(button, {
+                    ignoreClickUntil: Date.now() + wolfiLaunchSyntheticClickWindow,
+                });
             }, { passive: true });
 
             button.addEventListener('touchstart', (event) => {
-                startWolfiLaunchGesture(button, event);
+                beginWolfiLaunchGesture(button, event);
             }, { passive: true });
 
             button.addEventListener('touchmove', (event) => {
-                updateWolfiLaunchGesture(button, event);
+                trackWolfiLaunchGesture(button, event);
             }, { passive: true });
 
-            button.addEventListener('touchcancel', () => {
-                wolfiLaunchGestures.delete(button);
-            }, { passive: true });
+            button.addEventListener('touchend', (event) => {
+                trackWolfiLaunchGesture(button, event);
 
-            button.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
+                const state = getWolfiLaunchGesture(button);
+                const suppressUntil = Date.now() + wolfiLaunchSyntheticClickWindow;
 
-                if (shouldIgnoreWolfiLaunchClick(button)) {
+                if (state.moved) {
+                    setWolfiLaunchGesture(button, {
+                        ignoreClickUntil: suppressUntil,
+                    });
                     return;
                 }
 
-                setWolfiModalState(true, {
-                    userInitiated: true,
-                    triggerButton: button,
+                setWolfiLaunchGesture(button, {
+                    handledClickUntil: suppressUntil,
                 });
+                openWolfiFromLaunchButton(button, event);
+            });
+
+            button.addEventListener('touchcancel', () => {
+                setWolfiLaunchGesture(button, {
+                    ignoreClickUntil: Date.now() + wolfiLaunchSyntheticClickWindow,
+                });
+            }, { passive: true });
+
+            button.addEventListener('click', (event) => {
+                const state = getWolfiLaunchGesture(button);
+                const now = Date.now();
+
+                if (state.handledClickUntil > now || state.ignoreClickUntil > now || state.moved) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setWolfiLaunchGesture(button, {
+                        moved: false,
+                        handledClickUntil: 0,
+                        ignoreClickUntil: 0,
+                    });
+                    return;
+                }
+
+                openWolfiFromLaunchButton(button, event);
             });
         });
 
@@ -5273,12 +5329,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (backToTopButton instanceof HTMLButtonElement) {
         const prefersReducedMotion = typeof window.matchMedia === 'function'
             && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const tapMovementLimit = 14;
+        let backToTopStartPoint = null;
+        let backToTopGestureMoved = false;
 
         const syncBackToTopState = () => {
             backToTopButton.classList.toggle('is-visible', window.scrollY > 720);
         };
 
-        backToTopButton.addEventListener('click', () => {
+        const getTouchPoint = (event) => {
+            const touch = event.touches?.[0] ?? event.changedTouches?.[0] ?? null;
+
+            return touch
+                ? {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                }
+                : null;
+        };
+
+        backToTopButton.addEventListener('touchstart', (event) => {
+            backToTopStartPoint = getTouchPoint(event);
+            backToTopGestureMoved = false;
+        }, { passive: true });
+
+        backToTopButton.addEventListener('touchmove', (event) => {
+            const point = getTouchPoint(event);
+
+            if (!backToTopStartPoint || !point) {
+                return;
+            }
+
+            if (
+                Math.abs(point.x - backToTopStartPoint.x) > tapMovementLimit
+                || Math.abs(point.y - backToTopStartPoint.y) > tapMovementLimit
+            ) {
+                backToTopGestureMoved = true;
+            }
+        }, { passive: true });
+
+        backToTopButton.addEventListener('touchcancel', () => {
+            backToTopGestureMoved = true;
+        }, { passive: true });
+
+        backToTopButton.addEventListener('click', (event) => {
+            if (backToTopGestureMoved) {
+                event.preventDefault();
+                event.stopPropagation();
+                backToTopGestureMoved = false;
+                backToTopStartPoint = null;
+                return;
+            }
+
             window.scrollTo({
                 top: 0,
                 behavior: prefersReducedMotion ? 'auto' : 'smooth',

@@ -29,7 +29,7 @@
                 muted
                 loop
                 playsinline
-                preload="metadata"
+                preload="none"
                 poster="{{ $wolfiFabImage }}"
                 aria-hidden="true"
                 disablepictureinpicture

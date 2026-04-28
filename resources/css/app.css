@@ -1204,6 +1204,7 @@ h6 {
     font-weight: 600;
     line-height: 1.2;
     text-decoration: none;
+    touch-action: manipulation;
     transition:
         transform 0.24s ease,
         border-color 0.24s ease,
@@ -1869,6 +1870,7 @@ h6 {
     color: white;
     overflow: hidden;
     isolation: isolate;
+    touch-action: manipulation;
     box-shadow:
         0 24px 56px rgba(2, 6, 23, 0.36),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
@@ -3516,6 +3518,7 @@ body.wolfi-modal-scroll-lock {
         radial-gradient(circle at top left, rgba(244, 183, 74, 0.18), transparent 42%),
         linear-gradient(180deg, rgba(15, 24, 40, 0.94) 0%, rgba(7, 12, 20, 0.94) 100%);
     color: rgb(250 204 21);
+    touch-action: manipulation;
     box-shadow:
         0 22px 48px rgba(2, 6, 23, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -4990,6 +4993,21 @@ body.wolfi-modal-scroll-lock {
 @media (max-width: 640px) {
     .assistant-home-panel {
         border-radius: 2rem;
+        background:
+            linear-gradient(145deg, rgba(10, 16, 28, 0.99) 0%, rgba(5, 9, 16, 0.98) 100%);
+        box-shadow:
+            0 20px 46px rgba(2, 6, 23, 0.32),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .assistant-home-panel::after,
+    .assistant-home-orb,
+    .assistant-home-visual::before,
+    .assistant-home-visual-card::after,
+    .assistant-home-visual-glow {
+        display: none;
+        animation: none;
+        filter: none;
     }
 
     .assistant-home-orb-left {
@@ -5025,10 +5043,29 @@ body.wolfi-modal-scroll-lock {
     .assistant-home-visual-frame {
         padding: 0.68rem;
         border-radius: 2rem;
+        box-shadow:
+            0 18px 38px rgba(2, 6, 23, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.03) inset;
     }
 
     .assistant-home-visual-image-wrap {
         border-radius: 1.65rem;
+        box-shadow:
+            0 14px 32px rgba(2, 6, 23, 0.24),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+    }
+
+    .assistant-home-availability-dot,
+    .assistant-home-cta-primary::before,
+    .assistant-fab-shimmer,
+    .assistant-fab-halo,
+    .assistant-fab-orbit,
+    .assistant-fab-ping {
+        animation: none;
+    }
+
+    .assistant-fab-button {
+        will-change: auto;
     }
 
     .assistant-promo-stat-top {
