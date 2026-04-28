@@ -1625,6 +1625,24 @@ h6 {
     --wolfi-core-y: 47%;
 }
 
+.assistant-mascot-visual-checkout {
+    width: min(100%, 24rem);
+    --wolfi-core-x: 47.4%;
+    --wolfi-core-y: 60.8%;
+}
+
+.assistant-mascot-visual-checkout .assistant-core-breath-back {
+    width: 5.2rem;
+    height: 5.2rem;
+    filter: blur(13px);
+}
+
+.assistant-mascot-visual-checkout .assistant-core-breath-front {
+    width: 1.05rem;
+    height: 1.05rem;
+    animation-duration: 2.1s;
+}
+
 .assistant-portrait-frame {
     position: relative;
     z-index: 2;
@@ -1683,6 +1701,16 @@ h6 {
     --wolfi-position-x: 50%;
     --wolfi-position-y: 29%;
     --wolfi-zoom: 1.16;
+}
+
+.assistant-portrait-frame-checkout {
+    aspect-ratio: 513 / 562;
+}
+
+.assistant-portrait-image-checkout {
+    object-fit: contain;
+    object-position: center;
+    --wolfi-zoom: 1;
 }
 
 .assistant-support-strip {

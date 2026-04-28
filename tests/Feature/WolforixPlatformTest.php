@@ -867,6 +867,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Stripe')
             ->assertSee('PayPal')
             ->assertSee('EUR')
+            ->assertSee('wolfy-mobile.webp', false)
+            ->assertSee('assistant-mascot-visual-checkout', false)
             ->assertSee('Your data is protected using industry-standard security practices aligned with ISO/IEC 27001.')
             ->assertSee('Terms & Conditions')
             ->assertSee('country of residence')

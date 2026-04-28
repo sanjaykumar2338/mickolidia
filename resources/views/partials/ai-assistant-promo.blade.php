@@ -1,7 +1,8 @@
 @php
     $assistantQuestions = trans('site.ai_assistant.example_questions');
     $supportEmail = config('wolforix.support.email');
-    $homepageWolfiImage = asset((string) config('wolfi.images.homepage'));
+    $isCheckout = request()->routeIs('checkout.*');
+    $homepageWolfiImage = asset($isCheckout ? 'wolfy-mobile.webp' : (string) config('wolfi.images.homepage'));
     $homepageWolfiRightImage = asset((string) config('wolfi.images.homepage_right', config('wolfi.images.homepage')));
     $isHomepage = request()->routeIs('home');
 @endphp
@@ -126,14 +127,14 @@
                             <span class="assistant-promo-stat assistant-promo-stat-top">{{ __('site.ai_assistant.visual_title') }}</span>
 
                             <div class="assistant-mascot-stage">
-                                <div class="assistant-mascot-visual assistant-mascot-visual-home">
+                                <div class="assistant-mascot-visual assistant-mascot-visual-home {{ $isCheckout ? 'assistant-mascot-visual-checkout' : '' }}">
                                     <span class="assistant-core-breath assistant-core-breath-back" aria-hidden="true"></span>
 
-                                    <div class="assistant-portrait-frame assistant-portrait-frame-home">
+                                    <div class="assistant-portrait-frame assistant-portrait-frame-home {{ $isCheckout ? 'assistant-portrait-frame-checkout' : '' }}">
                                         <img
                                             src="{{ $homepageWolfiImage }}"
                                             alt="{{ __('site.ai_assistant.visual_alt') }}"
-                                            class="assistant-portrait-image assistant-portrait-image-home"
+                                            class="assistant-portrait-image assistant-portrait-image-home {{ $isCheckout ? 'assistant-portrait-image-checkout' : '' }}"
                                             loading="lazy"
                                             decoding="async"
                                         >
