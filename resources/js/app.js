@@ -4249,6 +4249,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let modalIsOpen = false;
         let modalHideTimeoutId = null;
         let lastWolfiTrigger = null;
+        let lockedWolfiScrollY = 0;
+        let wolfiScrollLocked = false;
 
         const prefersReducedMotion = () => modalMotionQuery?.matches ?? false;
         const getWolfiTransitionDuration = () => (prefersReducedMotion() ? 20 : 360);
@@ -4274,6 +4276,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             wolfiModalCard.scrollTop = 0;
+        };
+
+        const lockWolfiPageScroll = () => {
+            if (wolfiScrollLocked) {
+                return;
+            }
+
+            lockedWolfiScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+            wolfiScrollLocked = true;
+            document.documentElement.classList.add('wolfi-modal-scroll-lock');
+            document.body.classList.add('wolfi-modal-scroll-lock');
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${lockedWolfiScrollY}px`;
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+            document.body.style.width = '100%';
+        };
+
+        const unlockWolfiPageScroll = () => {
+            if (!wolfiScrollLocked) {
+                return;
+            }
+
+            wolfiScrollLocked = false;
+            document.documentElement.classList.remove('wolfi-modal-scroll-lock');
+            document.body.classList.remove('wolfi-modal-scroll-lock');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            document.body.style.width = '';
+
+            window.requestAnimationFrame(() => {
+                window.scrollTo({
+                    top: lockedWolfiScrollY,
+                    left: 0,
+                    behavior: 'auto',
+                });
+            });
         };
 
         const focusWolfiModalTopControl = () => {
@@ -4481,6 +4522,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (open) {
                 modalIsOpen = true;
                 clearWolfiModalHideTimeout();
+                lockWolfiPageScroll();
 
                 if (triggerButton instanceof HTMLElement) {
                     lastWolfiTrigger = triggerButton;
@@ -4546,11 +4588,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 active: false,
             });
             scheduleWolfiModalHide();
+            unlockWolfiPageScroll();
 
             if (lastWolfiTrigger instanceof HTMLElement) {
                 const triggerToFocus = lastWolfiTrigger;
                 window.setTimeout(() => {
-                    triggerToFocus.focus();
+                    try {
+                        triggerToFocus.focus({
+                            preventScroll: true,
+                        });
+                    } catch (error) {
+                        triggerToFocus.focus();
+                    }
                 }, prefersReducedMotion() ? 0 : 140);
             }
         };
@@ -4598,6 +4647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         wolfiLaunchButtons.forEach((button) => {
             button.addEventListener('click', (event) => {
                 event.preventDefault();
+                event.stopPropagation();
                 setWolfiModalState(true, {
                     userInitiated: true,
                     triggerButton: button,
@@ -4606,7 +4656,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         closeButtons.forEach((button) => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 setWolfiModalState(false);
             });
         });

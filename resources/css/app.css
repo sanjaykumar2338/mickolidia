@@ -2118,6 +2118,14 @@ h6 {
     pointer-events: none;
     --wolfi-voice-level: 0;
     transition: opacity 0.3s ease, visibility 0s linear 0.34s;
+    overscroll-behavior: contain;
+    touch-action: none;
+}
+
+html.wolfi-modal-scroll-lock,
+body.wolfi-modal-scroll-lock {
+    overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 .wolfi-modal.is-mounted {
@@ -2157,6 +2165,9 @@ h6 {
     max-height: min(88vh, 54rem);
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     scrollbar-width: thin;
     scrollbar-color: rgba(244, 183, 74, 0.42) transparent;
     border-radius: 2.15rem;
