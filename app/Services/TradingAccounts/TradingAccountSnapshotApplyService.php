@@ -64,7 +64,7 @@ class TradingAccountSnapshotApplyService
                 }
 
                 $freshAccount->forceFill(array_merge(
-                    $this->blockedFinalStateSyncFill($snapshot),
+                    $this->blockedFinalStateSyncFill($freshAccount, $snapshot, $snapshotAt),
                     [
                         'sync_status' => 'success',
                         'sync_source' => $source,
@@ -76,6 +76,8 @@ class TradingAccountSnapshotApplyService
                         'sync_error_at' => null,
                     ],
                 ))->save();
+
+                $this->persistBalanceSnapshot($freshAccount, $snapshot, $snapshotAt);
 
                 return $freshAccount->fresh([
                     'challengePlan',
@@ -140,18 +142,7 @@ class TradingAccountSnapshotApplyService
                 ],
             ))->save();
 
-            $freshAccount->balanceSnapshots()->create([
-                'snapshot_at' => $snapshotAt,
-                'balance' => $freshAccount->balance,
-                'equity' => $freshAccount->equity,
-                'profit_loss' => $freshAccount->profit_loss,
-                'total_profit' => $freshAccount->total_profit,
-                'today_profit' => $freshAccount->today_profit,
-                'daily_drawdown' => $freshAccount->daily_drawdown,
-                'max_drawdown' => $freshAccount->max_drawdown,
-                'drawdown_percent' => $freshAccount->drawdown_percent,
-                'payload' => $snapshot['raw'] ?? $snapshot,
-            ]);
+            $this->persistBalanceSnapshot($freshAccount, $snapshot, $snapshotAt);
 
             $this->consistencyService->evaluateAndPersist(
                 account: $freshAccount,
@@ -261,13 +252,39 @@ class TradingAccountSnapshotApplyService
      * @param  array<string, mixed>  $snapshot
      * @return array<string, mixed>
      */
-    private function blockedFinalStateSyncFill(array $snapshot): array
+    private function blockedFinalStateSyncFill(TradingAccount $account, array $snapshot, Carbon $snapshotAt): array
     {
-        return array_filter([
+        $fill = [
             'platform_account_id' => $snapshot['platform_account_id'] ?? null,
             'platform_login' => $snapshot['platform_login'] ?? null,
             'platform_environment' => $snapshot['platform_environment'] ?? null,
-        ], static fn ($value) => $value !== null);
+            'meta' => $this->connectedMeta($account, $snapshot, $snapshotAt),
+        ];
+
+        if (! in_array((string) $account->platform_status, ['disabled', 'disable_pending_ack', 'disable_failed'], true)) {
+            $fill['platform_status'] = $snapshot['platform_status'] ?? 'connected';
+        }
+
+        return array_filter($fill, static fn ($value) => $value !== null);
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     */
+    private function persistBalanceSnapshot(TradingAccount $account, array $snapshot, Carbon $snapshotAt): void
+    {
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => $snapshotAt,
+            'balance' => $account->balance,
+            'equity' => $account->equity,
+            'profit_loss' => $account->profit_loss,
+            'total_profit' => $account->total_profit,
+            'today_profit' => $account->today_profit,
+            'daily_drawdown' => $account->daily_drawdown,
+            'max_drawdown' => $account->max_drawdown,
+            'drawdown_percent' => $account->drawdown_percent,
+            'payload' => $snapshot['raw'] ?? $snapshot,
+        ]);
     }
 
     /**

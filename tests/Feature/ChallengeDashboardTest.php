@@ -568,7 +568,12 @@ class ChallengeDashboardTest extends TestCase
         $lockedBalance = (string) $account->balance;
         $lockedEquity = (string) $account->equity;
 
-        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])
+        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, [
+            'trade_count' => 1,
+            'trade_history' => [
+                $this->closedTrade('D-LOCKED-1', '2026-04-05 09:00:00', '2026-04-05 09:00:05', -100),
+            ],
+        ])
             ->assertOk()
             ->assertJsonPath('challenge_status', 'failed')
             ->assertJsonPath('trading_blocked', true)
@@ -584,6 +589,15 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($disableRequestedAt, (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at'));
         $this->assertSame($lockedBalance, (string) $account->balance);
         $this->assertSame($lockedEquity, (string) $account->equity);
+        $this->assertSame(2, $account->balanceSnapshots()->count());
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+
+        $tradesPanel = app(\App\Services\TradingAccounts\TradeHistoryPanelBuilder::class)->build($account);
+
+        $this->assertTrue($tradesPanel['is_available']);
+        $this->assertSame(1, $tradesPanel['summary']['closed']);
+        $this->assertSame('D-LOCKED-1', $tradesPanel['rows'][0]['id']);
         Mail::assertSent(ChallengeFailedMail::class, 1);
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
     }
