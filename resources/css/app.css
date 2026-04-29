@@ -988,6 +988,11 @@ h6 {
 }
 
 .challenge-comparison-grid {
+    --comparison-head-height: 6.8rem;
+    --comparison-metric-row-height: 1.8rem;
+    --comparison-price-row-height: 3.2rem;
+    --comparison-row-gap: 0.72rem;
+
     display: grid;
     gap: 0.75rem;
 }
@@ -1003,7 +1008,12 @@ h6 {
 
 .challenge-comparison-labels {
     display: grid;
-    gap: 0.72rem;
+    grid-template-rows:
+        var(--comparison-head-height)
+        repeat(6, var(--comparison-metric-row-height))
+        var(--comparison-price-row-height);
+    gap: var(--comparison-row-gap);
+    align-items: center;
     padding: 1.05rem 0.9rem;
     border-radius: 1.4rem;
     color: rgba(226, 232, 240, 0.82);
@@ -1012,15 +1022,25 @@ h6 {
 }
 
 .challenge-comparison-label-spacer {
-    min-height: 6.8rem;
+    height: 100%;
+}
+
+.challenge-comparison-labels > div:not(.challenge-comparison-label-spacer) {
+    display: flex;
+    align-items: center;
 }
 
 .challenge-comparison-card {
     position: relative;
     display: grid;
+    grid-template-rows:
+        var(--comparison-head-height)
+        auto
+        var(--comparison-price-row-height)
+        auto;
     min-width: 0;
     cursor: pointer;
-    gap: 0.9rem;
+    gap: var(--comparison-row-gap);
     border-radius: 1.45rem;
     padding: 1.05rem;
     color: #fff;
@@ -1049,7 +1069,10 @@ h6 {
 }
 
 .challenge-comparison-card-head {
-    min-height: 6.8rem;
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 0.9rem;
     text-align: center;
@@ -1087,11 +1110,14 @@ h6 {
 
 .challenge-comparison-metrics {
     display: grid;
-    gap: 0.72rem;
+    grid-template-rows: repeat(6, var(--comparison-metric-row-height));
+    gap: var(--comparison-row-gap);
 }
 
 .challenge-comparison-metrics div {
-    min-height: 1.8rem;
+    display: flex;
+    min-height: 0;
+    align-items: center;
 }
 
 .challenge-comparison-metrics dt {
@@ -1108,7 +1134,7 @@ h6 {
 
 .challenge-comparison-price {
     display: flex;
-    min-height: 3.2rem;
+    min-height: 0;
     flex-direction: column;
     justify-content: flex-end;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
