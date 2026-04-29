@@ -34,8 +34,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertSee('Wolfi supports your')
             ->assertSee('Trading workspace')
             ->assertSee('Open Wolfi Hub')
-            ->assertSee('newphoto.jpeg', false)
-            ->assertSee('wolfy-mobile.webp', false)
+            ->assertSee('new-wolfy.webp', false)
             ->assertSee('dashboard-wolfi-ring-avatar', false)
             ->assertSee('dashboard-command-wolfi-avatar', false)
             ->assertDontSee('Grounded in Wolforix data')
@@ -51,7 +50,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertSee('Live response')
             ->assertSee('Rule-aware')
             ->assertSee('wolfi-dashboard-avatar-image-poster', false)
-            ->assertSee('wolfy-image/dashboard-2.webp', false);
+            ->assertSee('new-wolfy.webp', false);
     }
 
     public function test_dashboard_renders_smart_insight_cards_when_account_crosses_thresholds(): void
@@ -143,6 +142,30 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertJsonFragment([
                 'label' => 'Floating P&L',
                 'value' => '$60.00',
+            ]);
+    }
+
+    public function test_wolfi_endpoint_treats_max_drawdown_questions_as_rules(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'max_drawdown_used' => 240,
+            'challenge_status' => 'active',
+            'account_status' => 'active',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($account->user)
+            ->postJson(route('dashboard.wolfi.respond'), [
+                'message' => 'What happens if I hit max drawdown?',
+                'page' => 'dashboard',
+                'account_id' => $account->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('group', 'challenge_rules')
+            ->assertJsonPath('intent', 'challenge_rules')
+            ->assertJsonFragment([
+                'label' => 'Max drawdown',
+                'value' => '8%',
             ]);
     }
 

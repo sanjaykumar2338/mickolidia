@@ -3735,6 +3735,15 @@ document.addEventListener('DOMContentLoaded', () => {
             intent: 'rules',
         });
 
+        const buildMaxDrawdownFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
+            localeBase,
+            question: userQuestion || (assistantConfig.assistant_name ?? ''),
+            userQuestion,
+            answer: assistantConfig.max_drawdown_fallback ?? assistantConfig.rules_fallback ?? '',
+            source: 'fallback',
+            intent: 'rules',
+        });
+
         const buildCheckoutFallbackResponse = (localeBase = pageLocaleBase, userQuestion = '') => buildAssistantResponse({
             localeBase,
             question: userQuestion || (assistantConfig.assistant_name ?? ''),
@@ -3902,6 +3911,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (normalizedQuery === '' || (intents.includes('greeting') && rawTokens.length <= 4)) {
                 return buildIntroResponse(preferredLocales[0] ?? pageLocaleBase);
+            }
+
+            const mentionsMaxDrawdown = (
+                (/\bmax(?:imum)?\b/.test(normalizedQuery) && normalizedQuery.includes('drawd'))
+                || normalizedQuery.includes('max draw')
+                || normalizedQuery.includes('maximum draw')
+                || normalizedQuery.includes('total loss')
+                || normalizedQuery.includes('max total loss')
+            );
+
+            if (mentionsMaxDrawdown && String(assistantConfig.max_drawdown_fallback ?? '').trim() !== '') {
+                return buildMaxDrawdownFallbackResponse(preferredLocales[0] ?? pageLocaleBase, query);
             }
 
             const rankedMatches = enrichedVoiceIndex

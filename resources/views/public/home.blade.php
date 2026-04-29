@@ -19,15 +19,6 @@
         ? route('checkout.show', $defaultCheckoutParams)
         : route('checkout.show');
     $challengeComparisonSizes = array_reverse($challengeSizes);
-    $localizedChallengePlanImages = [
-        'en' => 'challenge-plans/desktop-en.webp',
-        'es' => 'challenge-plans/desktop-es.webp',
-        'de' => 'challenge-plans/desktop-de.webp',
-    ];
-    $localizedChallengePlanImage = $localizedChallengePlanImages[app()->getLocale()] ?? null;
-    $challengePlanDesktopImage = $localizedChallengePlanImage && file_exists(public_path($localizedChallengePlanImage))
-        ? $localizedChallengePlanImage
-        : 'challenge-plans/desktop.webp';
     $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
         return match ($currency) {
             'USD' => '$'.number_format($amount, 0),
@@ -534,22 +525,6 @@
             @endif
         </div>
     </section>
-
-    @if (file_exists(public_path($challengePlanDesktopImage)))
-        <section class="challenge-plans-image-section hidden px-6 pt-10 lg:block lg:px-8 lg:pt-12">
-            <div class="mx-auto max-w-7xl">
-                <div class="challenge-plans-image-panel">
-                    <img
-                        src="{{ asset($challengePlanDesktopImage) }}"
-                        alt="Wolforix challenge plans comparison"
-                        class="challenge-plans-image"
-                        loading="lazy"
-                        decoding="async"
-                    >
-                </div>
-            </div>
-        </section>
-    @endif
 
     <section class="px-6 pt-12 lg:px-8 lg:pt-14">
         <div class="mx-auto max-w-7xl">

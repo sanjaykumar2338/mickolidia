@@ -159,16 +159,16 @@ class WolfiAssistantService
         $intentKeywords = [
             'greeting' => ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'],
             'consistency' => ['consistency', 'consisten', 'single day', '40%', '40 percent'],
-            'payouts' => ['payout', 'withdraw', 'withdrawal', 'profit split', 'paid', 'eligible profit'],
-            'performance_insights' => ['metric', 'metrics', 'balance', 'equity', 'floating', 'p&l', 'pnl', 'drawdown', 'win ratio', 'performance'],
+            'payouts' => ['payout', 'payouts', 'withdraw', 'withdrawal', 'profit split', 'paid', 'eligible profit'],
             'challenge_rules' => ['rule', 'rules', 'profit target', 'daily loss', 'max drawdown', 'trading days', 'pass', 'fail', 'phase'],
+            'performance_insights' => ['metric', 'metrics', 'balance', 'equity', 'floating', 'p&l', 'pnl', 'win ratio', 'performance'],
             'support' => ['support', 'help', 'invoice', 'billing', 'contact', 'login', 'email', 'ticket'],
             'platform_guidance' => ['dashboard', 'page', 'where', 'find', 'navigate', 'overview', 'accounts', 'settings', 'section'],
         ];
 
         foreach ($intentKeywords as $intent => $keywords) {
             foreach ($keywords as $keyword) {
-                if (str_contains($normalized, $this->normalize($keyword))) {
+                if ($this->matchesKeyword($normalized, $keyword)) {
                     return $intent;
                 }
             }
@@ -691,6 +691,21 @@ class WolfiAssistantService
             ->replaceMatches('/[^a-z0-9\s]/', ' ')
             ->squish()
             ->toString();
+    }
+
+    private function matchesKeyword(string $normalizedMessage, string $keyword): bool
+    {
+        $normalizedKeyword = $this->normalize($keyword);
+
+        if ($normalizedKeyword === '') {
+            return false;
+        }
+
+        if (str_contains($normalizedKeyword, ' ')) {
+            return str_contains($normalizedMessage, $normalizedKeyword);
+        }
+
+        return preg_match('/\b'.preg_quote($normalizedKeyword, '/').'\b/', $normalizedMessage) === 1;
     }
 
     private function trimTrailingZero(float $value): string

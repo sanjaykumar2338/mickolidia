@@ -123,6 +123,7 @@
             'first_payout_days' => $firstPayoutDays,
             'payout_cycle_days' => $payoutCycleDays,
         ]),
+        'max_drawdown_fallback' => __('site.contact.voice_max_drawdown_fallback'),
         'trial_fallback' => __('site.contact.voice_trial_fallback'),
         'rules_fallback' => __('site.contact.voice_rules_fallback'),
         'checkout_fallback' => __('site.contact.voice_checkout_fallback'),
