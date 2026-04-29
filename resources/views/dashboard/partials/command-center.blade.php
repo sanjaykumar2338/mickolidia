@@ -97,7 +97,7 @@
                     <div class="grid h-full w-full place-items-center rounded-full border border-white/8 bg-slate-950 text-center">
                         <span class="dashboard-command-wolfi-avatar">
                             <img
-                                src="{{ asset('wolfy-mobile.webp') }}"
+                                src="{{ asset('new-wolfy.webp') }}"
                                 alt=""
                                 class="dashboard-command-wolfi-image"
                                 loading="lazy"

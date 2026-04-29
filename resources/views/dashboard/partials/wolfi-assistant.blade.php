@@ -22,7 +22,7 @@
     $messageStats = $welcome['stats'] ?? [];
     $messageBullets = $welcome['bullets'] ?? [];
     $promptButtonsDataAttribute = 'data-wolfi-prompt';
-    $dashboardWolfiImage = asset('wolfy-image/dashboard-2.webp');
+    $dashboardWolfiImage = asset((string) config('wolfi.images.dashboard'));
 @endphp
 
 <section

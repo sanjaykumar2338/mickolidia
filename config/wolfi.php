@@ -1,11 +1,11 @@
 <?php
 
 $images = [
-    'homepage' => 'wolfy-image/Homepage.webp',
-    'homepage_right' => 'wolfy-image/rigth-side.webp',
-    'dashboard' => 'wolfy-image/dashboard-2.webp',
-    'talk' => 'wolfy-image/Talk with Wolfi.jpeg',
-    'shortcut' => 'wolfy-image/wolfy-short.jpeg',
+    'homepage' => 'new-wolfy.webp',
+    'homepage_right' => 'new-wolfy.webp',
+    'dashboard' => 'new-wolfy.webp',
+    'talk' => 'new-wolfy.webp',
+    'shortcut' => 'new-wolfy.webp',
 ];
 
 return [
