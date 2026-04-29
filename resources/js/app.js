@@ -1621,6 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currencyButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-currency]'));
         const typeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-type]'));
         const sizeButtons = Array.from(challengeSelector.querySelectorAll('[data-challenge-size]'));
+        const comparisonCards = Array.from(challengeSelector.querySelectorAll('[data-challenge-plan-card]'));
         const checkoutCtas = Array.from(document.querySelectorAll('[data-checkout-cta]'));
         const checkoutPlanTitle = document.querySelector('[data-checkout-plan-title]');
         const checkoutPlanPrice = document.querySelector('[data-checkout-plan-price]');
@@ -1708,6 +1709,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     payouts: upgrade?.after_consecutive_payouts ?? '',
                 },
             );
+            const formatPlanPhaseTargets = (plan) => (plan?.phases ?? [])
+                .map((phase) => `${ui.phase_titles?.[phase.key] ?? phase.key} ${phase.profit_target}%`.toUpperCase())
+                .join(' / ');
+            const formatPlanProfitShare = (plan) => {
+                const funded = plan?.funded ?? {};
+                const baseSplit = funded.profit_split;
+                const upgradedSplit = funded.profit_split_upgrade?.profit_split;
+
+                if (baseSplit && upgradedSplit) {
+                    return `${baseSplit}% to ${upgradedSplit}%`;
+                }
+
+                return baseSplit ? `${baseSplit}%` : '';
+            };
+            const buildPlanCheckoutUrl = (base, challengeType, plan) => {
+                const checkoutUrl = new URL(base, window.location.origin);
+
+                checkoutUrl.searchParams.set('challenge_type', challengeType);
+                checkoutUrl.searchParams.set('account_size', String(plan.account_size));
+                checkoutUrl.searchParams.set('currency', activeCurrency);
+
+                return withLaunchPromoCode(checkoutUrl.toString());
+            };
             const renderMetricRows = (rows) => rows.map(([label, value]) => `
                 <div class="challenge-metric-row rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                     <dt class="challenge-metric-term text-slate-400">${label}</dt>
@@ -1782,6 +1806,89 @@ document.addEventListener('DOMContentLoaded', () => {
                         </dl>
                     </section>
                 `;
+            };
+            const renderComparisonPlans = (currentType) => {
+                comparisonCards.forEach((card) => {
+                    if (!(card instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const size = card.dataset.challengeSize ?? '';
+                    const plan = currentType?.plans?.[size];
+
+                    card.classList.toggle('hidden', !plan);
+
+                    if (!plan) {
+                        return;
+                    }
+
+                    const firstPhase = plan.phases?.[0] ?? {};
+                    const accountSize = card.querySelector('[data-comparison-account-size]');
+                    const phaseTargets = card.querySelector('[data-comparison-phases]');
+                    const dailyLoss = card.querySelector('[data-comparison-daily-loss]');
+                    const totalLoss = card.querySelector('[data-comparison-total-loss]');
+                    const minDays = card.querySelector('[data-comparison-min-days]');
+                    const maxDays = card.querySelector('[data-comparison-max-days]');
+                    const profitShare = card.querySelector('[data-comparison-profit-share]');
+                    const price = card.querySelector('[data-comparison-price]');
+                    const originalWrap = card.querySelector('[data-comparison-original-wrap]');
+                    const originalPrice = card.querySelector('[data-comparison-original-price]');
+                    const discountBadge = card.querySelector('[data-comparison-discount]');
+                    const cta = card.querySelector('[data-comparison-cta]');
+
+                    card.classList.toggle('is-active', String(plan.account_size) === String(activeSize));
+
+                    if (accountSize) {
+                        accountSize.textContent = `$${Number(plan.account_size).toLocaleString('en-US')}`;
+                    }
+
+                    if (phaseTargets) {
+                        phaseTargets.textContent = formatPlanPhaseTargets(plan);
+                    }
+
+                    if (dailyLoss) {
+                        dailyLoss.textContent = `${firstPhase.daily_loss_limit ?? ''}%`;
+                    }
+
+                    if (totalLoss) {
+                        totalLoss.textContent = `${firstPhase.max_loss_limit ?? ''}%`;
+                    }
+
+                    if (minDays) {
+                        minDays.textContent = formatDays(firstPhase.minimum_trading_days ?? '');
+                    }
+
+                    if (maxDays) {
+                        maxDays.textContent = firstPhase.maximum_trading_days === null
+                            ? (ui.unlimited ?? 'Unlimited')
+                            : formatDays(firstPhase.maximum_trading_days ?? '');
+                    }
+
+                    if (profitShare) {
+                        profitShare.textContent = formatPlanProfitShare(plan);
+                    }
+
+                    if (price) {
+                        price.textContent = formatCurrency(convertCurrency(plan.discounted_price ?? plan.entry_fee ?? 0, activeCurrency), activeCurrency);
+                    }
+
+                    if (originalPrice) {
+                        originalPrice.textContent = formatCurrency(convertCurrency(plan.list_price ?? plan.entry_fee ?? 0, activeCurrency), activeCurrency);
+                    }
+
+                    if (originalWrap instanceof HTMLElement) {
+                        originalWrap.classList.toggle('hidden', !plan.discount?.enabled);
+                    }
+
+                    if (discountBadge instanceof HTMLElement) {
+                        discountBadge.classList.toggle('hidden', !plan.discount?.enabled);
+                        discountBadge.textContent = ui.discount_badge ?? discountBadge.textContent ?? '';
+                    }
+
+                    if (cta instanceof HTMLAnchorElement) {
+                        cta.href = buildPlanCheckoutUrl(cta.dataset.comparisonCheckoutBase ?? cta.href, activeType, plan);
+                    }
+                });
             };
 
             const updateToggleState = (button, active, activeClasses, inactiveClasses) => {
@@ -1890,6 +1997,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 renderDetailGroups(plan);
+                renderComparisonPlans(currentType);
 
                 checkoutCtas.forEach((link) => {
                     if (!(link instanceof HTMLAnchorElement)) {
@@ -1897,13 +2005,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const base = link.dataset.checkoutBase ?? link.href;
-                    const checkoutUrl = new URL(base, window.location.origin);
-
-                    checkoutUrl.searchParams.set('challenge_type', activeType);
-                    checkoutUrl.searchParams.set('account_size', String(plan.account_size));
-                    checkoutUrl.searchParams.set('currency', activeCurrency);
-
-                    link.href = withLaunchPromoCode(checkoutUrl.toString());
+                    link.href = buildPlanCheckoutUrl(base, activeType, plan);
                 });
 
                 currencyButtons.forEach((button) => {
@@ -1949,6 +2051,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     activeSize = button.dataset.challengeSize ?? activeSize;
+                    renderPlan();
+                });
+            });
+
+            comparisonCards.forEach((card) => {
+                if (!(card instanceof HTMLElement)) {
+                    return;
+                }
+
+                card.addEventListener('click', (event) => {
+                    if (event.target instanceof HTMLElement && event.target.closest('a')) {
+                        return;
+                    }
+
+                    const nextSize = card.dataset.challengeSize ?? activeSize;
+
+                    if (nextSize === '') {
+                        return;
+                    }
+
+                    activeSize = nextSize;
                     renderPlan();
                 });
             });

@@ -18,6 +18,16 @@
     $defaultCheckoutUrl = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? route('checkout.show', $defaultCheckoutParams)
         : route('checkout.show');
+    $challengeComparisonSizes = array_reverse($challengeSizes);
+    $localizedChallengePlanImages = [
+        'en' => 'challenge-plans/desktop-en.webp',
+        'es' => 'challenge-plans/desktop-es.webp',
+        'de' => 'challenge-plans/desktop-de.webp',
+    ];
+    $localizedChallengePlanImage = $localizedChallengePlanImages[app()->getLocale()] ?? null;
+    $challengePlanDesktopImage = $localizedChallengePlanImage && file_exists(public_path($localizedChallengePlanImage))
+        ? $localizedChallengePlanImage
+        : 'challenge-plans/desktop.webp';
     $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
         return match ($currency) {
             'USD' => '$'.number_format($amount, 0),
@@ -242,28 +252,30 @@
                     <script type="application/json" data-challenge-currencies>@json($currencies)</script>
                     <script type="application/json" data-challenge-ui>@json($challengeUi)</script>
 
-                    <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-                        <div class="surface-panel rounded-[2rem] p-6">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.currency_label') }}</p>
-                            <div class="challenge-currency-strip mt-4">
-                                @foreach ($currencies as $currencyCode => $currencyMeta)
-                                    <button
-                                        type="button"
-                                        data-challenge-currency="{{ $currencyCode }}"
-                                        class="challenge-currency-button rounded-[1.5rem] border border-white/8 bg-white/3 px-4 py-4 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
-                                    >
-                                        <span class="flex items-center gap-2 text-sm font-semibold tracking-[0.22em] text-white">
-                                            <span class="text-lg">{{ $currencyMeta['flag'] ?? '' }}</span>
-                                            <span>{{ $currencyCode }}</span>
-                                        </span>
-                                        <span class="mt-2 block text-[0.7rem] leading-4 tracking-[0.08em] text-slate-400 whitespace-normal">
-                                            {{ $currencyMeta['symbol'] ?? '' }} · {{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}
-                                        </span>
-                                    </button>
-                                @endforeach
+                    <div class="challenge-selector-layout grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+                        <div class="challenge-selector-controls surface-panel rounded-[2rem] p-6">
+                            <div class="challenge-control-group">
+                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.currency_label') }}</p>
+                                <div class="challenge-currency-strip mt-4">
+                                    @foreach ($currencies as $currencyCode => $currencyMeta)
+                                        <button
+                                            type="button"
+                                            data-challenge-currency="{{ $currencyCode }}"
+                                            class="challenge-currency-button rounded-[1.5rem] border border-white/8 bg-white/3 px-4 py-4 text-left text-slate-300 transition hover:border-amber-300/20 hover:bg-white/6"
+                                        >
+                                            <span class="flex items-center gap-2 text-sm font-semibold tracking-[0.22em] text-white">
+                                                <span class="text-lg">{{ $currencyMeta['flag'] ?? '' }}</span>
+                                                <span>{{ $currencyCode }}</span>
+                                            </span>
+                                            <span class="mt-2 block text-[0.7rem] leading-4 tracking-[0.08em] text-slate-400 whitespace-normal">
+                                                {{ $currencyMeta['symbol'] ?? '' }} · {{ __('site.home.challenge_selector.currencies.'.$currencyCode) }}
+                                            </span>
+                                        </button>
+                                    @endforeach
+                                </div>
                             </div>
 
-                            <div class="mt-8">
+                            <div class="challenge-control-group mt-8">
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.type_label') }}</p>
                                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
                                     @foreach ($challengeCatalog as $challengeTypeKey => $challengeType)
@@ -283,7 +295,7 @@
                                 </div>
                             </div>
 
-                            <div class="mt-8">
+                            <div class="challenge-control-group mt-8">
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('site.home.challenge_selector.size_label') }}</p>
                                 <div class="challenge-size-grid mt-4">
                                     @foreach ($challengeSizes as $size)
@@ -299,7 +311,7 @@
                             </div>
                         </div>
 
-                        <div class="surface-panel rounded-[2rem] p-6">
+                        <div class="challenge-selected-detail surface-panel rounded-[2rem] p-6">
                             <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                 <div>
                                     <p data-challenge-badge class="text-sm font-semibold tracking-[0.24em] text-amber-300">{{ __('site.home.challenge_selector.types.'.$defaultChallengeType.'.label') }}</p>
@@ -415,10 +427,129 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="challenge-desktop-comparison mt-6">
+                        <div class="challenge-comparison-grid">
+                            <aside class="challenge-comparison-labels" aria-hidden="true">
+                                <div class="challenge-comparison-label-spacer"></div>
+                                <div>{{ __('site.home.challenge_selector.metrics.profit_target') }}</div>
+                                <div>{{ __('site.home.challenge_selector.metrics.daily_loss') }}</div>
+                                <div>{{ __('site.home.challenge_selector.metrics.total_loss') }}</div>
+                                <div>{{ __('site.home.challenge_selector.metrics.minimum_days') }}</div>
+                                <div>{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</div>
+                                <div>{{ __('site.home.challenge_selector.metrics.profit_share') }}</div>
+                                <div>{{ __('site.home.challenge_selector.entry_fee') }}</div>
+                            </aside>
+
+                            @foreach ($challengeComparisonSizes as $comparisonSize)
+                                @php
+                                    $comparisonPlan = $challengeCatalog[$defaultChallengeType]['plans'][$comparisonSize] ?? null;
+                                    $comparisonFirstPhase = $comparisonPlan['phases'][0] ?? [];
+                                    $comparisonPhaseTargets = $comparisonPlan
+                                        ? collect($comparisonPlan['phases'])->map(function (array $phase): string {
+                                            return strtoupper((string) __('site.home.challenge_selector.phase_titles.'.$phase['key'])).' '.$phase['profit_target'].'%';
+                                        })->implode(' / ')
+                                        : '';
+                                    $comparisonProfitShare = '';
+
+                                    if ($comparisonPlan) {
+                                        $comparisonFunded = $comparisonPlan['funded'] ?? [];
+                                        $comparisonProfitShare = (string) ($comparisonFunded['profit_split'] ?? '');
+
+                                        if (! empty($comparisonFunded['profit_split_upgrade']['profit_split'])) {
+                                            $comparisonProfitShare .= '% to '.$comparisonFunded['profit_split_upgrade']['profit_split'].'%';
+                                        } elseif ($comparisonProfitShare !== '') {
+                                            $comparisonProfitShare .= '%';
+                                        }
+                                    }
+
+                                    $comparisonCheckoutUrl = $comparisonPlan
+                                        ? route('checkout.show', array_filter([
+                                            'challenge_type' => $defaultChallengeType,
+                                            'account_size' => $comparisonPlan['account_size'],
+                                            'currency' => $defaultCurrency,
+                                            'promo_code' => $launchPromoCode,
+                                        ], static fn ($value) => $value !== null && $value !== ''))
+                                        : '#';
+                                @endphp
+
+                                <article
+                                    data-challenge-plan-card
+                                    data-challenge-size="{{ $comparisonSize }}"
+                                    class="{{ $comparisonPlan ? '' : 'hidden ' }}challenge-comparison-card"
+                                >
+                                    <div class="challenge-comparison-card-head">
+                                        <span>{{ __('site.home.challenge_selector.size_label') }}</span>
+                                        <strong data-comparison-account-size>{{ $comparisonPlan ? '$'.number_format($comparisonPlan['account_size'], 0) : '' }}</strong>
+                                        <em data-comparison-discount class="{{ $comparisonPlan && $comparisonPlan['discount']['enabled'] ? '' : 'hidden' }}">{{ __('site.home.challenge_selector.discount_badge') }}</em>
+                                    </div>
+
+                                    <dl class="challenge-comparison-metrics">
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.profit_target') }}</dt>
+                                            <dd data-comparison-phases>{{ $comparisonPhaseTargets }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.daily_loss') }}</dt>
+                                            <dd data-comparison-daily-loss>{{ $comparisonFirstPhase['daily_loss_limit'] ?? '' }}%</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.total_loss') }}</dt>
+                                            <dd data-comparison-total-loss>{{ $comparisonFirstPhase['max_loss_limit'] ?? '' }}%</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.minimum_days') }}</dt>
+                                            <dd data-comparison-min-days>{{ $comparisonFirstPhase['minimum_trading_days'] ?? '' }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.max_trading_days') }}</dt>
+                                            <dd data-comparison-max-days>{{ ($comparisonFirstPhase['maximum_trading_days'] ?? null) === null ? __('site.home.challenge_selector.unlimited') : $comparisonFirstPhase['maximum_trading_days'] }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>{{ __('site.home.challenge_selector.metrics.profit_share') }}</dt>
+                                            <dd data-comparison-profit-share>{{ $comparisonProfitShare }}</dd>
+                                        </div>
+                                    </dl>
+
+                                    <div class="challenge-comparison-price">
+                                        <span data-comparison-price>{{ $comparisonPlan ? $formatMoney($comparisonPlan['discounted_price'], $defaultCurrency) : '' }}</span>
+                                        <small data-comparison-original-wrap class="{{ $comparisonPlan && $comparisonPlan['discount']['enabled'] ? '' : 'hidden' }}">
+                                            <span data-comparison-original-price>{{ $comparisonPlan ? $formatMoney($comparisonPlan['list_price'], $defaultCurrency) : '' }}</span>
+                                        </small>
+                                    </div>
+
+                                    <a
+                                        href="{{ $comparisonCheckoutUrl }}"
+                                        data-comparison-cta
+                                        data-comparison-checkout-base="{{ route('checkout.show') }}"
+                                        class="challenge-comparison-cta"
+                                    >
+                                        {{ __('site.home.challenge_selector.start_button') }}
+                                    </a>
+                                </article>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
     </section>
+
+    @if (file_exists(public_path($challengePlanDesktopImage)))
+        <section class="challenge-plans-image-section hidden px-6 pt-10 lg:block lg:px-8 lg:pt-12">
+            <div class="mx-auto max-w-7xl">
+                <div class="challenge-plans-image-panel">
+                    <img
+                        src="{{ asset($challengePlanDesktopImage) }}"
+                        alt="Wolforix challenge plans comparison"
+                        class="challenge-plans-image"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+            </div>
+        </section>
+    @endif
 
     <section class="px-6 pt-12 lg:px-8 lg:pt-14">
         <div class="mx-auto max-w-7xl">

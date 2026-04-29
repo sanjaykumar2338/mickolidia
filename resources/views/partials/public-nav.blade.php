@@ -63,7 +63,7 @@
 
 @endphp
 
-<header class="relative z-50 overflow-visible border-b border-white/5 bg-slate-950/72 backdrop-blur-xl">
+<header class="relative z-50 overflow-visible border-b border-white/5 bg-slate-950/72 backdrop-blur-xl lg:sticky lg:top-0">
     <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
         <div class="lg:hidden" data-mobile-nav>
             <div class="flex items-start justify-between gap-3">

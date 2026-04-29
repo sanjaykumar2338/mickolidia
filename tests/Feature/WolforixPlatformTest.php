@@ -597,18 +597,15 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Always on. Always ready.')
             ->assertSee('Let Wolfi guide you.')
             ->assertSee('24/7 available')
-            ->assertSee('wolfy-image/Homepage.webp', false)
-            ->assertSee('assistant-portrait-image-home', false)
+            ->assertSee('wolfy-image/rigth-side.webp', false)
+            ->assertSee('assistant-home-visual-image', false)
+            ->assertSee('challenge-desktop-comparison', false)
+            ->assertSee('challenge-plans/desktop.webp', false)
             ->assertSee('wolfy-image/wolfy-short.jpeg', false)
             ->assertSee('Talk with Wolfi')
             ->assertSee('Open Wolfi')
-            ->assertSee('Ask Wolfi')
             ->assertSee('Can I trade during news?')
             ->assertSee('Wolfi Assistant')
-            ->assertSee('Contact & Support')
-            ->assertSee(config('wolforix.support.email'))
-            ->assertSee('Email support')
-            ->assertSee('Start live chat')
             ->assertSee('We use cookies to improve your experience and support essential site functionality.')
             ->assertSee('Learn More')
             ->assertSee('Accept')
@@ -639,11 +636,10 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Visa')
             ->assertSee('Apple Pay')
             ->assertSee('Google Pay')
-            ->assertSee('Stay close to the Wolforix community')
+            ->assertSee('Wolforix Community Access')
             ->assertSeeInOrder([
-                'Stay close to the Wolforix community',
-                'Trust / Security',
                 'Legal & Policies',
+                'View full legal information',
             ])
             ->assertSee('View full legal information')
             ->assertDontSee('Open main navigation')

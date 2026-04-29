@@ -983,6 +983,199 @@ h6 {
     text-wrap: balance;
 }
 
+.challenge-desktop-comparison {
+    display: none;
+}
+
+.challenge-comparison-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.challenge-comparison-labels,
+.challenge-comparison-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(16, 24, 38, 0.96) 0%, rgba(10, 14, 23, 0.98) 100%);
+    box-shadow:
+        0 24px 56px rgba(2, 6, 23, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.challenge-comparison-labels {
+    display: grid;
+    gap: 0.72rem;
+    padding: 1.05rem 0.9rem;
+    border-radius: 1.4rem;
+    color: rgba(226, 232, 240, 0.82);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.challenge-comparison-label-spacer {
+    min-height: 6.8rem;
+}
+
+.challenge-comparison-card {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    cursor: pointer;
+    gap: 0.9rem;
+    border-radius: 1.45rem;
+    padding: 1.05rem;
+    color: #fff;
+    transition:
+        transform 0.22s ease,
+        border-color 0.22s ease,
+        box-shadow 0.22s ease,
+        background 0.22s ease;
+}
+
+.challenge-comparison-card.hidden,
+.challenge-comparison-card-head em.hidden,
+.challenge-comparison-price small.hidden {
+    display: none;
+}
+
+.challenge-comparison-card:hover,
+.challenge-comparison-card.is-active {
+    border-color: rgba(244, 183, 74, 0.3);
+    background:
+        radial-gradient(circle at top, rgba(244, 183, 74, 0.16), transparent 38%),
+        linear-gradient(180deg, rgba(19, 27, 42, 0.98) 0%, rgba(10, 14, 23, 0.98) 100%);
+    box-shadow:
+        0 28px 64px rgba(2, 6, 23, 0.3),
+        0 0 24px rgba(244, 183, 74, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+}
+
+.challenge-comparison-card-head {
+    min-height: 6.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.9rem;
+    text-align: center;
+}
+
+.challenge-comparison-card-head span {
+    display: block;
+    color: rgba(203, 213, 225, 0.76);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.challenge-comparison-card-head strong {
+    display: block;
+    margin-top: 0.38rem;
+    color: #fff;
+    font-size: clamp(1.1rem, 1.6vw, 1.42rem);
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.challenge-comparison-card-head em {
+    display: inline-flex;
+    margin-top: 0.65rem;
+    border-radius: 999px;
+    background: rgba(244, 183, 74, 0.16);
+    padding: 0.25rem 0.55rem;
+    color: #ffe7a2;
+    font-size: 0.62rem;
+    font-style: normal;
+    font-weight: 800;
+}
+
+.challenge-comparison-metrics {
+    display: grid;
+    gap: 0.72rem;
+}
+
+.challenge-comparison-metrics div {
+    min-height: 1.8rem;
+}
+
+.challenge-comparison-metrics dt {
+    display: none;
+}
+
+.challenge-comparison-metrics dd {
+    color: rgba(226, 232, 240, 0.88);
+    font-size: 0.86rem;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.challenge-comparison-price {
+    display: flex;
+    min-height: 3.2rem;
+    flex-direction: column;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 0.85rem;
+    text-align: center;
+}
+
+.challenge-comparison-price span {
+    color: #fff;
+    font-size: 1.18rem;
+    font-weight: 800;
+}
+
+.challenge-comparison-price small {
+    margin-top: 0.15rem;
+    color: rgba(148, 163, 184, 0.85);
+    font-size: 0.78rem;
+    text-decoration: line-through;
+}
+
+.challenge-comparison-cta {
+    display: inline-flex;
+    min-height: 2.85rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.95rem;
+    background: linear-gradient(135deg, #fce49c 0%, #f4b74a 45%, #d6901a 100%);
+    color: #08111d;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.challenge-comparison-cta:hover,
+.challenge-comparison-cta:focus-visible {
+    filter: saturate(1.05);
+    box-shadow: 0 14px 26px rgba(244, 183, 74, 0.22);
+    transform: translateY(-1px);
+}
+
+.challenge-plans-image-panel {
+    overflow: hidden;
+    border-radius: 2rem;
+    border: 1px solid rgba(244, 183, 74, 0.16);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(244, 183, 74, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(12, 18, 29, 0.98) 0%, rgba(5, 9, 16, 0.98) 100%);
+    padding: 0.85rem;
+    box-shadow:
+        0 30px 78px rgba(2, 6, 23, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.challenge-plans-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 1.35rem;
+    object-fit: contain;
+}
+
 .wolfi-avatar-shell {
     position: relative;
     display: inline-flex;
@@ -4108,6 +4301,70 @@ body.wolfi-modal-scroll-lock {
 
     .cookie-banner-visible .back-to-top-button {
         bottom: calc(11rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (min-width: 1024px) {
+    .challenge-selector-layout {
+        display: block;
+    }
+
+    .challenge-selector-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 1.2rem;
+        align-items: start;
+    }
+
+    .challenge-selector-controls .challenge-control-group {
+        margin-top: 0;
+    }
+
+    .challenge-selector-controls .challenge-currency-strip {
+        overflow: visible;
+    }
+
+    .challenge-selector-controls .challenge-currency-button {
+        min-width: 0;
+        flex: 1 1 0;
+    }
+
+    .challenge-selector-controls .challenge-size-grid {
+        justify-content: flex-start;
+        gap: 0.65rem;
+    }
+
+    .challenge-selector-controls .challenge-size-button {
+        min-height: 3.4rem;
+        min-width: 4.5rem;
+        flex: 1 1 calc(33.333% - 0.65rem);
+        border-radius: 1.1rem;
+        padding: 0.75rem 0.65rem;
+        font-size: 0.92rem;
+    }
+
+    .challenge-selected-detail {
+        display: none;
+    }
+
+    .challenge-desktop-comparison {
+        display: block;
+    }
+
+    .challenge-comparison-grid {
+        grid-template-columns: minmax(8.4rem, 0.68fr) repeat(5, minmax(0, 1fr));
+        align-items: stretch;
+    }
+}
+
+@media (min-width: 1280px) {
+    .challenge-comparison-grid {
+        grid-template-columns: minmax(9.25rem, 0.62fr) repeat(5, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+
+    .challenge-comparison-card {
+        padding: 1.2rem;
     }
 }
 
