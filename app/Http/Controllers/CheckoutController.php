@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChallengePlan;
+use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Payments\OrderFulfillmentService;
@@ -82,6 +83,7 @@ class CheckoutController extends Controller
         Request $request,
         ChallengePricingService $pricingService,
         PaymentManager $paymentManager,
+        OrderFulfillmentService $fulfillmentService,
     ): RedirectResponse {
         $validated = $request->validate([
             'order' => ['nullable', 'string', 'exists:orders,order_number'],
@@ -116,8 +118,11 @@ class CheckoutController extends Controller
 
         $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
         $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
+        $giveawayPromoCode = $launchPromoCode === null
+            ? $this->resolveGiveawayPromoCode($promoCodeInput)
+            : null;
 
-        if ($promoCodeInput !== '' && $launchPromoCode === null) {
+        if ($promoCodeInput !== '' && $launchPromoCode === null && ! $giveawayPromoCode instanceof Mt5PromoCode) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -142,9 +147,28 @@ class CheckoutController extends Controller
                 ]);
         }
 
+        if ($giveawayPromoCode instanceof Mt5PromoCode) {
+            $promoEntry = $giveawayPromoCode->poolEntry;
+
+            if (
+                ! $promoEntry instanceof \App\Models\Mt5AccountPoolEntry
+                || ! $promoEntry->is_promo
+                || $giveawayPromoCode->used_at !== null
+                || $promoEntry->allocated_at !== null
+                || $promoEntry->allocated_trading_account_id !== null
+                || (int) $promoEntry->account_size !== (int) $validated['account_size']
+            ) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'promo_code' => __('site.checkout.validation.promo_code'),
+                    ]);
+            }
+        }
+
         $provider = $paymentManager->provider($validated['payment_provider']);
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
-        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode): Order {
+        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode): Order {
             $existingOrder = null;
             $acceptedAt = now()->toIso8601String();
             /** @var User $user */
@@ -174,11 +198,11 @@ class CheckoutController extends Controller
                 'challenge_type' => $validated['challenge_type'],
                 'account_size' => (int) $validated['account_size'],
                 'currency' => $validated['currency'],
-                'payment_provider' => $validated['payment_provider'],
+                'payment_provider' => $giveawayPromoCode instanceof Mt5PromoCode ? 'promo' : $validated['payment_provider'],
                 'base_price' => $selectedPlan['list_price'],
-                'discount_percent' => $selectedPlan['discount']['percent'],
-                'discount_amount' => $selectedPlan['discount']['amount'],
-                'final_price' => $selectedPlan['discounted_price'],
+                'discount_percent' => $giveawayPromoCode instanceof Mt5PromoCode ? 100 : $selectedPlan['discount']['percent'],
+                'discount_amount' => $giveawayPromoCode instanceof Mt5PromoCode ? $selectedPlan['list_price'] : $selectedPlan['discount']['amount'],
+                'final_price' => $giveawayPromoCode instanceof Mt5PromoCode ? 0 : $selectedPlan['discounted_price'],
                 'payment_status' => Order::PAYMENT_PENDING,
                 'order_status' => Order::STATUS_AWAITING_PAYMENT,
                 'metadata' => array_merge($order->metadata ?? [], [
@@ -201,13 +225,20 @@ class CheckoutController extends Controller
                         'campaign' => $launchPromoCode !== null ? 'launch_20' : null,
                         'applied' => $launchPromoCode !== null,
                     ],
+                    'mt5_giveaway_promo' => $giveawayPromoCode instanceof Mt5PromoCode ? [
+                        'id' => $giveawayPromoCode->id,
+                        'code' => $giveawayPromoCode->code,
+                        'mt5_account_pool_entry_id' => $giveawayPromoCode->mt5_account_pool_entry_id,
+                        'mt5_login' => $giveawayPromoCode->mt5_login,
+                        'applied' => true,
+                    ] : null,
                 ]),
             ]);
             $order->save();
 
             $order->paymentAttempts()->create([
-                'provider' => $validated['payment_provider'],
-                'amount' => $selectedPlan['discounted_price'],
+                'provider' => $giveawayPromoCode instanceof Mt5PromoCode ? 'promo' : $validated['payment_provider'],
+                'amount' => $giveawayPromoCode instanceof Mt5PromoCode ? 0 : $selectedPlan['discounted_price'],
                 'currency' => $validated['currency'],
                 'status' => 'pending',
                 'payload' => [
@@ -217,6 +248,21 @@ class CheckoutController extends Controller
 
             return $order;
         });
+
+        if ($giveawayPromoCode instanceof Mt5PromoCode) {
+            $fulfillmentService->markPaid($order, [
+                'provider' => 'promo',
+                'source' => 'mt5_giveaway_promo',
+                'amount' => 0,
+                'currency' => $order->currency,
+                'payload' => [
+                    'promo_code' => $giveawayPromoCode->code,
+                    'mt5_login' => $giveawayPromoCode->mt5_login,
+                ],
+            ]);
+
+            return redirect()->route('dashboard.accounts');
+        }
 
         $successUrl = $validated['payment_provider'] === 'paypal'
             ? route('paypal.success', ['order' => $order->order_number])
@@ -278,19 +324,36 @@ class CheckoutController extends Controller
 
         $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
         $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
+        $giveawayPromoCode = $launchPromoCode === null
+            ? $this->resolveGiveawayPromoCode($promoCodeInput)
+            : null;
         $selectedPlan = $pricingService->resolvePlan(
             $validated['challenge_type'],
             (int) $validated['account_size'],
             $validated['currency'],
             $launchPromoCode !== null,
         );
+        $giveawayApplies = $giveawayPromoCode instanceof Mt5PromoCode
+            && $giveawayPromoCode->used_at === null
+            && $giveawayPromoCode->poolEntry !== null
+            && $giveawayPromoCode->poolEntry->is_promo
+            && $giveawayPromoCode->poolEntry->allocated_at === null
+            && $giveawayPromoCode->poolEntry->allocated_trading_account_id === null
+            && (int) $giveawayPromoCode->poolEntry->account_size === (int) $validated['account_size'];
+
+        if ($giveawayApplies) {
+            $selectedPlan['discounted_price'] = 0;
+            $selectedPlan['discount']['enabled'] = true;
+            $selectedPlan['discount']['percent'] = 100;
+            $selectedPlan['discount']['amount'] = $selectedPlan['list_price'];
+        }
 
         return response()->json([
-            'applied' => $launchPromoCode !== null,
-            'promo_code' => $launchPromoCode,
+            'applied' => $launchPromoCode !== null || $giveawayApplies,
+            'promo_code' => $giveawayApplies ? $giveawayPromoCode->code : $launchPromoCode,
             'message' => $promoCodeInput === ''
                 ? ''
-                : ($launchPromoCode !== null
+                : ($launchPromoCode !== null || $giveawayApplies
                     ? __('site.checkout.promo_code_feedback.success')
                     : __('site.checkout.promo_code_feedback.invalid')),
             'pricing' => $this->pricingPayload($selectedPlan),
@@ -381,6 +444,18 @@ class CheckoutController extends Controller
         return array_key_exists($size, $pricing)
             ? $size
             : (int) $pricingService->defaultChallengeSize($challengeType);
+    }
+
+    private function resolveGiveawayPromoCode(string $promoCode): ?Mt5PromoCode
+    {
+        if ($promoCode === '') {
+            return null;
+        }
+
+        return Mt5PromoCode::query()
+            ->with('poolEntry')
+            ->whereRaw('LOWER(code) = ?', [strtolower($promoCode)])
+            ->first();
     }
 
     /**

@@ -35,6 +35,7 @@ class Mt5AccountPoolEntry extends Model
         'allocated_trading_account_id',
         'allocated_user_id',
         'allocated_at',
+        'is_promo',
         'is_available',
         'meta',
     ];
@@ -52,6 +53,7 @@ class Mt5AccountPoolEntry extends Model
             'account_size' => 'integer',
             'source_created_at' => 'date',
             'allocated_at' => 'datetime',
+            'is_promo' => 'boolean',
             'is_available' => 'boolean',
             'meta' => 'array',
         ];
@@ -65,5 +67,10 @@ class Mt5AccountPoolEntry extends Model
     public function allocatedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'allocated_user_id');
+    }
+
+    public function promoCode()
+    {
+        return $this->hasOne(Mt5PromoCode::class, 'mt5_account_pool_entry_id');
     }
 }

@@ -14,6 +14,7 @@ use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Invoice;
 use App\Models\Mt5AccountPoolEntry;
+use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\TradingAccount;
@@ -1145,7 +1146,7 @@ class WolforixPlatformTest extends TestCase
             'investor_password' => 'fusion-investor-pass',
             'server' => 'FusionMarkets-Demo',
             'account_size' => 25000,
-            'source_file' => 'Account List FusionMarkets-Demo.ods',
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
             'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
             'is_available' => true,
             'meta' => [
@@ -1275,6 +1276,105 @@ class WolforixPlatformTest extends TestCase
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
         Mail::assertSent(ChallengePurchaseSupportNotificationMail::class, 1);
+    }
+
+    public function test_giveaway_promo_code_immediately_assigns_linked_promo_mt5_account_once(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'giveaway-owner@example.com',
+        ]);
+
+        $promoEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335374',
+            'password' => 'promo-trading-pass',
+            'investor_password' => 'promo-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => true,
+            'is_available' => false,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'promo_marker' => 'Promo',
+            ],
+        ]);
+
+        $normalEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335411',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => false,
+            'is_available' => true,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        $promoCode = Mt5PromoCode::query()->create([
+            'code' => 'WFXGIVE-335374',
+            'mt5_account_pool_entry_id' => $promoEntry->id,
+            'mt5_login' => '335374',
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Giveaway Trader',
+            'email' => 'giveaway-billing@example.com',
+            'street_address' => '10 Promo Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335374',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertRedirect(route('dashboard.accounts'));
+
+        $order = Order::query()->firstOrFail();
+        $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $promoCode->refresh();
+        $promoEntry->refresh();
+        $normalEntry->refresh();
+
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame('promo', $order->payment_provider);
+        $this->assertSame('0.00', (string) $order->final_price);
+        $this->assertSame('335374', $account->platform_login);
+        $this->assertSame('promo-trading-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertNotNull($promoCode->used_at);
+        $this->assertSame($user->id, $promoCode->used_by_user_id);
+        $this->assertSame($order->id, $promoCode->used_order_id);
+        $this->assertSame($account->id, $promoCode->used_trading_account_id);
+        $this->assertSame($account->id, $promoEntry->allocated_trading_account_id);
+        $this->assertNull($normalEntry->allocated_trading_account_id);
+        $this->assertTrue((bool) $normalEntry->is_available);
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), [
+            'full_name' => 'Second Trader',
+            'email' => 'second-giveaway@example.com',
+            'street_address' => '11 Promo Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335374',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertSessionHasErrors(['promo_code']);
     }
 
     public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void

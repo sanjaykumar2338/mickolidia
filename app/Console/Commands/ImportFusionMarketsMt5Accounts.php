@@ -52,6 +52,9 @@ class ImportFusionMarketsMt5Accounts extends Command
                 ['Invalid rows', (string) $report['invalid']],
                 ['Duplicates/skipped existing', (string) $report['duplicates']],
                 ['Skipped', (string) $report['skipped']],
+                ['Promo accounts', (string) $report['promo_accounts']],
+                ['Promo codes created', (string) $report['promo_codes_created']],
+                ['Promo codes existing', (string) $report['promo_codes_existing']],
                 ['Old unassigned entries disabled', (string) $report['deactivated_old_entries']],
                 ['Batch', $report['batch']],
             ],
@@ -73,6 +76,17 @@ class ImportFusionMarketsMt5Accounts extends Command
                     ->map(fn (int $count, string $reason): array => [$reason, (string) $count])
                     ->values()
                     ->all(),
+            );
+        }
+
+        if ($report['promo_codes'] !== []) {
+            $this->table(
+                ['Promo code', 'Linked login', 'Status'],
+                array_map(static fn (array $promoCode): array => [
+                    $promoCode['code'],
+                    $promoCode['login'],
+                    $promoCode['status'],
+                ], $report['promo_codes']),
             );
         }
 

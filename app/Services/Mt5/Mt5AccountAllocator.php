@@ -3,8 +3,10 @@
 namespace App\Services\Mt5;
 
 use App\Models\Mt5AccountPoolEntry;
+use App\Models\Mt5PromoCode;
 use App\Models\TradingAccount;
 use Illuminate\Support\Arr;
+use RuntimeException;
 
 class Mt5AccountAllocator
 {
@@ -28,10 +30,11 @@ class Mt5AccountAllocator
         /** @var Mt5AccountPoolEntry|null $entry */
         $entry = Mt5AccountPoolEntry::query()
             ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
-            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo.ods')))
+            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo30.04.ods')))
             ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
             ->where('meta->platform', (string) config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5))
             ->where('is_available', true)
+            ->where('is_promo', false)
             ->whereNull('allocated_at')
             ->whereNull('allocated_trading_account_id')
             ->where('account_size', (int) $account->account_size)
@@ -52,6 +55,51 @@ class Mt5AccountAllocator
         ])->save();
 
         $this->hydrateAccount($account, $entry);
+
+        return $entry;
+    }
+
+    public function allocatePromo(TradingAccount $account, Mt5PromoCode $promoCode): Mt5AccountPoolEntry
+    {
+        /** @var Mt5PromoCode $lockedPromoCode */
+        $lockedPromoCode = Mt5PromoCode::query()
+            ->with('poolEntry')
+            ->lockForUpdate()
+            ->findOrFail($promoCode->id);
+
+        if ($lockedPromoCode->used_at !== null) {
+            throw new RuntimeException('This promo code has already been used.');
+        }
+
+        $entry = $lockedPromoCode->poolEntry;
+
+        if (! $entry instanceof Mt5AccountPoolEntry || ! $entry->is_promo) {
+            throw new RuntimeException('This promo code is not linked to a promo MT5 account.');
+        }
+
+        if ($entry->allocated_at !== null || $entry->allocated_trading_account_id !== null) {
+            throw new RuntimeException('The linked promo MT5 account is already allocated.');
+        }
+
+        if ((int) $entry->account_size !== (int) $account->account_size) {
+            throw new RuntimeException('This promo code is linked to a different account size.');
+        }
+
+        $entry->forceFill([
+            'allocated_trading_account_id' => $account->id,
+            'allocated_user_id' => $account->user_id,
+            'allocated_at' => now(),
+            'is_available' => false,
+        ])->save();
+
+        $this->hydrateAccount($account, $entry);
+
+        $lockedPromoCode->forceFill([
+            'used_at' => now(),
+            'used_by_user_id' => $account->user_id,
+            'used_order_id' => $account->order_id,
+            'used_trading_account_id' => $account->id,
+        ])->save();
 
         return $entry;
     }

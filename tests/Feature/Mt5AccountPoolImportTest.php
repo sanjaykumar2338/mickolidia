@@ -171,6 +171,51 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame('fusion-investor-updated', $fusionEntry->fresh()->investor_password);
     }
 
+    public function test_fusionmarkets_import_creates_single_use_promo_codes_and_excludes_promo_accounts_from_normal_pool(): void
+    {
+        $path = $this->createOds([
+            ['Login', 'Password', 'Investor Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date', ''],
+            ['335374', 'promo-main-1', 'promo-investor-1', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26', 'Promo'],
+            ['335400', 'promo-main-2', 'promo-investor-2', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26', 'Promo'],
+            ['335411', 'normal-main', 'normal-investor', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26', ''],
+        ]);
+
+        $report = app(Mt5AccountPoolImportService::class)->import(
+            path: $path,
+            pool: Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            batch: 'fusion-promo-test-batch',
+            options: [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'update_existing' => true,
+                'require_investor_password' => true,
+            ],
+        );
+
+        $this->assertSame(2, $report['promo_accounts']);
+        $this->assertSame(2, $report['promo_codes_created']);
+        $this->assertDatabaseHas('mt5_account_pool_entries', [
+            'login' => '335374',
+            'is_promo' => true,
+            'is_available' => false,
+        ]);
+        $this->assertDatabaseHas('mt5_account_pool_entries', [
+            'login' => '335411',
+            'is_promo' => false,
+            'is_available' => true,
+        ]);
+        $this->assertDatabaseHas('mt5_promo_codes', [
+            'code' => 'WFXGIVE-335374',
+            'mt5_login' => '335374',
+            'used_at' => null,
+        ]);
+        $this->assertDatabaseHas('mt5_promo_codes', [
+            'code' => 'WFXGIVE-335400',
+            'mt5_login' => '335400',
+            'used_at' => null,
+        ]);
+    }
+
     public function test_admin_activation_allocates_from_client_pool_only_and_ignores_internal_pool_entries(): void
     {
         $user = User::factory()->create([
@@ -283,7 +328,7 @@ class Mt5AccountPoolImportTest extends TestCase
             'investor_password' => 'client-investor-pass',
             'server' => 'FusionMarkets-Demo',
             'account_size' => 25000,
-            'source_file' => 'Account List FusionMarkets-Demo.ods',
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
             'meta' => [
                 'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
                 'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,

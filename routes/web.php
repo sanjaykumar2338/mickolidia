@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminClientController;
+use App\Http\Controllers\AdminMt5PromoCodeController;
 use App\Http\Controllers\AdminReviewRequestController;
 use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\CheckoutController;
@@ -108,6 +109,7 @@ Route::prefix('admin')->group(function (): void {
     Route::middleware('admin.basic')->group(function (): void {
         Route::post('/logout', [AdminAuthController::class, 'destroy'])->name('admin.logout');
         Route::get('/clients', [AdminClientController::class, 'index'])->name('admin.clients.index');
+        Route::get('/mt5-promo-codes', [AdminMt5PromoCodeController::class, 'index'])->name('admin.mt5-promo-codes.index');
         Route::get('/wolfi/voices', [DashboardController::class, 'wolfiVoices'])->name('admin.wolfi.voices');
         Route::post('/wolfi/voices', [DashboardController::class, 'updateWolfiVoice'])->name('admin.wolfi.voices.update');
         Route::post('/wolfi/voices/preview', [DashboardController::class, 'previewWolfiVoice'])

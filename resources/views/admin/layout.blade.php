@@ -41,6 +41,9 @@
                     <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                         {{ __('site.admin.clients.title') }}
                     </a>
+                    <a href="{{ route('admin.mt5-promo-codes.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                        MT5 Promo Codes
+                    </a>
                     <a href="{{ route('admin.wolfi.voices') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                         Wolfi Voices
                     </a>

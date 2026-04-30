@@ -231,7 +231,10 @@ class Mt5AccountPoolSpreadsheetParser
             $dataRows[] = [
                 'row_number' => $row['row_number'],
                 'cells' => $row['values'],
-                'values' => $this->mappedRowValues($row['values'], $fieldMap),
+                'values' => array_merge(
+                    $this->mappedRowValues($row['values'], $fieldMap),
+                    ['promo_marker' => $this->promoMarker($row['values'])]
+                ),
             ];
         }
 
@@ -338,8 +341,23 @@ class Mt5AccountPoolSpreadsheetParser
             'status', 'available' => 'source_status',
             'c', 'currency', 'currency symbol' => 'currency_symbol',
             'created date', 'created at', 'date created' => 'source_created_at',
+            'promo', 'promotion', 'giveaway' => 'promo_marker',
             default => null,
         };
+    }
+
+    /**
+     * @param  list<string>  $values
+     */
+    private function promoMarker(array $values): string
+    {
+        foreach ($values as $value) {
+            if (Str::lower(trim($value)) === 'promo') {
+                return 'Promo';
+            }
+        }
+
+        return '';
     }
 
     /**

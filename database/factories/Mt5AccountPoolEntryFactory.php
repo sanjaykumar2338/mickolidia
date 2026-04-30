@@ -26,6 +26,7 @@ class Mt5AccountPoolEntryFactory extends Factory
             'source_batch' => 'test-batch',
             'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
             'source_created_at' => now()->subDay(),
+            'is_promo' => false,
             'is_available' => true,
             'meta' => [
                 'row_number' => 2,

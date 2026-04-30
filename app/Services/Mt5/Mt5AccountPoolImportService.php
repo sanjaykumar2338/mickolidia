@@ -3,6 +3,7 @@
 namespace App\Services\Mt5;
 
 use App\Models\Mt5AccountPoolEntry;
+use App\Models\Mt5PromoCode;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -58,6 +59,10 @@ class Mt5AccountPoolImportService
             'deactivated_old_entries' => 0,
             'skipped' => 0,
             'duplicates' => 0,
+            'promo_accounts' => 0,
+            'promo_codes_created' => 0,
+            'promo_codes_existing' => 0,
+            'promo_codes' => [],
             'skipped_reasons' => [],
             'skipped_rows' => [],
         ];
@@ -78,8 +83,13 @@ class Mt5AccountPoolImportService
 
             $login = (string) $values['login'];
             $server = (string) $values['server'];
+            $isPromo = $this->isPromoRow($values);
             $duplicateKey = Str::lower($login.'|'.$server);
             $currentKeys[$duplicateKey] = true;
+
+            if ($isPromo) {
+                $report['promo_accounts']++;
+            }
 
             if (isset($seenRows[$duplicateKey])) {
                 $this->recordSkip($report, $row['row_number'], 'duplicate_in_file');
@@ -113,6 +123,8 @@ class Mt5AccountPoolImportService
                             broker: $broker,
                             platform: $platform,
                         ))->save();
+
+                        $this->ensurePromoCode($existing, $report, $dryRun);
                     }
 
                     $report['updated']++;
@@ -134,13 +146,21 @@ class Mt5AccountPoolImportService
             }
 
             if ($dryRun) {
+                $report['promo_codes'][] = $isPromo
+                    ? [
+                        'code' => 'WFXGIVE-'.$login,
+                        'login' => $login,
+                        'status' => 'dry_run',
+                    ]
+                    : null;
+                $report['promo_codes'] = array_values(array_filter($report['promo_codes']));
                 $report['created']++;
                 $report['imported']++;
 
                 continue;
             }
 
-            Mt5AccountPoolEntry::query()->create($this->entryAttributes(
+            $entry = Mt5AccountPoolEntry::query()->create($this->entryAttributes(
                 values: $values,
                 inspection: $inspection,
                 rowNumber: $row['row_number'],
@@ -149,6 +169,7 @@ class Mt5AccountPoolImportService
                 broker: $broker,
                 platform: $platform,
             ));
+            $this->ensurePromoCode($entry, $report, $dryRun);
 
             $report['created']++;
             $report['imported']++;
@@ -286,7 +307,8 @@ class Mt5AccountPoolImportService
                 rowValue: $values['source_created_at'] ?? null,
                 metadataValue: $inspection['metadata']['created_at'] ?? null,
             ),
-            'is_available' => $this->isAvailable($values['source_status'] ?? 'available'),
+            'is_promo' => $this->isPromoRow($values),
+            'is_available' => ! $this->isPromoRow($values) && $this->isAvailable($values['source_status'] ?? 'available'),
             'meta' => array_filter([
                 'broker' => $broker !== '' ? $broker : null,
                 'provider' => $broker !== '' ? $broker : null,
@@ -296,7 +318,62 @@ class Mt5AccountPoolImportService
                 'header_row_number' => $inspection['header_row_number'],
                 'currency_symbol' => $values['currency_symbol'] ?? null,
                 'source_created_at_raw' => $values['source_created_at'] ?? ($inspection['metadata']['created_at'] ?? null),
+                'promo_marker' => $values['promo_marker'] ?? null,
             ], static fn (mixed $value): bool => $value !== null && $value !== ''),
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $values
+     */
+    private function isPromoRow(array $values): bool
+    {
+        return Str::lower(trim((string) ($values['promo_marker'] ?? ''))) === 'promo';
+    }
+
+    /**
+     * @param  array<string, mixed>  $report
+     */
+    private function ensurePromoCode(Mt5AccountPoolEntry $entry, array &$report, bool $dryRun): void
+    {
+        if (! $entry->is_promo) {
+            return;
+        }
+
+        $code = 'WFXGIVE-'.$entry->login;
+
+        if ($dryRun) {
+            $report['promo_codes'][] = [
+                'code' => $code,
+                'login' => $entry->login,
+                'status' => 'dry_run',
+            ];
+
+            return;
+        }
+
+        $promoCode = Mt5PromoCode::query()->firstOrCreate(
+            ['mt5_account_pool_entry_id' => $entry->id],
+            [
+                'code' => $code,
+                'mt5_login' => $entry->login,
+                'meta' => [
+                    'source_file' => $entry->source_file,
+                    'source_batch' => $entry->source_batch,
+                ],
+            ],
+        );
+
+        if ($promoCode->wasRecentlyCreated) {
+            $report['promo_codes_created']++;
+        } else {
+            $report['promo_codes_existing']++;
+        }
+
+        $report['promo_codes'][] = [
+            'code' => $promoCode->code,
+            'login' => $entry->login,
+            'status' => $promoCode->used_at === null ? 'unused' : 'used',
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Services\TradingAccounts;
 
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
+use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Services\Mt5\Mt5AccountAllocator;
@@ -91,7 +92,7 @@ class TradingAccountProvisioner
             ]),
         ]);
 
-        DB::transaction(function () use ($account, $purchase): void {
+        DB::transaction(function () use ($account, $order, $purchase): void {
             $account->save();
 
             $purchase->forceFill([
@@ -102,7 +103,16 @@ class TradingAccountProvisioner
                 ]),
             ])->save();
 
-            $this->mt5AccountAllocator->allocate($account);
+            $promoCodeId = data_get($order->metadata ?? [], 'mt5_giveaway_promo.id');
+            $promoCode = $promoCodeId
+                ? Mt5PromoCode::query()->find((int) $promoCodeId)
+                : null;
+
+            if ($promoCode instanceof Mt5PromoCode) {
+                $this->mt5AccountAllocator->allocatePromo($account, $promoCode);
+            } else {
+                $this->mt5AccountAllocator->allocate($account);
+            }
 
             if ($account->wasRecentlyCreated) {
                 $account->statusHistories()->create([

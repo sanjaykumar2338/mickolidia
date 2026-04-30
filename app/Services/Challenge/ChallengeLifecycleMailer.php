@@ -426,7 +426,7 @@ class ChallengeLifecycleMailer
     {
         return Mt5AccountPoolEntry::query()
             ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
-            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo.ods')))
+            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo30.04.ods')))
             ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
             ->where('meta->platform', (string) config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5))
             ->where('is_available', true)
