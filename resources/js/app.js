@@ -1834,6 +1834,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const originalWrap = card.querySelector('[data-comparison-original-wrap]');
                     const originalPrice = card.querySelector('[data-comparison-original-price]');
                     const discountBadge = card.querySelector('[data-comparison-discount]');
+                    const bestValueBadge = card.querySelector('[data-comparison-best-value]');
                     const cta = card.querySelector('[data-comparison-cta]');
 
                     card.classList.toggle('is-active', String(plan.account_size) === String(activeSize));
@@ -1883,6 +1884,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (discountBadge instanceof HTMLElement) {
                         discountBadge.classList.toggle('hidden', !plan.discount?.enabled);
                         discountBadge.textContent = ui.discount_badge ?? discountBadge.textContent ?? '';
+                    }
+
+                    if (bestValueBadge instanceof HTMLElement) {
+                        bestValueBadge.classList.toggle('hidden', Number(plan.account_size) !== 50000);
+                        bestValueBadge.textContent = ui.best_value ?? bestValueBadge.textContent ?? '';
                     }
 
                     if (cta instanceof HTMLAnchorElement) {

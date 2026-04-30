@@ -209,6 +209,7 @@ return array_replace_recursive($en, [
             'original_price' => 'Prix standard',
             'discount_badge' => '20 % OFF - Offre de lancement limitée',
             'discount_urgency' => 'Remise de lancement - Offre limitée dans le temps',
+            'best_value' => 'Meilleure valeur',
             'start_button' => 'Obtenir le plan',
             'review_policy' => 'Voir la politique de payout',
             'faq_link' => 'Lire la FAQ',

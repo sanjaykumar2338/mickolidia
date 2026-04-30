@@ -168,6 +168,7 @@ return [
             'original_price' => 'Regulärer Preis',
             'discount_badge' => '20 % RABATT - Limitierte Launch-Aktion',
             'discount_urgency' => 'Launch-Rabatt - Nur für kurze Zeit',
+            'best_value' => 'Bester Wert',
             'start_button' => 'Plan sichern',
             'review_policy' => 'Auszahlungsrichtlinie ansehen',
             'faq_link' => 'FAQ lesen',

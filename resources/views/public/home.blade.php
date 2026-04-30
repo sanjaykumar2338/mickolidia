@@ -73,6 +73,7 @@
         'unlimited' => __('site.home.challenge_selector.unlimited'),
         'discount_badge' => __('site.home.challenge_selector.discount_badge'),
         'discount_urgency' => __('site.home.challenge_selector.discount_urgency'),
+        'best_value' => __('site.home.challenge_selector.best_value'),
         'phase_titles' => trans('site.home.challenge_selector.phase_titles'),
         'metrics' => trans('site.home.challenge_selector.metrics'),
         'value_templates' => trans('site.home.challenge_selector.value_templates'),
@@ -319,9 +320,9 @@
                                         </span>
                                         <span class="text-xs font-semibold uppercase tracking-[0.26em] text-slate-400">{{ __('site.home.challenge_selector.current_price') }}</span>
                                     </div>
-                                    <p data-plan-price class="mt-4 text-4xl font-semibold text-white">{{ $initialPrice }}</p>
+                                    <p data-plan-price class="challenge-selected-price mt-4 text-4xl font-semibold">{{ $initialPrice }}</p>
                                     <div class="mt-4 flex flex-wrap items-center gap-3">
-                                        <span data-plan-original-wrap class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}rounded-full border border-white/8 bg-white/3 px-4 py-2 text-sm text-slate-400">
+                                        <span data-plan-original-wrap class="{{ $initialPlan['discount']['enabled'] ? '' : 'hidden ' }}challenge-selected-original rounded-full px-4 py-2 text-sm">
                                             {{ __('site.home.challenge_selector.original_price') }}
                                             <span data-plan-original-price class="ml-2 font-semibold line-through">{{ $initialListPrice }}</span>
                                         </span>
@@ -469,6 +470,9 @@
                                     data-challenge-size="{{ $comparisonSize }}"
                                     class="{{ $comparisonPlan ? '' : 'hidden ' }}challenge-comparison-card"
                                 >
+                                    <b data-comparison-best-value class="{{ $comparisonPlan && (int) $comparisonPlan['account_size'] === 50000 ? '' : 'hidden ' }}challenge-comparison-best-value">
+                                        {{ __('site.home.challenge_selector.best_value') }}
+                                    </b>
                                     <div class="challenge-comparison-card-head">
                                         <span>{{ __('site.home.challenge_selector.size_label') }}</span>
                                         <strong data-comparison-account-size>{{ $comparisonPlan ? '$'.number_format($comparisonPlan['account_size'], 0) : '' }}</strong>
@@ -503,8 +507,8 @@
                                     </dl>
 
                                     <div class="challenge-comparison-price">
-                                        <span data-comparison-price>{{ $comparisonPlan ? $formatMoney($comparisonPlan['discounted_price'], $defaultCurrency) : '' }}</span>
-                                        <small data-comparison-original-wrap class="{{ $comparisonPlan && $comparisonPlan['discount']['enabled'] ? '' : 'hidden' }}">
+                                        <span data-comparison-price class="challenge-comparison-price-current">{{ $comparisonPlan ? $formatMoney($comparisonPlan['discounted_price'], $defaultCurrency) : '' }}</span>
+                                        <small data-comparison-original-wrap class="{{ $comparisonPlan && $comparisonPlan['discount']['enabled'] ? '' : 'hidden' }} challenge-comparison-price-original">
                                             <span data-comparison-original-price>{{ $comparisonPlan ? $formatMoney($comparisonPlan['list_price'], $defaultCurrency) : '' }}</span>
                                         </small>
                                     </div>

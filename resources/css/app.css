@@ -1050,6 +1050,24 @@ h6 {
         background 0.22s ease;
 }
 
+.challenge-selected-price {
+    color: #f8da86;
+    letter-spacing: 0;
+    text-shadow: 0 0 24px rgba(244, 183, 74, 0.22);
+}
+
+.challenge-selected-original {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.42);
+    color: rgba(148, 163, 184, 0.78);
+}
+
+.challenge-selected-original [data-plan-original-price] {
+    color: rgba(203, 213, 225, 0.6);
+    text-decoration-color: rgba(248, 113, 113, 0.76);
+    text-decoration-thickness: 2px;
+}
+
 .challenge-comparison-card.hidden,
 .challenge-comparison-card-head em.hidden,
 .challenge-comparison-price small.hidden {
@@ -1076,6 +1094,30 @@ h6 {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 0.9rem;
     text-align: center;
+}
+
+.challenge-comparison-best-value {
+    position: absolute;
+    top: -0.95rem;
+    left: 50%;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 238, 186, 0.28);
+    background: linear-gradient(135deg, #ff7a32 0%, #f04d2f 56%, #bf2f24 100%);
+    padding: 0.34rem 0.78rem;
+    color: #fff7ed;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow:
+        0 14px 28px rgba(239, 68, 68, 0.3),
+        0 0 20px rgba(244, 183, 74, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.34);
+    transform: translateX(-50%);
 }
 
 .challenge-comparison-card-head span {
@@ -1142,17 +1184,23 @@ h6 {
     text-align: center;
 }
 
-.challenge-comparison-price span {
-    color: #fff;
-    font-size: 1.18rem;
+.challenge-comparison-price-current {
+    color: #f8da86;
+    font-size: 1.34rem;
     font-weight: 800;
+    letter-spacing: 0;
+    line-height: 1.05;
+    text-shadow: 0 0 20px rgba(244, 183, 74, 0.24);
 }
 
-.challenge-comparison-price small {
-    margin-top: 0.15rem;
-    color: rgba(148, 163, 184, 0.85);
-    font-size: 0.78rem;
+.challenge-comparison-price-original {
+    margin-top: 0.28rem;
+    color: rgba(148, 163, 184, 0.58);
+    font-size: 0.82rem;
+    font-weight: 700;
     text-decoration: line-through;
+    text-decoration-color: rgba(248, 113, 113, 0.72);
+    text-decoration-thickness: 2px;
 }
 
 .challenge-comparison-cta {

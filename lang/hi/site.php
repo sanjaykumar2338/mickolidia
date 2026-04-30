@@ -217,6 +217,7 @@ return array_replace_recursive($en, [
             'original_price' => 'सामान्य कीमत',
             'discount_badge' => '20% OFF - सीमित लॉन्च ऑफर',
             'discount_urgency' => 'लॉन्च डिस्काउंट - सीमित समय',
+            'best_value' => 'सर्वोत्तम मूल्य',
             'start_button' => 'प्लान लें',
             'review_policy' => 'पेआउट नीति देखें',
             'faq_link' => 'FAQ पढ़ें',

@@ -168,6 +168,7 @@ return [
             'original_price' => 'Regular price',
             'discount_badge' => '20% OFF - Limited Launch Offer',
             'discount_urgency' => 'Launch Discount - Limited Time Only',
+            'best_value' => 'Best Value',
             'start_button' => 'Get Plan',
             'review_policy' => 'Review payout policy',
             'faq_link' => 'Read FAQ',

@@ -168,6 +168,7 @@ return [
             'original_price' => 'Precio regular',
             'discount_badge' => '20 % OFF - Oferta limitada de lanzamiento',
             'discount_urgency' => 'Descuento de lanzamiento - Solo por tiempo limitado',
+            'best_value' => 'Mejor valor',
             'start_button' => 'Obtener plan',
             'review_policy' => 'Revisar política de payout',
             'faq_link' => 'Leer FAQ',

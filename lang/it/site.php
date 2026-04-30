@@ -217,6 +217,7 @@ return array_replace_recursive($en, [
             'original_price' => 'Prezzo standard',
             'discount_badge' => '20% OFF - Offerta di lancio limitata',
             'discount_urgency' => 'Sconto di lancio - Tempo limitato',
+            'best_value' => 'Miglior valore',
             'start_button' => 'Ottieni il piano',
             'review_policy' => 'Vedi policy payout',
             'faq_link' => 'Leggi FAQ',
