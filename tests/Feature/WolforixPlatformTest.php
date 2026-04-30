@@ -1724,8 +1724,13 @@ class WolforixPlatformTest extends TestCase
     {
         $this->get(route('payout-policy'))
             ->assertOk()
-            ->assertSee('First withdrawal requests become available after 21 days.')
-            ->assertSee('Payments within 24 hours');
+            ->assertSee('The first payout can be requested after 21 days.')
+            ->assertSee('Payments within 24 hours after approval')
+            ->assertSee('Once approved, payouts are processed within 24 hours.');
+
+        $this->get(route('faq'))
+            ->assertOk()
+            ->assertSee('Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.');
     }
 
     public function test_company_information_contains_the_updated_address(): void

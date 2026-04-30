@@ -252,7 +252,7 @@ class WolfiAssistantService
                 sprintf('Minimum trading days: %d.', (int) $currentRules['minimum_trading_days']),
                 sprintf('Funded profit split: %s%%.', $this->trimTrailingZero((float) $currentRules['funded_profit_split'])),
                 sprintf(
-                    'Funded payout timing: first withdrawal after %d days, then every %d days.',
+                    'Funded payout timing: first payout after %d days, then every %d days; approved payouts are processed within 24 hours.',
                     (int) $currentRules['first_payout_days'],
                     (int) $currentRules['payout_cycle_days'],
                 ),
@@ -433,18 +433,18 @@ class WolfiAssistantService
             return [
                 'group' => 'payouts',
                 'title' => 'Payout timing and approval',
-                'message' => 'Wolforix funded accounts unlock the first withdrawal after 21 days. After that, payout requests follow a 14-day cycle and still depend on rule compliance and internal review.',
+                'message' => 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.',
                 'bullets' => [
                     'Profit becomes payout-eligible only after the account reaches funded conditions.',
                     'The funded profit split is applied before calculating the eligible amount.',
-                    'Payout requests remain subject to Wolforix review checks.',
+                    'Payout requests remain subject to Wolforix approval checks before the 24-hour processing window starts.',
                     $consistencyRequired
                         ? 'For 1-Step funded accounts, the consistency rule must still be satisfied before payout approval.'
                         : 'The current funded configuration does not automatically require the consistency rule for every model.',
                 ],
                 'stats' => [
                     [
-                        'label' => 'First withdrawal',
+                        'label' => 'First payout',
                         'value' => '21 days',
                         'tone' => 'amber',
                     ],
@@ -455,7 +455,7 @@ class WolfiAssistantService
                     ],
                     [
                         'label' => 'Review',
-                        'value' => 'Required',
+                        'value' => '24h after approval',
                         'tone' => 'rose',
                     ],
                 ],
@@ -465,14 +465,15 @@ class WolfiAssistantService
 
         $message = $account['is_funded']
             ? sprintf(
-                'Your account is funded, so payout timing is now anchored to the first withdrawal window and recurring cycle. Profit split is %s%% for this account.',
+                'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours. Profit split is %s%% for this account.',
                 $this->trimTrailingZero((float) $account['profit_split_percent']),
             )
-            : 'Your current account is still in the challenge lifecycle, so payout timing is informational until funding is reached.';
+            : 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours. Your current account is still in the challenge lifecycle, so payout timing is informational until funding is reached.';
 
         $bullets = [
-            sprintf('First withdrawal timing for this model: %d days.', (int) $account['first_payout_days']),
-            sprintf('Recurring payout cycle after that: every %d days.', (int) $account['payout_cycle_days']),
+            sprintf('First payout timing for this model: %d days.', (int) $account['first_payout_days']),
+            sprintf('Subsequent payout cycle after that: every %d days.', (int) $account['payout_cycle_days']),
+            'Once approved, payments are processed within 24 hours.',
             sprintf('Stored first payout eligible date: %s.', $account['first_payout_eligible_at']),
             sprintf('Stored next payout window: %s.', $account['payout_eligible_at']),
             sprintf('Profit split on this account: %s%%.', $this->trimTrailingZero((float) $account['profit_split_percent'])),

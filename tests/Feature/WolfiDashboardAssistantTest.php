@@ -183,13 +183,18 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertOk()
             ->assertJsonPath('group', 'payouts')
             ->assertJsonPath('title', 'Payout timing and approval')
+            ->assertJsonPath('message', 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.')
             ->assertJsonFragment([
-                'label' => 'First withdrawal',
+                'label' => 'First payout',
                 'value' => '21 days',
             ])
             ->assertJsonFragment([
                 'label' => 'Cycle',
                 'value' => '14 days',
+            ])
+            ->assertJsonFragment([
+                'label' => 'Review',
+                'value' => '24h after approval',
             ]);
     }
 

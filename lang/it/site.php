@@ -270,7 +270,7 @@ return array_replace_recursive($en, [
                     'label' => '2-Step Pro',
                     'description' => 'Rischio più basso. Maggiore potenziale di scaling. Pensato per costanza e crescita a lungo termine.',
                     'note_title' => 'Modello funded 2-Step Pro',
-                    'note_body' => 'Valutazione in due fasi con leva 1:100 in Fase 1, primo prelievo dopo 21 giorni, payout ogni 14 giorni da quel momento e sistema di scaling per account funded profittevoli. Costruisci consistenza. Scala con decisione.',
+                    'note_body' => 'Valutazione in due fasi con leva 1:100 in Fase 1, primo payout dopo 21 giorni, payout ogni 14 giorni da quel momento e sistema di scaling per account funded profittevoli. Costruisci consistenza. Scala con decisione.',
                 ],
             ],
         ],
@@ -1086,7 +1086,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Ogni quanto vengono elaborati i payout?',
-                        'answer' => 'Gli account funded possono richiedere il primo prelievo dopo 21 giorni. Successivamente, le richieste seguono un ciclo di 14 giorni con un limite massimo per ciclo. Una volta inviata la richiesta, i payout vengono elaborati entro 24 ore.',
+                        'answer' => 'I payout sono definiti nella FAQ. Il primo payout può essere richiesto dopo 21 giorni, i successivi ogni 14 giorni e, una volta approvati, i pagamenti vengono elaborati entro 24 ore.',
                     ],
                     [
                         'question' => 'Quali metodi di payout sono disponibili?',
@@ -1359,7 +1359,7 @@ return array_replace_recursive($en, [
         'voice_support_fallback' => 'Posso aiutarti con regole, payout, piani e domande generali sulla piattaforma. Per billing o assistenza specifica sull’account, contatta :email.',
         'voice_trial_fallback' => 'Usa Prova Gratuita per aprire il flusso demo Wolforix. Gli utenti esistenti possono inserire la stessa email e password e Wolforix li porterà nella dashboard trial oppure creerà il trial se non è ancora stato avviato.',
         'voice_plan_fallback' => 'Wolforix offre attualmente i modelli 1-Step Instant e 2-Step Pro nelle dimensioni 5K, 10K, 25K, 50K e 100K. Scegli il modello che si adatta alla tua tolleranza al rischio, poi usa Ottieni il piano per continuare.',
-        'voice_payout_fallback' => 'Il primo prelievo diventa disponibile dopo :first_payout_days giorni. Dopo di che, i payout seguono un ciclo di :payout_cycle_days giorni. Una volta inviata la richiesta di prelievo, viene elaborata entro 24 ore, in base alle regole dell’account funded e ai controlli di consistenza.',
+        'voice_payout_fallback' => 'I payout sono definiti nella FAQ. Il primo payout può essere richiesto dopo :first_payout_days giorni, i successivi ogni :payout_cycle_days giorni e, una volta approvati, i pagamenti vengono elaborati entro 24 ore.',
         'voice_max_drawdown_fallback' => 'Se raggiungi il limite massimo di drawdown, la challenge viene fallita e l’account può essere bloccato o disattivato. Le posizioni aperte potrebbero dover essere chiuse, e la dashboard mostrerà lo stato di fallimento e il motivo.',
         'voice_rules_fallback' => '1-Step usa un target del 10%, perdita giornaliera max del 4% e perdita totale max dell’8%. 2-Step usa target del 10% e poi 5%, perdita giornaliera max del 5%, perdita totale max del 10% e minimo 3 giorni di trading per fase.',
         'voice_checkout_fallback' => 'Clicca Ottieni il piano sulla challenge selezionata, poi accedi o crea il tuo account prima del checkout. Dopo l’autenticazione, Wolforix ti riporta al piano corretto.',
@@ -1563,19 +1563,19 @@ return array_replace_recursive($en, [
             ],
             'payout_policy' => [
                 'title' => 'Policy payout',
-                'intro' => 'Le prime richieste di prelievo diventano disponibili dopo 21 giorni. Successivamente, le richieste di prelievo seguono un ciclo di 14 giorni con un limite massimo per ciclo.',
+                'intro' => 'Il primo payout può essere richiesto dopo 21 giorni. I payout successivi possono essere richiesti ogni 14 giorni.',
                 'highlight' => [
                     'title' => 'Elaborazione payout',
                     'items' => [
-                        'Pagamenti entro 24 ore',
+                        'Pagamenti entro 24 ore dopo l’approvazione',
                     ],
-                    'note' => 'Una volta inviata una richiesta di prelievo, Wolforix punta a elaborare il payout entro 24 ore.',
+                    'note' => 'Una volta approvati, i payout vengono elaborati entro 24 ore.',
                 ],
                 'sections' => [
                     [
                         'title' => 'Idoneità al payout',
                         'paragraphs' => [
-                            'Gli account funded possono richiedere il primo prelievo dopo 21 giorni. Successivamente, le richieste di prelievo seguono un ciclo di 14 giorni con un limite massimo per ciclo.',
+                            'Gli account funded possono richiedere il primo payout dopo 21 giorni. Successivamente, i payout possono essere richiesti ogni 14 giorni.',
                             'Gli account funded 2-Step possono anche scalare del +25% di capitale ogni 3 mesi se profittevoli.',
                             'Gli account funded 1-Step seguono lo stesso ritmo payout di 14 giorni ma richiedono il rispetto obbligatorio della regola di consistenza prima dell’approvazione payout.',
                         ],

@@ -1213,7 +1213,7 @@ return [
                 'items' => [
                     [
                         'question' => '¿Con qué frecuencia se procesan los payouts?',
-                        'answer' => 'Las cuentas funded pueden solicitar el primer retiro después de 21 días. Después, las solicitudes siguen un ciclo de 14 días con un límite máximo por ciclo. Una vez enviada la solicitud, los payouts se procesan en 24 horas.',
+                        'answer' => 'Los payouts están definidos en la FAQ. El primer payout puede solicitarse después de 21 días, los siguientes cada 14 días y, una vez aprobados, los pagos se procesan en 24 horas.',
                     ],
                     [
                         'question' => '¿Qué métodos de payout están disponibles?',
@@ -1488,7 +1488,7 @@ return [
         'voice_support_fallback' => 'Puedo ayudarte con reglas, payouts, planes y preguntas generales de la plataforma. Para facturación o ayuda específica de cuenta, contacta con :email.',
         'voice_trial_fallback' => 'Usa Free Trial para abrir el flujo demo de Wolforix. Los usuarios existentes pueden introducir el mismo email y contraseña, y Wolforix los llevará al dashboard de trial o creará el trial si todavía no existe.',
         'voice_plan_fallback' => 'Wolforix ofrece actualmente los modelos 1-Step Instant y 2-Step Pro en tamaños de 5K, 10K, 25K, 50K y 100K. Elige el modelo que mejor encaje con tu riesgo y luego usa Obtener plan para continuar.',
-        'voice_payout_fallback' => 'El primer retiro se puede solicitar después de :first_payout_days días. A partir de ahí, los payouts siguen un ciclo de :payout_cycle_days días. Una vez enviada la solicitud de retiro, se procesa dentro de 24 horas, siempre sujeto a las reglas funded y a los controles de consistencia.',
+        'voice_payout_fallback' => 'Los payouts están definidos en la FAQ. El primer payout puede solicitarse después de :first_payout_days días, los siguientes cada :payout_cycle_days días y, una vez aprobados, los pagos se procesan en 24 horas.',
         'voice_max_drawdown_fallback' => 'Si alcanzas el límite de drawdown máximo, el challenge queda fallido y la cuenta puede bloquearse o desactivarse. Las posiciones abiertas pueden tener que cerrarse, y el dashboard mostrará el estado de fallo y el motivo.',
         'voice_rules_fallback' => 'El 1-Step exige 10 % de objetivo, 4 % de pérdida diaria máxima y 8 % de pérdida total máxima. El 2-Step usa objetivos del 10 % y 5 %, con 5 % de pérdida diaria máxima, 10 % de pérdida total máxima y un mínimo de 3 días operados por fase.',
         'voice_checkout_fallback' => 'Haz clic en Obtener plan dentro del challenge elegido y después inicia sesión o crea tu cuenta antes del checkout. Wolforix te devuelve al plan correcto tras la autenticación.',
@@ -1694,19 +1694,19 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Política de Payout',
-                'intro' => 'La primera solicitud de retiro queda disponible después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
+                'intro' => 'El primer payout puede solicitarse después de 21 días. Los siguientes payouts pueden solicitarse cada 14 días.',
                 'highlight' => [
                     'title' => 'Procesamiento de payouts',
                     'items' => [
-                        'Pagos dentro de 24 horas',
+                        'Pagos dentro de 24 horas después de la aprobación',
                     ],
-                    'note' => 'Una vez que el cliente envía una solicitud de retiro, Wolforix busca procesar el payout dentro de 24 horas.',
+                    'note' => 'Una vez aprobados, los payouts se procesan en 24 horas.',
                 ],
                 'sections' => [
                     [
                         'title' => 'Elegibilidad para payout',
                         'paragraphs' => [
-                            'Las cuentas funded pueden solicitar el primer retiro después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
+                            'Las cuentas funded pueden solicitar el primer payout después de 21 días. A partir de ahí, los siguientes payouts pueden solicitarse cada 14 días.',
                             'Las cuentas funded 2-Step además pueden escalar +25 % de capital cada 3 meses si son rentables.',
                             'Las cuentas funded 1-Step operan con el mismo ritmo de 14 días, pero requieren el cumplimiento obligatorio de la regla de consistencia antes de aprobar payouts.',
                         ],
@@ -2232,10 +2232,10 @@ return [
         'payouts' => [
             'next_window' => 'Próxima ventana de payout',
             'next_window_value' => 'Próxima revisión de 14 días en 3 días',
-            'cycle_note' => 'La primera solicitud de retiro queda disponible después de 21 días. A partir de ahí, las solicitudes de payout siguen un ciclo de 14 días con un límite máximo por ciclo.',
+            'cycle_note' => 'El primer payout puede solicitarse después de 21 días. Los siguientes payouts pueden solicitarse cada 14 días y, una vez aprobados, los pagos se procesan en 24 horas.',
             'placeholder_status' => 'Placeholder de revisión manual',
             'queue_title' => 'Vista previa de la cola de payouts',
-            'queue_copy' => 'Los ciclos de payout de 14 días, un primer retiro después de 21 días para todas las cuentas funded, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
+            'queue_copy' => 'Los ciclos de payout de 14 días, un primer payout después de 21 días para todas las cuentas funded, el procesamiento de 24 horas tras la aprobación, los requisitos de consistencia de 1-Step y las revisiones internas se representan aquí sin motor real de payouts.',
             'progressive_note' => 'Las cuentas funded 2-Step pueden escalar +25 % de capital cada 3 meses si son rentables. Las cuentas funded 1-Step mantienen la regla de consistencia obligatoria antes de aprobar payouts.',
             'requirements_title' => 'Lista de elegibilidad',
             'requirements' => [

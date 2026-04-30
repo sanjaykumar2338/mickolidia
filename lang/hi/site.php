@@ -1086,7 +1086,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Payouts कितनी बार process होते हैं?',
-                        'answer' => 'Funded accounts पहला withdrawal 21 days के बाद request कर सकते हैं। उसके बाद withdrawal requests 14-day cycle follow करती हैं, जिसमें per cycle maximum limit होती है। Request submit होने के बाद payouts 24 hours के भीतर process होते हैं।',
+                        'answer' => 'Payouts FAQ में defined हैं। पहला payout 21 days के बाद request किया जा सकता है, subsequent payouts हर 14 days में request किए जा सकते हैं, और approve होने के बाद payments 24 hours के भीतर process होते हैं।',
                     ],
                     [
                         'question' => 'कौन से payout methods available हैं?',
@@ -1359,7 +1359,7 @@ return array_replace_recursive($en, [
         'voice_support_fallback' => 'मैं नियमों, पेआउट्स, प्लान्स और सामान्य प्लेटफॉर्म सवालों में मदद कर सकता हूँ। Billing या account-specific मदद के लिए :email पर संपर्क करें।',
         'voice_trial_fallback' => 'Free Trial का उपयोग करके Wolforix demo flow खोलें। मौजूदा यूज़र्स वही ईमेल और पासवर्ड दर्ज कर सकते हैं, और वुल्फोरिक्स उन्हें trial dashboard में भेज देगा या अगर trial शुरू नहीं हुआ है तो बना देगा।',
         'voice_plan_fallback' => 'वुल्फोरिक्स फिलहाल 1-Step Instant और 2-Step Pro मॉडल 5K, 10K, 25K, 50K और 100K साइज में देता है। अपनी risk tolerance के अनुसार मॉडल चुनें, फिर आगे बढ़ने के लिए Get Plan का उपयोग करें।',
-        'voice_payout_fallback' => 'पहला withdrawal :first_payout_days दिनों बाद उपलब्ध होता है। उसके बाद पेआउट्स हर :payout_cycle_days दिनों के चक्र में होते हैं। Withdrawal request submit होने के बाद funded account rules और consistency checks के अधीन 24 घंटे के भीतर process किया जाता है।',
+        'voice_payout_fallback' => 'Payouts FAQ में defined हैं। पहला payout :first_payout_days days के बाद request किया जा सकता है, subsequent payouts हर :payout_cycle_days days में request किए जा सकते हैं, और approve होने के बाद payments 24 hours के भीतर process होते हैं।',
         'voice_max_drawdown_fallback' => 'अगर आप maximum drawdown limit hit करते हैं, तो challenge fail हो जाता है और account block या disable हो सकता है। Open positions close करनी पड़ सकती हैं, और dashboard failure status और reason दिखाएगा।',
         'voice_rules_fallback' => '1-Step में 10% target, 4% max daily loss और 8% max total loss है। 2-Step में 10% और फिर 5% targets, 5% max daily loss, 10% max total loss और हर phase में कम से कम 3 trading days हैं।',
         'voice_checkout_fallback' => 'चुने गए challenge पर Get Plan क्लिक करें, फिर checkout से पहले sign in करें या अकाउंट बनाएं। Authentication के बाद वुल्फोरिक्स आपको सही plan पर वापस भेज देता है।',
@@ -1563,19 +1563,19 @@ return array_replace_recursive($en, [
             ],
             'payout_policy' => [
                 'title' => 'पेआउट पॉलिसी',
-                'intro' => 'पहली withdrawal request 21 दिनों बाद उपलब्ध होती है। उसके बाद withdrawal requests 14-दिन के cycle का पालन करती हैं, जिसमें प्रति cycle अधिकतम सीमा हो सकती है।',
+                'intro' => 'पहला payout 21 दिनों बाद request किया जा सकता है। Subsequent payouts हर 14 दिनों में request किए जा सकते हैं।',
                 'highlight' => [
                     'title' => 'पेआउट प्रोसेसिंग',
                     'items' => [
-                        '24 घंटे के भीतर भुगतान',
+                        'Approval के बाद 24 घंटे के भीतर भुगतान',
                     ],
-                    'note' => 'जैसे ही क्लाइंट withdrawal request submit करता है, वुल्फोरिक्स 24 घंटों के भीतर payout process करने का लक्ष्य रखता है।',
+                    'note' => 'Approve होने के बाद payouts 24 घंटों के भीतर process होते हैं।',
                 ],
                 'sections' => [
                     [
                         'title' => 'पेआउट पात्रता',
                         'paragraphs' => [
-                            'फंडेड अकाउंट्स 21 दिनों बाद पहला withdrawal request कर सकते हैं। उसके बाद withdrawal requests 14-दिन के cycle का पालन करती हैं, जिसमें प्रति cycle अधिकतम सीमा हो सकती है।',
+                            'Funded accounts पहला payout 21 दिनों बाद request कर सकते हैं। उसके बाद subsequent payouts हर 14 दिनों में request किए जा सकते हैं।',
                             '2-Step funded accounts लाभदायक होने पर हर 3 महीने में +25% कैपिटल से स्केल भी कर सकते हैं।',
                             '1-Step funded accounts वही 14-दिन payout rhythm अपनाते हैं, लेकिन payout approval से पहले अनिवार्य consistency-rule compliance की आवश्यकता होती है।',
                         ],

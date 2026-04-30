@@ -221,7 +221,7 @@ return [
                     'label' => '2-Step Pro',
                     'description' => 'Lower risk. Higher scaling potential. Designed for consistency and long-term growth.',
                     'note_title' => '2-Step Pro funded model',
-                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, a first withdrawal after 21 days, payouts every 14 days after that, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
+                    'note_body' => 'Two-phase evaluation with 1:100 leverage in Phase 1, a first payout after 21 days, payouts every 14 days after that, and a scaling system for profitable funded accounts. Build consistency. Scale aggressively.',
                 ],
             ],
         ],
@@ -303,7 +303,7 @@ return [
                 ],
                 [
                     'title' => 'Payout safeguards visible early',
-                    'description' => 'The 21-day first withdrawal, 14-day payout cycle after that, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
+                    'description' => 'The 21-day first payout, 14-day payout cycle after that, 24-hour processing after approval, 1-Step consistency obligations, and 2-Step scaling every 3 months are already surfaced in the website and dashboard UI.',
                 ],
                 [
                     'title' => 'Multilingual from the start',
@@ -1213,7 +1213,7 @@ return [
                 'items' => [
                     [
                         'question' => 'How often are payouts processed?',
-                        'answer' => 'Funded accounts can request the first withdrawal after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle. Once a withdrawal request is submitted, payouts are processed within 24 hours.',
+                        'answer' => 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.',
                     ],
                     [
                         'question' => 'What payout methods are available?',
@@ -1488,7 +1488,7 @@ return [
         'voice_support_fallback' => 'I can help with rules, payouts, plans, and general platform questions. For billing or account-specific help, contact :email.',
         'voice_trial_fallback' => 'Use Free Trial to open the Wolforix demo flow. Existing users can enter the same email and password, and Wolforix will route them into the trial dashboard or create the trial if it has not been started yet.',
         'voice_plan_fallback' => 'Wolforix currently offers 1-Step Instant and 2-Step Pro models in 5K, 10K, 25K, 50K, and 100K sizes. Choose the model that fits your risk tolerance, then use Get Plan to continue.',
-        'voice_payout_fallback' => 'The first withdrawal becomes available after :first_payout_days days. After that, payouts follow a :payout_cycle_days-day cycle. Once a withdrawal request is submitted, it is processed within 24 hours, subject to the funded account rules and consistency checks.',
+        'voice_payout_fallback' => 'Payouts are defined in the FAQ. The first payout can be requested after :first_payout_days days, subsequent payouts every :payout_cycle_days days, and once approved, payments are processed within 24 hours.',
         'voice_max_drawdown_fallback' => 'If you hit the maximum drawdown limit, the challenge is failed and the account can be blocked or disabled. Any open positions may need to be closed, and the dashboard will show the failure status and reason.',
         'voice_rules_fallback' => '1-Step uses a 10% target, 4% max daily loss, and 8% max total loss. 2-Step uses 10% then 5% targets with 5% max daily loss, 10% max total loss, and a minimum of 3 trading days per phase.',
         'voice_checkout_fallback' => 'Click Get Plan on the selected challenge, then sign in or create your account before checkout. Wolforix sends you back to the correct plan after authentication.',
@@ -1694,19 +1694,19 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Payout Policy',
-                'intro' => 'First withdrawal requests become available after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle.',
+                'intro' => 'The first payout can be requested after 21 days. Subsequent payouts can be requested every 14 days.',
                 'highlight' => [
                     'title' => 'Payout processing',
                     'items' => [
-                        'Payments within 24 hours',
+                        'Payments within 24 hours after approval',
                     ],
-                    'note' => 'Once a client submits a withdrawal request, Wolforix aims to process the payout within 24 hours.',
+                    'note' => 'Once approved, payouts are processed within 24 hours.',
                 ],
                 'sections' => [
                     [
                         'title' => 'Payout Eligibility',
                         'paragraphs' => [
-                            'Funded accounts can request the first withdrawal after 21 days. After that, withdrawal requests follow a 14-day cycle with a maximum limit per cycle.',
+                            'Funded accounts can request the first payout after 21 days. After that, subsequent payouts can be requested every 14 days.',
                             '2-Step funded accounts may also scale by +25% capital every 3 months if profitable.',
                             '1-Step funded accounts operate on the same 14-day payout rhythm but require obligatory consistency-rule compliance before payout approval.',
                         ],
@@ -2232,16 +2232,16 @@ return [
         'payouts' => [
             'next_window' => 'Next payout window',
             'next_window_value' => 'Next 14-day review in 3 days',
-            'cycle_note' => 'First withdrawal requests become available after 21 days. After that, payout requests follow a 14-day cycle with a maximum limit per cycle.',
+            'cycle_note' => 'The first payout can be requested after 21 days. Subsequent payouts can be requested every 14 days, and once approved, payments are processed within 24 hours.',
             'placeholder_status' => 'Manual review placeholder',
             'queue_title' => 'Payout queue preview',
-            'queue_copy' => '14-day payout cycles, a first withdrawal after 21 days across funded accounts, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
+            'queue_copy' => '14-day payout cycles, a first payout after 21 days across funded accounts, approval-based 24-hour processing, 1-Step consistency requirements, and internal review checks are represented here without live payout engine logic.',
             'progressive_note' => '2-Step funded accounts can scale by +25% capital every 3 months if profitable. 1-Step funded accounts keep the obligatory consistency rule before payout approval.',
             'requirements_title' => 'Eligibility checklist',
             'requirements' => [
                 'Minimum trading days for the active phase must be met.',
                 '1-Step funded accounts must satisfy the obligatory consistency rule before profit becomes payout-eligible.',
-                'Funded accounts can request the first withdrawal after 21 days.',
+                'Funded accounts can request the first payout after 21 days.',
                 'No rule violations may be present on the account and all payout requests remain subject to internal trade review.',
             ],
             'cta' => 'Payout request placeholder',

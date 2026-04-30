@@ -1086,7 +1086,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Com que frequência são processados os payouts?',
-                        'answer' => 'As contas funded podem pedir o primeiro levantamento após 21 dias. Depois disso, os pedidos seguem um ciclo de 14 dias com limite máximo por ciclo. Após submissão, os payouts são processados em até 24 horas.',
+                        'answer' => 'Os payouts estão definidos na FAQ. O primeiro payout pode ser pedido após 21 dias, os seguintes a cada 14 dias e, após aprovação, os pagamentos são processados em até 24 horas.',
                     ],
                     [
                         'question' => 'Que métodos de payout estão disponíveis?',
@@ -1359,7 +1359,7 @@ return array_replace_recursive($en, [
         'voice_support_fallback' => 'Posso ajudar com regras, payouts, planos e questões gerais da plataforma. Para billing ou ajuda específica da conta, contacte :email.',
         'voice_trial_fallback' => 'Use Teste Gratuito para abrir o fluxo demo da Wolforix. Utilizadores existentes podem inserir o mesmo email e palavra-passe, e a Wolforix encaminha-os para o dashboard de teste ou cria o teste se ainda não tiver sido iniciado.',
         'voice_plan_fallback' => 'A Wolforix oferece atualmente os modelos 1-Step Instant e 2-Step Pro nos tamanhos 5K, 10K, 25K, 50K e 100K. Escolha o modelo que combina com a sua tolerância ao risco e depois use Obter plano para continuar.',
-        'voice_payout_fallback' => 'O primeiro levantamento fica disponível após :first_payout_days dias. Depois disso, os payouts seguem um ciclo de :payout_cycle_days dias. Assim que um pedido de levantamento é enviado, é processado em 24 horas, sujeito às regras da conta funded e às verificações de consistência.',
+        'voice_payout_fallback' => 'Os payouts estão definidos na FAQ. O primeiro payout pode ser pedido após :first_payout_days dias, os seguintes a cada :payout_cycle_days dias e, após aprovação, os pagamentos são processados em até 24 horas.',
         'voice_max_drawdown_fallback' => 'Se atingir o limite máximo de drawdown, o challenge falha e a conta pode ser bloqueada ou desativada. As posições abertas podem ter de ser fechadas, e o dashboard mostrará o estado de falha e o motivo.',
         'voice_rules_fallback' => 'O 1-Step usa meta de 10%, perda diária máxima de 4% e perda total máxima de 8%. O 2-Step usa metas de 10% e depois 5%, perda diária máxima de 5%, perda total máxima de 10% e mínimo de 3 dias de trading por fase.',
         'voice_checkout_fallback' => 'Clique em Obter plano na challenge selecionada e depois entre ou crie a sua conta antes do checkout. Após a autenticação, a Wolforix devolve-o ao plano correto.',
@@ -1563,19 +1563,19 @@ return array_replace_recursive($en, [
             ],
             'payout_policy' => [
                 'title' => 'Política de payout',
-                'intro' => 'Os primeiros pedidos de levantamento ficam disponíveis após 21 dias. Depois disso, os pedidos de levantamento seguem um ciclo de 14 dias com um limite máximo por ciclo.',
+                'intro' => 'O primeiro payout pode ser pedido após 21 dias. Os payouts seguintes podem ser pedidos a cada 14 dias.',
                 'highlight' => [
                     'title' => 'Processamento de payout',
                     'items' => [
-                        'Pagamentos em até 24 horas',
+                        'Pagamentos em até 24 horas após aprovação',
                     ],
-                    'note' => 'Assim que um cliente submete um pedido de levantamento, a Wolforix procura processar o payout em até 24 horas.',
+                    'note' => 'Após aprovação, os payouts são processados em até 24 horas.',
                 ],
                 'sections' => [
                     [
                         'title' => 'Elegibilidade para payout',
                         'paragraphs' => [
-                            'As contas funded podem pedir o primeiro levantamento após 21 dias. Depois disso, os pedidos de levantamento seguem um ciclo de 14 dias com um limite máximo por ciclo.',
+                            'As contas funded podem pedir o primeiro payout após 21 dias. Depois disso, os payouts seguintes podem ser pedidos a cada 14 dias.',
                             'As contas funded 2-Step também podem escalar +25% de capital a cada 3 meses se forem lucrativas.',
                             'As contas funded 1-Step seguem o mesmo ritmo de payout de 14 dias, mas exigem o cumprimento obrigatório da regra de consistência antes da aprovação do payout.',
                         ],

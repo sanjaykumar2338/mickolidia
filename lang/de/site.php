@@ -1213,7 +1213,7 @@ return [
                 'items' => [
                     [
                         'question' => 'Wie oft werden Auszahlungen verarbeitet?',
-                        'answer' => 'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern. Danach folgen Auszahlungsanfragen einem 14-Tage-Zyklus mit einem Höchstbetrag pro Zyklus. Sobald eine Anfrage eingereicht wurde, werden Auszahlungen innerhalb von 24 Stunden bearbeitet.',
+                        'answer' => 'Payouts sind in der FAQ definiert. Die erste Auszahlung kann nach 21 Tagen angefordert werden, weitere Auszahlungen alle 14 Tage, und nach Genehmigung werden Zahlungen innerhalb von 24 Stunden bearbeitet.',
                     ],
                     [
                         'question' => 'Welche Auszahlungsmethoden sind verfügbar?',
@@ -1488,7 +1488,7 @@ return [
         'voice_support_fallback' => 'Ich kann dir bei Regeln, Auszahlungen, Modellen und allgemeinen Plattformfragen helfen. Für Abrechnung oder kontospezifische Hilfe kontaktiere bitte :email.',
         'voice_trial_fallback' => 'Nutze Free Trial, um den Wolforix-Demoablauf zu öffnen. Bestehende Nutzer können dieselbe E-Mail und dasselbe Passwort eingeben. Wolforix leitet sie dann direkt ins Trial-Dashboard oder erstellt den Trial, falls er noch nicht gestartet wurde.',
         'voice_plan_fallback' => 'Wolforix bietet aktuell die Modelle 1-Step Instant und 2-Step Pro in den Größen 5K, 10K, 25K, 50K und 100K an. Wähle das Modell, das am besten zu deinem Risiko passt, und klicke danach auf Plan sichern.',
-        'voice_payout_fallback' => 'Die erste Auszahlung ist nach :first_payout_days Tagen möglich. Danach folgen Auszahlungen im :payout_cycle_days-Tage-Rhythmus. Sobald eine Auszahlungsanfrage eingereicht wurde, wird sie innerhalb von 24 Stunden bearbeitet, vorbehaltlich der Funded-Regeln und der Konsistenzprüfung.',
+        'voice_payout_fallback' => 'Payouts sind in der FAQ definiert. Die erste Auszahlung kann nach :first_payout_days Tagen angefordert werden, weitere Auszahlungen alle :payout_cycle_days Tage, und nach Genehmigung werden Zahlungen innerhalb von 24 Stunden bearbeitet.',
         'voice_max_drawdown_fallback' => 'Wenn du das maximale Drawdown-Limit erreichst, gilt die Challenge als fehlgeschlagen und das Konto kann blockiert oder deaktiviert werden. Offene Positionen müssen möglicherweise geschlossen werden, und das Dashboard zeigt den Fehlerstatus und den Grund an.',
         'voice_rules_fallback' => 'Beim 1-Step gelten 10 % Gewinnziel, 4 % maximaler Tagesverlust und 8 % maximaler Gesamtverlust. Beim 2-Step gelten 10 % und 5 % Gewinnziel, 5 % maximaler Tagesverlust, 10 % maximaler Gesamtverlust und mindestens 3 Handelstage pro Phase.',
         'voice_checkout_fallback' => 'Klicke im gewählten Challenge-Modell auf Plan sichern und melde dich danach an oder erstelle ein Konto, bevor du zum Checkout gehst. Wolforix führt dich anschließend wieder zurück zum richtigen Plan.',
@@ -1694,19 +1694,19 @@ return [
             ],
             'payout_policy' => [
                 'title' => 'Auszahlungsrichtlinie',
-                'intro' => 'Die erste Auszahlungsanfrage ist nach 21 Tagen moeglich. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
+                'intro' => 'Die erste Auszahlung kann nach 21 Tagen angefordert werden. Weitere Auszahlungen können alle 14 Tage angefordert werden.',
                 'highlight' => [
                     'title' => 'Auszahlungsverarbeitung',
                     'items' => [
-                        'Auszahlungen innerhalb von 24 Stunden',
+                        'Auszahlungen innerhalb von 24 Stunden nach Genehmigung',
                     ],
-                    'note' => 'Sobald ein Kunde eine Auszahlungsanfrage eingereicht hat, strebt Wolforix eine Bearbeitung der Auszahlung innerhalb von 24 Stunden an.',
+                    'note' => 'Nach Genehmigung werden Auszahlungen innerhalb von 24 Stunden bearbeitet.',
                 ],
                 'sections' => [
                     [
                         'title' => 'Auszahlungsberechtigung',
                         'paragraphs' => [
-                            'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
+                            'Funded-Konten können die erste Auszahlung nach 21 Tagen anfordern. Danach können weitere Auszahlungen alle 14 Tage angefordert werden.',
                             '2-Step Funded-Konten können bei Profitabilität zudem alle 3 Monate um +25 % Kapital skaliert werden.',
                             '1-Step Funded-Konten arbeiten im selben 14-Tage-Rhythmus, verlangen jedoch vor jeder Auszahlung die obligatorische Einhaltung der Konsistenzregel.',
                         ],
@@ -2232,10 +2232,10 @@ return [
         'payouts' => [
             'next_window' => 'Nächstes Auszahlungsfenster',
             'next_window_value' => 'Naechste 14-Tage-Pruefung in 3 Tagen',
-            'cycle_note' => 'Die erste Auszahlungsanfrage ist nach 21 Tagen moeglich. Danach folgen Auszahlungsanfragen in einem 14-Tage-Zyklus mit einem Hoechstbetrag pro Zyklus.',
+            'cycle_note' => 'Die erste Auszahlung kann nach 21 Tagen angefordert werden. Weitere Auszahlungen können alle 14 Tage angefordert werden, und nach Genehmigung werden Zahlungen innerhalb von 24 Stunden bearbeitet.',
             'placeholder_status' => 'Platzhalter für manuelle Prüfung',
             'queue_title' => 'Vorschau der Auszahlungswarteschlange',
-            'queue_copy' => '14-Tage-Auszahlungszyklen, eine erste Auszahlung nach 21 Tagen für alle funded Konten, 1-Step-Konsistenzanforderungen und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
+            'queue_copy' => '14-Tage-Auszahlungszyklen, eine erste Auszahlung nach 21 Tagen für alle funded Konten, Bearbeitung innerhalb von 24 Stunden nach Genehmigung, 1-Step-Konsistenzanforderungen und interne Prüfungen werden hier ohne Live-Auszahlungs-Engine dargestellt.',
             'progressive_note' => '2-Step Funded-Konten koennen bei Profitabilitaet alle 3 Monate um +25 % Kapital skaliert werden. 1-Step Funded-Konten behalten die obligatorische Konsistenzregel vor der Auszahlungsfreigabe.',
             'requirements_title' => 'Berechtigungs-Checkliste',
             'requirements' => [

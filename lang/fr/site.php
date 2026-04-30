@@ -259,7 +259,7 @@ return array_replace_recursive($en, [
                     'label' => '2-Step Pro',
                     'description' => 'Risque plus faible. Potentiel de scaling plus élevé. Conçu pour la régularité et la croissance à long terme.',
                     'note_title' => 'Modèle funded 2-Step Pro',
-                    'note_body' => 'Évaluation en deux phases avec levier 1:100 en phase 1, payouts tous les 14 jours et un système de scaling pour les comptes funded rentables. Construisez votre régularité. Scalez agressivement.',
+                    'note_body' => 'Évaluation en deux phases avec levier 1:100 en phase 1, premier payout après 21 jours, payouts tous les 14 jours ensuite et système de scaling pour les comptes funded rentables. Construisez votre régularité. Scalez agressivement.',
                 ],
             ],
         ],
@@ -274,7 +274,7 @@ return array_replace_recursive($en, [
                 ],
                 [
                     'title' => 'Protections payout visibles très tôt',
-                    'description' => 'Le premier retrait après 21 jours, le cycle de payout de 14 jours ensuite, la cohérence obligatoire en 1-Step et le scaling 2-Step tous les 3 mois sont déjà visibles sur le site et le dashboard.',
+                    'description' => 'Le premier payout après 21 jours, le cycle de payout de 14 jours ensuite, le traitement sous 24 heures après approbation, la cohérence obligatoire en 1-Step et le scaling 2-Step tous les 3 mois sont déjà visibles sur le site et le dashboard.',
                 ],
                 [
                     'title' => 'Multilingue dès le départ',
@@ -851,7 +851,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'À quelle fréquence les payouts sont-ils traités ?',
-                        'answer' => 'Les comptes funded peuvent demander le premier retrait après 21 jours. Ensuite, les demandes suivent un cycle de 14 jours avec une limite maximale par cycle. Une fois la demande soumise, les payouts sont traités sous 24 heures.',
+                        'answer' => 'Les payouts sont définis dans la FAQ. Le premier payout peut être demandé après 21 jours, les suivants tous les 14 jours et, une fois approuvés, les paiements sont traités sous 24 heures.',
                     ],
                     [
                         'question' => 'Quels moyens de payout sont disponibles ?',
@@ -1124,7 +1124,7 @@ return array_replace_recursive($en, [
         'voice_support_fallback' => 'Je peux vous aider sur les règles, les payouts, les plans et les questions générales de plateforme. Pour la facturation ou l’aide spécifique au compte, contactez :email.',
         'voice_trial_fallback' => 'Utilisez Free Trial pour ouvrir le parcours démo Wolforix. Les utilisateurs existants peuvent saisir le même email et mot de passe, et Wolforix les redirigera vers le dashboard d’essai ou créera l’essai s’il n’a pas encore commencé.',
         'voice_plan_fallback' => 'Wolforix propose actuellement les modèles 1-Step Instant et 2-Step Pro en tailles 5K, 10K, 25K, 50K et 100K. Choisissez le modèle adapté à votre risque, puis utilisez Obtenir le plan pour continuer.',
-        'voice_payout_fallback' => 'Le premier retrait devient disponible après :first_payout_days jours. Ensuite, les payouts suivent un cycle de :payout_cycle_days jours. Une fois la demande de retrait envoyée, elle est traitée sous 24 heures, sous réserve des règles funded et des contrôles de cohérence.',
+        'voice_payout_fallback' => 'Les payouts sont définis dans la FAQ. Le premier payout peut être demandé après :first_payout_days jours, les suivants tous les :payout_cycle_days jours et, une fois approuvés, les paiements sont traités sous 24 heures.',
         'voice_max_drawdown_fallback' => 'Si vous atteignez la limite de drawdown maximum, le challenge échoue et le compte peut être bloqué ou désactivé. Les positions ouvertes peuvent devoir être clôturées, et le dashboard affichera le statut d’échec et la raison.',
         'voice_rules_fallback' => 'Le 1-Step utilise un objectif de 10 %, une perte journalière maximale de 4 % et une perte totale maximale de 8 %. Le 2-Step utilise des objectifs de 10 % puis 5 %, avec 5 % de perte journalière maximale, 10 % de perte totale maximale et un minimum de 3 jours tradés par phase.',
         'voice_checkout_fallback' => 'Cliquez sur Obtenir le plan dans le challenge choisi, puis connectez-vous ou créez votre compte avant le checkout. Wolforix vous ramène ensuite vers le bon plan.',
