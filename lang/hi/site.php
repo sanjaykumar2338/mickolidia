@@ -52,7 +52,7 @@ return array_replace_recursive($en, [
         'home_visual_alt' => 'मोबाइल-स्टाइल स्क्रीन पर दिखाया गया स्वीकृत Wolfi homepage preview',
         'example_questions' => [
             'क्या मैं न्यूज़ के दौरान ट्रेड कर सकता हूँ?',
-            'अगर मैं मैक्स ड्रॉडाउन हिट कर दूँ तो क्या होगा?',
+            'Payouts कितनी बार process होते हैं?',
             'मेरे लिए कौन-सा प्लान बेहतर है?',
         ],
     ],

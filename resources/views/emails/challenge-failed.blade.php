@@ -57,9 +57,15 @@
 
     @include('emails.partials.details-table', [
         'rows' => [
-            ['label' => 'Account ID', 'value' => (string) $tradingAccount->account_reference],
+            ['label' => 'Client Name', 'value' => (string) ($details['client_name'] ?? $user->name)],
+            ['label' => 'Client Email', 'value' => (string) ($details['client_email'] ?? $user->email)],
+            ['label' => 'Account ID', 'value' => (string) ($details['account_reference'] ?? $tradingAccount->account_reference)],
+            ['label' => 'MT5 Login', 'value' => (string) ($details['mt5_login'] ?? ($tradingAccount->platform_login ?: $tradingAccount->platform_account_id ?: 'Not available'))],
             ['label' => 'Plan', 'value' => (string) $details['plan']],
             ['label' => 'Rule Breached', 'value' => (string) $details['rule']],
+            ['label' => 'Reason', 'value' => (string) ($details['reason'] ?? $details['rule'])],
+            ['label' => 'Violation Timestamp', 'value' => (string) ($details['violation_timestamp'] ?? optional($tradingAccount->failed_at)->toDateTimeString() ?? 'Not available')],
+            ['label' => 'Final Account Status', 'value' => (string) ($details['final_account_status'] ?? str((string) ($tradingAccount->challenge_status ?: $tradingAccount->account_status ?: 'failed'))->replace('_', ' ')->title())],
             ['label' => 'Threshold', 'value' => (string) $details['threshold']],
             ['label' => 'Recorded Value', 'value' => (string) $details['recorded_value']],
         ],

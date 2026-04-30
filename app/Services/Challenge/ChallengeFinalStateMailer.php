@@ -179,10 +179,17 @@ class ChallengeFinalStateMailer
         });
 
         return [
+            'client_name' => (string) ($account->user?->name ?: 'Trader'),
+            'client_email' => (string) ($account->user?->email ?: 'Not available'),
+            'account_reference' => (string) ($account->account_reference ?: 'N/A'),
+            'mt5_login' => (string) ($account->platform_login ?: $account->platform_account_id ?: 'Not available'),
             'plan' => $this->planLabel($account),
             'rule' => $this->reasonLabel($reason),
+            'reason' => $this->reasonLabel($reason),
             'threshold' => $this->money($threshold),
             'recorded_value' => $this->money($recorded),
+            'violation_timestamp' => optional($account->failed_at)->toDateTimeString() ?: now()->toDateTimeString(),
+            'final_account_status' => $this->reasonLabel((string) ($account->challenge_status ?: $account->account_status ?: 'failed')),
             'support_email' => (string) config('wolforix.support.email'),
         ];
     }

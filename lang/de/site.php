@@ -55,7 +55,7 @@ return [
         'home_visual_alt' => 'Freigegebene Wolfi-Homepage-Vorschau in einer mobilen Darstellung',
         'example_questions' => [
             'Kann ich während News traden?',
-            'Was passiert, wenn ich den maximalen Drawdown erreiche?',
+            'Wie oft werden Auszahlungen verarbeitet?',
             'Welches Modell passt am besten zu mir?',
         ],
     ],

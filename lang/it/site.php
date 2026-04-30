@@ -52,7 +52,7 @@ return array_replace_recursive($en, [
         'home_visual_alt' => 'Anteprima approvata della homepage di Wolfi mostrata in un layout mobile',
         'example_questions' => [
             'Posso fare trading durante le news?',
-            'Cosa succede se raggiungo il drawdown massimo?',
+            'Ogni quanto vengono elaborati i payout?',
             'Quale piano è migliore per me?',
         ],
     ],

@@ -158,7 +158,7 @@ class WolfiDashboardAssistantTest extends TestCase
 
         $this->actingAs($account->user)
             ->postJson(route('dashboard.wolfi.respond'), [
-                'message' => 'What happens if I hit max drawdown?',
+                'message' => 'Explain max drawdown rules',
                 'page' => 'dashboard',
                 'account_id' => $account->id,
             ])

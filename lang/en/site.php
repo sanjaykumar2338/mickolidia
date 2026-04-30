@@ -55,7 +55,7 @@ return [
         'home_visual_alt' => 'Approved Wolfi homepage preview shown on a mobile-style screen',
         'example_questions' => [
             'Can I trade during news?',
-            'What happens if I hit max drawdown?',
+            'How often are payouts processed?',
             'Which plan is best for me?',
         ],
     ],

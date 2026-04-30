@@ -55,7 +55,7 @@ return [
         'home_visual_alt' => 'Vista aprobada de la homepage de Wolfi mostrada en una pantalla de estilo móvil',
         'example_questions' => [
             '¿Puedo operar durante noticias?',
-            '¿Qué pasa si llego al drawdown máximo?',
+            '¿Con qué frecuencia se procesan los payouts?',
             '¿Qué plan es mejor para mí?',
         ],
     ],

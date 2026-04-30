@@ -441,7 +441,17 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
         $this->assertNotNull($account->failed_at);
         $this->assertNotNull($account->failed_email_sent_at);
-        Mail::assertSent(ChallengeFailedMail::class, 1);
+        Mail::assertSent(ChallengeFailedMail::class, function (ChallengeFailedMail $mail) use ($account): bool {
+            return $mail->hasTo($account->user->email)
+                && $mail->details['client_name'] === $account->user->name
+                && $mail->details['client_email'] === $account->user->email
+                && $mail->details['account_reference'] === $account->account_reference
+                && $mail->details['mt5_login'] === $account->platform_login
+                && $mail->details['rule'] === 'Daily loss limit'
+                && $mail->details['reason'] === 'Daily loss limit'
+                && $mail->details['violation_timestamp'] === $account->failed_at?->toDateTimeString()
+                && $mail->details['final_account_status'] === 'Failed';
+        });
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
         Mail::assertNotSent(ChallengePhasePassSupportNotificationMail::class);
         $this->assertNotEmpty(data_get($account->meta, 'trustpilot_review.initial_requested_at'));
