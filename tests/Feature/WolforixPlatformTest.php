@@ -70,6 +70,22 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_homepage_uses_locale_specific_desktop_hero_images(): void
+    {
+        foreach ([
+            'en' => 'desktop-view/95D6764F-5789-4965-A3F2-8F32B5A32B62-english.png',
+            'de' => 'desktop-view/AA9B97AE-643E-4443-88EA-6D0128E18ACB-german.png',
+            'es' => 'desktop-view/B27C71CD-AEFA-47A7-9692-97F9FA2D5067-spanish.png',
+            'fr' => 'desktop-view/95D6764F-5789-4965-A3F2-8F32B5A32B62-english.png',
+        ] as $locale => $imagePath) {
+            $this->withSession(['locale' => $locale])
+                ->get(route('home'))
+                ->assertOk()
+                ->assertSee($imagePath, false)
+                ->assertSee('alt="Wolforix trading dashboard"', false);
+        }
+    }
+
     public function test_about_page_contains_the_about_story_and_header_link(): void
     {
         $this->get(route('about'))
