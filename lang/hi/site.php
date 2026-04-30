@@ -1780,7 +1780,7 @@ return array_replace_recursive($en, [
             'entry_title' => 'trading workspace',
             'entry_copy' => 'Rules, metrics, payout timing और MT5 context में आपके next step को support करने के लिए तैयार।',
             'entry_hint' => 'Main dashboard account data पर focused रहता है; full assistant Wolfi Hub में है।',
-            'open_hub' => 'Wolfi Hub खोलें',
+            'open_hub' => 'Wolfi – आपकी प्रोफ़ाइल खोलें',
             'fallbacks' => ['dashboard_workspace' => 'Dashboard workspace'],
             'welcome' => [
                 'title' => 'Personal account briefing',

@@ -34,18 +34,14 @@
                 </p>
             </div>
 
-            <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p class="max-w-3xl text-xs leading-5 text-slate-500">
                     {{ __('site.dashboard.wolfi.entry_hint') }}
                 </p>
-                <div class="w-full sm:w-auto sm:min-w-[22rem]">
-                    <x-talk-with-wolfi-button class="w-full" />
-                </div>
+                <a href="{{ $hubUrl }}" class="dashboard-wolfi-profile-cta">
+                    {{ __('site.dashboard.wolfi.open_hub') }}
+                </a>
             </div>
-
-            <a href="{{ $hubUrl }}" class="mt-4 inline-flex text-sm font-semibold text-amber-100 transition hover:text-amber-50">
-                {{ __('site.dashboard.wolfi.open_hub') }}
-            </a>
         </div>
     </div>
 </section>

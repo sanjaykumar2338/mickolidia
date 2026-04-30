@@ -1780,7 +1780,7 @@ return array_replace_recursive($en, [
             'entry_title' => 'workspace di trading',
             'entry_copy' => 'Pronto a supportare il tuo prossimo passo su regole, metriche, tempistiche payout e contesto MT5.',
             'entry_hint' => 'La dashboard principale resta focalizzata sui dati account; l’assistente completo vive in Wolfi Hub.',
-            'open_hub' => 'Apri Wolfi Hub',
+            'open_hub' => 'Apri Wolfi – Il tuo profilo',
             'fallbacks' => ['dashboard_workspace' => 'Workspace dashboard'],
             'welcome' => [
                 'title' => 'Briefing account personalizzato',

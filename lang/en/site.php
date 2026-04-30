@@ -1993,7 +1993,7 @@ return [
             'entry_title' => 'Trading workspace',
             'entry_copy' => 'Ready to support your next step across rules, metrics, payout timing, and MT5 context.',
             'entry_hint' => 'The main dashboard stays focused on account data; the full assistant lives in Wolfi Hub.',
-            'open_hub' => 'Open Wolfi Hub',
+            'open_hub' => 'Open Wolfi – Your Profile',
             'fallbacks' => [
                 'dashboard_workspace' => 'Dashboard workspace',
             ],

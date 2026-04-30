@@ -1993,7 +1993,7 @@ return [
             'entry_title' => 'Espacio de trading',
             'entry_copy' => 'Listo para apoyar tu siguiente paso sobre reglas, métricas, timing de payout y contexto MT5.',
             'entry_hint' => 'El dashboard principal prioriza los datos de cuenta; el asistente completo vive en Wolfi Hub.',
-            'open_hub' => 'Abrir Wolfi Hub',
+            'open_hub' => 'Abrir Wolfi – Tu perfil',
             'fallbacks' => [
                 'dashboard_workspace' => 'Espacio del dashboard',
             ],

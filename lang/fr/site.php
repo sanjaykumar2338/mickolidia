@@ -1540,7 +1540,7 @@ return array_replace_recursive($en, [
             'entry_title' => 'espace de trading',
             'entry_copy' => 'Prêt à soutenir votre prochaine étape sur les règles, les métriques, le timing payout et le contexte MT5.',
             'entry_hint' => 'Le dashboard principal garde les données de compte en priorité ; l’assistant complet vit dans Wolfi Hub.',
-            'open_hub' => 'Ouvrir Wolfi Hub',
+            'open_hub' => 'Ouvrir Wolfi – Votre profil',
             'fallbacks' => [
                 'dashboard_workspace' => 'Espace dashboard',
             ],

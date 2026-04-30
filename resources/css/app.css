@@ -4714,6 +4714,62 @@ body.wolfi-modal-scroll-lock {
     border-radius: inherit;
 }
 
+.dashboard-wolfi-profile-cta {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    flex: 0 0 min(100%, 22rem);
+    min-height: 3.75rem;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 238, 186, 0.4);
+    background:
+        radial-gradient(circle at 0 0, rgba(255, 249, 221, 0.72), transparent 30%),
+        linear-gradient(135deg, #f9dd8c 0%, #f4bf57 42%, #d49a1d 100%);
+    padding: 0.95rem 1.3rem;
+    color: #050b13;
+    font-size: 0.98rem;
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+    box-shadow:
+        0 24px 56px rgba(212, 160, 23, 0.28),
+        0 0 26px rgba(244, 183, 74, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease,
+        filter 0.22s ease;
+}
+
+.dashboard-wolfi-profile-cta::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.dashboard-wolfi-profile-cta:hover,
+.dashboard-wolfi-profile-cta:focus-visible {
+    filter: saturate(1.05);
+    transform: translateY(-2px);
+    box-shadow:
+        0 30px 70px rgba(212, 160, 23, 0.34),
+        0 0 34px rgba(244, 183, 74, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.dashboard-wolfi-profile-cta:focus-visible {
+    outline: 2px solid rgba(248, 218, 134, 0.92);
+    outline-offset: 4px;
+}
+
 .dashboard-command-wolfi-avatar {
     position: relative;
     display: inline-flex;

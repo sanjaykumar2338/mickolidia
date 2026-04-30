@@ -1993,7 +1993,7 @@ return [
             'entry_title' => 'Trading-Workspace',
             'entry_copy' => 'Bereit, deinen nächsten Schritt rund um Regeln, Metriken, Auszahlungszeiten und MT5-Kontext zu unterstützen.',
             'entry_hint' => 'Das Haupt-Dashboard fokussiert Kontodaten; der vollständige Assistent lebt im Wolfi Hub.',
-            'open_hub' => 'Wolfi Hub öffnen',
+            'open_hub' => 'Wolfi – dein Profil öffnen',
             'fallbacks' => [
                 'dashboard_workspace' => 'Dashboard-Workspace',
             ],

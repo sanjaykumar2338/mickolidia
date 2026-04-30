@@ -33,10 +33,12 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertOk()
             ->assertSee('Wolfi supports your')
             ->assertSee('Trading workspace')
-            ->assertSee('Open Wolfi Hub')
+            ->assertSee('Open Wolfi – Your Profile')
             ->assertSee('new-wolfy.webp', false)
             ->assertSee('dashboard-wolfi-ring-avatar', false)
             ->assertSee('dashboard-command-wolfi-avatar', false)
+            ->assertSee('dashboard-wolfi-profile-cta', false)
+            ->assertDontSee('talk-with-wolfi-button', false)
             ->assertDontSee('Grounded in Wolforix data')
             ->assertDontSee('dashboard\\/wolfi\\/respond', false);
 
