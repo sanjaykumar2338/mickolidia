@@ -183,7 +183,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertOk()
             ->assertJsonPath('group', 'payouts')
             ->assertJsonPath('title', 'Payout timing and approval')
-            ->assertJsonPath('message', 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.')
+            ->assertJsonPath('message', 'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, email support@wolforix.com once the minimum withdrawal threshold of $100 has been reached.')
             ->assertJsonFragment([
                 'label' => 'First payout',
                 'value' => '21 days',

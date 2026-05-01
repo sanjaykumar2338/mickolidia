@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendTrialEncouragementEmail;
+use App\Mail\TrialAccountInstructionsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
@@ -199,7 +200,7 @@ class TrialController extends Controller
         $dailyDrawdownLimitPercent = (float) ($displayRules['daily_drawdown_limit'] ?? 5);
         $maxDrawdownLimitPercent = (float) ($displayRules['max_drawdown_limit'] ?? 10);
 
-        return TradingAccount::query()->create([
+        $trialAccount = TradingAccount::query()->create([
             'user_id' => $user->id,
             'challenge_plan_id' => null,
             'account_reference' => 'WFX-TRIAL-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(5)),
@@ -238,6 +239,10 @@ class TrialController extends Controller
                 'execution_profile' => 'challenge-matched-demo',
             ],
         ]);
+
+        rescue(fn () => Mail::to($user->email)->send(new TrialAccountInstructionsMail($user)));
+
+        return $trialAccount;
     }
 
     private function markLastActivity(TradingAccount $trialAccount): void

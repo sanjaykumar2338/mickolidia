@@ -433,7 +433,7 @@ class WolfiAssistantService
             return [
                 'group' => 'payouts',
                 'title' => 'Payout timing and approval',
-                'message' => 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.',
+                'message' => 'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, email support@wolforix.com once the minimum withdrawal threshold of $100 has been reached.',
                 'bullets' => [
                     'Profit becomes payout-eligible only after the account reaches funded conditions.',
                     'The funded profit split is applied before calculating the eligible amount.',
@@ -465,10 +465,10 @@ class WolfiAssistantService
 
         $message = $account['is_funded']
             ? sprintf(
-                'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours. Profit split is %s%% for this account.',
+                'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, email support@wolforix.com once the minimum withdrawal threshold of $100 has been reached. Profit split is %s%% for this account.',
                 $this->trimTrailingZero((float) $account['profit_split_percent']),
             )
-            : 'Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours. Your current account is still in the challenge lifecycle, so payout timing is informational until funding is reached.';
+            : 'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, email support@wolforix.com once the minimum withdrawal threshold of $100 has been reached. Your current account is still in the challenge lifecycle, so payout timing is informational until funding is reached.';
 
         $bullets = [
             sprintf('First payout timing for this model: %d days.', (int) $account['first_payout_days']),

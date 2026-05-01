@@ -30,12 +30,12 @@
     $initialPrice = $initialPlan !== null ? $formatMoney($initialPlan['discounted_price'], $defaultCurrency) : '';
     $initialListPrice = $initialPlan !== null ? $formatMoney($initialPlan['list_price'], $defaultCurrency) : '';
     $defaultCurrencyMeta = $currencies[$defaultCurrency] ?? [];
-    $desktopHeroImages = [
+    $localizedPlatformImages = [
         'en' => '95D6764F-5789-4965-A3F2-8F32B5A32B62-english.png',
         'de' => 'AA9B97AE-643E-4443-88EA-6D0128E18ACB-german.png',
         'es' => 'B27C71CD-AEFA-47A7-9692-97F9FA2D5067-spanish.png',
     ];
-    $desktopHeroImage = $desktopHeroImages[app()->getLocale()] ?? $desktopHeroImages['en'];
+    $localizedPlatformImage = $localizedPlatformImages[app()->getLocale()] ?? $localizedPlatformImages['en'];
     $featureIcons = [
         <<<'SVG'
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -184,7 +184,7 @@
                             <div class="hero-visual-glow pointer-events-none absolute inset-x-[12%] bottom-[6%] h-20 rounded-full bg-amber-400/14 blur-3xl"></div>
                             <div class="hero-visual-image relative z-10 overflow-hidden rounded-[1.75rem] border border-white/8 bg-slate-950/95">
                                 <img
-                                    src="{{ asset('desktop-view/'.$desktopHeroImage) }}"
+                                    src="{{ asset('trading123.png') }}"
                                     alt="Wolforix trading dashboard"
                                     class="block aspect-[4/5] w-full object-cover object-center sm:aspect-[4/3] lg:aspect-[11/10]"
                                     loading="eager"
@@ -530,6 +530,22 @@
                     </div>
                 </div>
             @endif
+        </div>
+    </section>
+
+    <section class="px-6 pt-12 lg:px-8 lg:pt-14" aria-label="{{ __('site.home.plans.title') }}">
+        <div class="mx-auto max-w-7xl">
+            <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(244,183,74,0.12),transparent_38%),linear-gradient(180deg,rgba(10,18,31,0.82),rgba(5,10,18,0.92))] p-2 shadow-[0_30px_90px_rgba(2,6,23,0.42)] sm:p-3">
+                <div class="overflow-hidden rounded-[1.55rem] border border-white/8 bg-slate-950/70">
+                    <img
+                        src="{{ asset('desktop-view/'.$localizedPlatformImage) }}"
+                        alt="Wolforix localized platform preview"
+                        class="block w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                </div>
+            </div>
         </div>
     </section>
 

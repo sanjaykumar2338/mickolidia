@@ -10,6 +10,7 @@ use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
+use App\Mail\TrialAccountInstructionsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\TrustpilotReviewRequestMail;
@@ -104,6 +105,7 @@ class WolforixMailBrandingTest extends TestCase
                 'profit_target_percent' => '10%',
                 'support_email' => $supportEmail,
             ]),
+            new TrialAccountInstructionsMail($user),
             new TrialPassedMail($user, $account),
             new TrialBreachedMail($user, $account, 'Daily loss limit reached'),
             new TrustpilotReviewRequestMail('Mail Trader', 'https://de.trustpilot.com/review/wolforix.com'),

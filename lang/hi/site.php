@@ -1086,7 +1086,7 @@ return array_replace_recursive($en, [
                 'items' => [
                     [
                         'question' => 'Payouts कितनी बार process होते हैं?',
-                        'answer' => 'Payouts FAQ में defined हैं। पहला payout 21 days के बाद request किया जा सकता है, subsequent payouts हर 14 days में request किए जा सकते हैं, और approve होने के बाद payments 24 hours के भीतर process होते हैं।',
+                        'answer' => 'Commissions request पर paid होती हैं और Wolforix Partner Success Team की review और approval के अधीन हैं। पहला payout 21 days के बाद eligible होता है, और subsequent payouts recurring 14-day cycles में available होते हैं। Required cycle period पूरा होने के बाद payouts 24 hours के भीतर process होते हैं। Payout request करने के लिए, minimum withdrawal threshold $100 reach होने के बाद support@wolforix.com पर email submit करें।',
                     ],
                     [
                         'question' => 'कौन से payout methods available हैं?',
@@ -1243,6 +1243,53 @@ return array_replace_recursive($en, [
                         'question' => 'मैं payout कैसे request कर सकता हूँ?',
                         'answer' => 'Payout request button आपके dashboard में है। 1-Step funded accounts को profit payout-eligible होने से पहले mandatory consistency rule satisfy करना होगा।',
                     ],
+                    [
+                        'question' => 'I have successfully passed, what should I do now?',
+                        'answer_paragraphs' => [
+                            'What happens next depends on whether you are participating in the Wolforix Step-1 Instant or Wolforix Step-Pro, as each program follows a slightly different structure. However, both include a Verification phase.',
+                        ],
+                        'answer_sections' => [
+                            [
+                                'title' => 'Wolforix Step-1 Instant',
+                                'paragraphs' => [
+                                    'After successfully passing all Trading Objectives in your Step-1 Instant account, you will receive a notification in your dashboard confirming that your objectives have been met and your account is under review.',
+                                    'The review process typically takes 1-2 business days. Once your results are verified, you will receive access to the Verification phase.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Verification Phase',
+                                'paragraphs' => [
+                                    'After passing all Trading Objectives in the Verification phase, your account will again be reviewed.',
+                                    'Once your results are verified, the following steps are required:',
+                                ],
+                                'bullets' => [
+                                    'Complete your identity verification (KYC/KYB) in your client area',
+                                    'Sign the Wolforix Account Agreement',
+                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Wolforix Step-Pro',
+                                'paragraphs' => [
+                                    'Phase 1',
+                                    'After passing all Trading Objectives in Phase 1, you will receive a notification confirming your success. At this point, no further trading is required, and your account will be reviewed.',
+                                    'The review process typically takes 1-2 business days. Once verified, you will receive access to the next phase.',
+                                ],
+                            ],
+                            [
+                                'title' => 'Verification Phase',
+                                'paragraphs' => [
+                                    'After successfully completing all Trading Objectives in the Verification phase, your account will be set for final review.',
+                                    'Once your results are verified, the following steps are required:',
+                                ],
+                                'bullets' => [
+                                    'Complete your identity verification (KYC/KYB) in your client area',
+                                    'Sign the Wolforix Account Agreement',
+                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
             [
@@ -1359,7 +1406,7 @@ return array_replace_recursive($en, [
         'voice_support_fallback' => 'मैं नियमों, पेआउट्स, प्लान्स और सामान्य प्लेटफॉर्म सवालों में मदद कर सकता हूँ। Billing या account-specific मदद के लिए :email पर संपर्क करें।',
         'voice_trial_fallback' => 'Free Trial का उपयोग करके Wolforix demo flow खोलें। मौजूदा यूज़र्स वही ईमेल और पासवर्ड दर्ज कर सकते हैं, और वुल्फोरिक्स उन्हें trial dashboard में भेज देगा या अगर trial शुरू नहीं हुआ है तो बना देगा।',
         'voice_plan_fallback' => 'वुल्फोरिक्स फिलहाल 1-Step Instant और 2-Step Pro मॉडल 5K, 10K, 25K, 50K और 100K साइज में देता है। अपनी risk tolerance के अनुसार मॉडल चुनें, फिर आगे बढ़ने के लिए Get Plan का उपयोग करें।',
-        'voice_payout_fallback' => 'Payouts FAQ में defined हैं। पहला payout :first_payout_days days के बाद request किया जा सकता है, subsequent payouts हर :payout_cycle_days days में request किए जा सकते हैं, और approve होने के बाद payments 24 hours के भीतर process होते हैं।',
+        'voice_payout_fallback' => 'Commissions request पर paid होती हैं और Wolforix Partner Success Team की review और approval के अधीन हैं। पहला payout :first_payout_days days के बाद eligible होता है, और subsequent payouts recurring :payout_cycle_days-day cycles में available होते हैं। Required cycle period पूरा होने के बाद payouts 24 hours के भीतर process होते हैं। Payout request करने के लिए, minimum withdrawal threshold $100 reach होने के बाद support@wolforix.com पर email करें।',
         'voice_max_drawdown_fallback' => 'अगर आप maximum drawdown limit hit करते हैं, तो challenge fail हो जाता है और account block या disable हो सकता है। Open positions close करनी पड़ सकती हैं, और dashboard failure status और reason दिखाएगा।',
         'voice_rules_fallback' => '1-Step में 10% target, 4% max daily loss और 8% max total loss है। 2-Step में 10% और फिर 5% targets, 5% max daily loss, 10% max total loss और हर phase में कम से कम 3 trading days हैं।',
         'voice_checkout_fallback' => 'चुने गए challenge पर Get Plan क्लिक करें, फिर checkout से पहले sign in करें या अकाउंट बनाएं। Authentication के बाद वुल्फोरिक्स आपको सही plan पर वापस भेज देता है।',

@@ -6,6 +6,7 @@ use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\TrustpilotReviewRequestMail;
+use App\Mail\TrialAccountInstructionsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Mail\WelcomeMail;
@@ -70,7 +71,7 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
-    public function test_homepage_uses_locale_specific_desktop_hero_images(): void
+    public function test_homepage_uses_static_hero_image_and_locale_platform_banner_below_plans(): void
     {
         foreach ([
             'en' => 'desktop-view/95D6764F-5789-4965-A3F2-8F32B5A32B62-english.png',
@@ -78,11 +79,23 @@ class WolforixPlatformTest extends TestCase
             'es' => 'desktop-view/B27C71CD-AEFA-47A7-9692-97F9FA2D5067-spanish.png',
             'fr' => 'desktop-view/95D6764F-5789-4965-A3F2-8F32B5A32B62-english.png',
         ] as $locale => $imagePath) {
-            $this->withSession(['locale' => $locale])
+            $response = $this->withSession(['locale' => $locale])
                 ->get(route('home'))
                 ->assertOk()
-                ->assertSee($imagePath, false)
+                ->assertSee(asset('trading123.png'), false)
+                ->assertSee(asset($imagePath), false)
                 ->assertSee('alt="Wolforix trading dashboard"', false);
+
+            $content = $response->getContent();
+            $heroImagePosition = strpos($content, asset('trading123.png'));
+            $plansPosition = strpos($content, 'id="plans"');
+            $localizedImagePosition = strpos($content, asset($imagePath));
+
+            $this->assertNotFalse($heroImagePosition);
+            $this->assertNotFalse($plansPosition);
+            $this->assertNotFalse($localizedImagePosition);
+            $this->assertLessThan($plansPosition, $heroImagePosition);
+            $this->assertGreaterThan($plansPosition, $localizedImagePosition);
         }
     }
 
@@ -1846,7 +1859,9 @@ class WolforixPlatformTest extends TestCase
 
         $this->get(route('faq'))
             ->assertOk()
-            ->assertSee('Payouts are defined in the FAQ. The first payout can be requested after 21 days, subsequent payouts every 14 days, and once approved, payments are processed within 24 hours.');
+            ->assertSee('Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team.')
+            ->assertSee('minimum withdrawal threshold of $100')
+            ->assertSee('support@wolforix.com');
     }
 
     public function test_company_information_contains_the_updated_address(): void
@@ -1935,6 +1950,9 @@ class WolforixPlatformTest extends TestCase
             'Hedging across multiple accounts and unauthorized copy trading',
             'High-frequency trading (HFT) is strictly prohibited in Wolforix.',
             'Grid systems without proper risk control',
+            'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team.',
+            'I have successfully passed, what should I do now?',
+            'Complete your identity verification (KYC/KYB) in your client area',
         ];
 
         $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);
@@ -3066,6 +3084,8 @@ class WolforixPlatformTest extends TestCase
 
     public function test_trial_registration_creates_a_trial_account_and_dashboard(): void
     {
+        Mail::fake();
+
         $response = $this->post(route('trial.store'), [
             'email' => 'trial@example.com',
             'password' => 'password123',
@@ -3082,6 +3102,12 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('trial', $trialAccount->account_type);
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
         $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
+        Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
+            return $mail->hasTo($user->email)
+                && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
+                && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
+                && str_contains($mail->render(), (string) config('wolforix.support.email'));
+        });
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
@@ -3102,6 +3128,8 @@ class WolforixPlatformTest extends TestCase
 
     public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void
     {
+        Mail::fake();
+
         $user = User::factory()->create([
             'email' => 'existing-demo@example.com',
             'password' => 'password123',
@@ -3123,10 +3151,13 @@ class WolforixPlatformTest extends TestCase
             'is_trial' => true,
             'trial_status' => 'active',
         ]);
+        Mail::assertSent(TrialAccountInstructionsMail::class, 1);
     }
 
     public function test_authenticated_user_can_start_a_trial_from_the_trial_page(): void
     {
+        Mail::fake();
+
         $user = User::factory()->create([
             'email' => 'existing-trial-user@example.com',
             'password' => 'password123',
@@ -3144,6 +3175,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertNotNull($trialAccount);
         $this->assertSame('active', $trialAccount->trial_status);
+        Mail::assertSent(TrialAccountInstructionsMail::class, 1);
     }
 
     public function test_existing_user_login_from_trial_page_returns_to_trial_access(): void
