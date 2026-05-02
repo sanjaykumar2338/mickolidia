@@ -95,16 +95,20 @@
                             >
                         </label>
 
-                        <div class="flex justify-end">
-                            <a href="{{ route('password.request') }}" class="text-sm font-medium text-amber-200 transition hover:text-amber-100">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-3 text-sm text-slate-300">
+                                <input type="checkbox" name="remember" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300">
+                                <span>{{ __('site.auth.login.remember') }}</span>
+                            </label>
+
+                            <a
+                                href="{{ route('password.request') }}"
+                                data-password-reset-link
+                                class="inline-flex w-full items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/10 px-5 py-3 text-sm font-semibold text-amber-100 shadow-[0_14px_32px_rgba(244,183,74,0.12)] transition hover:border-amber-200/45 hover:bg-amber-300/16 focus:outline-none focus:ring-2 focus:ring-amber-300/35 sm:w-auto"
+                            >
                                 {{ __('site.auth.login.forgot_password') }}
                             </a>
                         </div>
-
-                        <label class="flex items-center gap-3 text-sm text-slate-300">
-                            <input type="checkbox" name="remember" value="1" @checked(old('remember')) class="h-4 w-4 rounded border-white/20 bg-black/40 text-amber-400 focus:ring-amber-300">
-                            <span>{{ __('site.auth.login.remember') }}</span>
-                        </label>
 
                         <button type="submit" class="primary-cta w-full rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.auth.login.submit') }}

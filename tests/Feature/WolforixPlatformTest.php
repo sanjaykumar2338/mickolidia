@@ -517,6 +517,7 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('login'))
             ->assertOk()
             ->assertSee('Forgot Password?')
+            ->assertSee('data-password-reset-link', false)
             ->assertSee(route('password.request'), false);
 
         $this->post(route('password.email'), [
