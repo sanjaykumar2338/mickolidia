@@ -1065,9 +1065,9 @@ h6 {
 }
 
 .challenge-selected-price {
-    color: #f8da86;
+    color: #fff;
     letter-spacing: 0;
-    text-shadow: 0 0 24px rgba(244, 183, 74, 0.22);
+    text-shadow: none;
 }
 
 .challenge-selected-original {
@@ -1200,12 +1200,12 @@ h6 {
 }
 
 .challenge-comparison-price-current {
-    color: #f8da86;
+    color: #fff;
     font-size: 1.34rem;
     font-weight: 800;
     letter-spacing: 0;
     line-height: 1.05;
-    text-shadow: 0 0 20px rgba(244, 183, 74, 0.24);
+    text-shadow: none;
 }
 
 .challenge-comparison-price-original {
