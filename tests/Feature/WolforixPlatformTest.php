@@ -636,6 +636,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('challenge-desktop-comparison', false)
             ->assertSee('Best Value')
             ->assertSee('challenge-comparison-best-value', false)
+            ->assertSee('data-challenge-size="50000"', false)
+            ->assertSee('hidden challenge-comparison-best-value', false)
             ->assertSee('challenge-comparison-price-current', false)
             ->assertSee('challenge-comparison-price-original', false)
             ->assertDontSee('challenge-plans/desktop', false)
@@ -698,6 +700,17 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('Dashboard Preview')
             ->assertDontSee('Our mission')
             ->assertDontSee('Identify, train, and fund traders who are ready to perform.');
+    }
+
+    public function test_only_the_50k_homepage_plan_is_marked_best_value(): void
+    {
+        $content = $this->get(route('home'))
+            ->assertOk()
+            ->content();
+
+        $this->assertSame(1, substr_count($content, 'class="challenge-comparison-best-value"'));
+        $this->assertSame(4, substr_count($content, 'class="hidden challenge-comparison-best-value"'));
+        $this->assertStringContainsString('data-challenge-size="50000"', $content);
     }
 
     public function test_launch_offer_apply_persists_discount_for_the_session(): void

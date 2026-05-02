@@ -1084,6 +1084,7 @@ h6 {
 
 .challenge-comparison-card.hidden,
 .challenge-comparison-card-head em.hidden,
+.challenge-comparison-best-value.hidden,
 .challenge-comparison-price small.hidden {
     display: none;
 }
