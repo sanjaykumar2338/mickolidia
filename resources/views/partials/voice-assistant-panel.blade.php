@@ -5,7 +5,11 @@
     $assistantQuestion = trim((string) ($assistantQuestion ?? request('assistant_question', '')));
     $assistantClass = $assistantClass ?? 'rounded-[2rem] border border-white/8 bg-white/4 p-5 sm:p-6';
     $assistantExampleQuestions = trans('site.ai_assistant.example_questions');
-    $voiceLocales = array_keys(config('wolforix.supported_locales', []));
+    $supportedVoiceLocales = array_keys(config('wolforix.supported_locales', []));
+    $currentVoiceLocale = in_array(app()->getLocale(), $supportedVoiceLocales, true)
+        ? app()->getLocale()
+        : (string) config('wolforix.default_locale', 'en');
+    $voiceLocales = [$currentVoiceLocale];
     $voiceLocaleMap = [
         'en' => 'en-US',
         'de' => 'de-DE',

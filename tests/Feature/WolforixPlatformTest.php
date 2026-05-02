@@ -118,7 +118,7 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('data-footer-brand', false)
             ->assertSee('https://www.facebook.com/share/1JQhTJwzJq/', false)
-            ->assertSee('https://www.instagram.com/wolforix', false)
+            ->assertSee('https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA', false)
             ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://x.com/wolforixhq', false)
             ->assertSee('https://youtube.com/@wolforix', false)
@@ -136,7 +136,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Talk with Wolfi')
             ->assertSee('Your trading assistant is ready to help.')
             ->assertSee('Tap to talk')
-            ->assertSee('wolfy-image/wolfy-short.jpeg', false)
+            ->assertSee('new-wolfy.webp', false)
             ->assertSee('data-wolfi-live-scene', false)
             ->assertSee('data-wolfi-talk-control', false)
             ->assertSee('Wolfi\'s answer')
@@ -147,12 +147,12 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('What happens if I hit '.'max drawdown?')
             ->assertSee('Let me make sure I answer the right thing.')
             ->assertSee('"locale":"en"', false)
-            ->assertSee('"locale":"de"', false)
-            ->assertSee('"locale":"es"', false)
-            ->assertSee('"locale":"fr"', false)
-            ->assertSee('"locale":"hi"', false)
-            ->assertSee('"locale":"it"', false)
-            ->assertSee('"locale":"pt"', false)
+            ->assertDontSee('"locale":"de"', false)
+            ->assertDontSee('"locale":"es"', false)
+            ->assertDontSee('"locale":"fr"', false)
+            ->assertDontSee('"locale":"hi"', false)
+            ->assertDontSee('"locale":"it"', false)
+            ->assertDontSee('"locale":"pt"', false)
             ->assertSee(route('faq'), false);
     }
 
@@ -163,6 +163,8 @@ class WolforixPlatformTest extends TestCase
         ])->get(route('contact'))
             ->assertOk()
             ->assertSee('Support, Live-Chat und FAQ-Sprachhilfe an einem Ort.')
+            ->assertSee('"locale":"de"', false)
+            ->assertDontSee('"locale":"en"', false)
             ->assertSee('Sprich mit Wolfi')
             ->assertSee('Wolfis Antwort')
             ->assertSee('Ich höre zu... tippe erneut zum Stoppen.')
@@ -681,7 +683,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('View full legal information')
             ->assertDontSee('Open main navigation')
             ->assertSee('https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3', false)
-            ->assertSee('https://www.instagram.com/wolforix', false)
+            ->assertSee('https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA', false)
             ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t', false)
             ->assertSee('Back to top')
@@ -1917,24 +1919,125 @@ class WolforixPlatformTest extends TestCase
     public function test_translated_faq_locales_include_the_new_policy_content(): void
     {
         $expectedByLocale = [
-            'de' => ['Welche Plattform verwendet Wolforix?', 'Welche Auszahlungsmethoden sind verfügbar?', 'Welche Zahlungsmethoden werden akzeptiert?', 'Welche Länder sind eingeschränkt?', 'Ist High-Frequency Trading (HFT) erlaubt?', 'Sind Duration Abuse, Grid Trading und Martingale-Strategien erlaubt?'],
-            'es' => ['¿Qué plataforma utiliza Wolforix?', '¿Qué métodos de payout están disponibles?', '¿Qué métodos de pago se aceptan?', '¿Qué países están restringidos?', '¿Está permitido el high-frequency trading (HFT)?', '¿Se permiten duration abuse, grid trading y estrategias martingale?'],
-            'fr' => ['Quelle plateforme Wolforix utilise-t-il ?', 'Quels moyens de payout sont disponibles ?', 'Quels moyens de paiement sont acceptés ?', 'Quels pays sont restreints ?', 'Le high-frequency trading (HFT) est-il autorisé ?', 'Le duration abuse, le grid trading et les stratégies martingale sont-ils autorisés ?'],
-            'hi' => ['Wolforix कौन सा platform use करता है?', 'कौन से payout methods available हैं?', 'कौन से payment methods accepted हैं?', 'कौन से countries restricted हैं?', 'क्या high-frequency trading (HFT) allowed है?', 'क्या duration abuse, grid trading और martingale strategies allowed हैं?'],
-            'it' => ['Quale piattaforma usa Wolforix?', 'Quali metodi di payout sono disponibili?', 'Quali metodi di pagamento sono accettati?', 'Quali Paesi sono soggetti a restrizioni?', 'High-frequency trading (HFT) è consentito?', 'Duration abuse, grid trading e strategie martingale sono consentiti?'],
-            'pt' => ['Que plataforma usa a Wolforix?', 'Que métodos de payout estão disponíveis?', 'Que métodos de pagamento são aceites?', 'Que países estão restritos?', 'High-frequency trading (HFT) é permitido?', 'Duration abuse, grid trading e estratégias martingale são permitidos?'],
+            'de' => ['Welche Plattform verwendet Wolforix?', 'Wie oft werden Auszahlungen verarbeitet?', 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'Wie starte ich mein Wolforix-Testkonto?', 'Wie sehe ich meinen Gewinn und Kontostand?'],
+            'es' => ['¿Qué plataforma utiliza Wolforix?', '¿Con qué frecuencia se procesan los payouts?', 'He aprobado correctamente, ¿qué debo hacer ahora?', '¿Cómo inicio mi Cuenta Trial de Wolforix?', '¿Cómo veo mi beneficio y balance?'],
+            'fr' => ['Quelle plateforme Wolforix utilise-t-il ?', 'À quelle fréquence les payouts sont-ils traités ?', 'J’ai réussi, que dois-je faire maintenant ?', 'Comment démarrer mon compte Trial Wolforix ?', 'Comment voir mon profit et mon solde ?'],
+            'hi' => ['Wolforix कौन सा platform use करता है?', 'पेआउट कितनी बार प्रोसेस होते हैं?', 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'मैं अपना Wolforix ट्रायल खाता कैसे शुरू करूँ?', 'मैं अपना profit और balance कैसे देखूँ?'],
+            'it' => ['Quale piattaforma usa Wolforix?', 'Ogni quanto vengono elaborati i payout?', 'Ho superato con successo, cosa devo fare ora?', 'Come avvio il mio Account Trial Wolforix?', 'Come vedo profitto e saldo?'],
+            'pt' => ['Que plataforma usa a Wolforix?', 'Com que frequência são processados os payouts?', 'Passei com sucesso, o que devo fazer agora?', 'Como inicio a minha Conta Trial Wolforix?', 'Como vejo o meu lucro e saldo?'],
         ];
 
         foreach ($expectedByLocale as $locale => $expectedStrings) {
             $translations = require base_path("lang/{$locale}/site.php");
             $faqText = json_encode($translations['faq']['sections'], JSON_UNESCAPED_UNICODE);
 
-            $this->assertCount(9, $translations['faq']['sections'], "FAQ section count mismatch for {$locale}.");
+            $this->assertCount(10, $translations['faq']['sections'], "FAQ section count mismatch for {$locale}.");
             $this->assertStringContainsString('MetaQuotes-Demo', $faqText, "MT5 login details missing for {$locale}.");
+            $this->assertStringNotContainsString('I have successfully passed, what should I do now?', $faqText, "English passed FAQ leaked into {$locale}.");
+            $this->assertStringNotContainsString('Commissions are paid upon request', $faqText, "English payout FAQ leaked into {$locale}.");
+            $this->assertStringNotContainsString('How do I start my Wolforix Trial Account?', $faqText, "English trial FAQ leaked into {$locale}.");
 
             foreach ($expectedStrings as $expectedString) {
                 $this->assertStringContainsString($expectedString, $faqText, "Missing translated FAQ text for {$locale}: {$expectedString}");
             }
+        }
+    }
+
+    public function test_translated_faq_locales_have_matching_structure_without_english_fallback_leaks(): void
+    {
+        $shape = function (mixed $value) use (&$shape): mixed {
+            if (! is_array($value)) {
+                return 'string';
+            }
+
+            return array_map($shape, $value);
+        };
+        $flatten = function (mixed $value, string $path = '') use (&$flatten): array {
+            if (! is_array($value)) {
+                return [$path => (string) $value];
+            }
+
+            $flattened = [];
+
+            foreach ($value as $key => $child) {
+                $flattened = [...$flattened, ...$flatten($child, "{$path}/{$key}")];
+            }
+
+            return $flattened;
+        };
+        $englishFaq = (require base_path('lang/en/site.php'))['faq'];
+        $englishShape = $shape($englishFaq);
+        $englishFlat = $flatten($englishFaq);
+        $allowedExactMatches = [
+            'FAQ',
+            'MT5',
+            'MetaTrader 5',
+            'Wolforix',
+            'Wolforix Ltd.',
+            'PayPal',
+            'Stripe',
+            'Forex',
+            'EURUSD, GBPUSD, USDJPY, USDCHF, USDCAD',
+            'SPX500, NDX100, US30',
+            'GER30, UK100, FRA40',
+            'XAUUSD (Gold)',
+            'BTCUSD, ETHUSD, XRPUSD',
+            'ADAUSD, LTCUSD, XLMUSD',
+            'UKOUSD (Brent)',
+            'USOUSD (Crude Oil)',
+            'Wolforix Step-1 Instant',
+            'Wolforix Step-Pro',
+            'support@wolforix.com',
+            'https://www.icmarkets.eu/de/open-trading-account/demo',
+        ];
+
+        foreach (['de', 'es', 'fr', 'hi', 'it', 'pt'] as $locale) {
+            $faq = (require base_path("lang/{$locale}/site.php"))['faq'];
+            $this->assertSame($englishShape, $shape($faq), "FAQ structure mismatch for {$locale}.");
+
+            $leaks = collect($flatten($faq))
+                ->filter(fn (string $text, string $path): bool => ($englishFlat[$path] ?? null) === $text
+                    && ! in_array($text, $allowedExactMatches, true)
+                    && trim($text) !== '')
+                ->all();
+
+            $this->assertSame([], $leaks, "English FAQ fallback text leaked into {$locale}.");
+        }
+    }
+
+    public function test_faq_display_search_and_wolfi_use_selected_locale_faq_content(): void
+    {
+        $contentIndex = app(PublicContentIndex::class);
+        $expectations = [
+            'de' => ['passed' => 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'trial' => 'Wie starte ich mein Wolforix-Testkonto?', 'payout' => 'Wie oft werden Auszahlungen verarbeitet?'],
+            'es' => ['passed' => 'He aprobado correctamente, ¿qué debo hacer ahora?', 'trial' => '¿Cómo inicio mi Cuenta Trial de Wolforix?', 'payout' => '¿Con qué frecuencia se procesan los payouts?'],
+            'fr' => ['passed' => 'J’ai réussi, que dois-je faire maintenant ?', 'trial' => 'Comment démarrer mon compte Trial Wolforix ?', 'payout' => 'À quelle fréquence les payouts sont-ils traités ?'],
+            'hi' => ['passed' => 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'trial' => 'मैं अपना Wolforix ट्रायल खाता कैसे शुरू करूँ?', 'payout' => 'पेआउट कितनी बार प्रोसेस होते हैं?'],
+            'it' => ['passed' => 'Ho superato con successo, cosa devo fare ora?', 'trial' => 'Come avvio il mio Account Trial Wolforix?', 'payout' => 'Ogni quanto vengono elaborati i payout?'],
+            'pt' => ['passed' => 'Passei com sucesso, o que devo fazer agora?', 'trial' => 'Como inicio a minha Conta Trial Wolforix?', 'payout' => 'Com que frequência são processados os payouts?'],
+        ];
+
+        foreach ($expectations as $locale => $strings) {
+            $this->withSession(['locale' => $locale])
+                ->get(route('faq'))
+                ->assertOk()
+                ->assertSee($strings['passed'])
+                ->assertSee($strings['trial'])
+                ->assertSee($strings['payout'])
+                ->assertDontSee('I have successfully passed, what should I do now?')
+                ->assertDontSee('How do I start my Wolforix Trial Account?')
+                ->assertDontSee('Commissions are paid upon request');
+
+            $siteSearchText = json_encode($contentIndex->siteSearchIndex($locale), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $wolfiIndexText = json_encode($contentIndex->voiceAssistantIndex([$locale], [$locale => $locale]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+            foreach ($strings as $expectedString) {
+                $this->assertStringContainsString($expectedString, $siteSearchText, "Site search index missing {$locale} FAQ text: {$expectedString}");
+                $this->assertStringContainsString($expectedString, $wolfiIndexText, "Wolfi index missing {$locale} FAQ text: {$expectedString}");
+            }
+
+            $this->assertStringNotContainsString('I have successfully passed, what should I do now?', $siteSearchText);
+            $this->assertStringNotContainsString('I have successfully passed, what should I do now?', $wolfiIndexText);
         }
     }
 
@@ -1953,6 +2056,8 @@ class WolforixPlatformTest extends TestCase
             'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team.',
             'I have successfully passed, what should I do now?',
             'Complete your identity verification (KYC/KYB) in your client area',
+            'How do I start my Wolforix Trial Account?',
+            'Complete your demo registration with IC Markets at https://www.icmarkets.eu/de/open-trading-account/demo.',
         ];
 
         $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);

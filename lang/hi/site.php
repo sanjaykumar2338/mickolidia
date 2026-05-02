@@ -651,7 +651,7 @@ return array_replace_recursive($en, [
                         'question' => 'मैं MT5 में login कैसे करूँ?',
                         'answer_sections' => [
                             [
-                                'title' => 'Mobile',
+                                'title' => 'मोबाइल',
                                 'bullets' => [
                                     '1. MetaTrader 5 download करें।',
                                     '2. "Manage Accounts" में जाएँ।',
@@ -662,16 +662,16 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Desktop',
+                                'title' => 'डेस्कटॉप',
                                 'bullets' => [
                                     '1. MT5 खोलें।',
-                                    '2. File -> Login to Trade Account.',
+                                    '2. फ़ाइल -> ट्रेड खाते में लॉगिन करें.',
                                     '3. अपनी login details enter करें।',
-                                    '4. Server: MetaQuotes-Demo.',
+                                    '4. सर्वर: MetaQuotes-Demo.',
                                 ],
                             ],
                             [
-                                'title' => 'Important',
+                                'title' => 'महत्वपूर्ण',
                                 'bullets' => [
                                     'Wolforix अपना broker use नहीं करता।',
                                     'हम MetaQuotes-Demo server use करते हैं।',
@@ -684,7 +684,7 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Tradable Instruments',
+                'title' => 'ट्रेड किए जा सकने वाले इंस्ट्रूमेंट',
                 'items' => [
                     [
                         'question' => 'मैं क्या trade कर सकता हूँ?',
@@ -698,7 +698,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Indices',
+                                'title' => 'इंडेक्स',
                                 'bullets' => [
                                     'SPX500, NDX100, US30',
                                     'GER30, UK100, FRA40',
@@ -706,17 +706,17 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Commodities',
+                                'title' => 'कमोडिटी',
                                 'bullets' => [
                                     'XAUUSD (Gold)',
-                                    'XAGUSD (Silver)',
-                                    'XPTUSD (Platinum)',
+                                    'XAGUSD (चांदी)',
+                                    'XPTUSD (प्लैटिनम)',
                                     'UKOUSD (Brent)',
                                     'USOUSD (Crude Oil)',
                                 ],
                             ],
                             [
-                                'title' => 'Cryptocurrencies',
+                                'title' => 'क्रिप्टोकरेंसी',
                                 'bullets' => [
                                     'BTCUSD, ETHUSD, XRPUSD',
                                     'ADAUSD, LTCUSD, XLMUSD',
@@ -728,7 +728,7 @@ return array_replace_recursive($en, [
                         'question' => 'मैं सभी instruments कैसे देख सकता हूँ?',
                         'answer_sections' => [
                             [
-                                'title' => 'MT5 Market Watch',
+                                'title' => 'MT5 मार्केट वॉच',
                                 'bullets' => [
                                     '1. MT5 खोलें।',
                                     '2. Market Watch में जाएँ।',
@@ -741,7 +741,7 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Trading Rules',
+                'title' => 'ट्रेडिंग नियम',
                 'items' => [
                     [
                         'question' => 'Consistency rule क्या है?',
@@ -764,21 +764,21 @@ return array_replace_recursive($en, [
                         'answer' => 'Wolforix traded instrument के अनुसार standard market hours में trading allow करता है।',
                         'answer_sections' => [
                             [
-                                'title' => 'General Rule',
+                                'title' => 'सामान्य नियम',
                                 'bullets' => [
                                     'Trading global market sessions के अनुसार Monday to Friday, 24 hours और 5 days a week available है।',
                                     'Availability instrument के अनुसार vary कर सकती है, जैसे Forex, indices, crypto और अन्य CFDs.',
                                 ],
                             ],
                             [
-                                'title' => 'Position Holding',
+                                'title' => 'पोजीशन होल्डिंग',
                                 'bullets' => [
                                     'Positions intraday या overnight hold की जा सकती हैं, जब तक specific account rules restrict न करें।',
                                     'Low liquidity periods में exposure manage करना trader की responsibility है।',
                                 ],
                             ],
                             [
-                                'title' => 'Market Closures',
+                                'title' => 'बाजार बंद रहने का समय',
                                 'bullets' => [
                                     'Weekends में trading available नहीं है।',
                                     'कुछ instruments में daily breaks या maintenance windows हो सकती हैं।',
@@ -786,14 +786,14 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Important',
+                                'title' => 'महत्वपूर्ण',
                                 'bullets' => [
                                     'Traders को market session times और liquidity conditions की जानकारी होनी चाहिए।',
                                     'Illiquid या volatile periods में trading से हुए losses के लिए Wolforix responsible नहीं है।',
                                 ],
                             ],
                             [
-                                'title' => 'Restrictions',
+                                'title' => 'प्रतिबंध',
                                 'bullets' => [
                                     'News events से related trading restrictions (±5 minutes) अभी भी apply होते हैं।',
                                     'बाकी सभी trading rules time की परवाह किए बिना लागू रहते हैं।',
@@ -809,7 +809,7 @@ return array_replace_recursive($en, [
                         ],
                         'answer_sections' => [
                             [
-                                'title' => 'Trading Conditions',
+                                'title' => 'ट्रेडिंग शर्तें',
                                 'bullets' => [
                                     'Stop Loss mandatory नहीं है, लेकिन risk control strongly recommended है।',
                                     'Trading realistic execution behavior और market conditions reflect करनी चाहिए।',
@@ -817,7 +817,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Expert Advisors (EAs) & Algorithmic Trading',
+                                'title' => 'एक्सपर्ट एडवाइज़र (EAs) और एल्गोरिदमिक ट्रेडिंग',
                                 'bullets' => [
                                     'EAs permitted हैं।',
                                     'Third-party EA duplication internal risk management से conflict कर सकता है।',
@@ -827,7 +827,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Server & Execution Limits',
+                                'title' => 'सर्वर और निष्पादन सीमाएँ',
                                 'bullets' => [
                                     'Maximum simultaneous open orders limits apply हो सकते हैं।',
                                     'Daily execution limits enforce किए जा सकते हैं।',
@@ -836,7 +836,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Scalping & Trade Duration Policy',
+                                'title' => 'स्कैल्पिंग और ट्रेड अवधि नीति',
                                 'bullets' => [
                                     '60 seconds से कम में profit के साथ closed trades strictly prohibited हैं।',
                                     'ऐसी activity real market conditions में non-replicable मानी जाती है और latency exploitation या unrealistic execution indicate कर सकती है।',
@@ -845,7 +845,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Prohibited Trading Practices',
+                                'title' => 'निषिद्ध ट्रेडिंग प्रथाएँ',
                                 'paragraphs' => [
                                     'यदि prohibited activity पाई जाती है, तो Wolforix positions remove या adjust कर सकता है, account recalculate कर सकता है, leverage reduce कर सकता है, account suspend या terminate कर सकता है, या trader के साथ cooperation end कर सकता है।',
                                     'यदि आप genuine intent, clear edge और consistent rule-compliant behavior के साथ trade करते हैं, तो Wolforix आपकी success के साथ aligned रहता है।',
@@ -889,7 +889,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Examples',
+                                'title' => 'उदाहरण',
                                 'bullets' => [
                                     'एक account में Long EURUSD और दूसरे में Short EURUSD.',
                                     'एक account में Long SPX500 और दूसरे में Short NDX100.',
@@ -906,7 +906,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Important Clarification',
+                                'title' => 'महत्वपूर्ण स्पष्टीकरण',
                                 'bullets' => [
                                     'Same account में opposite positions खोलना MT5 में technically possible हो सकता है, लेकिन risk rules bypass करने वाली strategies allowed नहीं हैं।',
                                     'Automation तभी allowed है जब वह independent trading logic reflect करे, trade replication नहीं।',
@@ -914,7 +914,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Detection & Monitoring',
+                                'title' => 'पहचान और निगरानी',
                                 'bullets' => [
                                     'Wolforix internal systems से hedging patterns detect करता है।',
                                     'Wolforix trade synchronization monitor करता है।',
@@ -923,7 +923,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Consequences',
+                                'title' => 'परिणाम',
                                 'bullets' => [
                                     'Wolforix trades remove या adjust कर सकता है।',
                                     'Wolforix account balance recalculate कर सकता है।',
@@ -959,12 +959,12 @@ return array_replace_recursive($en, [
                                     'बहुत short periods में high volume trades execute करना।',
                                     'Rapid order placement और cancellation.',
                                     'Orders की excessive modifications.',
-                                    'Ultra-fast algorithmic execution patterns.',
+                                    'बहुत तेज एल्गोरिदमिक निष्पादन पैटर्न।',
                                     'Platform पर abnormal load डालने वाला trading behavior.',
                                 ],
                             ],
                             [
-                                'title' => 'Important Clarification',
+                                'title' => 'महत्वपूर्ण स्पष्टीकरण',
                                 'bullets' => [
                                     'Algorithmic trading और EAs allowed हैं।',
                                     'Strategies normal trading frequency और realistic execution behavior में operate करनी चाहिए।',
@@ -984,7 +984,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Detection & Monitoring',
+                                'title' => 'पहचान और निगरानी',
                                 'bullets' => [
                                     'Wolforix trade frequency monitor करता है।',
                                     'Wolforix order volume monitor करता है।',
@@ -993,7 +993,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Consequences',
+                                'title' => 'परिणाम',
                                 'bullets' => [
                                     'Warning issue की जा सकती है।',
                                     'HFT activity से generated profits remove किए जा सकते हैं।',
@@ -1008,7 +1008,7 @@ return array_replace_recursive($en, [
                         'answer' => 'Wolforix ऐसी strategies strictly prohibit करता है जो risk structures exploit करती हैं या unrealistic performance profiles बनाती हैं, जिसमें duration abuse, grid trading और martingale systems शामिल हैं।',
                         'answer_sections' => [
                             [
-                                'title' => 'Duration Abuse',
+                                'title' => 'अवधि दुरुपयोग',
                                 'paragraphs' => [
                                     'Duration abuse का मतलब है trades को systematically open और close करना ताकि intended risk exposure या trading rules bypass हों, बिना genuine market participation के।',
                                     'सभी trades genuine market exposure और intent reflect करनी चाहिए, rule manipulation नहीं।',
@@ -1020,7 +1020,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Grid Trading',
+                                'title' => 'ग्रिड ट्रेडिंग',
                                 'paragraphs' => [
                                     'Grid trading में fixed price intervals पर multiple pending या active orders place किए जाते हैं, अक्सर clear stop-loss logic के बिना।',
                                 ],
@@ -1031,7 +1031,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Martingale Strategies',
+                                'title' => 'मार्टिंगेल रणनीतियाँ',
                                 'paragraphs' => [
                                     'Martingale strategies losses के बाद position size बढ़ाती हैं ताकि previous losses एक single winning trade से recover हों।',
                                 ],
@@ -1045,13 +1045,13 @@ return array_replace_recursive($en, [
                                 'title' => 'क्या allowed है?',
                                 'bullets' => [
                                     'Defined risk per trade वाली structured strategies.',
-                                    'Logical position sizing.',
+                                    'तार्किक पोजीशन साइजिंग।',
                                     'Consistent और controlled exposure.',
                                     'Stop-loss और proper risk management का use.',
                                 ],
                             ],
                             [
-                                'title' => 'Detection & Monitoring',
+                                'title' => 'पहचान और निगरानी',
                                 'bullets' => [
                                     'Wolforix trade duration patterns monitor करता है।',
                                     'Wolforix position sizing behavior monitor करता है।',
@@ -1060,7 +1060,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Consequences',
+                                'title' => 'परिणाम',
                                 'bullets' => [
                                     'Wolforix trades remove या adjust कर सकता है।',
                                     'Wolforix account balance recalculate कर सकता है।',
@@ -1082,25 +1082,29 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Payouts',
+                'title' => 'पेआउट',
                 'items' => [
                     [
-                        'question' => 'Payouts कितनी बार process होते हैं?',
-                        'answer' => 'Commissions request पर paid होती हैं और Wolforix Partner Success Team की review और approval के अधीन हैं। पहला payout 21 days के बाद eligible होता है, और subsequent payouts recurring 14-day cycles में available होते हैं। Required cycle period पूरा होने के बाद payouts 24 hours के भीतर process होते हैं। Payout request करने के लिए, minimum withdrawal threshold $100 reach होने के बाद support@wolforix.com पर email submit करें।',
+                        'question' => 'पेआउट कितनी बार प्रोसेस होते हैं?',
+                        'answer_paragraphs' => [
+                            'कमीशन अनुरोध पर भुगतान किए जाते हैं और Wolforix Partner Success Team की समीक्षा और स्वीकृति के अधीन होते हैं। पहला पेआउट 21 दिनों के बाद पात्र होता है, और उसके बाद के पेआउट 14-दिन के नियमित चक्रों में उपलब्ध होते हैं।',
+                            'आवश्यक चक्र अवधि पूरी होने के बाद पेआउट 24 घंटों के भीतर प्रोसेस किए जाते हैं।',
+                            'पेआउट का अनुरोध करने के लिए, $100 की न्यूनतम निकासी सीमा पूरी होने पर support@wolforix.com पर ईमेल भेजें।',
+                        ],
                     ],
                     [
                         'question' => 'कौन से payout methods available हैं?',
                         'answer' => 'Wolforix approved withdrawals के लिए secure और efficient payout methods support करता है।',
                         'answer_sections' => [
                             [
-                                'title' => 'Available payout options',
+                                'title' => 'उपलब्ध पेआउट विकल्प',
                                 'bullets' => [
                                     'Bank Transfer (Stripe infrastructure के through, region के अनुसार)',
                                     'PayPal',
                                 ],
                             ],
                             [
-                                'title' => 'Important',
+                                'title' => 'महत्वपूर्ण',
                                 'bullets' => [
                                     'Payout methods आपकी location के अनुसार vary कर सकते हैं।',
                                     'सभी withdrawals account review और compliance checks के अधीन हैं।',
@@ -1108,14 +1112,14 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Processing Time',
+                                'title' => 'प्रोसेसिंग समय',
                                 'bullets' => [
                                     'Requests आमतौर पर 1–3 business days में review होती हैं।',
                                     'Approve होने के बाद funds shortly process होते हैं।',
                                 ],
                             ],
                             [
-                                'title' => 'Additional Notes',
+                                'title' => 'अतिरिक्त नोट्स',
                                 'bullets' => [
                                     'Payout method account holder की identity से match करना चाहिए।',
                                     'Wolforix withdrawals process करने से पहले verification request कर सकता है।',
@@ -1148,21 +1152,21 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Update Frequency',
+                                'title' => 'अपडेट आवृत्ति',
                                 'bullets' => [
                                     'Scaling updates हर trading day के end में apply होते हैं।',
                                     'Changes day के दौरान real time में apply नहीं होते।',
                                 ],
                             ],
                             [
-                                'title' => 'Scaling Structure',
+                                'title' => 'स्केलिंग संरचना',
                                 'paragraphs' => [
                                     'Scaling model consistency, risk management और sustainable performance को reward करने के लिए designed है।',
                                     'Account समय के साथ stability demonstrate करता है तो maximum exposure evolve होता है।',
                                 ],
                             ],
                             [
-                                'title' => 'Important',
+                                'title' => 'महत्वपूर्ण',
                                 'bullets' => [
                                     'Scaling linear नहीं है और account performance के अनुसार vary कर सकता है।',
                                     'Sufficient performance के बिना overexposure restrictions का कारण बन सकता है।',
@@ -1181,7 +1185,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Consequences',
+                                'title' => 'परिणाम',
                                 'bullets' => [
                                     'Wolforix trades adjust या remove कर सकता है।',
                                     'Wolforix account balance recalculate कर सकता है।',
@@ -1190,7 +1194,7 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Summary',
+                                'title' => 'सारांश',
                                 'bullets' => [
                                     'Performance बढ़े, trading capacity बढ़े।',
                                     'Performance घटे, limits adjust हो सकती हैं।',
@@ -1203,21 +1207,21 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Billing',
+                'title' => 'बिलिंग',
                 'items' => [
                     [
                         'question' => 'कौन से payment methods accepted हैं?',
                         'answer' => 'Wolforix trusted providers के through secure online payments accept करता है। सभी payments Stripe और PayPal के through securely process होते हैं, जिससे fast और reliable transactions मिलते हैं।',
                         'answer_sections' => [
                             [
-                                'title' => 'Available payment methods',
+                                'title' => 'उपलब्ध भुगतान विधियाँ',
                                 'bullets' => [
                                     'Credit और debit cards (Visa, Mastercard, American Express)',
                                     'PayPal',
                                 ],
                             ],
                             [
-                                'title' => 'Important',
+                                'title' => 'महत्वपूर्ण',
                                 'bullets' => [
                                     'Approval के बाद payments instantly confirm होते हैं।',
                                     'सभी transactions encrypted और securely processed होते हैं।',
@@ -1229,7 +1233,7 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Accounts / Dashboard',
+                'title' => 'खाता / डैशबोर्ड',
                 'items' => [
                     [
                         'question' => 'मैं अपना profit और balance कैसे देखूँ?',
@@ -1244,48 +1248,48 @@ return array_replace_recursive($en, [
                         'answer' => 'Payout request button आपके dashboard में है। 1-Step funded accounts को profit payout-eligible होने से पहले mandatory consistency rule satisfy करना होगा।',
                     ],
                     [
-                        'question' => 'I have successfully passed, what should I do now?',
+                        'question' => 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?',
                         'answer_paragraphs' => [
-                            'What happens next depends on whether you are participating in the Wolforix Step-1 Instant or Wolforix Step-Pro, as each program follows a slightly different structure. However, both include a Verification phase.',
+                            'अगला चरण इस बात पर निर्भर करता है कि आप Wolforix Step-1 Instant में भाग ले रहे हैं या Wolforix Step-Pro में, क्योंकि दोनों कार्यक्रमों की संरचना थोड़ी अलग है। हालांकि, दोनों में सत्यापन चरण शामिल है।',
                         ],
                         'answer_sections' => [
                             [
                                 'title' => 'Wolforix Step-1 Instant',
                                 'paragraphs' => [
-                                    'After successfully passing all Trading Objectives in your Step-1 Instant account, you will receive a notification in your dashboard confirming that your objectives have been met and your account is under review.',
-                                    'The review process typically takes 1-2 business days. Once your results are verified, you will receive access to the Verification phase.',
+                                    'अपने Step-1 Instant खाते में सभी ट्रेडिंग उद्देश्यों को सफलतापूर्वक पूरा करने के बाद, आपको अपने डैशबोर्ड में एक सूचना मिलेगी कि आपके उद्देश्य पूरे हो गए हैं और आपका खाता समीक्षा में है।',
+                                    'समीक्षा प्रक्रिया में आमतौर पर 1 से 2 कार्य दिवस लगते हैं। आपके परिणाम सत्यापित होने के बाद आपको सत्यापन चरण का एक्सेस मिलेगा।',
                                 ],
                             ],
                             [
-                                'title' => 'Verification Phase',
+                                'title' => 'सत्यापन चरण',
                                 'paragraphs' => [
-                                    'After passing all Trading Objectives in the Verification phase, your account will again be reviewed.',
-                                    'Once your results are verified, the following steps are required:',
+                                    'सत्यापन चरण में सभी ट्रेडिंग उद्देश्यों को पूरा करने के बाद, आपके खाते की फिर से समीक्षा की जाएगी।',
+                                    'आपके परिणाम सत्यापित होने के बाद निम्नलिखित चरण आवश्यक हैं:',
                                 ],
                                 'bullets' => [
-                                    'Complete your identity verification (KYC/KYB) in your client area',
-                                    'Sign the Wolforix Account Agreement',
-                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                    'अपने क्लाइंट क्षेत्र में पहचान सत्यापन (KYC/KYB) पूरा करें',
+                                    'Wolforix खाता समझौते पर हस्ताक्षर करें',
+                                    'सभी चरण सफलतापूर्वक पूरे होने के बाद आपका funded Wolforix खाता जारी किया जाएगा।',
                                 ],
                             ],
                             [
                                 'title' => 'Wolforix Step-Pro',
                                 'paragraphs' => [
-                                    'Phase 1',
-                                    'After passing all Trading Objectives in Phase 1, you will receive a notification confirming your success. At this point, no further trading is required, and your account will be reviewed.',
-                                    'The review process typically takes 1-2 business days. Once verified, you will receive access to the next phase.',
+                                    'चरण 1',
+                                    'चरण 1 में सभी ट्रेडिंग उद्देश्यों को पूरा करने के बाद, आपको सफलता की पुष्टि करने वाली सूचना मिलेगी। इस समय आगे ट्रेडिंग की आवश्यकता नहीं होती और आपके खाते की समीक्षा की जाएगी।',
+                                    'समीक्षा प्रक्रिया में आमतौर पर 1 से 2 कार्य दिवस लगते हैं। सत्यापन के बाद आपको अगले चरण का एक्सेस मिलेगा।',
                                 ],
                             ],
                             [
-                                'title' => 'Verification Phase',
+                                'title' => 'सत्यापन चरण',
                                 'paragraphs' => [
-                                    'After successfully completing all Trading Objectives in the Verification phase, your account will be set for final review.',
-                                    'Once your results are verified, the following steps are required:',
+                                    'सत्यापन चरण में सभी ट्रेडिंग उद्देश्यों को सफलतापूर्वक पूरा करने के बाद, आपका खाता अंतिम समीक्षा के लिए भेजा जाएगा।',
+                                    'आपके परिणाम सत्यापित होने के बाद निम्नलिखित चरण आवश्यक हैं:',
                                 ],
                                 'bullets' => [
-                                    'Complete your identity verification (KYC/KYB) in your client area',
-                                    'Sign the Wolforix Account Agreement',
-                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                    'अपने क्लाइंट क्षेत्र में पहचान सत्यापन (KYC/KYB) पूरा करें',
+                                    'Wolforix खाता समझौते पर हस्ताक्षर करें',
+                                    'सभी चरण सफलतापूर्वक पूरे होने के बाद आपका funded Wolforix खाता जारी किया जाएगा।',
                                 ],
                             ],
                         ],
@@ -1293,7 +1297,21 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Support / Contact',
+                'title' => 'ट्रायल खाता',
+                'items' => [
+                    [
+                        'question' => 'मैं अपना Wolforix ट्रायल खाता कैसे शुरू करूँ?',
+                        'answer_paragraphs' => [
+                            'Wolforix ट्रायल खाते के लिए पंजीकरण करने के बाद आपको निर्देशों वाली ईमेल मिलेगी।',
+                            'IC Markets पर डेमो पंजीकरण पूरा करने के लिए https://www.icmarkets.eu/de/open-trading-account/demo का उपयोग करें।',
+                            'अपनी जानकारी सबमिट करने के बाद आपको लॉगिन क्रेडेंशियल ईमेल से मिलेंगे। इन क्रेडेंशियल के साथ आप अपने डेमो खाते में प्रवेश कर सकते हैं और मुफ्त ट्रायल शुरू कर सकते हैं।',
+                            'यदि आपको सहायता चाहिए, तो support@wolforix.com पर संपर्क करें।',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'सपोर्ट / संपर्क',
                 'items' => [
                     [
                         'question' => 'मैं support से कैसे contact करूँ?',
@@ -1306,7 +1324,7 @@ return array_replace_recursive($en, [
                 ],
             ],
             [
-                'title' => 'Legal / Compliance',
+                'title' => 'कानूनी / अनुपालन',
                 'items' => [
                     [
                         'question' => 'क्या मुझे identity verify करनी होगी?',
@@ -1320,7 +1338,7 @@ return array_replace_recursive($en, [
                         ],
                         'answer_sections' => [
                             [
-                                'title' => 'Eligibility',
+                                'title' => 'पात्रता',
                                 'bullets' => [
                                     'Wolforix services use करके आप confirm करते हैं कि आप restricted jurisdiction के resident नहीं हैं।',
                                     'आप confirm करते हैं कि आप किसी applicable sanctions के subject नहीं हैं।',
@@ -1328,14 +1346,14 @@ return array_replace_recursive($en, [
                                 ],
                             ],
                             [
-                                'title' => 'Compliance',
+                                'title' => 'अनुपालन',
                                 'paragraphs' => [
                                     'Wolforix international regulations comply करता है, जिसमें anti-money laundering (AML) और counter-terrorism financing (CTF) policies शामिल हैं।',
                                     'Services का access country of residence, nationality, Stripe या PayPal जैसे payment provider limitations, या internal risk assessment के आधार पर restrict हो सकता है।',
                                 ],
                             ],
                             [
-                                'title' => 'Important Notice',
+                                'title' => 'महत्वपूर्ण सूचना',
                                 'bullets' => [
                                     'Wolforix अपने sole discretion पर किसी भी user का access restrict या deny कर सकता है।',
                                     'Wolforix किसी भी समय identity verification (KYC) request कर सकता है।',

@@ -83,7 +83,7 @@
             'badge' => 'Primary Entry',
             'title' => 'Start here',
             'description' => 'Discover Wolforix and stay connected',
-            'url' => 'https://www.instagram.com/wolforix?igsh=djA4NHZicW5oam96&utm_source=qr',
+            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
             'image' => asset($communityImages['instagram']),
             'primary' => true,
         ],

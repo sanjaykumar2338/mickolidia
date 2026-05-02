@@ -1424,6 +1424,20 @@ return [
                 ],
             ],
             [
+                'title' => 'Trial Account',
+                'items' => [
+                    [
+                        'question' => 'How do I start my Wolforix Trial Account?',
+                        'answer_paragraphs' => [
+                            'After you register for a Wolforix Trial Account, you will receive an email with instructions.',
+                            'Complete your demo registration with IC Markets at https://www.icmarkets.eu/de/open-trading-account/demo.',
+                            'After submitting your details, you will receive your login credentials by email. With these credentials, you can access your demo account and start your free trial.',
+                            'If you need assistance, contact us at support@wolforix.com.',
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'title' => 'Support / Contact',
                 'items' => [
                     [

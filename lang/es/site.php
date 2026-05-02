@@ -751,7 +751,7 @@ return [
         'no_results' => 'Ninguna FAQ coincide con esa búsqueda.',
         'sections' => [
             [
-                'title' => 'General',
+                'title' => 'Información general',
                 'items' => [
                     [
                         'question' => '¿Qué es Wolforix?',
@@ -792,9 +792,9 @@ return [
                                 'title' => 'Escritorio',
                                 'bullets' => [
                                     '1. Abre MT5.',
-                                    '2. File -> Login to Trade Account.',
+                                    '2. Archivo -> Iniciar sesión en cuenta de trading.',
                                     '3. Introduce tus datos de acceso.',
-                                    '4. Server: MetaQuotes-Demo.',
+                                    '4. Servidor: MetaQuotes-Demo.',
                                 ],
                             ],
                             [
@@ -855,7 +855,7 @@ return [
                         'question' => '¿Cómo puedo ver todos los instrumentos?',
                         'answer_sections' => [
                             [
-                                'title' => 'MT5 Market Watch',
+                                'title' => 'Observación de mercado MT5',
                                 'bullets' => [
                                     '1. Abre MT5.',
                                     '2. Ve a Market Watch.',
@@ -1135,7 +1135,7 @@ return [
                         'answer' => 'Wolforix prohíbe estrictamente las estrategias que explotan estructuras de riesgo o crean perfiles de rendimiento irreales, incluyendo duration abuse, grid trading y sistemas martingale.',
                         'answer_sections' => [
                             [
-                                'title' => 'Duration Abuse',
+                                'title' => 'Abuso de duración',
                                 'paragraphs' => [
                                     'Duration abuse consiste en abrir y cerrar operaciones sistemáticamente de una forma que evita la exposición de riesgo prevista o las reglas de trading, sin participación real en el mercado.',
                                     'Todas las operaciones deben reflejar exposición e intención reales de mercado, no manipulación de reglas.',
@@ -1147,7 +1147,7 @@ return [
                                 ],
                             ],
                             [
-                                'title' => 'Grid Trading',
+                                'title' => 'Trading en cuadrícula',
                                 'paragraphs' => [
                                     'Grid trading implica colocar múltiples órdenes pendientes o activas a intervalos fijos de precio, a menudo sin una lógica clara de stop-loss.',
                                 ],
@@ -1209,11 +1209,15 @@ return [
                 ],
             ],
             [
-                'title' => 'Payouts',
+                'title' => 'Retiros',
                 'items' => [
                     [
                         'question' => '¿Con qué frecuencia se procesan los payouts?',
-                        'answer' => 'Las comisiones se pagan bajo solicitud y están sujetas a revisión y aprobación por parte del Wolforix Partner Success Team. El primer payout es elegible después de 21 días, con payouts posteriores disponibles en ciclos recurrentes de 14 días. Una vez completado el ciclo requerido, los payouts se procesan en 24 horas. Para solicitar un payout, envía un email a support@wolforix.com cuando se alcance el umbral mínimo de retiro de $100.',
+                        'answer_paragraphs' => [
+                            'Las comisiones se pagan bajo solicitud y están sujetas a revisión y aprobación por parte del Wolforix Partner Success Team. El primer payout es elegible después de 21 días, con payouts posteriores disponibles en ciclos recurrentes de 14 días.',
+                            'Una vez completado el ciclo requerido, los payouts se procesan en 24 horas.',
+                            'Para solicitar un payout, envía un email a support@wolforix.com cuando se alcance el umbral mínimo de retiro de $100.',
+                        ],
                     ],
                     [
                         'question' => '¿Qué métodos de payout están disponibles?',
@@ -1371,50 +1375,64 @@ return [
                         'answer' => 'El botón de solicitud de payout está en tu dashboard. Las cuentas funded 1-Step deben cumplir la regla de consistencia obligatoria antes de que el beneficio sea elegible para payout.',
                     ],
                     [
-                        'question' => 'I have successfully passed, what should I do now?',
+                        'question' => 'He aprobado correctamente, ¿qué debo hacer ahora?',
                         'answer_paragraphs' => [
-                            'What happens next depends on whether you are participating in the Wolforix Step-1 Instant or Wolforix Step-Pro, as each program follows a slightly different structure. However, both include a Verification phase.',
+                            'Lo que sucede a continuación depende de si participas en Wolforix Step-1 Instant o Wolforix Step-Pro, ya que cada programa tiene una estructura ligeramente distinta. Sin embargo, ambos incluyen una fase de verificación.',
                         ],
                         'answer_sections' => [
                             [
                                 'title' => 'Wolforix Step-1 Instant',
                                 'paragraphs' => [
-                                    'After successfully passing all Trading Objectives in your Step-1 Instant account, you will receive a notification in your dashboard confirming that your objectives have been met and your account is under review.',
-                                    'The review process typically takes 1-2 business days. Once your results are verified, you will receive access to the Verification phase.',
+                                    'Después de cumplir correctamente todos los Objetivos de Trading en tu cuenta Step-1 Instant, recibirás una notificación en tu dashboard confirmando que los objetivos se han cumplido y que tu cuenta está en revisión.',
+                                    'El proceso de revisión suele tardar entre 1 y 2 días laborables. Una vez verificados tus resultados, recibirás acceso a la fase de verificación.',
                                 ],
                             ],
                             [
-                                'title' => 'Verification Phase',
+                                'title' => 'Fase de verificación',
                                 'paragraphs' => [
-                                    'After passing all Trading Objectives in the Verification phase, your account will again be reviewed.',
-                                    'Once your results are verified, the following steps are required:',
+                                    'Después de cumplir todos los Objetivos de Trading en la fase de verificación, tu cuenta volverá a ser revisada.',
+                                    'Una vez verificados tus resultados, se requieren los siguientes pasos:',
                                 ],
                                 'bullets' => [
-                                    'Complete your identity verification (KYC/KYB) in your client area',
-                                    'Sign the Wolforix Account Agreement',
-                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                    'Completa tu verificación de identidad (KYC/KYB) en tu área de cliente',
+                                    'Firma el Acuerdo de Cuenta de Wolforix',
+                                    'Una vez completados correctamente todos los pasos, se emitirá tu cuenta financiada de Wolforix.',
                                 ],
                             ],
                             [
                                 'title' => 'Wolforix Step-Pro',
                                 'paragraphs' => [
-                                    'Phase 1',
-                                    'After passing all Trading Objectives in Phase 1, you will receive a notification confirming your success. At this point, no further trading is required, and your account will be reviewed.',
-                                    'The review process typically takes 1-2 business days. Once verified, you will receive access to the next phase.',
+                                    'Fase 1',
+                                    'Después de cumplir todos los Objetivos de Trading en la Fase 1, recibirás una notificación confirmando tu éxito. En ese momento no se requiere más trading y tu cuenta será revisada.',
+                                    'El proceso de revisión suele tardar entre 1 y 2 días laborables. Una vez verificada, recibirás acceso a la siguiente fase.',
                                 ],
                             ],
                             [
-                                'title' => 'Verification Phase',
+                                'title' => 'Fase de verificación',
                                 'paragraphs' => [
-                                    'After successfully completing all Trading Objectives in the Verification phase, your account will be set for final review.',
-                                    'Once your results are verified, the following steps are required:',
+                                    'Después de completar correctamente todos los Objetivos de Trading en la fase de verificación, tu cuenta pasará a revisión final.',
+                                    'Una vez verificados tus resultados, se requieren los siguientes pasos:',
                                 ],
                                 'bullets' => [
-                                    'Complete your identity verification (KYC/KYB) in your client area',
-                                    'Sign the Wolforix Account Agreement',
-                                    'Once all steps are successfully completed, your funded Wolforix account will be issued.',
+                                    'Completa tu verificación de identidad (KYC/KYB) en tu área de cliente',
+                                    'Firma el Acuerdo de Cuenta de Wolforix',
+                                    'Una vez completados correctamente todos los pasos, se emitirá tu cuenta financiada de Wolforix.',
                                 ],
                             ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => 'Cuenta Trial',
+                'items' => [
+                    [
+                        'question' => '¿Cómo inicio mi Cuenta Trial de Wolforix?',
+                        'answer_paragraphs' => [
+                            'Después de registrarte para una Cuenta Trial de Wolforix, recibirás un email con las instrucciones.',
+                            'Completa tu registro demo en IC Markets usando https://www.icmarkets.eu/de/open-trading-account/demo.',
+                            'Cuando envíes tus datos, recibirás tus credenciales de acceso por email. Con esas credenciales podrás acceder a tu cuenta demo y comenzar la prueba gratuita.',
+                            'Si necesitas ayuda, contáctanos en support@wolforix.com.',
                         ],
                     ],
                 ],
@@ -1433,7 +1451,7 @@ return [
                 ],
             ],
             [
-                'title' => 'Legal / Compliance',
+                'title' => 'Legal / Cumplimiento',
                 'items' => [
                     [
                         'question' => '¿Necesito verificar mi identidad?',
@@ -1455,7 +1473,7 @@ return [
                                 ],
                             ],
                             [
-                                'title' => 'Compliance',
+                                'title' => 'Cumplimiento',
                                 'paragraphs' => [
                                     'Wolforix cumple regulaciones internacionales, incluidas políticas contra el lavado de dinero (AML) y financiación del terrorismo (CTF).',
                                     'El acceso a los servicios puede restringirse por país de residencia, nacionalidad, limitaciones de proveedores de pago como Stripe o PayPal, o evaluación interna de riesgo.',

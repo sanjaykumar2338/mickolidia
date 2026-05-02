@@ -243,7 +243,7 @@ return [
         ],
         'instagram' => [
             'label' => 'Instagram',
-            'url' => 'https://www.instagram.com/wolforix',
+            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
         ],
         'telegram' => [
             'label' => 'Telegram',
