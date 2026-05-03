@@ -10,10 +10,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -60,9 +62,22 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:255'],
         ]);
 
-        $status = Password::sendResetLink([
-            'email' => $validated['email'],
-        ]);
+        try {
+            $status = Password::sendResetLink([
+                'email' => $validated['email'],
+            ]);
+        } catch (TransportExceptionInterface $exception) {
+            Log::warning('Password reset email could not be sent.', [
+                'email' => $validated['email'],
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'email' => __('site.auth.passwords.status.mailer'),
+                ]);
+        }
 
         if ($status !== Password::RESET_LINK_SENT) {
             return back()

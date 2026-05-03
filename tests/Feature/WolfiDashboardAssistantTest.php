@@ -147,6 +147,25 @@ class WolfiDashboardAssistantTest extends TestCase
             ]);
     }
 
+    public function test_wolfi_hub_page_can_post_to_the_assistant_endpoint(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'challenge_status' => 'active',
+            'account_status' => 'active',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($account->user)
+            ->postJson(route('dashboard.wolfi.respond'), [
+                'message' => 'Explain my dashboard',
+                'page' => 'dashboard.wolfi',
+                'account_id' => $account->id,
+            ])
+            ->assertOk()
+            ->assertJsonPath('group', 'platform_guidance')
+            ->assertJsonPath('intent', 'platform_guidance');
+    }
+
     public function test_wolfi_endpoint_treats_max_drawdown_questions_as_rules(): void
     {
         $account = $this->createChallengeAccount('one_step', [
@@ -183,7 +202,7 @@ class WolfiDashboardAssistantTest extends TestCase
             ->assertOk()
             ->assertJsonPath('group', 'payouts')
             ->assertJsonPath('title', 'Payout timing and approval')
-            ->assertJsonPath('message', 'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, email support@wolforix.com once the minimum withdrawal threshold of $100 has been reached.')
+            ->assertJsonPath('message', 'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team. The first payout becomes eligible after 21 days, with subsequent payouts available in recurring 14-day cycles. Once the required cycle period has been completed, payouts are processed within 24 hours. To request a payout, please submit an email to support@wolforix.com once the minimum withdrawal threshold of $100 has been reached.')
             ->assertJsonFragment([
                 'label' => 'First payout',
                 'value' => '21 days',

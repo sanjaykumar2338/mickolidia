@@ -27,7 +27,9 @@
     $payoutCycleDays = (int) config('wolforix.challenge_models.one_step.funded.payout_cycle_days', 14);
     $voiceTtsAvailable = app(\App\Services\Voice\OpenAiTextToSpeechService::class)->isConfigured();
 
-    $faqVoiceIndex = app(\App\Support\PublicContentIndex::class)->voiceAssistantIndex($voiceLocales, $voiceLocaleMap);
+    $faqVoiceIndex = request()->routeIs('checkout.*')
+        ? []
+        : app(\App\Support\PublicContentIndex::class)->voiceAssistantIndex($voiceLocales, $voiceLocaleMap);
 
     foreach ($voiceLocales as $voiceLocale) {
         $faqVoiceIndex = [

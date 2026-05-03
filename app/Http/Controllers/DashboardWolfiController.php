@@ -14,7 +14,7 @@ class DashboardWolfiController extends Controller
     {
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:500'],
-            'page' => ['nullable', 'string', 'in:dashboard,dashboard.accounts,dashboard.payouts,dashboard.settings,dashboard.wolfi.voices'],
+            'page' => ['nullable', 'string', 'in:dashboard,dashboard.accounts,dashboard.payouts,dashboard.settings,dashboard.wolfi,dashboard.wolfi.voices'],
             'account_id' => ['nullable', 'integer'],
         ]);
 

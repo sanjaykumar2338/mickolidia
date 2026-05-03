@@ -13,12 +13,22 @@
                 <div class="mt-8 surface-card rounded-[2rem] p-6">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.trial.register.what_you_get_title') }}</p>
                     <ul class="mt-5 space-y-3 text-sm text-slate-300">
-                        <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.balance_line', ['amount' => '$'.number_format($startingBalance, 0)]) }}</li>
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.take_profit_line', ['percent' => $displayRules['profit_target'] ?? 8]) }}</li>
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.minimum_days_line', ['days' => $displayRules['minimum_trading_days'] ?? 3]) }}</li>
-                        <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.markets_line', ['markets' => implode(', ', $allowedSymbols)]) }}</li>
                         <li class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">{{ __('site.trial.register.restrictions_line') }}</li>
                     </ul>
+                </div>
+
+                <div class="mt-6 surface-panel rounded-[2rem] p-6">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">{{ __('site.trial.setup.process_label') }}</p>
+                    <div class="mt-5 space-y-4">
+                        @foreach (trans('site.trial.setup.steps') as $step)
+                            <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-4">
+                                <p class="text-sm font-semibold text-white">{{ $step['title'] }}</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-300">{{ $step['body'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -62,6 +72,10 @@
                     <button type="submit" class="primary-cta w-full rounded-full px-8 py-4 text-base font-semibold">
                         {{ __('site.trial.register.submit') }}
                     </button>
+
+                    <a href="{{ route('password.request') }}" class="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-semibold text-white transition hover:border-white/20 hover:bg-white/[0.07]">
+                        {{ __('site.trial.register.recover_password') }}
+                    </a>
                 </form>
             </div>
         </div>

@@ -866,22 +866,70 @@ h6 {
 }
 
 .launch-popup-card {
-    width: min(100%, 43rem);
-    max-height: calc(100vh - 3rem);
-    overflow-x: hidden;
-    overflow-y: auto;
+    box-sizing: border-box;
+    width: min(calc(100vw - 2rem), 43rem);
+    max-width: 100%;
     animation: popupRise 0.35s ease-out both;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
 }
 
-.launch-popup-card::-webkit-scrollbar {
-    width: 0.45rem;
+.popup-container {
+    position: relative;
+    z-index: 10;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-height: 90vh;
+    padding: 24px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: url('/background-popup.png') center center / cover no-repeat;
 }
 
-.launch-popup-card::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: rgba(148, 163, 184, 0.35);
+.popup-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        rgba(0, 0, 0, 0.65),
+        rgba(0, 0, 0, 0.85)
+    );
+    backdrop-filter: blur(4px);
+}
+
+.popup-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+.launch-popup-title,
+.launch-popup-copy {
+    text-wrap: balance;
+}
+
+.launch-popup-title {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .popup-container {
+        padding: 18px;
+    }
+
+    .popup-content {
+        gap: 1rem;
+    }
+
+    .launch-popup-title {
+        font-size: 1.5rem;
+        line-height: 1.16;
+    }
+
+    .launch-popup-copy {
+        line-height: 1.55;
+    }
 }
 
 .challenge-currency-strip {

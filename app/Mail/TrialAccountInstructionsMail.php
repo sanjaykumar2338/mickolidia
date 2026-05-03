@@ -15,10 +15,11 @@ class TrialAccountInstructionsMail extends Mailable
     use Queueable, SerializesModels;
     use UsesAutomatedSender;
 
-    public string $demoRegistrationUrl = 'https://www.icmarkets.eu/de/open-trading-account/demo';
+    public string $demoRegistrationUrl;
 
     public function __construct(public User $user)
     {
+        $this->demoRegistrationUrl = (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/de/open-trading-account/demo');
     }
 
     public function envelope(): Envelope

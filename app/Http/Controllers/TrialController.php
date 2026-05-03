@@ -32,9 +32,8 @@ class TrialController extends Controller
         $request->session()->put('url.intended', route('trial.register'));
 
         return view('trial.register', [
-            'startingBalance' => (float) config('wolforix.trial.starting_balance', 10000),
-            'allowedSymbols' => config('wolforix.trial.allowed_symbols', []),
             'displayRules' => config('wolforix.trial.display_rules', []),
+            'demoRegistrationUrl' => $this->demoRegistrationUrl(),
         ]);
     }
 
@@ -93,8 +92,67 @@ class TrialController extends Controller
         $request->session()->put('trial_user_id', $user->id);
 
         return redirect()
-            ->route('trial.dashboard')
+            ->route('trial.setup')
             ->with('trial_success', __('site.trial.register.success'));
+    }
+
+    public function setup(Request $request): View|RedirectResponse
+    {
+        $user = $request->user();
+        $trialAccount = $this->latestTrialAccount($user);
+
+        if (! $trialAccount instanceof TradingAccount) {
+            return redirect()->route('trial.register');
+        }
+
+        if (! $this->requiresTrialDemoConfirmation($trialAccount)) {
+            return redirect()->route('trial.dashboard');
+        }
+
+        return view('trial.setup', [
+            'trialAccount' => $trialAccount,
+            'demoRegistrationUrl' => $this->demoRegistrationUrl(),
+        ]);
+    }
+
+    public function confirmDemo(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $trialAccount = $this->latestTrialAccount($user);
+
+        if (! $trialAccount instanceof TradingAccount) {
+            return redirect()->route('trial.register');
+        }
+
+        if (! $this->requiresTrialDemoConfirmation($trialAccount)) {
+            return redirect()->route('trial.dashboard');
+        }
+
+        $validated = $request->validate([
+            'mt5_account_number' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._-]+$/'],
+        ]);
+
+        $mt5AccountNumber = trim((string) $validated['mt5_account_number']);
+        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+
+        $trialAccount->forceFill([
+            'platform' => 'MT5 Demo',
+            'platform_slug' => 'mt5',
+            'platform_account_id' => $mt5AccountNumber,
+            'platform_login' => $mt5AccountNumber,
+            'platform_environment' => 'IC Markets Demo',
+            'platform_status' => 'confirmed',
+            'meta' => array_merge($meta, [
+                'demo_broker' => 'IC Markets',
+                'demo_registration_url' => $this->demoRegistrationUrl(),
+                'trial_demo_confirmed_at' => now()->toIso8601String(),
+                'trial_onboarding_step' => 'dashboard_access',
+            ]),
+        ])->save();
+
+        return redirect()
+            ->route('trial.dashboard')
+            ->with('trial_success', __('site.trial.setup.confirm_success'));
     }
 
     public function dashboard(Request $request): View|RedirectResponse
@@ -104,6 +162,10 @@ class TrialController extends Controller
 
         if (! $trialAccount instanceof TradingAccount) {
             return redirect()->route('trial.register');
+        }
+
+        if ($this->requiresTrialDemoConfirmation($trialAccount)) {
+            return redirect()->route('trial.setup');
         }
 
         $this->markLastActivity($trialAccount);
@@ -125,9 +187,7 @@ class TrialController extends Controller
             'trialEnded' => $trialEnded,
             'trialStatus' => $trialStatus,
             'milestoneMessage' => $milestoneMessage,
-            'allowedSymbols' => $trialAccount->allowed_symbols ?? config('wolforix.trial.allowed_symbols', []),
             'displayRules' => config('wolforix.trial.display_rules', []),
-            'startingBalance' => (float) $trialAccount->starting_balance,
         ]);
     }
 
@@ -149,7 +209,7 @@ class TrialController extends Controller
         });
 
         return redirect()
-            ->route('trial.dashboard')
+            ->route('trial.setup')
             ->with('trial_success', __('site.trial.retry.success'));
     }
 
@@ -165,7 +225,9 @@ class TrialController extends Controller
         $trialAccount = $this->latestTrialAccount($user);
 
         if ($trialAccount instanceof TradingAccount) {
-            return redirect()->route('trial.dashboard');
+            return redirect()->route(
+                $this->requiresTrialDemoConfirmation($trialAccount) ? 'trial.setup' : 'trial.dashboard'
+            );
         }
 
         DB::transaction(function () use ($user): void {
@@ -179,7 +241,7 @@ class TrialController extends Controller
         });
 
         return redirect()
-            ->route('trial.dashboard')
+            ->route('trial.setup')
             ->with('trial_success', __('site.trial.register.success'));
     }
 
@@ -204,7 +266,10 @@ class TrialController extends Controller
             'user_id' => $user->id,
             'challenge_plan_id' => null,
             'account_reference' => 'WFX-TRIAL-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(5)),
-            'platform' => 'cTrader Demo',
+            'platform' => 'MT5 Demo',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'IC Markets Demo',
+            'platform_status' => 'pending_confirmation',
             'stage' => config('wolforix.trial.account_type', 'Trial (Demo)'),
             'status' => 'Active',
             'account_status' => 'active',
@@ -237,12 +302,37 @@ class TrialController extends Controller
             'meta' => [
                 'source' => 'free-trial-registration',
                 'execution_profile' => 'challenge-matched-demo',
+                'demo_broker' => 'IC Markets',
+                'demo_registration_url' => $this->demoRegistrationUrl(),
+                'trial_onboarding_step' => 'demo_pending',
             ],
         ]);
 
         rescue(fn () => Mail::to($user->email)->send(new TrialAccountInstructionsMail($user)));
 
         return $trialAccount;
+    }
+
+    private function demoRegistrationUrl(): string
+    {
+        return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/de/open-trading-account/demo');
+    }
+
+    private function requiresTrialDemoConfirmation(TradingAccount $trialAccount): bool
+    {
+        if ($this->resolveTrialOutcome($trialAccount) !== 'active') {
+            return false;
+        }
+
+        return ! $this->trialDemoConfirmed($trialAccount);
+    }
+
+    private function trialDemoConfirmed(TradingAccount $trialAccount): bool
+    {
+        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+
+        return filled($trialAccount->platform_account_id)
+            || filled(data_get($meta, 'trial_demo_confirmed_at'));
     }
 
     private function markLastActivity(TradingAccount $trialAccount): void

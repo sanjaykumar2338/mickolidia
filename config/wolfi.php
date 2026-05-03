@@ -3,6 +3,7 @@
 $images = [
     'homepage' => 'new-wolfy.webp',
     'homepage_right' => 'new-wolfy.webp',
+    'checkout' => 'wolfy-mobile.webp',
     'dashboard' => 'new-wolfy.webp',
     'talk' => 'new-wolfy.webp',
     'shortcut' => 'new-wolfy.webp',

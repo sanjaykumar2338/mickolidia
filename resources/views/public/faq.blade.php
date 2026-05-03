@@ -1,7 +1,19 @@
 @extends('layouts.public')
 
 @php
+    use Illuminate\Support\HtmlString;
     use Illuminate\Support\Str;
+
+    $renderFaqText = static function (string $text): HtmlString {
+        $escaped = e($text);
+        $linked = preg_replace(
+            '/support@wolforix\.com/i',
+            '<a href="mailto:support@wolforix.com" class="font-semibold text-amber-200 underline decoration-amber-300/40 underline-offset-4">support@wolforix.com</a>',
+            $escaped,
+        );
+
+        return new HtmlString($linked ?? $escaped);
+    };
 
     $faqSearchText = static function (array $item): string {
         $segments = [
@@ -76,13 +88,13 @@
                                     </summary>
 
                                     @if (! empty($item['answer']))
-                                        <p class="mt-4 text-sm leading-7 text-slate-300">{{ $item['answer'] }}</p>
+                                        <p class="mt-4 text-sm leading-7 text-slate-300">{!! $renderFaqText((string) $item['answer']) !!}</p>
                                     @endif
 
                                     @if (! empty($item['answer_paragraphs']))
                                         <div class="mt-4 space-y-4 text-sm leading-7 text-slate-300">
                                             @foreach ($item['answer_paragraphs'] as $paragraph)
-                                                <p>{{ $paragraph }}</p>
+                                                <p>{!! $renderFaqText((string) $paragraph) !!}</p>
                                             @endforeach
                                         </div>
                                     @endif
@@ -96,7 +108,7 @@
                                                     @if (! empty($sectionContent['paragraphs']))
                                                         <div class="mt-3 space-y-3 text-sm leading-7 text-slate-300">
                                                             @foreach ($sectionContent['paragraphs'] as $paragraph)
-                                                                <p>{{ $paragraph }}</p>
+                                                                <p>{!! $renderFaqText((string) $paragraph) !!}</p>
                                                             @endforeach
                                                         </div>
                                                     @endif
@@ -104,7 +116,7 @@
                                                     @if (! empty($sectionContent['bullets']))
                                                         <ul class="mt-3 space-y-2 text-sm leading-7 text-slate-300">
                                                             @foreach ($sectionContent['bullets'] as $bullet)
-                                                                <li class="rounded-xl border border-white/6 bg-white/3 px-3 py-2">{{ $bullet }}</li>
+                                                                <li class="rounded-xl border border-white/6 bg-white/3 px-3 py-2">{!! $renderFaqText((string) $bullet) !!}</li>
                                                             @endforeach
                                                         </ul>
                                                     @endif

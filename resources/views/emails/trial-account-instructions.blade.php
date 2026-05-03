@@ -3,8 +3,8 @@
     :title="__('Your Wolforix Trial Account')"
     :primary-url="$demoRegistrationUrl"
     :primary-label="__('Open Demo Registration')"
-    :secondary-url="route('trial.dashboard')"
-    :secondary-label="__('Open Trial Dashboard')"
+    :secondary-url="route('trial.setup')"
+    :secondary-label="__('Continue Trial Setup')"
 >
     <x-slot:intro>
         Hello,<br><br>

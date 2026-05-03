@@ -2,7 +2,7 @@
     $assistantQuestions = trans('site.ai_assistant.example_questions');
     $supportEmail = config('wolforix.support.email');
     $isCheckout = request()->routeIs('checkout.*');
-    $homepageWolfiImage = asset((string) config('wolfi.images.homepage'));
+    $homepageWolfiImage = asset((string) config($isCheckout ? 'wolfi.images.checkout' : 'wolfi.images.homepage'));
     $homepageWolfiRightImage = asset((string) config('wolfi.images.homepage_right', config('wolfi.images.homepage')));
     $isHomepage = request()->routeIs('home');
 @endphp

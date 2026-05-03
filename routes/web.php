@@ -98,6 +98,8 @@ Route::prefix('dashboard/wolfi')->middleware('admin.basic')->group(function (): 
 });
 
 Route::middleware('trial.session')->prefix('trial')->group(function (): void {
+    Route::get('/setup', [TrialController::class, 'setup'])->name('trial.setup');
+    Route::post('/confirm-demo', [TrialController::class, 'confirmDemo'])->name('trial.confirm-demo');
     Route::get('/dashboard', [TrialController::class, 'dashboard'])->name('trial.dashboard');
     Route::post('/retry', [TrialController::class, 'retry'])->name('trial.retry');
 });

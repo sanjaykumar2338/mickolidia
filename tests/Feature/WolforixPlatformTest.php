@@ -1903,6 +1903,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('What payout methods are available?')
             ->assertSee('Bank Transfer (via Stripe infrastructure, depending on region)')
             ->assertSee('Requests are typically reviewed within 1–3 business days.')
+            ->assertSee('mailto:support@wolforix.com', false)
             ->assertSee('How does the account scaling plan work?')
             ->assertSee('Scaling updates are applied at the end of each trading day.')
             ->assertSee('Any attempt to bypass or manipulate the scaling system is strictly prohibited.')
@@ -1933,12 +1934,12 @@ class WolforixPlatformTest extends TestCase
     public function test_translated_faq_locales_include_the_new_policy_content(): void
     {
         $expectedByLocale = [
-            'de' => ['Welche Plattform verwendet Wolforix?', 'Wie oft werden Auszahlungen verarbeitet?', 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'Wie starte ich mein Wolforix-Testkonto?', 'Wie sehe ich meinen Gewinn und Kontostand?'],
-            'es' => ['¿Qué plataforma utiliza Wolforix?', '¿Con qué frecuencia se procesan los payouts?', 'He aprobado correctamente, ¿qué debo hacer ahora?', '¿Cómo inicio mi Cuenta Trial de Wolforix?', '¿Cómo veo mi beneficio y balance?'],
-            'fr' => ['Quelle plateforme Wolforix utilise-t-il ?', 'À quelle fréquence les payouts sont-ils traités ?', 'J’ai réussi, que dois-je faire maintenant ?', 'Comment démarrer mon compte Trial Wolforix ?', 'Comment voir mon profit et mon solde ?'],
-            'hi' => ['Wolforix कौन सा platform use करता है?', 'पेआउट कितनी बार प्रोसेस होते हैं?', 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'मैं अपना Wolforix ट्रायल खाता कैसे शुरू करूँ?', 'मैं अपना profit और balance कैसे देखूँ?'],
-            'it' => ['Quale piattaforma usa Wolforix?', 'Ogni quanto vengono elaborati i payout?', 'Ho superato con successo, cosa devo fare ora?', 'Come avvio il mio Account Trial Wolforix?', 'Come vedo profitto e saldo?'],
-            'pt' => ['Que plataforma usa a Wolforix?', 'Com que frequência são processados os payouts?', 'Passei com sucesso, o que devo fazer agora?', 'Como inicio a minha Conta Trial Wolforix?', 'Como vejo o meu lucro e saldo?'],
+            'de' => ['Welche Plattform verwendet Wolforix?', 'Wie oft werden Auszahlungen verarbeitet?', 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'Wie funktioniert es?', 'Wie sehe ich meinen Gewinn und Kontostand?'],
+            'es' => ['¿Qué plataforma utiliza Wolforix?', '¿Con qué frecuencia se procesan los payouts?', 'He aprobado correctamente, ¿qué debo hacer ahora?', '¿Cómo funciona?', '¿Cómo veo mi beneficio y balance?'],
+            'fr' => ['Quelle plateforme Wolforix utilise-t-il ?', 'À quelle fréquence les payouts sont-ils traités ?', 'J’ai réussi, que dois-je faire maintenant ?', 'Comment ça fonctionne ?', 'Comment voir mon profit et mon solde ?'],
+            'hi' => ['Wolforix कौन सा platform use करता है?', 'पेआउट कितनी बार प्रोसेस होते हैं?', 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'यह कैसे काम करता है?', 'मैं अपना profit और balance कैसे देखूँ?'],
+            'it' => ['Quale piattaforma usa Wolforix?', 'Ogni quanto vengono elaborati i payout?', 'Ho superato con successo, cosa devo fare ora?', 'Come funziona?', 'Come vedo profitto e saldo?'],
+            'pt' => ['Que plataforma usa a Wolforix?', 'Com que frequência são processados os payouts?', 'Passei com sucesso, o que devo fazer agora?', 'Como funciona?', 'Como vejo o meu lucro e saldo?'],
         ];
 
         foreach ($expectedByLocale as $locale => $expectedStrings) {
@@ -2023,12 +2024,12 @@ class WolforixPlatformTest extends TestCase
     {
         $contentIndex = app(PublicContentIndex::class);
         $expectations = [
-            'de' => ['passed' => 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'trial' => 'Wie starte ich mein Wolforix-Testkonto?', 'payout' => 'Wie oft werden Auszahlungen verarbeitet?'],
-            'es' => ['passed' => 'He aprobado correctamente, ¿qué debo hacer ahora?', 'trial' => '¿Cómo inicio mi Cuenta Trial de Wolforix?', 'payout' => '¿Con qué frecuencia se procesan los payouts?'],
-            'fr' => ['passed' => 'J’ai réussi, que dois-je faire maintenant ?', 'trial' => 'Comment démarrer mon compte Trial Wolforix ?', 'payout' => 'À quelle fréquence les payouts sont-ils traités ?'],
-            'hi' => ['passed' => 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'trial' => 'मैं अपना Wolforix ट्रायल खाता कैसे शुरू करूँ?', 'payout' => 'पेआउट कितनी बार प्रोसेस होते हैं?'],
-            'it' => ['passed' => 'Ho superato con successo, cosa devo fare ora?', 'trial' => 'Come avvio il mio Account Trial Wolforix?', 'payout' => 'Ogni quanto vengono elaborati i payout?'],
-            'pt' => ['passed' => 'Passei com sucesso, o que devo fazer agora?', 'trial' => 'Como inicio a minha Conta Trial Wolforix?', 'payout' => 'Com que frequência são processados os payouts?'],
+            'de' => ['passed' => 'Ich habe erfolgreich bestanden. Was soll ich jetzt tun?', 'trial' => 'Wie funktioniert es?', 'payout' => 'Wie oft werden Auszahlungen verarbeitet?'],
+            'es' => ['passed' => 'He aprobado correctamente, ¿qué debo hacer ahora?', 'trial' => '¿Cómo funciona?', 'payout' => '¿Con qué frecuencia se procesan los payouts?'],
+            'fr' => ['passed' => 'J’ai réussi, que dois-je faire maintenant ?', 'trial' => 'Comment ça fonctionne ?', 'payout' => 'À quelle fréquence les payouts sont-ils traités ?'],
+            'hi' => ['passed' => 'सफलतापूर्वक पास होने के बाद मुझे क्या करना चाहिए?', 'trial' => 'यह कैसे काम करता है?', 'payout' => 'पेआउट कितनी बार प्रोसेस होते हैं?'],
+            'it' => ['passed' => 'Ho superato con successo, cosa devo fare ora?', 'trial' => 'Come funziona?', 'payout' => 'Ogni quanto vengono elaborati i payout?'],
+            'pt' => ['passed' => 'Passei com sucesso, o que devo fazer agora?', 'trial' => 'Como funciona?', 'payout' => 'Com que frequência são processados os payouts?'],
         ];
 
         foreach ($expectations as $locale => $strings) {
@@ -2070,8 +2071,10 @@ class WolforixPlatformTest extends TestCase
             'Commissions are paid upon request and are subject to review and approval by the Wolforix Partner Success Team.',
             'I have successfully passed, what should I do now?',
             'Complete your identity verification (KYC/KYB) in your client area',
-            'How do I start my Wolforix Trial Account?',
-            'Complete your demo registration with IC Markets at https://www.icmarkets.eu/de/open-trading-account/demo.',
+            'How is working?',
+            'Open your MT5 demo account with IC Markets using the button in the trial setup screen.',
+            'enter your MT5 account number',
+            'I already have my Demo Account',
         ];
 
         $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);
@@ -3216,9 +3219,11 @@ class WolforixPlatformTest extends TestCase
             ->where('is_trial', true)
             ->first();
 
-        $response->assertRedirect(route('trial.dashboard'));
+        $response->assertRedirect(route('trial.setup'));
         $this->assertNotNull($trialAccount);
         $this->assertSame('trial', $trialAccount->account_type);
+        $this->assertSame('MT5 Demo', $trialAccount->platform);
+        $this->assertSame('mt5', $trialAccount->platform_slug);
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
         $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
         Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
@@ -3231,18 +3236,46 @@ class WolforixPlatformTest extends TestCase
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.dashboard'))
+            ->assertRedirect(route('trial.setup'));
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.setup'))
+            ->assertOk()
+            ->assertSee('Open Demo Account')
+            ->assertSee('Enter your MT5 Account Number to continue.')
+            ->assertSee('I already have my Demo Account');
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->post(route('trial.confirm-demo'), [
+                'mt5_account_number' => '105381073',
+            ])
+            ->assertRedirect(route('trial.dashboard'));
+
+        $trialAccount->refresh();
+        $this->assertSame('105381073', $trialAccount->platform_account_id);
+        $this->assertSame('105381073', $trialAccount->platform_login);
+        $this->assertSame('confirmed', $trialAccount->platform_status);
+        $this->assertNotEmpty($trialAccount->meta['trial_demo_confirmed_at'] ?? null);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.dashboard'))
             ->assertOk()
             ->assertSee('This is a Trial Account.')
             ->assertSee('Take Profit')
             ->assertSeeInOrder([
-                'Starting Balance',
                 'Take Profit',
                 'Daily Drawdown Limit',
                 'Max Drawdown Limit',
             ])
             ->assertSee('Minimum Trading Days')
             ->assertSee('No withdrawals')
-            ->assertSee('XAU/USD');
+            ->assertDontSee('Starting Balance')
+            ->assertDontSee('Available Markets')
+            ->assertDontSee('XAU/USD')
+            ->assertDontSee('$10,000');
     }
 
     public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void
@@ -3261,7 +3294,7 @@ class WolforixPlatformTest extends TestCase
         ]);
 
         $response
-            ->assertRedirect(route('trial.dashboard'))
+            ->assertRedirect(route('trial.setup'))
             ->assertSessionHas('trial_user_id', $user->id);
 
         $this->assertAuthenticatedAs($user->fresh());
@@ -3284,7 +3317,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('trial.register'))
-            ->assertRedirect(route('trial.dashboard'))
+            ->assertRedirect(route('trial.setup'))
             ->assertSessionHas('trial_user_id', $user->id);
 
         $trialAccount = TradingAccount::query()
@@ -3304,7 +3337,12 @@ class WolforixPlatformTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $this->get(route('trial.register'))->assertOk();
+        $this->get(route('trial.register'))
+            ->assertOk()
+            ->assertSee('Recover Password')
+            ->assertSee(route('password.request'), false)
+            ->assertDontSee('Demo balance:')
+            ->assertDontSee('Available markets:');
 
         $this->post(route('login.store'), [
             'login_email' => $user->email,
@@ -3314,7 +3352,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertAuthenticatedAs($user);
 
         $this->get(route('trial.register'))
-            ->assertRedirect(route('trial.dashboard'))
+            ->assertRedirect(route('trial.setup'))
             ->assertSessionHas('trial_user_id', $user->id);
 
         $this->assertDatabaseHas('trading_accounts', [
@@ -3520,7 +3558,7 @@ class WolforixPlatformTest extends TestCase
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->post(route('trial.retry'))
-            ->assertRedirect(route('trial.dashboard'));
+            ->assertRedirect(route('trial.setup'));
 
         $this->assertCount(2, TradingAccount::query()->where('user_id', $user->id)->where('is_trial', true)->get());
         $this->assertNotNull($trialAccount->fresh()->ended_at);
