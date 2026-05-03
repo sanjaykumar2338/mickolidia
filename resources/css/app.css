@@ -883,7 +883,7 @@ h6 {
     padding: 24px;
     overflow: hidden;
     border-radius: 20px;
-    background: url('/background-popup.png') center center / cover no-repeat;
+    background: #020617;
 }
 
 .popup-container::before {
@@ -891,11 +891,19 @@ h6 {
     position: absolute;
     inset: 0;
     z-index: 1;
-    background: linear-gradient(
-        rgba(0, 0, 0, 0.65),
-        rgba(0, 0, 0, 0.85)
-    );
-    backdrop-filter: blur(4px);
+    background: url('/background-popup.png') center center / cover no-repeat;
+    filter: saturate(1.1) contrast(1.05);
+}
+
+.popup-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(15, 23, 42, 0.18), transparent 35%),
+        linear-gradient(180deg, rgba(2, 6, 23, 0.28) 0%, rgba(2, 6, 23, 0.52) 46%, rgba(2, 6, 23, 0.74) 100%),
+        linear-gradient(90deg, rgba(2, 6, 23, 0.5) 0%, rgba(2, 6, 23, 0.18) 35%, rgba(2, 6, 23, 0.42) 100%);
 }
 
 .popup-content {
