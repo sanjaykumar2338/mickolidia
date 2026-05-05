@@ -5,7 +5,9 @@ namespace App\Services\Mt5;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\Mt5PromoCode;
 use App\Models\TradingAccount;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class Mt5AccountAllocator
@@ -18,7 +20,11 @@ class Mt5AccountAllocator
             ->first();
 
         if ($existingAllocation instanceof Mt5AccountPoolEntry) {
-            $this->hydrateAccount($account, $existingAllocation);
+            try {
+                $this->hydrateAccount($account, $existingAllocation, $this->credentialsFor($existingAllocation));
+            } catch (DecryptException $exception) {
+                $this->reportInvalidCredentials($existingAllocation, $exception);
+            }
 
             return $existingAllocation;
         }
@@ -27,8 +33,7 @@ class Mt5AccountAllocator
             return null;
         }
 
-        /** @var Mt5AccountPoolEntry|null $entry */
-        $entry = Mt5AccountPoolEntry::query()
+        $entries = Mt5AccountPoolEntry::query()
             ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
             ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo30.04.ods')))
             ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
@@ -41,22 +46,30 @@ class Mt5AccountAllocator
             ->orderBy('source_created_at')
             ->orderBy('id')
             ->lockForUpdate()
-            ->first();
+            ->get();
 
-        if (! $entry instanceof Mt5AccountPoolEntry) {
-            return null;
+        foreach ($entries as $entry) {
+            try {
+                $credentials = $this->credentialsFor($entry);
+            } catch (DecryptException $exception) {
+                $this->reportInvalidCredentials($entry, $exception);
+
+                continue;
+            }
+
+            $entry->forceFill([
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'allocated_at' => now(),
+                'is_available' => false,
+            ])->save();
+
+            $this->hydrateAccount($account, $entry, $credentials);
+
+            return $entry;
         }
 
-        $entry->forceFill([
-            'allocated_trading_account_id' => $account->id,
-            'allocated_user_id' => $account->user_id,
-            'allocated_at' => now(),
-            'is_available' => false,
-        ])->save();
-
-        $this->hydrateAccount($account, $entry);
-
-        return $entry;
+        return null;
     }
 
     public function allocatePromo(TradingAccount $account, Mt5PromoCode $promoCode): Mt5AccountPoolEntry
@@ -92,7 +105,7 @@ class Mt5AccountAllocator
             'is_available' => false,
         ])->save();
 
-        $this->hydrateAccount($account, $entry);
+        $this->hydrateAccount($account, $entry, $this->credentialsFor($entry));
 
         $lockedPromoCode->forceFill([
             'used_at' => now(),
@@ -104,19 +117,22 @@ class Mt5AccountAllocator
         return $entry;
     }
 
-    private function hydrateAccount(TradingAccount $account, Mt5AccountPoolEntry $entry): void
+    /**
+     * @param  array{password: string|null, investor_password: string|null}  $entryCredentials
+     */
+    private function hydrateAccount(TradingAccount $account, Mt5AccountPoolEntry $entry, array $entryCredentials): void
     {
         $meta = is_array($account->meta) ? $account->meta : [];
         $credentials = is_array(Arr::get($meta, 'credentials')) ? Arr::get($meta, 'credentials') : [];
 
         $credentials['server'] = $entry->server;
         $credentials['mt5_server'] = $entry->server;
-        $credentials['password'] = $entry->password;
-        $credentials['trading_password'] = $entry->password;
+        $credentials['password'] = $entryCredentials['password'];
+        $credentials['trading_password'] = $entryCredentials['password'];
 
-        if (filled($entry->investor_password)) {
-            $credentials['investor_password'] = $entry->investor_password;
-            $credentials['readonly_password'] = $entry->investor_password;
+        if (filled($entryCredentials['investor_password'])) {
+            $credentials['investor_password'] = $entryCredentials['investor_password'];
+            $credentials['readonly_password'] = $entryCredentials['investor_password'];
         }
 
         $credentials['last_updated_at'] = now()->toIso8601String();
@@ -153,6 +169,29 @@ class Mt5AccountAllocator
             'platform_status' => $account->last_synced_at ? 'connected' : 'waiting_for_first_sync',
             'meta' => $meta,
         ])->save();
+    }
+
+    /**
+     * @return array{password: string|null, investor_password: string|null}
+     */
+    private function credentialsFor(Mt5AccountPoolEntry $entry): array
+    {
+        return [
+            'password' => $entry->password,
+            'investor_password' => $entry->investor_password,
+        ];
+    }
+
+    private function reportInvalidCredentials(Mt5AccountPoolEntry $entry, DecryptException $exception): void
+    {
+        Log::warning('MT5 account pool entry credentials could not be decrypted.', [
+            'mt5_account_pool_entry_id' => $entry->id,
+            'login' => $entry->login,
+            'source_pool' => $entry->source_pool,
+            'source_file' => $entry->source_file,
+            'account_size' => $entry->account_size,
+            'exception' => $exception::class,
+        ]);
     }
 
     private function hasManualCredentials(TradingAccount $account): bool

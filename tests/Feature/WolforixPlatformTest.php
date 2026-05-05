@@ -5,12 +5,11 @@ namespace Tests\Feature;
 use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\ChallengePurchaseSupportNotificationMail;
-use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\TrialAccountInstructionsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
+use App\Mail\TrustpilotReviewRequestMail;
 use App\Mail\WelcomeMail;
-use App\Notifications\WolforixResetPasswordNotification;
 use App\Models\ChallengePlan;
 use App\Models\ChallengePurchase;
 use App\Models\Invoice;
@@ -21,11 +20,13 @@ use App\Models\PaymentAttempt;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Notifications\WolforixResetPasswordNotification;
 use App\Services\Pricing\ChallengePricingService;
 use App\Support\PublicContentIndex;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -1321,6 +1322,90 @@ class WolforixPlatformTest extends TestCase
         Mail::assertSent(ChallengePurchaseConfirmationMail::class, 1);
         Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
         Mail::assertSent(ChallengePurchaseSupportNotificationMail::class, 1);
+    }
+
+    public function test_checkout_success_skips_mt5_pool_entries_with_invalid_encrypted_credentials(): void
+    {
+        $this->useFakeStripeGateway();
+        Mail::fake();
+        Storage::fake('public');
+
+        $user = User::factory()->create([
+            'email' => 'account-owner@example.com',
+        ]);
+
+        $badPoolEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335410',
+            'password' => 'bad-trading-pass',
+            'investor_password' => 'bad-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 25000,
+            'source_created_at' => now()->subDays(2),
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_available' => true,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $badPoolEntry->id)
+            ->update([
+                'password' => 'not-a-valid-laravel-encrypted-value',
+            ]);
+
+        $goodPoolEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335411',
+            'password' => 'fusion-trading-pass',
+            'investor_password' => 'fusion-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 25000,
+            'source_created_at' => now()->subDay(),
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_available' => true,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Paid Trader',
+            'email' => 'billing-paid@example.com',
+            'street_address' => '2 Trade Street',
+            'city' => 'London',
+            'postal_code' => 'E17 3NU',
+            'country' => 'GB',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+            ->assertOk()
+            ->assertSee('Challenge order confirmed');
+
+        $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $badPoolEntry->refresh();
+        $goodPoolEntry->refresh();
+
+        $this->assertSame('335411', $account->platform_login);
+        $this->assertSame('fusion-trading-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertNull($badPoolEntry->allocated_trading_account_id);
+        $this->assertTrue((bool) $badPoolEntry->is_available);
+        $this->assertSame($account->id, $goodPoolEntry->allocated_trading_account_id);
+        $this->assertFalse((bool) $goodPoolEntry->is_available);
     }
 
     public function test_giveaway_promo_code_immediately_assigns_linked_promo_mt5_account_once(): void
