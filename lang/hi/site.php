@@ -5,7 +5,8 @@ $en = require __DIR__.'/../en/site.php';
 return array_replace_recursive($en, [
     'meta' => [
         'default_title' => 'वुल्फोरिक्स प्रॉप फर्म प्लेटफॉर्म',
-        'description' => 'वुल्फोरिक्स प्रॉप फर्म प्लेटफॉर्म के लिए प्रीमियम मल्टीलैंग्वेज बेस, जिसमें पब्लिक पेज, कानूनी संरचना और ऑथेंटिकेटेड डैशबोर्ड एक्सेस शामिल है।',
+        'description' => 'Wolforix is a modern prop trading platform built for disciplined traders. Access evaluation accounts, track performance, manage payouts, and trade with clear rules, secure infrastructure, and scalable capital opportunities.',
+        'image' => 'trading123.png',
     ],
     'languages' => [
         'en' => 'अंग्रेज़ी',

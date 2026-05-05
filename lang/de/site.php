@@ -4,7 +4,8 @@ return [
     'meta' => [
         'brand' => 'Wolforix',
         'default_title' => 'Wolforix Prop-Firm-Plattform',
-        'description' => 'Meilenstein-1-Grundlage für die Wolforix Prop-Firm-Plattform mit dunklem Premium-Branding, mehrsprachigen öffentlichen Seiten, Rechtsstruktur und authentifiziertem Dashboard-Zugriff.',
+        'description' => 'Wolforix is a modern prop trading platform built for disciplined traders. Access evaluation accounts, track performance, manage payouts, and trade with clear rules, secure infrastructure, and scalable capital opportunities.',
+        'image' => 'trading123.png',
     ],
 
     'languages' => [
@@ -24,7 +25,7 @@ return [
     ],
 
     'public_layout' => [
-        'preview_badge' => 'Meilenstein-1-Grundlage',
+        'preview_badge' => 'Prop-Firm-Plattform',
         'simulated_notice' => 'Trade Fearlessly. Win Real.',
     ],
 

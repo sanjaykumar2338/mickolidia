@@ -13,9 +13,10 @@
     $cityValue = old('city', $order?->city ?? $profile?->city);
     $postalCodeValue = old('postal_code', $order?->postal_code ?? $profile?->postal_code);
     $launchPromoCodeValue = old('promo_code', $launchPromoCodeInput ?? '');
-    $promoCodeFeedbackState = $errors->has('promo_code') ? 'error' : ($launchPromoCode !== null ? 'success' : 'idle');
+    $giveawayApplies = (bool) ($giveawayApplies ?? false);
+    $promoCodeFeedbackState = $errors->has('promo_code') ? 'error' : ($launchPromoCode !== null || $giveawayApplies ? 'success' : 'idle');
     $promoCodeFeedbackMessage = $errors->first('promo_code')
-        ?: ($launchPromoCode !== null ? __('site.checkout.promo_code_feedback.success') : __('site.checkout.promo_code_help'));
+        ?: ($giveawayApplies ? __('site.checkout.giveaway.no_payment_required') : ($launchPromoCode !== null ? __('site.checkout.promo_code_feedback.success') : __('site.checkout.promo_code_help')));
     $basePricingState = [
         'list_price' => number_format((float) $basePlan['list_price'], 2, '.', ''),
         'discounted_price' => number_format((float) $basePlan['discounted_price'], 2, '.', ''),
@@ -169,8 +170,10 @@
                         data-currency="{{ $selectedCurrency }}"
                         data-help-message="{{ __('site.checkout.promo_code_help') }}"
                         data-success-message="{{ __('site.checkout.promo_code_feedback.success') }}"
+                        data-giveaway-message="{{ __('site.checkout.giveaway.no_payment_required') }}"
                         data-invalid-message="{{ __('site.checkout.promo_code_feedback.invalid') }}"
-                        data-applied-code="{{ $launchPromoCode ?? '' }}"
+                        data-applied-code="{{ $giveawayApplies ? $launchPromoCodeValue : ($launchPromoCode ?? '') }}"
+                        data-payment-required="{{ $giveawayApplies ? 'false' : 'true' }}"
                     >
                         <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.promo_code_label') }}</p>
                         <div class="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -278,7 +281,10 @@
                         </div>
                     </div>
 
-                    <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
+                    <div
+                        class="{{ $giveawayApplies ? 'hidden ' : '' }}rounded-[1.8rem] border border-white/8 bg-white/3 p-5"
+                        data-checkout-payment-section
+                    >
                         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-300">{{ __('site.checkout.payment_methods_title') }}</p>
                         <p class="mt-3 text-sm leading-6 text-slate-400">{{ __('site.checkout.payment_methods_subtitle') }}</p>
                         <div class="mt-5 grid gap-4 xl:grid-cols-2">
@@ -292,6 +298,7 @@
                                         class="peer sr-only"
                                         @checked(old('payment_provider', config('wolforix.payments.default_provider')) === $providerKey)
                                         @disabled(! $provider['enabled'])
+                                        data-provider-enabled="{{ $provider['enabled'] ? 'true' : 'false' }}"
                                     >
                                     <span class="block rounded-[1.65rem] border border-white/8 px-5 py-5 transition peer-checked:shadow-[0_24px_52px_rgba(2,6,23,0.22)] {{ $cardMeta['card_classes'] }} {{ $provider['enabled'] ? 'cursor-pointer hover:border-white/16 hover:bg-white/5' : 'cursor-not-allowed opacity-60' }}">
                                         <span class="flex flex-wrap items-start justify-between gap-3">
@@ -351,6 +358,13 @@
                         <p class="mt-4 text-xs leading-6 text-slate-500">{{ __('site.checkout.trust_message') }}</p>
                     </div>
 
+                    <div
+                        class="{{ $giveawayApplies ? '' : 'hidden ' }}rounded-[1.8rem] border border-emerald-400/20 bg-emerald-500/10 p-5 text-sm leading-6 text-emerald-50"
+                        data-checkout-free-message
+                    >
+                        {{ __('site.checkout.giveaway.no_payment_required') }}
+                    </div>
+
                     <div class="rounded-[1.8rem] border border-white/8 bg-white/3 p-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.checkout.confirmation_title') }}</p>
                         <div class="mt-5 space-y-4">
@@ -381,8 +395,8 @@
                     </div>
 
                     <div class="flex flex-col gap-4 sm:flex-row">
-                        <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
-                            {{ __('site.checkout.submit') }}
+                        <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold" data-checkout-submit data-payment-label="{{ __('site.checkout.submit') }}" data-free-label="{{ __('site.checkout.giveaway.submit') }}">
+                            {{ $giveawayApplies ? __('site.checkout.giveaway.submit') : __('site.checkout.submit') }}
                         </button>
                         <a href="{{ route('home') }}#plans" class="inline-flex rounded-full border border-white/10 px-6 py-4 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/6">
                             {{ __('site.checkout.back_to_plans') }}

@@ -4,7 +4,8 @@ return [
     'meta' => [
         'brand' => 'Wolforix',
         'default_title' => 'Wolforix Prop Firm Platform',
-        'description' => 'Milestone 1 foundation for the Wolforix prop firm platform with premium dark branding, multilingual public pages, legal structure, and authenticated dashboard access.',
+        'description' => 'Wolforix is a modern prop trading platform built for disciplined traders. Access evaluation accounts, track performance, manage payouts, and trade with clear rules, secure infrastructure, and scalable capital opportunities.',
+        'image' => 'trading123.png',
     ],
 
     'languages' => [
@@ -24,7 +25,7 @@ return [
     ],
 
     'public_layout' => [
-        'preview_badge' => 'Milestone 1 foundation',
+        'preview_badge' => 'Prop firm platform',
         'simulated_notice' => 'Trade Fearlessly. Win Real.',
     ],
 
@@ -727,7 +728,11 @@ return [
         'promo_code_applied_copy' => 'The launch code was applied automatically and the 20% launch offer is already reflected in the total above.',
         'promo_code_feedback' => [
             'success' => 'Code applied successfully',
-            'invalid' => 'Invalid/expired code',
+            'invalid' => 'Invalid or expired promo code.',
+        ],
+        'giveaway' => [
+            'no_payment_required' => 'Promo code applied. No payment is required for this giveaway account.',
+            'submit' => 'Complete Free Checkout',
         ],
         'billing_title' => 'Billing information',
         'payment_methods_title' => 'Choose your payment method',
@@ -810,7 +815,9 @@ return [
         'validation' => [
             'accept_terms_and_residency' => 'You must accept the Terms & Conditions and confirm your current country of residence before continuing.',
             'accept_refund_policy' => 'You must accept the Cancellation and Refund Policy before continuing.',
-            'promo_code' => 'Invalid/expired code',
+            'promo_code' => 'Invalid or expired promo code.',
+            'promo_code_used' => 'This promo code has already been used.',
+            'giveaway_plan' => 'This promo code is only valid for the $10K 2-step evaluation account.',
         ],
     ],
 

@@ -7,6 +7,8 @@ use App\Models\Order;
 
 class FakeStripePaymentGateway implements PaymentGatewayInterface
 {
+    public static int $checkoutSessionsCreated = 0;
+
     public function provider(): string
     {
         return 'stripe';
@@ -14,6 +16,8 @@ class FakeStripePaymentGateway implements PaymentGatewayInterface
 
     public function createCheckoutSession(Order $order, array $context = []): array
     {
+        self::$checkoutSessionsCreated++;
+
         return [
             'provider' => $this->provider(),
             'checkout_url' => 'https://stripe.test/checkout/fake-session-'.$order->id,

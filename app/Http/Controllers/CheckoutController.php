@@ -64,6 +64,9 @@ class CheckoutController extends Controller
         }
 
         $launchPromoCode = $pricingService->normalizeLaunchPromoCode($launchPromoCodeInput);
+        $giveawayPromoCode = $launchPromoCode === null
+            ? $this->resolveGiveawayPromoCode($launchPromoCodeInput)
+            : null;
 
         if (! $hasOldPromoCodeInput && $launchPromoCode === null && $launchPromoCodeInput === '') {
             $launchPromoCode = $pricingService->launchPromoCodeForRequest($request);
@@ -71,16 +74,30 @@ class CheckoutController extends Controller
         }
 
         $launchDiscountApplied = $launchPromoCode !== null;
+        $selectedPlan = $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, $launchDiscountApplied);
+        $giveawayValidation = $giveawayPromoCode instanceof Mt5PromoCode
+            ? $this->validateGiveawayPromoCode($giveawayPromoCode, $selectedType, $selectedSize)
+            : ['applies' => false, 'message' => ''];
+        $giveawayApplies = (bool) $giveawayValidation['applies'];
+
+        if ($giveawayApplies) {
+            $selectedPlan['discounted_price'] = 0;
+            $selectedPlan['discount']['enabled'] = true;
+            $selectedPlan['discount']['percent'] = 100;
+            $selectedPlan['discount']['amount'] = $selectedPlan['list_price'];
+            $selectedPlan['discount']['badge'] = '100% giveaway';
+        }
 
         return view('checkout.index', [
             'order' => $retryOrder,
             'basePlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, false),
-            'selectedPlan' => $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, $launchDiscountApplied),
+            'selectedPlan' => $selectedPlan,
             'selectedChallengeType' => $selectedType,
             'selectedAccountSize' => $selectedSize,
             'selectedCurrency' => $selectedCurrency,
             'launchPromoCode' => $launchPromoCode,
-            'launchPromoCodeInput' => $launchPromoCode ?? '',
+            'launchPromoCodeInput' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? $giveawayPromoCode->code : ($launchPromoCode ?? ''),
+            'giveawayApplies' => $giveawayApplies,
             'checkoutCountries' => $countryEligibility->allowedCountries(),
             'paymentProviders' => $paymentManager->providers(),
         ]);
@@ -120,7 +137,7 @@ class CheckoutController extends Controller
             ],
             'currency' => ['required', Rule::in($pricingService->supportedProviderCurrencies())],
             'promo_code' => ['nullable', 'string', 'max:60'],
-            'payment_provider' => ['required', Rule::in($paymentManager->enabledProviderKeys())],
+            'payment_provider' => ['nullable', Rule::in($paymentManager->enabledProviderKeys())],
             'accept_terms_and_residency' => ['accepted'],
             'accept_refund_policy' => ['accepted'],
         ], [
@@ -159,30 +176,38 @@ class CheckoutController extends Controller
                 ]);
         }
 
-        if ($giveawayPromoCode instanceof Mt5PromoCode) {
-            $promoEntry = $giveawayPromoCode->poolEntry;
+        $giveawayApplies = false;
 
-            if (
-                ! $promoEntry instanceof Mt5AccountPoolEntry
-                || ! $promoEntry->is_promo
-                || $giveawayPromoCode->used_at !== null
-                || $promoEntry->allocated_at !== null
-                || $promoEntry->allocated_trading_account_id !== null
-                || $validated['challenge_type'] !== 'two_step'
-                || (int) $promoEntry->account_size !== (int) $validated['account_size']
-                || (int) $validated['account_size'] !== 10000
-            ) {
+        if ($giveawayPromoCode instanceof Mt5PromoCode) {
+            $giveawayValidation = $this->validateGiveawayPromoCode(
+                $giveawayPromoCode,
+                $validated['challenge_type'],
+                (int) $validated['account_size'],
+            );
+            $giveawayApplies = $giveawayValidation['applies'];
+
+            if (! $giveawayApplies) {
                 return back()
                     ->withInput()
                     ->withErrors([
-                        'promo_code' => __('site.checkout.validation.promo_code'),
+                        'promo_code' => $giveawayValidation['message'],
                     ]);
             }
         }
 
-        $provider = $paymentManager->provider($validated['payment_provider']);
+        if (! $giveawayApplies && empty($validated['payment_provider'])) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'payment_provider' => __('validation.required', ['attribute' => __('site.checkout.payment_methods_title')]),
+                ]);
+        }
+
+        $provider = $giveawayApplies
+            ? null
+            : $paymentManager->provider((string) $validated['payment_provider']);
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
-        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode): Order {
+        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode, $giveawayApplies): Order {
             $existingOrder = null;
             $acceptedAt = now()->toIso8601String();
             /** @var User $user */
@@ -212,11 +237,11 @@ class CheckoutController extends Controller
                 'challenge_type' => $validated['challenge_type'],
                 'account_size' => (int) $validated['account_size'],
                 'currency' => $validated['currency'],
-                'payment_provider' => $giveawayPromoCode instanceof Mt5PromoCode ? 'promo' : $validated['payment_provider'],
+                'payment_provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
                 'base_price' => $selectedPlan['list_price'],
-                'discount_percent' => $giveawayPromoCode instanceof Mt5PromoCode ? 100 : $selectedPlan['discount']['percent'],
-                'discount_amount' => $giveawayPromoCode instanceof Mt5PromoCode ? $selectedPlan['list_price'] : $selectedPlan['discount']['amount'],
-                'final_price' => $giveawayPromoCode instanceof Mt5PromoCode ? 0 : $selectedPlan['discounted_price'],
+                'discount_percent' => $giveawayApplies ? 100 : $selectedPlan['discount']['percent'],
+                'discount_amount' => $giveawayApplies ? $selectedPlan['list_price'] : $selectedPlan['discount']['amount'],
+                'final_price' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
                 'payment_status' => Order::PAYMENT_PENDING,
                 'order_status' => Order::STATUS_AWAITING_PAYMENT,
                 'metadata' => array_merge($order->metadata ?? [], [
@@ -239,7 +264,7 @@ class CheckoutController extends Controller
                         'campaign' => $launchPromoCode !== null ? 'launch_20' : null,
                         'applied' => $launchPromoCode !== null,
                     ],
-                    'mt5_giveaway_promo' => $giveawayPromoCode instanceof Mt5PromoCode ? [
+                    'mt5_giveaway_promo' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? [
                         'id' => $giveawayPromoCode->id,
                         'code' => $giveawayPromoCode->code,
                         'mt5_account_pool_entry_id' => $giveawayPromoCode->mt5_account_pool_entry_id,
@@ -251,8 +276,8 @@ class CheckoutController extends Controller
             $order->save();
 
             $order->paymentAttempts()->create([
-                'provider' => $giveawayPromoCode instanceof Mt5PromoCode ? 'promo' : $validated['payment_provider'],
-                'amount' => $giveawayPromoCode instanceof Mt5PromoCode ? 0 : $selectedPlan['discounted_price'],
+                'provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
+                'amount' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
                 'currency' => $validated['currency'],
                 'status' => 'pending',
                 'payload' => [
@@ -263,17 +288,34 @@ class CheckoutController extends Controller
             return $order;
         });
 
-        if ($giveawayPromoCode instanceof Mt5PromoCode) {
-            $fulfillmentService->markPaid($order, [
-                'provider' => 'promo',
-                'source' => 'mt5_giveaway_promo',
-                'amount' => 0,
-                'currency' => $order->currency,
-                'payload' => [
-                    'promo_code' => $giveawayPromoCode->code,
-                    'mt5_login' => $giveawayPromoCode->mt5_login,
-                ],
-            ]);
+        if ($giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode) {
+            try {
+                $fulfillmentService->markPaid($order, [
+                    'provider' => 'promo',
+                    'source' => 'mt5_giveaway_promo',
+                    'amount' => 0,
+                    'currency' => $order->currency,
+                    'payload' => [
+                        'promo_code' => $giveawayPromoCode->code,
+                        'mt5_login' => $giveawayPromoCode->mt5_login,
+                    ],
+                ]);
+            } catch (Throwable $exception) {
+                Log::warning('checkout.giveaway_promo_fulfillment_failed', [
+                    'order_id' => $order->id,
+                    'promo_code_id' => $giveawayPromoCode->id,
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'promo_code' => str_contains(strtolower($exception->getMessage()), 'already')
+                            ? __('site.checkout.validation.promo_code_used')
+                            : __('site.checkout.validation.promo_code'),
+                    ]);
+            }
 
             return redirect()->route('dashboard.accounts');
         }
@@ -347,15 +389,10 @@ class CheckoutController extends Controller
             $validated['currency'],
             $launchPromoCode !== null,
         );
-        $giveawayApplies = $giveawayPromoCode instanceof Mt5PromoCode
-            && $giveawayPromoCode->used_at === null
-            && $giveawayPromoCode->poolEntry !== null
-            && $giveawayPromoCode->poolEntry->is_promo
-            && $giveawayPromoCode->poolEntry->allocated_at === null
-            && $giveawayPromoCode->poolEntry->allocated_trading_account_id === null
-            && $validated['challenge_type'] === 'two_step'
-            && (int) $validated['account_size'] === 10000
-            && (int) $giveawayPromoCode->poolEntry->account_size === (int) $validated['account_size'];
+        $giveawayValidation = $giveawayPromoCode instanceof Mt5PromoCode
+            ? $this->validateGiveawayPromoCode($giveawayPromoCode, $validated['challenge_type'], (int) $validated['account_size'])
+            : ['applies' => false, 'message' => __('site.checkout.promo_code_feedback.invalid')];
+        $giveawayApplies = (bool) $giveawayValidation['applies'];
 
         if ($giveawayApplies) {
             $selectedPlan['discounted_price'] = 0;
@@ -370,8 +407,10 @@ class CheckoutController extends Controller
             'message' => $promoCodeInput === ''
                 ? ''
                 : ($launchPromoCode !== null || $giveawayApplies
-                    ? __('site.checkout.promo_code_feedback.success')
-                    : __('site.checkout.promo_code_feedback.invalid')),
+                    ? ($giveawayApplies ? __('site.checkout.giveaway.no_payment_required') : __('site.checkout.promo_code_feedback.success'))
+                    : $giveawayValidation['message']),
+            'payment_required' => ! $giveawayApplies,
+            'checkout_mode' => $giveawayApplies ? 'giveaway' : 'payment',
             'pricing' => $this->pricingPayload($selectedPlan),
         ]);
     }
@@ -489,14 +528,55 @@ class CheckoutController extends Controller
 
     private function resolveGiveawayPromoCode(string $promoCode): ?Mt5PromoCode
     {
-        if ($promoCode === '') {
+        $normalizedCode = $this->normalizeGiveawayPromoCode($promoCode);
+
+        if ($normalizedCode === '') {
             return null;
         }
 
         return Mt5PromoCode::query()
             ->with('poolEntry')
-            ->whereRaw('LOWER(code) = ?', [strtolower($promoCode)])
+            ->whereRaw("LOWER(REPLACE(REPLACE(code, '-', ''), ' ', '')) = ?", [$normalizedCode])
             ->first();
+    }
+
+    private function normalizeGiveawayPromoCode(string $promoCode): string
+    {
+        return strtolower((string) preg_replace('/[\s-]+/', '', trim($promoCode)));
+    }
+
+    /**
+     * @return array{applies: bool, message: string}
+     */
+    private function validateGiveawayPromoCode(Mt5PromoCode $promoCode, string $challengeType, int $accountSize): array
+    {
+        $poolEntry = $promoCode->poolEntry;
+
+        if ($challengeType !== 'two_step' || $accountSize !== 10000 || ($poolEntry instanceof Mt5AccountPoolEntry && (int) $poolEntry->account_size !== $accountSize)) {
+            return [
+                'applies' => false,
+                'message' => __('site.checkout.validation.giveaway_plan'),
+            ];
+        }
+
+        if (! $poolEntry instanceof Mt5AccountPoolEntry || ! $poolEntry->is_promo) {
+            return [
+                'applies' => false,
+                'message' => __('site.checkout.validation.promo_code'),
+            ];
+        }
+
+        if ($promoCode->used_at !== null || $poolEntry->allocated_at !== null || $poolEntry->allocated_trading_account_id !== null) {
+            return [
+                'applies' => false,
+                'message' => __('site.checkout.validation.promo_code_used'),
+            ];
+        }
+
+        return [
+            'applies' => true,
+            'message' => __('site.checkout.giveaway.no_payment_required'),
+        ];
     }
 
     /**

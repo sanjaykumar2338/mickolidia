@@ -4,8 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('site.meta.default_title'))</title>
-    <meta name="description" content="@yield('description', __('site.meta.description'))">
+    @php
+        $metaTitle = trim($__env->yieldContent('title', __('site.meta.default_title')));
+        $metaDescription = trim($__env->yieldContent('description', __('site.meta.description')));
+        $metaImagePath = \Illuminate\Support\Facades\Lang::has('site.meta.image') ? (string) __('site.meta.image') : 'trading123.png';
+        $metaImage = trim($__env->yieldContent('image', asset($metaImagePath)));
+        $metaUrl = url()->current();
+    @endphp
+    <title>{{ $metaTitle }}</title>
+    <meta name="description" content="{{ $metaDescription }}">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:image" content="{{ $metaImage }}">
+    <meta property="og:url" content="{{ $metaUrl }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $metaImage }}">
     <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])

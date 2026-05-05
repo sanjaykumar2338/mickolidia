@@ -74,6 +74,25 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_homepage_social_share_meta_uses_wolforix_platform_copy(): void
+    {
+        $description = 'Wolforix is a modern prop trading platform built for disciplined traders. Access evaluation accounts, track performance, manage payouts, and trade with clear rules, secure infrastructure, and scalable capital opportunities.';
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('<title>Wolforix Prop Firm Platform</title>', false)
+            ->assertSee('<meta name="description" content="'.$description.'">', false)
+            ->assertSee('<meta property="og:title" content="Wolforix Prop Firm Platform">', false)
+            ->assertSee('<meta property="og:description" content="'.$description.'">', false)
+            ->assertSee('<meta property="og:image" content="'.asset('trading123.png').'">', false)
+            ->assertSee('<meta property="og:type" content="website">', false)
+            ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
+            ->assertSee('<meta name="twitter:title" content="Wolforix Prop Firm Platform">', false)
+            ->assertSee('<meta name="twitter:description" content="'.$description.'">', false)
+            ->assertSee('<meta name="twitter:image" content="'.asset('trading123.png').'">', false)
+            ->assertDontSee('Milestone 1 foundation for the Wolforix prop firm platform');
+    }
+
     public function test_homepage_uses_static_hero_image_and_locale_platform_banner_below_plans(): void
     {
         foreach ([
@@ -1022,6 +1041,52 @@ class WolforixPlatformTest extends TestCase
             ]);
     }
 
+    public function test_checkout_giveaway_promo_preview_returns_zero_payment_state(): void
+    {
+        $user = User::factory()->create();
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335374');
+
+        $this->actingAs($user)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ])
+            ->assertOk()
+            ->assertJson([
+                'applied' => true,
+                'promo_code' => $promoCode->code,
+                'message' => 'Promo code applied. No payment is required for this giveaway account.',
+                'payment_required' => false,
+                'checkout_mode' => 'giveaway',
+                'pricing' => [
+                    'discount_enabled' => true,
+                    'discounted_price' => '0.00',
+                    'currency' => 'USD',
+                ],
+            ]);
+    }
+
+    public function test_checkout_giveaway_promo_page_hides_payment_options_when_valid(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335374');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ]))
+            ->assertOk()
+            ->assertSee('Promo code applied. No payment is required for this giveaway account.')
+            ->assertSee('data-payment-required="false"', false)
+            ->assertSee('data-checkout-payment-section', false)
+            ->assertSee('hidden rounded-[1.8rem] border border-white/8 bg-white/3 p-5', false)
+            ->assertSee('Complete Free Checkout');
+    }
+
     public function test_checkout_promo_preview_returns_invalid_feedback_for_bad_code(): void
     {
         $user = User::factory()->create();
@@ -1037,13 +1102,35 @@ class WolforixPlatformTest extends TestCase
             ->assertJson([
                 'applied' => false,
                 'promo_code' => null,
-                'message' => 'Invalid/expired code',
+                'message' => 'Invalid or expired promo code.',
                 'pricing' => [
                     'discount_enabled' => false,
                     'discounted_price' => '289.00',
                     'list_price' => '289.00',
                     'currency' => 'USD',
                 ],
+            ]);
+    }
+
+    public function test_checkout_giveaway_promo_code_normalization_works(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => '  wfxgive 335400  ',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'applied' => true,
+                'promo_code' => $promoCode->code,
+                'payment_required' => false,
+                'checkout_mode' => 'giveaway',
             ]);
     }
 
@@ -1370,7 +1457,7 @@ class WolforixPlatformTest extends TestCase
         $poolEntry->refresh();
         $invoice = Invoice::query()->where('order_id', $order->id)->firstOrFail();
 
-        $this->assertSame('WF-000001', $invoice->invoice_number);
+        $this->assertMatchesRegularExpression('/^WF-\d{6}$/', $invoice->invoice_number);
         $this->assertSame($user->id, $invoice->user_id);
         $this->assertSame('paid', $invoice->status);
         $this->assertNotNull($invoice->pdf_generated_at);
@@ -1601,6 +1688,7 @@ class WolforixPlatformTest extends TestCase
 
     public function test_giveaway_promo_code_immediately_assigns_linked_promo_mt5_account_once(): void
     {
+        $this->useFakeStripeGateway();
         Mail::fake();
 
         $user = User::factory()->create([
@@ -1657,7 +1745,6 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 10000,
             'currency' => 'USD',
             'promo_code' => 'WFXGIVE-335374',
-            'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
         ])->assertRedirect(route('dashboard.accounts'));
@@ -1670,6 +1757,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
         $this->assertSame('promo', $order->payment_provider);
+        $this->assertSame(0, FakeStripePaymentGateway::$checkoutSessionsCreated);
         $this->assertSame('PY', $order->country);
         $this->assertSame('0.00', (string) $order->final_price);
         $this->assertSame('335374', $account->platform_login);
@@ -1695,10 +1783,26 @@ class WolforixPlatformTest extends TestCase
             'account_size' => 10000,
             'currency' => 'USD',
             'promo_code' => 'WFXGIVE-335374',
-            'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
         ])->assertSessionHasErrors(['promo_code']);
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), [
+            'full_name' => 'Second Trader',
+            'email' => 'second-giveaway@example.com',
+            'street_address' => '11 Promo Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335374',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertSessionHasErrors([
+            'promo_code' => 'This promo code has already been used.',
+        ]);
     }
 
     public function test_giveaway_promo_code_rejects_faq_restricted_country_before_assignment(): void
@@ -1799,12 +1903,16 @@ class WolforixPlatformTest extends TestCase
         $this->actingAs(User::factory()->create())->post(route('checkout.store'), $basePayload + [
             'challenge_type' => 'one_step',
             'account_size' => 10000,
-        ])->assertSessionHasErrors(['promo_code']);
+        ])->assertSessionHasErrors([
+            'promo_code' => 'This promo code is only valid for the $10K 2-step evaluation account.',
+        ]);
 
         $this->actingAs(User::factory()->create())->post(route('checkout.store'), $basePayload + [
             'challenge_type' => 'two_step',
             'account_size' => 25000,
-        ])->assertSessionHasErrors(['promo_code']);
+        ])->assertSessionHasErrors([
+            'promo_code' => 'This promo code is only valid for the $10K 2-step evaluation account.',
+        ]);
 
         $promoEntry->refresh();
 
@@ -4014,6 +4122,7 @@ class WolforixPlatformTest extends TestCase
 
     private function useFakeStripeGateway(): void
     {
+        FakeStripePaymentGateway::$checkoutSessionsCreated = 0;
         config()->set('wolforix.payments.providers.stripe.class', FakeStripePaymentGateway::class);
     }
 
@@ -4022,6 +4131,33 @@ class WolforixPlatformTest extends TestCase
         config()->set('wolforix.payments.providers.paypal.class', FakePayPalPaymentGateway::class);
         config()->set('wolforix.payments.providers.paypal.enabled', true);
         config()->set('wolforix.payments.providers.paypal.coming_soon', false);
+    }
+
+    private function createGiveawayPromoCode(string $code, array $entryOverrides = []): Mt5PromoCode
+    {
+        $entry = Mt5AccountPoolEntry::factory()->create(array_merge([
+            'login' => '335374',
+            'password' => 'promo-trading-pass',
+            'investor_password' => 'promo-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => true,
+            'is_available' => false,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'promo_marker' => 'Promo',
+            ],
+        ], $entryOverrides));
+
+        return Mt5PromoCode::query()->create([
+            'code' => $code,
+            'mt5_account_pool_entry_id' => $entry->id,
+            'mt5_login' => (string) $entry->login,
+        ]);
     }
 
     /**

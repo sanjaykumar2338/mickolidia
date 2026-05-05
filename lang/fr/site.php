@@ -5,7 +5,8 @@ $en = require __DIR__.'/../en/site.php';
 return array_replace_recursive($en, [
     'meta' => [
         'default_title' => 'Plateforme Prop Firm Wolforix',
-        'description' => 'Base premium pour la plateforme prop firm Wolforix avec site public multilingue, structure juridique, espace d’essai gratuit et accès authentifié au dashboard.',
+        'description' => 'Wolforix is a modern prop trading platform built for disciplined traders. Access evaluation accounts, track performance, manage payouts, and trade with clear rules, secure infrastructure, and scalable capital opportunities.',
+        'image' => 'trading123.png',
     ],
     'languages' => [
         'en' => 'Anglais',

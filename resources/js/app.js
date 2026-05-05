@@ -2134,6 +2134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const originalWrap = checkoutPricing.querySelector('[data-checkout-original-wrap]');
         const originalPrice = checkoutPricing.querySelector('[data-checkout-original-price]');
         const discountBadge = checkoutPricing.querySelector('[data-checkout-discount-badge]');
+        const paymentSection = document.querySelector('[data-checkout-payment-section]');
+        const freeMessage = document.querySelector('[data-checkout-free-message]');
+        const submitButton = document.querySelector('[data-checkout-submit]');
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
         const basePricingScript = checkoutPricing.querySelector('[data-checkout-base-pricing]');
         const selectedPricingScript = checkoutPricing.querySelector('[data-checkout-selected-pricing]');
@@ -2172,8 +2175,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const currency = checkoutPromo.dataset.currency ?? '';
             const helpMessage = checkoutPromo.dataset.helpMessage ?? '';
             const successMessage = checkoutPromo.dataset.successMessage ?? '';
+            const giveawayMessage = checkoutPromo.dataset.giveawayMessage ?? successMessage;
             const invalidMessage = checkoutPromo.dataset.invalidMessage ?? '';
             const feedbackStates = ['text-slate-400', 'text-emerald-100', 'text-rose-100'];
+
+            const setPaymentRequired = (paymentRequired) => {
+                if (paymentSection instanceof HTMLElement) {
+                    paymentSection.classList.toggle('hidden', !paymentRequired);
+
+                    paymentSection.querySelectorAll('input[name="payment_provider"]').forEach((radio) => {
+                        if (radio instanceof HTMLInputElement) {
+                            radio.disabled = !paymentRequired || radio.dataset.providerEnabled === 'false';
+                        }
+                    });
+                }
+
+                if (freeMessage instanceof HTMLElement) {
+                    freeMessage.classList.toggle('hidden', paymentRequired);
+                }
+
+                if (submitButton instanceof HTMLButtonElement) {
+                    submitButton.textContent = paymentRequired
+                        ? (submitButton.dataset.paymentLabel ?? submitButton.textContent ?? '')
+                        : (submitButton.dataset.freeLabel ?? submitButton.textContent ?? '');
+                }
+            };
 
             const renderFeedback = (state, message) => {
                 feedback.dataset.feedbackState = state;
@@ -2208,12 +2234,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const setIdleState = () => {
                 appliedCode = '';
                 renderPricing(basePricing);
+                setPaymentRequired(true);
                 renderFeedback('idle', helpMessage);
                 storage.remove(launchPromoStorageKey);
                 syncLaunchPromoCodeToCheckoutLinks('');
             };
 
             renderPricing(selectedPricing);
+            setPaymentRequired(checkoutPromo.dataset.paymentRequired !== 'false');
 
             if (appliedCode !== '') {
                 renderFeedback('success', feedback.textContent.trim() || successMessage);
@@ -2265,15 +2293,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     renderPricing(payload.pricing ?? basePricing);
+                    setPaymentRequired(payload.payment_required !== false);
 
                     if (payload.applied) {
                         appliedCode = normalizePromoCode(payload.promo_code ?? promoCode);
                         input.value = appliedCode;
-                        renderFeedback('success', payload.message ?? successMessage);
+                        renderFeedback('success', payload.message ?? (payload.payment_required === false ? giveawayMessage : successMessage));
                         setLaunchPromoCode(appliedCode);
                         syncLaunchPromoCodeToCheckoutLinks(appliedCode);
                     } else {
                         appliedCode = '';
+                        setPaymentRequired(true);
                         renderFeedback('error', payload.message ?? invalidMessage);
                         storage.remove(launchPromoStorageKey);
                         syncLaunchPromoCodeToCheckoutLinks('');
@@ -2281,6 +2311,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     appliedCode = '';
                     renderPricing(basePricing);
+                    setPaymentRequired(true);
                     renderFeedback('error', error instanceof Error ? error.message : invalidMessage);
                     storage.remove(launchPromoStorageKey);
                     syncLaunchPromoCodeToCheckoutLinks('');
