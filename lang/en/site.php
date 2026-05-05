@@ -818,6 +818,7 @@ return [
             'promo_code' => 'Invalid or expired promo code.',
             'promo_code_used' => 'This promo code has already been used.',
             'giveaway_plan' => 'This promo code is only valid for the $10K 2-step evaluation account.',
+            'promo_claim_failed' => 'This promo code is valid, but the giveaway account could not be assigned. Please contact support.',
         ],
     ],
 

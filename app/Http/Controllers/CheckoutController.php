@@ -319,9 +319,7 @@ class CheckoutController extends Controller
                 return back()
                     ->withInput()
                     ->withErrors([
-                        'promo_code' => str_contains(strtolower($exception->getMessage()), 'already')
-                            ? __('site.checkout.validation.promo_code_used')
-                            : __('site.checkout.validation.promo_code'),
+                        'promo_code' => $this->giveawayFulfillmentErrorMessage($exception),
                     ]);
             }
 
@@ -611,6 +609,25 @@ class CheckoutController extends Controller
             'applies' => true,
             'message' => __('site.checkout.giveaway.no_payment_required'),
         ];
+    }
+
+    private function giveawayFulfillmentErrorMessage(Throwable $exception): string
+    {
+        $message = strtolower($exception->getMessage());
+
+        if (str_contains($message, 'already')) {
+            return __('site.checkout.validation.promo_code_used');
+        }
+
+        if (str_contains($message, 'different account size')) {
+            return __('site.checkout.validation.giveaway_plan');
+        }
+
+        if (str_contains($message, 'not linked')) {
+            return __('site.checkout.validation.promo_code');
+        }
+
+        return __('site.checkout.validation.promo_claim_failed');
     }
 
     /**

@@ -1885,6 +1885,99 @@ class WolforixPlatformTest extends TestCase
         ]);
     }
 
+    public function test_giveaway_promo_code_claim_accepts_plaintext_imported_mt5_credentials(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'plaintext-promo-owner@example.com',
+        ]);
+
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $promoCode->mt5_account_pool_entry_id)
+            ->update([
+                'password' => 'plain-imported-trading-pass',
+                'investor_password' => 'plain-imported-investor-pass',
+            ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Plain Import Trader',
+            'email' => 'plain-import-billing@example.com',
+            'street_address' => '10 Promo Street',
+            'city' => 'Asuncion',
+            'postal_code' => '1209',
+            'country' => 'PY',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335400',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertRedirect(route('dashboard.accounts'));
+
+        $order = Order::query()->firstOrFail();
+        $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $promoCode->refresh();
+
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame('promo', $order->payment_provider);
+        $this->assertSame('335400', $account->platform_login);
+        $this->assertSame('plain-imported-trading-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertSame('plain-imported-investor-pass', data_get($account->meta, 'credentials.investor_password'));
+        $this->assertNotNull($promoCode->used_at);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
+    }
+
+    public function test_giveaway_promo_code_claim_reports_assignment_error_for_wrong_key_encrypted_credentials(): void
+    {
+        Mail::fake();
+
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        $wrongKeyEncryptedPayload = base64_encode((string) json_encode([
+            'iv' => base64_encode(random_bytes(16)),
+            'value' => base64_encode('encrypted-with-another-key'),
+            'mac' => str_repeat('0', 64),
+            'tag' => '',
+        ]));
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $promoCode->mt5_account_pool_entry_id)
+            ->update([
+                'password' => $wrongKeyEncryptedPayload,
+                'investor_password' => $wrongKeyEncryptedPayload,
+            ]);
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), [
+            'full_name' => 'Wrong Key Trader',
+            'email' => 'wrong-key-billing@example.com',
+            'street_address' => '10 Promo Street',
+            'city' => 'Asuncion',
+            'postal_code' => '1209',
+            'country' => 'PY',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335400',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertSessionHasErrors([
+            'promo_code' => 'This promo code is valid, but the giveaway account could not be assigned. Please contact support.',
+        ]);
+
+        $promoCode->refresh();
+
+        $this->assertNull($promoCode->used_at);
+        $this->assertSame(0, TradingAccount::query()->count());
+        Mail::assertNothingSent();
+    }
+
     public function test_giveaway_promo_code_rejects_faq_restricted_country_before_assignment(): void
     {
         Mail::fake();

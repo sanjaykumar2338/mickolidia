@@ -98,6 +98,8 @@ class Mt5AccountAllocator
             throw new RuntimeException('This promo code is linked to a different account size.');
         }
 
+        $credentials = $this->credentialsFor($entry);
+
         $entry->forceFill([
             'allocated_trading_account_id' => $account->id,
             'allocated_user_id' => $account->user_id,
@@ -105,7 +107,7 @@ class Mt5AccountAllocator
             'is_available' => false,
         ])->save();
 
-        $this->hydrateAccount($account, $entry, $this->credentialsFor($entry));
+        $this->hydrateAccount($account, $entry, $credentials);
 
         $lockedPromoCode->forceFill([
             'used_at' => now(),
@@ -177,9 +179,54 @@ class Mt5AccountAllocator
     private function credentialsFor(Mt5AccountPoolEntry $entry): array
     {
         return [
-            'password' => $entry->password,
-            'investor_password' => $entry->investor_password,
+            'password' => $this->credentialValue($entry, 'password'),
+            'investor_password' => $this->credentialValue($entry, 'investor_password'),
         ];
+    }
+
+    private function credentialValue(Mt5AccountPoolEntry $entry, string $key): ?string
+    {
+        try {
+            $value = $entry->{$key};
+
+            return filled($value) ? (string) $value : null;
+        } catch (DecryptException $exception) {
+            $rawValue = $entry->getRawOriginal($key);
+
+            if (! filled($rawValue)) {
+                return null;
+            }
+
+            if (! $entry->is_promo || $this->looksLikeEncryptedCastPayload((string) $rawValue)) {
+                throw $exception;
+            }
+
+            Log::notice('MT5 account pool entry is using legacy plaintext credentials; assignment continued.', [
+                'mt5_account_pool_entry_id' => $entry->id,
+                'login' => $entry->login,
+                'source_pool' => $entry->source_pool,
+                'source_file' => $entry->source_file,
+                'credential' => $key,
+            ]);
+
+            return (string) $rawValue;
+        }
+    }
+
+    private function looksLikeEncryptedCastPayload(string $value): bool
+    {
+        $decoded = base64_decode($value, true);
+
+        if ($decoded === false) {
+            return false;
+        }
+
+        $payload = json_decode($decoded, true);
+
+        return is_array($payload)
+            && array_key_exists('iv', $payload)
+            && array_key_exists('value', $payload)
+            && array_key_exists('mac', $payload);
     }
 
     private function reportInvalidCredentials(Mt5AccountPoolEntry $entry, DecryptException $exception): void
