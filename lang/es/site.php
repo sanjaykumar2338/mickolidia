@@ -1503,7 +1503,7 @@ return [
                         'question' => '¿Qué países están restringidos?',
                         'answer_paragraphs' => [
                             'Wolforix no presta servicios a personas o entidades residentes en países sujetos a sanciones internacionales o restricciones regulatorias.',
-                            'Esto incluye, entre otros, Irán, Corea del Norte, Siria, Sudán, Cuba, Rusia y Venezuela.',
+                            'Los países actualmente restringidos son Irán, Corea del Norte, Siria, Sudán, Cuba, Rusia y Venezuela.',
                         ],
                         'answer_sections' => [
                             [

@@ -1376,7 +1376,7 @@ return array_replace_recursive($en, [
                         'question' => 'कौन से countries restricted हैं?',
                         'answer_paragraphs' => [
                             'Wolforix ऐसे countries में रहने वाले individuals या entities को services provide नहीं करता जो international sanctions या regulatory restrictions के subject हैं।',
-                            'इसमें Iran, North Korea, Syria, Sudan, Cuba, Russia और Venezuela शामिल हैं, लेकिन list इन्हीं तक limited नहीं है।',
+                            'वर्तमान restricted countries Iran, North Korea, Syria, Sudan, Cuba, Russia और Venezuela हैं।',
                         ],
                         'answer_sections' => [
                             [

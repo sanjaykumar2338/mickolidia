@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Payments\OrderFulfillmentService;
 use App\Services\Payments\PaymentManager;
 use App\Services\Pricing\ChallengePricingService;
+use App\Support\CountryEligibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,8 +23,12 @@ use Throwable;
 
 class CheckoutController extends Controller
 {
-    public function show(Request $request, ChallengePricingService $pricingService, PaymentManager $paymentManager): View
-    {
+    public function show(
+        Request $request,
+        ChallengePricingService $pricingService,
+        PaymentManager $paymentManager,
+        CountryEligibility $countryEligibility,
+    ): View {
         $retryOrder = null;
         /** @var User $user */
         $user = $request->user();
@@ -76,7 +81,7 @@ class CheckoutController extends Controller
             'selectedCurrency' => $selectedCurrency,
             'launchPromoCode' => $launchPromoCode,
             'launchPromoCodeInput' => $launchPromoCode ?? '',
-            'checkoutCountries' => config('wolforix.checkout_countries', []),
+            'checkoutCountries' => $countryEligibility->allowedCountries(),
             'paymentProviders' => $paymentManager->providers(),
         ]);
     }
@@ -86,7 +91,12 @@ class CheckoutController extends Controller
         ChallengePricingService $pricingService,
         PaymentManager $paymentManager,
         OrderFulfillmentService $fulfillmentService,
+        CountryEligibility $countryEligibility,
     ): RedirectResponse {
+        $request->merge([
+            'country' => $countryEligibility->normalizeCountryCode($request->input('country')),
+        ]);
+
         $validated = $request->validate([
             'order' => ['nullable', 'string', 'exists:orders,order_number'],
             'full_name' => ['required', 'string', 'max:120'],
@@ -94,7 +104,7 @@ class CheckoutController extends Controller
             'street_address' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:120'],
             'postal_code' => ['required', 'string', 'max:32'],
-            'country' => ['required', Rule::in(array_keys(config('wolforix.checkout_countries', [])))],
+            'country' => ['required', Rule::in(array_keys($countryEligibility->allowedCountries()))],
             'challenge_type' => ['required', Rule::in(array_keys(config('wolforix.challenge_models', [])))],
             'account_size' => [
                 'required',

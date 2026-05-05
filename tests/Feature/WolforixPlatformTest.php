@@ -939,6 +939,31 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('ISO/IEC 27001 alignment is currently in progress.');
     }
 
+    public function test_country_eligibility_includes_paraguay_and_excludes_faq_restricted_countries(): void
+    {
+        $countries = config('wolforix.countries');
+        $checkoutCountries = config('wolforix.checkout_countries');
+        $restrictedCountries = config('wolforix.restricted_countries');
+
+        $this->assertSame('Paraguay', $countries['PY'] ?? null);
+        $this->assertSame('Paraguay', $checkoutCountries['PY'] ?? null);
+        $this->assertContains('PY', array_keys($checkoutCountries));
+
+        sort($restrictedCountries);
+
+        $this->assertSame(['CU', 'IR', 'KP', 'RU', 'SD', 'SY', 'VE'], $restrictedCountries);
+
+        foreach ($restrictedCountries as $countryCode) {
+            $this->assertArrayHasKey($countryCode, $countries);
+            $this->assertArrayNotHasKey($countryCode, $checkoutCountries);
+        }
+
+        $this->get(route('faq'))
+            ->assertOk()
+            ->assertSee('The currently restricted countries are Iran, North Korea, Syria, Sudan, Cuba, Russia, and Venezuela.')
+            ->assertDontSee('Paraguay');
+    }
+
     public function test_checkout_page_renders_selected_plan_and_provider_options(): void
     {
         $this->actingAs(User::factory()->create())
@@ -961,6 +986,9 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Stripe')
             ->assertSee('PayPal')
             ->assertSee('EUR')
+            ->assertSee('value="PY"', false)
+            ->assertSee('Paraguay')
+            ->assertDontSee('value="VE"', false)
             ->assertSee('wolfy-mobile.webp', false)
             ->assertSee('assistant-mascot-visual-checkout', false)
             ->assertSee('Your data is protected using industry-standard security practices aligned with ISO/IEC 27001.')
@@ -1155,6 +1183,30 @@ class WolforixPlatformTest extends TestCase
             ->assertSessionHasErrors(['promo_code']);
     }
 
+    public function test_checkout_rejects_faq_restricted_country_before_order_creation(): void
+    {
+        $this->useFakeStripeGateway();
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('checkout.store'), [
+                'full_name' => 'Restricted Trader',
+                'email' => 'restricted@example.com',
+                'street_address' => '1 Blocked Street',
+                'city' => 'Caracas',
+                'postal_code' => '1010',
+                'country' => 'VE',
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'payment_provider' => 'stripe',
+                'accept_terms_and_residency' => '1',
+                'accept_refund_policy' => '1',
+            ])
+            ->assertSessionHasErrors(['country']);
+
+        $this->assertSame(0, Order::query()->count());
+    }
+
     public function test_checkout_creates_an_order_for_the_authenticated_user_and_redirects_to_provider(): void
     {
         $this->useFakeStripeGateway();
@@ -1197,6 +1249,52 @@ class WolforixPlatformTest extends TestCase
         $this->assertTrue($order->metadata['checkout_confirmations']['refund_policy']['accepted']);
         $this->assertSame(config('wolforix.launch_discount.code'), $order->metadata['launch_promo']['code']);
         $this->assertTrue($order->metadata['launch_promo']['applied']);
+    }
+
+    public function test_checkout_accepts_paraguay_and_stores_profile_country_after_fulfillment(): void
+    {
+        $this->useFakeStripeGateway();
+        Mail::fake();
+        Storage::fake('public');
+
+        $user = User::factory()->create([
+            'email' => 'paraguay@example.com',
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Paraguay Trader',
+            'email' => 'paraguay-billing@example.com',
+            'street_address' => '1 Asuncion Street',
+            'city' => 'Asuncion',
+            'postal_code' => '1209',
+            'country' => 'py',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->assertSame('PY', $order->country);
+        $this->assertSame('PY', $order->metadata['checkout_confirmations']['terms_and_residency']['country']);
+
+        $this->actingAs($user)
+            ->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+            ->assertOk()
+            ->assertSee('Challenge order confirmed');
+
+        $profile = $user->profile()->firstOrFail();
+
+        $this->assertSame('Paraguay', $profile->country);
+        $this->assertDatabaseHas('challenge_purchases', [
+            'order_id' => $order->id,
+            'user_id' => $user->id,
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+        ]);
     }
 
     public function test_checkout_success_marks_order_paid_and_creates_purchase_for_the_authenticated_user(): void
@@ -1552,9 +1650,9 @@ class WolforixPlatformTest extends TestCase
             'full_name' => 'Giveaway Trader',
             'email' => 'giveaway-billing@example.com',
             'street_address' => '10 Promo Street',
-            'city' => 'Berlin',
-            'postal_code' => '10115',
-            'country' => 'DE',
+            'city' => 'Asuncion',
+            'postal_code' => '1209',
+            'country' => 'PY',
             'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
@@ -1572,6 +1670,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
         $this->assertSame('promo', $order->payment_provider);
+        $this->assertSame('PY', $order->country);
         $this->assertSame('0.00', (string) $order->final_price);
         $this->assertSame('335374', $account->platform_login);
         $this->assertSame('promo-trading-pass', data_get($account->meta, 'credentials.password'));
@@ -1582,6 +1681,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame($account->id, $promoEntry->allocated_trading_account_id);
         $this->assertNull($normalEntry->allocated_trading_account_id);
         $this->assertTrue((bool) $normalEntry->is_available);
+        $this->assertSame('Paraguay', $user->profile()->firstOrFail()->country);
+        Mail::assertSent(ChallengeAccountDetailsMail::class, 1);
 
         $this->actingAs(User::factory()->create())->post(route('checkout.store'), [
             'full_name' => 'Second Trader',
@@ -1598,6 +1699,59 @@ class WolforixPlatformTest extends TestCase
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
         ])->assertSessionHasErrors(['promo_code']);
+    }
+
+    public function test_giveaway_promo_code_rejects_faq_restricted_country_before_assignment(): void
+    {
+        Mail::fake();
+
+        $promoEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335375',
+            'password' => 'promo-trading-pass',
+            'investor_password' => 'promo-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => true,
+            'is_available' => false,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'promo_marker' => 'Promo',
+            ],
+        ]);
+
+        $promoCode = Mt5PromoCode::query()->create([
+            'code' => 'WFXGIVE-335375',
+            'mt5_account_pool_entry_id' => $promoEntry->id,
+            'mt5_login' => '335375',
+        ]);
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), [
+            'full_name' => 'Restricted Giveaway Trader',
+            'email' => 'restricted-giveaway@example.com',
+            'street_address' => '11 Promo Street',
+            'city' => 'Caracas',
+            'postal_code' => '1010',
+            'country' => 'VE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335375',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertSessionHasErrors(['country']);
+
+        $promoCode->refresh();
+        $promoEntry->refresh();
+
+        $this->assertSame(0, Order::query()->count());
+        $this->assertNull($promoCode->used_at);
+        $this->assertNull($promoEntry->allocated_trading_account_id);
+        Mail::assertNothingSent();
     }
 
     public function test_giveaway_promo_code_requires_the_10k_two_step_plan(): void

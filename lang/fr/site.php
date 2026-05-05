@@ -1101,7 +1101,7 @@ return array_replace_recursive($en, [
                         'question' => 'Quels pays sont restreints ?',
                         'answer_paragraphs' => [
                             'Wolforix ne fournit pas de services aux personnes ou entités résidant dans des pays soumis à des sanctions internationales ou restrictions réglementaires.',
-                            'Cela inclut notamment l’Iran, la Corée du Nord, la Syrie, le Soudan, Cuba, la Russie et le Venezuela.',
+                            'Les pays actuellement restreints sont l’Iran, la Corée du Nord, la Syrie, le Soudan, Cuba, la Russie et le Venezuela.',
                         ],
                         'answer_sections' => [
                             [

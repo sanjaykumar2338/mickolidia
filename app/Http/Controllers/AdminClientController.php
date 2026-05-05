@@ -8,15 +8,17 @@ use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
-use Illuminate\Support\Arr;
+use App\Support\CountryEligibility;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\View\View;
 
 class AdminClientController extends Controller
 {
     public function __construct(
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
+        private readonly CountryEligibility $countryEligibility,
     ) {}
 
     public function index(): View
@@ -453,7 +455,7 @@ class AdminClientController extends Controller
 
     private function countryName(string $countryCode): string
     {
-        return config("wolforix.checkout_countries.{$countryCode}", $countryCode);
+        return $this->countryEligibility->countryName($countryCode);
     }
 
     private function formatMoney(float $amount, string $currency = 'USD'): string

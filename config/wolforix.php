@@ -1,8 +1,22 @@
 <?php
 
-$stripeProviderClass = \App\Services\Payments\StripePaymentGateway::class;
-$payPalProviderClass = \App\Services\Payments\PayPalGateway::class;
+use App\Services\Payments\PayPalGateway;
+use App\Services\Payments\StripePaymentGateway;
+
+$stripeProviderClass = StripePaymentGateway::class;
+$payPalProviderClass = PayPalGateway::class;
 $payPalConfigured = filled((string) env('PAYPAL_CLIENT_ID')) && filled((string) env('PAYPAL_CLIENT_SECRET'));
+$countries = require __DIR__.'/countries.php';
+$restrictedCountries = [
+    'CU', // Cuba
+    'IR', // Iran
+    'KP', // North Korea
+    'RU', // Russia
+    'SD', // Sudan
+    'SY', // Syria
+    'VE', // Venezuela
+];
+$checkoutCountries = array_diff_key($countries, array_flip($restrictedCountries));
 
 $supportedLocales = [
     'en' => [
@@ -340,45 +354,11 @@ return [
 
     'future_locales' => [],
 
-    'checkout_countries' => [
-        'AT' => 'Austria',
-        'BE' => 'Belgium',
-        'BR' => 'Brazil',
-        'CA' => 'Canada',
-        'CH' => 'Switzerland',
-        'CY' => 'Cyprus',
-        'CZ' => 'Czech Republic',
-        'DE' => 'Germany',
-        'DK' => 'Denmark',
-        'EE' => 'Estonia',
-        'ES' => 'Spain',
-        'FI' => 'Finland',
-        'FR' => 'France',
-        'GB' => 'United Kingdom',
-        'GR' => 'Greece',
-        'HR' => 'Croatia',
-        'HU' => 'Hungary',
-        'IE' => 'Ireland',
-        'IN' => 'India',
-        'IT' => 'Italy',
-        'LT' => 'Lithuania',
-        'LU' => 'Luxembourg',
-        'LV' => 'Latvia',
-        'MT' => 'Malta',
-        'MX' => 'Mexico',
-        'NL' => 'Netherlands',
-        'NO' => 'Norway',
-        'PL' => 'Poland',
-        'PT' => 'Portugal',
-        'RO' => 'Romania',
-        'SE' => 'Sweden',
-        'SG' => 'Singapore',
-        'SI' => 'Slovenia',
-        'SK' => 'Slovakia',
-        'TR' => 'Turkey',
-        'US' => 'United States',
-        'ZA' => 'South Africa',
-    ],
+    'countries' => $countries,
+
+    'restricted_countries' => $restrictedCountries,
+
+    'checkout_countries' => $checkoutCountries,
 
     'legal_pages' => [
         'terms' => [

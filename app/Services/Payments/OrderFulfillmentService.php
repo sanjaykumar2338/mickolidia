@@ -11,6 +11,7 @@ use App\Models\UserProfile;
 use App\Services\Billing\OrderInvoiceService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
+use App\Support\CountryEligibility;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -22,6 +23,7 @@ class OrderFulfillmentService
         private readonly TradingAccountProvisioner $tradingAccountProvisioner,
         private readonly OrderInvoiceService $invoiceService,
         private readonly ChallengeLifecycleMailer $lifecycleMailer,
+        private readonly CountryEligibility $countryEligibility,
     ) {}
 
     /**
@@ -246,7 +248,7 @@ class OrderFulfillmentService
 
     private function countryName(string $countryCode): string
     {
-        return config("wolforix.checkout_countries.{$countryCode}", $countryCode);
+        return $this->countryEligibility->countryName($countryCode);
     }
 
     private function challengeTypeLabel(string $challengeType): string

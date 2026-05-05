@@ -1503,7 +1503,7 @@ return [
                         'question' => 'Which countries are restricted?',
                         'answer_paragraphs' => [
                             'Wolforix does not provide services to individuals or entities residing in countries subject to international sanctions or regulatory restrictions.',
-                            'This includes, but is not limited to, Iran, North Korea, Syria, Sudan, Cuba, Russia, and Venezuela.',
+                            'The currently restricted countries are Iran, North Korea, Syria, Sudan, Cuba, Russia, and Venezuela.',
                         ],
                         'answer_sections' => [
                             [

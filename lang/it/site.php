@@ -1376,7 +1376,7 @@ return array_replace_recursive($en, [
                         'question' => 'Quali Paesi sono soggetti a restrizioni?',
                         'answer_paragraphs' => [
                             'Wolforix non fornisce servizi a persone o entità residenti in Paesi soggetti a sanzioni internazionali o restrizioni regolamentari.',
-                            'Questo include, tra gli altri, Iran, Corea del Nord, Siria, Sudan, Cuba, Russia e Venezuela.',
+                            'I Paesi attualmente soggetti a restrizioni sono Iran, Corea del Nord, Siria, Sudan, Cuba, Russia e Venezuela.',
                         ],
                         'answer_sections' => [
                             [

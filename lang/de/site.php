@@ -1503,7 +1503,7 @@ return [
                         'question' => 'Welche Länder sind eingeschränkt?',
                         'answer_paragraphs' => [
                             'Wolforix bietet keine Dienste für Personen oder Unternehmen an, die in Ländern wohnen oder ansässig sind, die internationalen Sanktionen oder regulatorischen Einschränkungen unterliegen.',
-                            'Dazu gehören unter anderem Iran, Nordkorea, Syrien, Sudan, Kuba, Russland und Venezuela.',
+                            'Die derzeit eingeschränkten Länder sind Iran, Nordkorea, Syrien, Sudan, Kuba, Russland und Venezuela.',
                         ],
                         'answer_sections' => [
                             [
