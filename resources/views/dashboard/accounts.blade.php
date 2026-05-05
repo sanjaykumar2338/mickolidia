@@ -163,6 +163,9 @@
                                 'rose' => 'border-rose-400/20 bg-rose-500/10 text-rose-100',
                                 default => 'border-white/10 bg-white/5 text-slate-200',
                             };
+                            $metricCardClasses = 'surface-card min-w-0 rounded-3xl p-5';
+                            $metricLabelClasses = 'text-xs font-semibold uppercase tracking-[0.22em] text-slate-400';
+                            $metricValueClasses = 'mt-3 min-w-0 break-words text-[1.35rem] font-semibold leading-tight text-white 2xl:text-2xl';
                         @endphp
 
                         @if (! empty($account['state_notice']))
@@ -176,38 +179,38 @@
                             </div>
                         @endif
 
-                        <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Initial balance') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['starting_balance'] }}</p>
+                        <div class="mt-6 grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-4">
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Initial balance') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['starting_balance'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Current balance') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['balance'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Current balance') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['balance'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Challenge equity') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['equity'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Challenge equity') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['equity'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Recognized profit') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['total_profit'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Recognized profit') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['total_profit'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Floating P&L') }}</p>
-                                <p class="mt-3 text-2xl font-semibold {{ $floatingToneClasses }}">{{ $account['floating_pnl'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Floating P&L') }}</p>
+                                <p class="{{ $metricValueClasses }} {{ $floatingToneClasses }}">{{ $account['floating_pnl'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Challenge phase') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['challenge_phase'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Challenge phase') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['challenge_phase'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Trading days') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['trading_days'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Trading days') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['trading_days'] }}</p>
                             </div>
-                            <div class="surface-card rounded-3xl p-5">
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{{ __('Max drawdown used') }}</p>
-                                <p class="mt-3 text-2xl font-semibold text-white">{{ $account['max_drawdown_used'] }}</p>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Max drawdown used') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['max_drawdown_used'] }}</p>
                             </div>
                         </div>
 
