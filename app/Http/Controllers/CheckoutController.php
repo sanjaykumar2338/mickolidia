@@ -158,7 +158,9 @@ class CheckoutController extends Controller
                 || $giveawayPromoCode->used_at !== null
                 || $promoEntry->allocated_at !== null
                 || $promoEntry->allocated_trading_account_id !== null
+                || $validated['challenge_type'] !== 'two_step'
                 || (int) $promoEntry->account_size !== (int) $validated['account_size']
+                || (int) $validated['account_size'] !== 10000
             ) {
                 return back()
                     ->withInput()
@@ -341,6 +343,8 @@ class CheckoutController extends Controller
             && $giveawayPromoCode->poolEntry->is_promo
             && $giveawayPromoCode->poolEntry->allocated_at === null
             && $giveawayPromoCode->poolEntry->allocated_trading_account_id === null
+            && $validated['challenge_type'] === 'two_step'
+            && (int) $validated['account_size'] === 10000
             && (int) $giveawayPromoCode->poolEntry->account_size === (int) $validated['account_size'];
 
         if ($giveawayApplies) {

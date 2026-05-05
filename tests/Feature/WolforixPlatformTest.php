@@ -1534,7 +1534,7 @@ class WolforixPlatformTest extends TestCase
             'city' => 'Berlin',
             'postal_code' => '10115',
             'country' => 'DE',
-            'challenge_type' => 'one_step',
+            'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
             'promo_code' => 'WFXGIVE-335374',
@@ -1577,6 +1577,63 @@ class WolforixPlatformTest extends TestCase
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
         ])->assertSessionHasErrors(['promo_code']);
+    }
+
+    public function test_giveaway_promo_code_requires_the_10k_two_step_plan(): void
+    {
+        Mail::fake();
+
+        $promoEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335374',
+            'password' => 'promo-trading-pass',
+            'investor_password' => 'promo-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => true,
+            'is_available' => false,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'promo_marker' => 'Promo',
+            ],
+        ]);
+
+        Mt5PromoCode::query()->create([
+            'code' => 'WFXGIVE-335374',
+            'mt5_account_pool_entry_id' => $promoEntry->id,
+            'mt5_login' => '335374',
+        ]);
+
+        $basePayload = [
+            'full_name' => 'Giveaway Trader',
+            'email' => 'giveaway-billing@example.com',
+            'street_address' => '10 Promo Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'currency' => 'USD',
+            'promo_code' => 'WFXGIVE-335374',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ];
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), $basePayload + [
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+        ])->assertSessionHasErrors(['promo_code']);
+
+        $this->actingAs(User::factory()->create())->post(route('checkout.store'), $basePayload + [
+            'challenge_type' => 'two_step',
+            'account_size' => 25000,
+        ])->assertSessionHasErrors(['promo_code']);
+
+        $promoEntry->refresh();
+
+        $this->assertNull($promoEntry->allocated_trading_account_id);
     }
 
     public function test_dashboard_invoice_download_is_scoped_to_the_invoice_owner(): void
