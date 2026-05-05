@@ -468,7 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const launchPromoStorageKey = 'wolforix-launch-promo-code';
-    const normalizePromoCode = (value) => (value ?? '').toString().trim();
+    const normalizePromoCode = (value) => (value ?? '')
+        .toString()
+        .replace(/[\u2010-\u2015]/g, '-')
+        .replace(/[\s\u00a0\u200b\u200c\u200d\ufeff]+/g, ' ')
+        .trim()
+        .toUpperCase();
     const getLaunchPromoCode = () => normalizePromoCode(storage.get(launchPromoStorageKey));
     const setLaunchPromoCode = (value) => {
         const normalized = normalizePromoCode(value);
@@ -2290,6 +2295,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (!response.ok) {
                         throw new Error(payload?.message ?? invalidMessage);
+                    }
+
+                    if (typeof payload.redirect_url === 'string' && payload.redirect_url.trim() !== '') {
+                        renderFeedback('success', payload.message ?? giveawayMessage);
+                        window.location.assign(payload.redirect_url);
+                        return;
                     }
 
                     renderPricing(payload.pricing ?? basePricing);

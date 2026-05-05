@@ -1068,6 +1068,86 @@ class WolforixPlatformTest extends TestCase
             ]);
     }
 
+    public function test_checkout_giveaway_promo_apply_and_reload_use_the_same_validation(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', true)
+            ->assertJsonPath('payment_required', false)
+            ->assertJsonPath('checkout_mode', 'giveaway');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ]))
+            ->assertOk()
+            ->assertSee($promoCode->code)
+            ->assertSee('Promo code applied. No payment is required for this giveaway account.')
+            ->assertSee('data-payment-required="false"', false)
+            ->assertDontSee('data-feedback-state="error"', false);
+    }
+
+    public function test_checkout_giveaway_promo_wrong_account_size_returns_specific_error_and_redirect_target(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 100000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('message', 'This promo code is only valid for the $10K 2-step evaluation account.')
+            ->assertJsonPath('selection.challenge_type', 'two_step')
+            ->assertJsonPath('selection.account_size', 10000)
+            ->assertJsonPath('selection.promo_code', $promoCode->code)
+            ->assertJsonPath('redirect_url', route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ]));
+    }
+
+    public function test_checkout_giveaway_promo_url_with_wrong_account_size_redirects_to_correct_plan(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335400', [
+            'login' => '335400',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 100000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ]))
+            ->assertRedirect(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => $promoCode->code,
+            ]));
+    }
+
     public function test_checkout_giveaway_promo_page_hides_payment_options_when_valid(): void
     {
         $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335374');

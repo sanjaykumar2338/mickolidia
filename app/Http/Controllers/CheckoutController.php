@@ -28,7 +28,7 @@ class CheckoutController extends Controller
         ChallengePricingService $pricingService,
         PaymentManager $paymentManager,
         CountryEligibility $countryEligibility,
-    ): View {
+    ): View|RedirectResponse {
         $retryOrder = null;
         /** @var User $user */
         $user = $request->user();
@@ -79,6 +79,14 @@ class CheckoutController extends Controller
             ? $this->validateGiveawayPromoCode($giveawayPromoCode, $selectedType, $selectedSize)
             : ['applies' => false, 'message' => ''];
         $giveawayApplies = (bool) $giveawayValidation['applies'];
+
+        if (
+            $giveawayPromoCode instanceof Mt5PromoCode
+            && ! $giveawayApplies
+            && $this->giveawayPlanMismatch($giveawayPromoCode, $selectedType, $selectedSize)
+        ) {
+            return redirect()->route('checkout.show', $this->giveawayCheckoutParameters($giveawayPromoCode, $selectedCurrency));
+        }
 
         if ($giveawayApplies) {
             $selectedPlan['discounted_price'] = 0;
@@ -411,6 +419,12 @@ class CheckoutController extends Controller
                     : $giveawayValidation['message']),
             'payment_required' => ! $giveawayApplies,
             'checkout_mode' => $giveawayApplies ? 'giveaway' : 'payment',
+            'redirect_url' => $giveawayPromoCode instanceof Mt5PromoCode && ! $giveawayApplies && $this->giveawayPlanMismatch($giveawayPromoCode, $validated['challenge_type'], (int) $validated['account_size'])
+                ? route('checkout.show', $this->giveawayCheckoutParameters($giveawayPromoCode, $validated['currency']))
+                : null,
+            'selection' => $giveawayPromoCode instanceof Mt5PromoCode
+                ? $this->giveawayCheckoutParameters($giveawayPromoCode, $validated['currency'])
+                : null,
             'pricing' => $this->pricingPayload($selectedPlan),
         ]);
     }
@@ -542,7 +556,27 @@ class CheckoutController extends Controller
 
     private function normalizeGiveawayPromoCode(string $promoCode): string
     {
-        return strtolower((string) preg_replace('/[\s-]+/', '', trim($promoCode)));
+        return strtolower((string) preg_replace('/[\s\x{00A0}\x{200B}\x{200C}\x{200D}\x{FEFF}\p{Pd}]+/u', '', trim($promoCode)));
+    }
+
+    private function giveawayPlanMismatch(Mt5PromoCode $promoCode, string $challengeType, int $accountSize): bool
+    {
+        $target = $this->giveawayCheckoutParameters($promoCode);
+
+        return $challengeType !== $target['challenge_type'] || $accountSize !== $target['account_size'];
+    }
+
+    /**
+     * @return array{challenge_type: string, account_size: int, currency: string, promo_code: string}
+     */
+    private function giveawayCheckoutParameters(Mt5PromoCode $promoCode, ?string $currency = null): array
+    {
+        return [
+            'challenge_type' => 'two_step',
+            'account_size' => (int) ($promoCode->poolEntry?->account_size ?: 10000),
+            'currency' => $currency !== null && $currency !== '' ? strtoupper($currency) : 'USD',
+            'promo_code' => $promoCode->code,
+        ];
     }
 
     /**
