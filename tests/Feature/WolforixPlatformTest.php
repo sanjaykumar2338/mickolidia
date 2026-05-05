@@ -21,6 +21,7 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Notifications\WolforixResetPasswordNotification;
+use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\Pricing\ChallengePricingService;
 use App\Support\PublicContentIndex;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -32,6 +33,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Tests\Fixtures\FakePayPalPaymentGateway;
 use Tests\Fixtures\FakeStripePaymentGateway;
 use Tests\TestCase;
@@ -1406,6 +1408,76 @@ class WolforixPlatformTest extends TestCase
         $this->assertTrue((bool) $badPoolEntry->is_available);
         $this->assertSame($account->id, $goodPoolEntry->allocated_trading_account_id);
         $this->assertFalse((bool) $goodPoolEntry->is_available);
+    }
+
+    public function test_checkout_success_still_completes_when_post_payment_email_delivery_fails(): void
+    {
+        $this->useFakeStripeGateway();
+        Storage::fake('public');
+
+        $this->mock(ChallengeLifecycleMailer::class, function ($mock): void {
+            $mock->shouldReceive('sendPurchaseConfirmationIfNeeded')
+                ->once()
+                ->andThrow(new RuntimeException('SMTP unavailable'));
+            $mock->shouldReceive('sendPurchaseCredentialsIfNeeded')
+                ->once()
+                ->andThrow(new RuntimeException('SMTP unavailable'));
+            $mock->shouldReceive('sendPurchaseSupportNotificationIfNeeded')
+                ->once()
+                ->andThrow(new RuntimeException('SMTP unavailable'));
+        });
+
+        $user = User::factory()->create([
+            'email' => 'account-owner@example.com',
+        ]);
+
+        $poolEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335411',
+            'password' => 'fusion-trading-pass',
+            'investor_password' => 'fusion-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 25000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_available' => true,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Paid Trader',
+            'email' => 'billing-paid@example.com',
+            'street_address' => '2 Trade Street',
+            'city' => 'London',
+            'postal_code' => 'E17 3NU',
+            'country' => 'GB',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('checkout.success', ['session_id' => $order->external_checkout_id]))
+            ->assertOk()
+            ->assertSee('Challenge order confirmed');
+
+        $order->refresh();
+        $account = TradingAccount::query()->where('order_id', $order->id)->firstOrFail();
+        $poolEntry->refresh();
+
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame(Order::STATUS_COMPLETED, $order->order_status);
+        $this->assertSame('335411', $account->platform_login);
+        $this->assertSame($account->id, $poolEntry->allocated_trading_account_id);
+        $this->assertSame(1, Invoice::query()->where('order_id', $order->id)->count());
     }
 
     public function test_giveaway_promo_code_immediately_assigns_linked_promo_mt5_account_once(): void

@@ -3,19 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChallengePlan;
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Payments\OrderFulfillmentService;
 use App\Services\Payments\PaymentManager;
 use App\Services\Pricing\ChallengePricingService;
-use InvalidArgumentException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Throwable;
 
 class CheckoutController extends Controller
@@ -151,7 +153,7 @@ class CheckoutController extends Controller
             $promoEntry = $giveawayPromoCode->poolEntry;
 
             if (
-                ! $promoEntry instanceof \App\Models\Mt5AccountPoolEntry
+                ! $promoEntry instanceof Mt5AccountPoolEntry
                 || ! $promoEntry->is_promo
                 || $giveawayPromoCode->used_at !== null
                 || $promoEntry->allocated_at !== null
@@ -184,7 +186,7 @@ class CheckoutController extends Controller
 
             $order = $existingOrder instanceof Order
                 ? $existingOrder
-                : new Order();
+                : new Order;
 
             $order->fill([
                 'user_id' => $user->id,
@@ -376,7 +378,32 @@ class CheckoutController extends Controller
             abort(404);
         }
 
-        $session = $gateway->retrieveCheckoutSession($sessionId);
+        try {
+            $session = $gateway->retrieveCheckoutSession($sessionId);
+        } catch (Throwable $exception) {
+            Log::warning('checkout.success_session_retrieval_failed', [
+                'provider' => $providerKey,
+                'session_id' => $sessionId,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
+            $order = Order::query()
+                ->with(['challengePurchase', 'user'])
+                ->where('external_checkout_id', $sessionId)
+                ->first();
+
+            if ($order instanceof Order && $order->isPaid()) {
+                return view('checkout.success', [
+                    'order' => $order,
+                ]);
+            }
+
+            return redirect()
+                ->route('checkout.cancel', ['order' => $order?->order_number])
+                ->withErrors(['payment' => __('site.checkout.errors.provider_unavailable')]);
+        }
+
         $order = Order::query()
             ->with(['challengePurchase', 'paymentAttempts'])
             ->where('external_checkout_id', $sessionId)

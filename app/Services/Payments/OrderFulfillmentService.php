@@ -12,7 +12,9 @@ use App\Services\Billing\OrderInvoiceService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 class OrderFulfillmentService
 {
@@ -20,8 +22,7 @@ class OrderFulfillmentService
         private readonly TradingAccountProvisioner $tradingAccountProvisioner,
         private readonly OrderInvoiceService $invoiceService,
         private readonly ChallengeLifecycleMailer $lifecycleMailer,
-    ) {
-    }
+    ) {}
 
     /**
      * @param  array<string, mixed>  $paymentData
@@ -90,16 +91,26 @@ class OrderFulfillmentService
             ->with(['challengePurchase.tradingAccounts', 'invoice', 'user'])
             ->findOrFail($result['order_id']);
 
-        $this->invoiceService->ensureForOrder($fulfilledOrder);
-        $this->lifecycleMailer->sendPurchaseConfirmationIfNeeded($fulfilledOrder);
+        $this->runPostPaymentStep('invoice.ensure', $fulfilledOrder, function () use ($fulfilledOrder): void {
+            $this->invoiceService->ensureForOrder($fulfilledOrder);
+        });
+
+        $this->runPostPaymentStep('mail.purchase_confirmation', $fulfilledOrder, function () use ($fulfilledOrder): void {
+            $this->lifecycleMailer->sendPurchaseConfirmationIfNeeded($fulfilledOrder);
+        });
 
         $account = $fulfilledOrder->challengePurchase?->tradingAccounts
             ->where('id', $result['account_id'])
             ->first();
 
         if ($account !== null) {
-            $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($account);
-            $this->lifecycleMailer->sendPurchaseSupportNotificationIfNeeded($fulfilledOrder, $account);
+            $this->runPostPaymentStep('mail.purchase_credentials', $fulfilledOrder, function () use ($account): void {
+                $this->lifecycleMailer->sendPurchaseCredentialsIfNeeded($account);
+            });
+
+            $this->runPostPaymentStep('mail.purchase_support_notification', $fulfilledOrder, function () use ($fulfilledOrder, $account): void {
+                $this->lifecycleMailer->sendPurchaseSupportNotificationIfNeeded($fulfilledOrder, $account);
+            });
         }
 
         return ChallengePurchase::query()->findOrFail($result['purchase_id']);
@@ -244,5 +255,21 @@ class OrderFulfillmentService
             'wolforix.challenge_catalog.'.$challengeType.'.label',
             $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
         );
+    }
+
+    private function runPostPaymentStep(string $step, Order $order, callable $callback): void
+    {
+        try {
+            $callback();
+        } catch (Throwable $exception) {
+            Log::error('Post-payment fulfillment step failed.', [
+                'step' => $step,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_provider' => $order->payment_provider,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 }
