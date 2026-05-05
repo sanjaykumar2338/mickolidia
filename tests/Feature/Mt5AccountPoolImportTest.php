@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Mt5\Mt5AccountPoolImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 use ZipArchive;
@@ -169,6 +170,59 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame(2, Mt5AccountPoolEntry::query()->count());
         $this->assertSame('fusion-main-updated', $fusionEntry->fresh()->password);
         $this->assertSame('fusion-investor-updated', $fusionEntry->fresh()->investor_password);
+    }
+
+    public function test_fusionmarkets_import_can_rewrite_existing_entry_with_wrong_key_encrypted_credentials(): void
+    {
+        $entry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335400',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_promo' => true,
+            'is_available' => false,
+        ]);
+
+        $wrongKeyEncryptedPayload = base64_encode((string) json_encode([
+            'iv' => base64_encode(random_bytes(16)),
+            'value' => base64_encode('encrypted-with-another-key'),
+            'mac' => str_repeat('0', 64),
+            'tag' => '',
+        ]));
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $entry->id)
+            ->update([
+                'password' => $wrongKeyEncryptedPayload,
+                'investor_password' => $wrongKeyEncryptedPayload,
+            ]);
+
+        $path = $this->createOds([
+            ['Login', 'Password', 'Investor Password', 'Server', 'Account Size', 'C', 'Status', 'Created Date', ''],
+            ['335400', 'fusion-main-fixed', 'fusion-investor-fixed', 'FusionMarkets-Demo', '10000', '$', 'available', '23.04.26', 'Promo'],
+        ]);
+
+        $report = app(Mt5AccountPoolImportService::class)->import(
+            path: $path,
+            pool: Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            batch: 'fusion-reencrypt-test-batch',
+            options: [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'update_existing' => true,
+                'require_investor_password' => true,
+            ],
+        );
+
+        $entry->refresh();
+
+        $this->assertSame(0, $report['created']);
+        $this->assertSame(1, $report['updated']);
+        $this->assertSame('fusion-main-fixed', $entry->password);
+        $this->assertSame('fusion-investor-fixed', $entry->investor_password);
+        $this->assertSame(10000, $entry->account_size);
+        $this->assertTrue((bool) $entry->is_promo);
     }
 
     public function test_fusionmarkets_import_creates_single_use_promo_codes_and_excludes_promo_accounts_from_normal_pool(): void

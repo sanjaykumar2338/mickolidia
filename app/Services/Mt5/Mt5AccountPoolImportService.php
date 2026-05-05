@@ -5,6 +5,8 @@ namespace App\Services\Mt5;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\Mt5PromoCode;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -114,7 +116,7 @@ class Mt5AccountPoolImportService
                     && $existing->allocated_trading_account_id === null
                 ) {
                     if (! $dryRun) {
-                        $existing->forceFill($this->entryAttributes(
+                        $this->updateExistingEntry($existing, $this->entryAttributes(
                             values: $values,
                             inspection: $inspection,
                             rowNumber: $row['row_number'],
@@ -122,7 +124,9 @@ class Mt5AccountPoolImportService
                             batch: $batch,
                             broker: $broker,
                             platform: $platform,
-                        ))->save();
+                        ));
+
+                        $existing = $existing->fresh() ?? $existing;
 
                         $this->ensurePromoCode($existing, $report, $dryRun);
                     }
@@ -321,6 +325,24 @@ class Mt5AccountPoolImportService
                 'promo_marker' => $values['promo_marker'] ?? null,
             ], static fn (mixed $value): bool => $value !== null && $value !== ''),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function updateExistingEntry(Mt5AccountPoolEntry $entry, array $attributes): void
+    {
+        $updates = $attributes;
+        $updates['password'] = Crypt::encryptString((string) $attributes['password']);
+        $updates['investor_password'] = filled($attributes['investor_password'] ?? null)
+            ? Crypt::encryptString((string) $attributes['investor_password'])
+            : null;
+        $updates['meta'] = json_encode($attributes['meta'] ?? [], JSON_THROW_ON_ERROR);
+        $updates['updated_at'] = now();
+
+        DB::table($entry->getTable())
+            ->where('id', $entry->id)
+            ->update($updates);
     }
 
     /**
