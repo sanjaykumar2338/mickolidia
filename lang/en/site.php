@@ -125,25 +125,25 @@ return [
         ],
         'trust' => [
             'eyebrow' => 'Trust / Security',
-            'title' => 'Security positioning visible from the first visit.',
-            'description' => 'Wolforix is building operational trust around secure infrastructure, risk controls, monitoring, and ISO/IEC 27001 alignment work that is currently in progress.',
+            'title' => 'Visible security from the first moment',
+            'description' => 'Wolforix reinforces trust with robust infrastructure, advanced risk controls, continuous monitoring, and an active alignment process with the ISO/IEC 27001 standard.',
             'cta' => 'View Security',
             'items' => [
                 [
                     'title' => 'Secure infrastructure',
-                    'description' => 'Protected hosting and controlled operational access across core systems.',
+                    'description' => 'Protected hosting and strictly controlled operational access across core systems.',
                 ],
                 [
                     'title' => 'Advanced risk control',
-                    'description' => 'Preventive controls and review paths designed to reduce operational risk.',
+                    'description' => 'Preventive controls and review flows designed to minimize operational risk.',
                 ],
                 [
                     'title' => 'Real-time monitoring',
-                    'description' => 'Continuous visibility into platform activity, events, and service health.',
+                    'description' => 'Continuous visibility into platform activity, critical events, and service status.',
                 ],
                 [
                     'title' => 'ISO/IEC 27001 aligned',
-                    'description' => 'Alignment roadmap in progress without any certification claim.',
+                    'description' => 'The implementation process is in progress and forms part of our commitment to international security standards.',
                 ],
             ],
             'support_items' => [

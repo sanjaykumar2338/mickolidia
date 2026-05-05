@@ -125,25 +125,25 @@ return [
         ],
         'trust' => [
             'eyebrow' => 'Vertrauen / Sicherheit',
-            'title' => 'Sicherheitspositionierung direkt beim ersten Besuch sichtbar.',
-            'description' => 'Wolforix baut Vertrauen rund um sichere Infrastruktur, Risikokontrollen, Monitoring und laufende ISO/IEC-27001-Ausrichtung auf.',
+            'title' => 'Sichtbare Sicherheit vom ersten Moment an',
+            'description' => 'Wolforix stärkt Vertrauen durch robuste Infrastruktur, fortschrittliche Risikokontrollen, kontinuierliches Monitoring und einen aktiven Ausrichtungsprozess an der Norm ISO/IEC 27001.',
             'cta' => 'Sicherheit ansehen',
             'items' => [
                 [
                     'title' => 'Sichere Infrastruktur',
-                    'description' => 'Geschuetztes Hosting und kontrollierter operativer Zugriff auf Kernsysteme.',
+                    'description' => 'Geschütztes Hosting und streng kontrollierte operative Zugriffe auf zentrale Systeme.',
                 ],
                 [
                     'title' => 'Erweiterte Risikokontrolle',
-                    'description' => 'Praeventive Kontrollen und Review-Ablaeufe zur Reduzierung operativer Risiken.',
+                    'description' => 'Präventive Kontrollen und Prüfabläufe, die darauf ausgelegt sind, operative Risiken zu minimieren.',
                 ],
                 [
                     'title' => 'Echtzeit-Monitoring',
-                    'description' => 'Kontinuierliche Sichtbarkeit auf Plattformaktivitaet, Ereignisse und Servicezustand.',
+                    'description' => 'Kontinuierliche Sichtbarkeit der Plattformaktivität, kritischer Ereignisse und des Servicestatus.',
                 ],
                 [
                     'title' => 'ISO/IEC 27001 ausgerichtet',
-                    'description' => 'Die Ausrichtungs-Roadmap laeuft, ohne irgendeinen Zertifizierungsanspruch.',
+                    'description' => 'Der Implementierungsprozess läuft und ist Teil unseres Engagements für internationale Sicherheitsstandards.',
                 ],
             ],
             'support_items' => [

@@ -107,25 +107,25 @@ return array_replace_recursive($en, [
         ],
         'trust' => [
             'eyebrow' => 'Confiance / Sécurité',
-            'title' => 'Le positionnement sécurité visible dès la première visite.',
-            'description' => 'Wolforix renforce la confiance autour d’une infrastructure sécurisée, de contrôles de risque, du monitoring et d’un alignement ISO/IEC 27001 en cours.',
+            'title' => 'Une sécurité visible dès le premier instant',
+            'description' => 'Wolforix renforce la confiance grâce à une infrastructure robuste, des contrôles de risque avancés, une surveillance continue et un processus actif d’alignement avec la norme ISO/IEC 27001.',
             'cta' => 'Voir la sécurité',
             'items' => [
                 [
                     'title' => 'Infrastructure sécurisée',
-                    'description' => 'Hébergement protégé et accès opérationnel contrôlé sur les systèmes clés.',
+                    'description' => 'Hébergement protégé et accès opérationnels strictement contrôlés sur les systèmes centraux.',
                 ],
                 [
                     'title' => 'Contrôle avancé du risque',
-                    'description' => 'Contrôles préventifs et circuits de revue pour réduire le risque opérationnel.',
+                    'description' => 'Contrôles préventifs et flux de revue conçus pour minimiser le risque opérationnel.',
                 ],
                 [
-                    'title' => 'Monitoring en temps réel',
-                    'description' => 'Visibilité continue sur l’activité de la plateforme, les événements et la santé du service.',
+                    'title' => 'Surveillance en temps réel',
+                    'description' => 'Visibilité continue sur l’activité de la plateforme, les événements critiques et l’état du service.',
                 ],
                 [
                     'title' => 'Aligné ISO/IEC 27001',
-                    'description' => 'La feuille de route d’alignement est en cours sans aucune revendication de certification.',
+                    'description' => 'Le processus de mise en œuvre est en cours et fait partie de notre engagement envers les standards internationaux de sécurité.',
                 ],
             ],
             'support_items' => [

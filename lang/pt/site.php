@@ -130,25 +130,25 @@ return array_replace_recursive($en, [
         ],
         'trust' => [
             'eyebrow' => 'Confiança / Segurança',
-            'title' => 'Posicionamento de segurança visível desde a primeira visita.',
-            'description' => 'A Wolforix está a construir confiança operacional em torno de infraestrutura segura, controlos de risco, monitorização e alinhamento ISO/IEC 27001 atualmente em curso.',
+            'title' => 'Segurança visível desde o primeiro momento',
+            'description' => 'A Wolforix reforça a confiança com uma infraestrutura robusta, controlos de risco avançados, monitorização contínua e um processo ativo de alinhamento com a norma ISO/IEC 27001.',
             'cta' => 'Ver segurança',
             'items' => [
                 [
                     'title' => 'Infraestrutura segura',
-                    'description' => 'Alojamento protegido e acesso operacional controlado aos sistemas principais.',
+                    'description' => 'Alojamento protegido e acessos operacionais estritamente controlados nos sistemas centrais.',
                 ],
                 [
                     'title' => 'Controlo de risco avançado',
-                    'description' => 'Controlos preventivos e percursos de revisão concebidos para reduzir o risco operacional.',
+                    'description' => 'Controlos preventivos e fluxos de revisão concebidos para minimizar o risco operacional.',
                 ],
                 [
                     'title' => 'Monitorização em tempo real',
-                    'description' => 'Visibilidade contínua sobre a atividade da plataforma, eventos e estado dos serviços.',
+                    'description' => 'Visibilidade contínua da atividade da plataforma, eventos críticos e estado do serviço.',
                 ],
                 [
                     'title' => 'Alinhamento ISO/IEC 27001',
-                    'description' => 'Roadmap de alinhamento em curso sem qualquer alegação de certificação.',
+                    'description' => 'O processo de implementação está em curso e faz parte do nosso compromisso com as normas internacionais de segurança.',
                 ],
             ],
             'support_items' => [

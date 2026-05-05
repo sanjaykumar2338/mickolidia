@@ -102,6 +102,27 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_homepage_security_trust_copy_is_localized(): void
+    {
+        $this->withSession(['locale' => 'es'])
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('Seguridad visible desde el primer momento')
+            ->assertSee('Wolforix refuerza la confianza con una infraestructura robusta, controles de riesgo avanzados, monitorización continua y un proceso activo de alineación con la norma ISO/IEC 27001.')
+            ->assertSee('Hosting protegido y accesos operativos estrictamente controlados en los sistemas centrales.')
+            ->assertSee('El proceso de implementación está en curso y forma parte de nuestro compromiso con los estándares internacionales de seguridad.');
+
+        foreach (array_keys(config('wolforix.supported_locales')) as $locale) {
+            $trust = trans('site.home.trust', [], $locale);
+
+            $this->assertIsArray($trust);
+            $this->assertNotEmpty($trust['title'] ?? null);
+            $this->assertNotEmpty($trust['description'] ?? null);
+            $this->assertCount(4, $trust['items'] ?? []);
+            $this->assertStringContainsString('ISO/IEC 27001', json_encode($trust, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+        }
+    }
+
     public function test_about_page_contains_the_about_story_and_header_link(): void
     {
         $this->get(route('about'))
