@@ -9,6 +9,7 @@ use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Support\Mt5ConnectorCredentials;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,10 @@ use Illuminate\View\View;
 
 class TrialController extends Controller
 {
+    public function __construct(
+        private readonly Mt5ConnectorCredentials $connectorCredentials,
+    ) {}
+
     public function create(Request $request): View|RedirectResponse
     {
         if (! $request->user() && $request->session()->has('trial_user_id')) {
@@ -68,7 +73,7 @@ class TrialController extends Controller
                 ?? redirect()->route('trial.dashboard');
         }
 
-        $user = DB::transaction(function () use ($validated, $request): User {
+        $user = DB::transaction(function () use ($validated): User {
             $user = User::query()->create([
                 'name' => Str::of($validated['email'])->before('@')->replace(['.', '-', '_'], ' ')->title()->toString(),
                 'email' => $validated['email'],
@@ -105,13 +110,14 @@ class TrialController extends Controller
             return redirect()->route('trial.register');
         }
 
-        if (! $this->requiresTrialDemoConfirmation($trialAccount)) {
+        if ($this->resolveTrialOutcome($trialAccount) !== 'active') {
             return redirect()->route('trial.dashboard');
         }
 
         return view('trial.setup', [
             'trialAccount' => $trialAccount,
             'demoRegistrationUrl' => $this->demoRegistrationUrl(),
+            'connector' => $this->connectorCredentials->forAccount($trialAccount),
         ]);
     }
 
@@ -124,35 +130,24 @@ class TrialController extends Controller
             return redirect()->route('trial.register');
         }
 
-        if (! $this->requiresTrialDemoConfirmation($trialAccount)) {
-            return redirect()->route('trial.dashboard');
-        }
-
-        $validated = $request->validate([
-            'mt5_account_number' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9._-]+$/'],
-        ]);
-
-        $mt5AccountNumber = trim((string) $validated['mt5_account_number']);
         $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
 
         $trialAccount->forceFill([
             'platform' => 'MT5 Demo',
             'platform_slug' => 'mt5',
-            'platform_account_id' => $mt5AccountNumber,
-            'platform_login' => $mt5AccountNumber,
             'platform_environment' => 'IC Markets Demo',
-            'platform_status' => 'confirmed',
+            'platform_status' => 'pending_connection',
             'meta' => array_merge($meta, [
                 'demo_broker' => 'IC Markets',
                 'demo_registration_url' => $this->demoRegistrationUrl(),
-                'trial_demo_confirmed_at' => now()->toIso8601String(),
-                'trial_onboarding_step' => 'dashboard_access',
+                'trial_connector_acknowledged_at' => now()->toIso8601String(),
+                'trial_onboarding_step' => 'connector_pending',
             ]),
         ])->save();
 
         return redirect()
             ->route('trial.dashboard')
-            ->with('trial_success', __('site.trial.setup.confirm_success'));
+            ->with('trial_success', __('site.trial.setup.continue_success'));
     }
 
     public function dashboard(Request $request): View|RedirectResponse
@@ -162,10 +157,6 @@ class TrialController extends Controller
 
         if (! $trialAccount instanceof TradingAccount) {
             return redirect()->route('trial.register');
-        }
-
-        if ($this->requiresTrialDemoConfirmation($trialAccount)) {
-            return redirect()->route('trial.setup');
         }
 
         $this->markLastActivity($trialAccount);
@@ -188,6 +179,7 @@ class TrialController extends Controller
             'trialStatus' => $trialStatus,
             'milestoneMessage' => $milestoneMessage,
             'displayRules' => config('wolforix.trial.display_rules', []),
+            'connector' => $this->connectorCredentials->forAccount($trialAccount),
         ]);
     }
 
@@ -225,8 +217,12 @@ class TrialController extends Controller
         $trialAccount = $this->latestTrialAccount($user);
 
         if ($trialAccount instanceof TradingAccount) {
+            if ($this->resolveTrialOutcome($trialAccount) !== 'active') {
+                return redirect()->route('trial.dashboard');
+            }
+
             return redirect()->route(
-                $this->requiresTrialDemoConfirmation($trialAccount) ? 'trial.setup' : 'trial.dashboard'
+                $this->connectorCredentials->connectionStatus($trialAccount) === 'connected' ? 'trial.dashboard' : 'trial.setup'
             );
         }
 
@@ -269,7 +265,7 @@ class TrialController extends Controller
             'platform' => 'MT5 Demo',
             'platform_slug' => 'mt5',
             'platform_environment' => 'IC Markets Demo',
-            'platform_status' => 'pending_confirmation',
+            'platform_status' => 'pending_connection',
             'stage' => config('wolforix.trial.account_type', 'Trial (Demo)'),
             'status' => 'Active',
             'account_status' => 'active',
@@ -304,7 +300,11 @@ class TrialController extends Controller
                 'execution_profile' => 'challenge-matched-demo',
                 'demo_broker' => 'IC Markets',
                 'demo_registration_url' => $this->demoRegistrationUrl(),
-                'trial_onboarding_step' => 'demo_pending',
+                'trial_onboarding_step' => 'connector_pending',
+                'mt5_connector' => [
+                    'secret_token' => Str::random(48),
+                    'created_at' => now()->toIso8601String(),
+                ],
             ],
         ]);
 
@@ -316,23 +316,6 @@ class TrialController extends Controller
     private function demoRegistrationUrl(): string
     {
         return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/de/open-trading-account/demo');
-    }
-
-    private function requiresTrialDemoConfirmation(TradingAccount $trialAccount): bool
-    {
-        if ($this->resolveTrialOutcome($trialAccount) !== 'active') {
-            return false;
-        }
-
-        return ! $this->trialDemoConfirmed($trialAccount);
-    }
-
-    private function trialDemoConfirmed(TradingAccount $trialAccount): bool
-    {
-        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
-
-        return filled($trialAccount->platform_account_id)
-            || filled(data_get($meta, 'trial_demo_confirmed_at'));
     }
 
     private function markLastActivity(TradingAccount $trialAccount): void

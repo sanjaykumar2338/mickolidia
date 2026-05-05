@@ -98,7 +98,7 @@
                 'url' => route('trial.register'),
                 'search_text' => trim(implode(' ', array_filter([
                     Lang::get('site.contact.voice_trial_fallback', [], $voiceLocale),
-                    'free trial demo free demo demo account practice account trial register login email password existing user',
+                    'free trial demo free demo demo account practice account trial register login email password existing user mt5 connector ea expert advisor base url account reference secret token connect mt5',
                 ]))),
             ],
             [

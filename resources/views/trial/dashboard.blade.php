@@ -56,6 +56,10 @@
                 </div>
             @endif
 
+            <div class="mt-10">
+                @include('trial.partials.mt5-connector', ['connector' => $connector, 'compact' => false])
+            </div>
+
             <div class="mt-10 grid gap-5 md:grid-cols-3">
                 @foreach ($metrics as $metric)
                     <article class="surface-panel rounded-[1.8rem] p-5">

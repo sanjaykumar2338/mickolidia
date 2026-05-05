@@ -2,6 +2,42 @@ import './bootstrap';
 import { initWolfiDashboard } from './wolfi-dashboard';
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', async (event) => {
+        const copyButton = event.target instanceof Element
+            ? event.target.closest('[data-copy-value]')
+            : null;
+
+        if (!copyButton) {
+            return;
+        }
+
+        const value = copyButton.getAttribute('data-copy-value') ?? '';
+        const defaultLabel = copyButton.getAttribute('data-copy-label') ?? copyButton.textContent;
+        const copiedLabel = copyButton.getAttribute('data-copied-label') ?? 'Copied';
+
+        try {
+            await navigator.clipboard.writeText(value);
+            copyButton.textContent = copiedLabel;
+            window.setTimeout(() => {
+                copyButton.textContent = defaultLabel;
+            }, 1600);
+        } catch (error) {
+            const fallbackInput = document.createElement('textarea');
+            fallbackInput.value = value;
+            fallbackInput.setAttribute('readonly', 'readonly');
+            fallbackInput.style.position = 'fixed';
+            fallbackInput.style.left = '-9999px';
+            document.body.appendChild(fallbackInput);
+            fallbackInput.select();
+            document.execCommand('copy');
+            fallbackInput.remove();
+            copyButton.textContent = copiedLabel;
+            window.setTimeout(() => {
+                copyButton.textContent = defaultLabel;
+            }, 1600);
+        }
+    });
+
     const storage = {
         get(key) {
             try {
@@ -76,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         greeting: ['hello', 'hi', 'hey', 'hola', 'bonjour', 'salut', 'hallo', 'namaste', 'ciao', 'ola', 'olá'],
         support: ['support', 'help', 'contact', 'email', 'live chat', 'ticket', 'customer service', 'ayuda', 'soporte', 'aide', 'hilfe', 'kontakt', 'billing', 'refund', 'madad', 'supporto', 'suporte', 'contatto', 'contato'],
         login: ['login', 'log in', 'sign in', 'signin', 'password', 'register', 'sign up', 'account', 'google', 'facebook', 'apple', 'contraseña', 'passwort', 'mot de passe', 'anmelden', 'registro', 'registrarse', 'connexion', 'accedi', 'acceso', 'cadastro', 'senha', 'khata'],
-        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'trial access', 'demo login', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto', 'prova gratuita', 'teste gratis', 'teste grátis', 'muft trial', 'free test'],
+        trial: ['trial', 'free trial', 'free demo', 'demo', 'demo account', 'practice account', 'trial access', 'demo login', 'mt5 account', 'connect mt5', 'mt5 connector', 'connector ea', 'expert advisor', 'base url', 'account reference', 'secret token', 'essai', 'demo gratuit', 'prueba', 'prueba gratis', 'demokonto', 'testkonto', 'prova gratuita', 'teste gratis', 'teste grátis', 'muft trial', 'free test'],
         payout: ['payout', 'get paid', 'paid', 'cash out', 'withdraw', 'withdrawal', 'withdraw money', 'profit split', 'payment', 'processing time', 'retiro', 'retirar', 'retrait', 'auszahlung', 'zahlung', 'primer payout', 'first payout', 'first withdrawal', 'saque', 'pagamento', 'prelievo', 'pagamento del profitto'],
         rules: ['rule', 'rules', 'drawdown', 'loss', 'daily loss', 'max daily loss', 'max total loss', 'consistency', 'news', 'news trading', 'stop loss', 'trading days', 'regla', 'regeln', 'verlust', 'regel', 'nachrichten', 'noticias', 'nouvelles', 'daily drawdown', 'max loss', 'niyam', 'regola', 'regole', 'regra', 'regras'],
         plans: ['plan', 'challenge', 'account size', 'size', 'model', 'which challenge', 'which plan', 'best plan', 'difference', 'compare', 'single phase', 'funded account', 'one step', 'two step', '1-step', '2-step', 'desafio', 'cuenta', 'konto', 'compte', 'funded', 'phase', 'fase', 'phase 1', 'phase 2', 'piano', 'sfida', 'plano', 'khata size'],

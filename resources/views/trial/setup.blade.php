@@ -67,27 +67,16 @@
                         </a>
                     </section>
 
+                    @include('trial.partials.mt5-connector', ['connector' => $connector, 'compact' => false])
+
                     <section class="surface-panel rounded-[2rem] p-6 sm:p-8">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.trial.setup.step_three_label') }}</p>
-                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('site.trial.setup.confirm_title') }}</h2>
-                        <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.trial.setup.confirm_copy') }}</p>
-
-                        <form method="POST" action="{{ route('trial.confirm-demo') }}" class="mt-6 space-y-4">
+                        <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('site.trial.connector.status_title') }}</h2>
+                        <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.trial.connector.waiting_sync') }}</p>
+                        <form method="POST" action="{{ route('trial.confirm-demo') }}" class="mt-6">
                             @csrf
-                            <label class="block">
-                                <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.trial.setup.mt5_account_number_label') }}</span>
-                                <input
-                                    type="text"
-                                    name="mt5_account_number"
-                                    value="{{ old('mt5_account_number') }}"
-                                    class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
-                                    placeholder="{{ __('site.trial.setup.mt5_account_number_placeholder') }}"
-                                    required
-                                >
-                            </label>
-
                             <button type="submit" class="primary-cta w-full justify-center rounded-full px-8 py-4 text-base font-semibold">
-                                {{ __('site.trial.setup.confirm_button') }}
+                                {{ __('site.trial.setup.continue_button') }}
                             </button>
                         </form>
                     </section>

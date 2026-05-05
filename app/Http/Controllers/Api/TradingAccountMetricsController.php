@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Services\TradingAccounts\TradingAccountSnapshotApplyService;
+use App\Support\Mt5ConnectorCredentials;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -69,8 +70,13 @@ class TradingAccountMetricsController extends Controller
         Request $request,
         string $accountIdentifier,
         TradingAccountSnapshotApplyService $snapshotApplyService,
+        Mt5ConnectorCredentials $connectorCredentials,
     ): JsonResponse {
-        $this->authorizeIngestion($request);
+        $account = $this->resolveAccount($accountIdentifier);
+
+        if ($authFailure = $this->authorizeIngestion($request, $account, $connectorCredentials, $accountIdentifier)) {
+            return $authFailure;
+        }
 
         try {
             $normalizedPayload = $this->normalizePayload($request->all(), $accountIdentifier);
@@ -117,9 +123,9 @@ class TradingAccountMetricsController extends Controller
             'raw' => ['nullable', 'array'],
         ])->validate();
 
-        $account = $this->resolveAccount($accountIdentifier, $validated);
         $startedAt = now();
         $syncTrigger = (string) ($validated['sync_trigger'] ?? 'timer');
+        $sanitizedPayload = $this->sanitizePayload($request->all());
 
         Log::info('MT5 metrics update received.', [
             'account_identifier' => $accountIdentifier,
@@ -138,12 +144,12 @@ class TradingAccountMetricsController extends Controller
             'status' => 'started',
             'message' => "MT5 metrics update received ({$syncTrigger}).",
             'started_at' => $startedAt,
-            'payload' => $request->all(),
+            'payload' => $sanitizedPayload,
         ]);
 
         try {
             $updatedAccount = $snapshotApplyService->apply($account, array_merge($validated, [
-                'raw' => $request->all(),
+                'raw' => $sanitizedPayload,
             ]), [
                 'source' => 'mt5_ea',
                 'started_at' => $startedAt,
@@ -215,16 +221,29 @@ class TradingAccountMetricsController extends Controller
         }
     }
 
-    private function authorizeIngestion(Request $request): void
+    private function authorizeIngestion(
+        Request $request,
+        TradingAccount $account,
+        Mt5ConnectorCredentials $connectorCredentials,
+        string $accountIdentifier,
+    ): ?JsonResponse
     {
-        $configuredToken = (string) config('services.mt5_ingestion.token');
-        $providedToken = (string) ($request->bearerToken() ?: $request->header('X-Wolforix-Token', ''));
+        $providedToken = (string) ($request->bearerToken() ?: $request->input('secret_token', ''));
 
-        abort_unless(
-            $configuredToken !== '' && hash_equals($configuredToken, $providedToken),
-            401,
-            'Invalid integration token.',
-        );
+        if ($connectorCredentials->tokenMatches($account, $providedToken)) {
+            return null;
+        }
+
+        Log::warning('MT5 metrics token rejected.', [
+            'account_identifier' => $accountIdentifier,
+            'account_reference' => $account->account_reference,
+            'has_token' => $providedToken !== '',
+            'ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'error' => 'Invalid token',
+        ], 401);
     }
 
     private function shouldRequestPositionClosure(TradingAccount $account): bool
@@ -294,39 +313,11 @@ class TradingAccountMetricsController extends Controller
         return $this->mt5DeactivationEvent($account) !== null;
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function resolveAccount(string $accountIdentifier, array $payload = []): TradingAccount
+    private function resolveAccount(string $accountIdentifier): TradingAccount
     {
         $account = TradingAccount::query()
-            ->where('platform_account_id', $accountIdentifier)
-            ->orWhere('platform_login', $accountIdentifier)
-            ->orWhere('account_reference', $accountIdentifier)
-            ->when(is_numeric($accountIdentifier), function ($query) use ($accountIdentifier) {
-                $query->orWhere('id', (int) $accountIdentifier);
-            })
+            ->where('account_reference', $accountIdentifier)
             ->first();
-
-        if (! $account instanceof TradingAccount) {
-            $payloadIdentifiers = array_values(array_unique(array_filter([
-                $payload['platform_login'] ?? null,
-                $payload['platform_account_id'] ?? null,
-            ], static fn (mixed $value): bool => is_scalar($value) && filled((string) $value))));
-
-            if ($payloadIdentifiers !== []) {
-                $account = TradingAccount::query()
-                    ->where(function ($query) use ($payloadIdentifiers): void {
-                        foreach ($payloadIdentifiers as $identifier) {
-                            $identifier = (string) $identifier;
-
-                            $query->orWhere('platform_account_id', $identifier)
-                                ->orWhere('platform_login', $identifier);
-                        }
-                    })
-                    ->first();
-            }
-        }
 
         if (! $account instanceof TradingAccount) {
             throw ValidationException::withMessages([
@@ -335,6 +326,17 @@ class TradingAccountMetricsController extends Controller
         }
 
         return $account;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function sanitizePayload(array $payload): array
+    {
+        unset($payload['secret_token']);
+
+        return $payload;
     }
 
     /**

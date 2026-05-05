@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class TradingAccount extends Model
 {
@@ -176,6 +177,23 @@ class TradingAccount extends Model
             'rule_state' => 'array',
             'meta' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (TradingAccount $account): void {
+            if (filled(data_get($account->meta, 'mt5_connector.secret_token'))) {
+                return;
+            }
+
+            $meta = is_array($account->meta) ? $account->meta : [];
+            $meta['mt5_connector'] = array_merge((array) data_get($meta, 'mt5_connector', []), [
+                'secret_token' => Str::random(48),
+                'created_at' => now()->toIso8601String(),
+            ]);
+
+            $account->meta = $meta;
+        });
     }
 
     public function user(): BelongsTo

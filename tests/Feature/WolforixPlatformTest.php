@@ -2462,8 +2462,8 @@ class WolforixPlatformTest extends TestCase
             'Complete your identity verification (KYC/KYB) in your client area',
             'How is working?',
             'Open your MT5 demo account with IC Markets using the button in the trial setup screen.',
-            'enter your MT5 account number',
-            'I already have my Demo Account',
+            'Download the Wolforix MT5 connector',
+            'Base URL, Account Reference, and Secret Token',
         ];
 
         $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);
@@ -3259,7 +3259,6 @@ class WolforixPlatformTest extends TestCase
     {
         config()->set('wolforix.admin_auth.username', 'admin');
         config()->set('wolforix.admin_auth.password', 'secret');
-        config()->set('services.mt5_ingestion.token', 'mt5-secret');
 
         $user = User::factory()->create([
             'name' => 'Pending Activation Trader',
@@ -3398,7 +3397,7 @@ class WolforixPlatformTest extends TestCase
                 'has_activity' => true,
             ],
             [
-                'Authorization' => 'Bearer mt5-secret',
+                'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             ],
         )
             ->assertOk()
@@ -3615,43 +3614,59 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('mt5', $trialAccount->platform_slug);
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
         $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
+        $this->assertFileExists(public_path('mt5software/wolforix-mt5-connector.zip'));
         Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
             return $mail->hasTo($user->email)
                 && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
                 && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
+                && str_contains($mail->render(), 'Install the MT5 connector')
+                && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
                 && str_contains($mail->render(), (string) config('wolforix.support.email'));
         });
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.dashboard'))
-            ->assertRedirect(route('trial.setup'));
+            ->assertOk()
+            ->assertSee('Connect Your MT5 Demo Account')
+            ->assertSee('Not Connected')
+            ->assertSee('Base URL')
+            ->assertSee('Account Reference')
+            ->assertSee('Secret Token');
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.setup'))
             ->assertOk()
+            ->assertSee('Connect Your MT5 Demo Account')
             ->assertSee('Open Demo Account')
-            ->assertSee('Enter your MT5 Account Number to continue.')
-            ->assertSee('I already have my Demo Account');
+            ->assertSee('Download MT5 Connector')
+            ->assertSee('mt5software/wolforix-mt5-connector.zip')
+            ->assertDontSee('downloads/mt5-connector.ex5')
+            ->assertSee('Copy WolforixRuleEngineEA.mq5 into MQL5/Experts')
+            ->assertSee('Copy the Include files into MQL5/Include')
+            ->assertSee('Base URL')
+            ->assertSee($trialAccount->account_reference)
+            ->assertDontSee('Enter your MT5 Account Number to continue.')
+            ->assertDontSee('I already have my Demo Account');
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
-            ->post(route('trial.confirm-demo'), [
-                'mt5_account_number' => '105381073',
-            ])
+            ->post(route('trial.confirm-demo'))
             ->assertRedirect(route('trial.dashboard'));
 
         $trialAccount->refresh();
-        $this->assertSame('105381073', $trialAccount->platform_account_id);
-        $this->assertSame('105381073', $trialAccount->platform_login);
-        $this->assertSame('confirmed', $trialAccount->platform_status);
-        $this->assertNotEmpty($trialAccount->meta['trial_demo_confirmed_at'] ?? null);
+        $this->assertNull($trialAccount->platform_account_id);
+        $this->assertNull($trialAccount->platform_login);
+        $this->assertSame('pending_connection', $trialAccount->platform_status);
+        $this->assertNotEmpty($trialAccount->meta['trial_connector_acknowledged_at'] ?? null);
+        $this->assertNotEmpty($trialAccount->meta['mt5_connector']['secret_token'] ?? null);
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.dashboard'))
             ->assertOk()
+            ->assertSee('Not Connected')
             ->assertSee('This is a Trial Account.')
             ->assertSee('Take Profit')
             ->assertSeeInOrder([
@@ -3665,6 +3680,41 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('Available Markets')
             ->assertDontSee('XAU/USD')
             ->assertDontSee('$10,000');
+
+        $this->postJson(
+            route('api.mt5.metrics', ['accountIdentifier' => $trialAccount->account_reference]),
+            [
+                'balance' => 10040,
+                'equity' => 10055,
+                'open_profit' => 15,
+                'platform_login' => '105381073',
+                'platform_account_id' => '105381073',
+                'platform_environment' => 'ICMarkets-Demo',
+                'timestamp' => now()->toIso8601String(),
+                'server_day' => now()->toDateString(),
+                'trade_count' => 1,
+                'has_activity' => true,
+                'sync_trigger' => 'ea_timer',
+            ],
+            [
+                'Authorization' => 'Bearer '.$trialAccount->fresh()->meta['mt5_connector']['secret_token'],
+            ],
+        )
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_reference', $trialAccount->account_reference);
+
+        $trialAccount->refresh();
+        $this->assertSame('105381073', $trialAccount->platform_account_id);
+        $this->assertSame('105381073', $trialAccount->platform_login);
+        $this->assertSame('connected', $trialAccount->platform_status);
+        $this->assertSame('mt5_ea', $trialAccount->sync_source);
+
+        $this->actingAs($user)
+            ->withSession(['trial_user_id' => $user->id])
+            ->get(route('trial.dashboard'))
+            ->assertOk()
+            ->assertSee('Connected');
     }
 
     public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void

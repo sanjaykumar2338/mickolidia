@@ -27,8 +27,6 @@ class ChallengeDashboardTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        config()->set('services.mt5_ingestion.token', 'integration-secret');
         Mail::fake();
         Storage::fake('public');
     }
@@ -69,7 +67,7 @@ class ChallengeDashboardTest extends TestCase
         ]);
 
         $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             'Accept' => 'application/json',
         ])->postJson(route('api.integrations.mt5.metrics', [
             'accountIdentifier' => $account->account_reference,
@@ -99,7 +97,69 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('active', $account->challenge_status);
     }
 
-    public function test_metrics_endpoint_maps_fusionmarkets_login_to_the_linked_user_account(): void
+    public function test_mt5_metrics_requires_the_account_secret_token(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->postJson(route('api.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), $this->metricsPayload())
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'error' => 'Invalid token',
+            ]);
+    }
+
+    public function test_mt5_metrics_rejects_invalid_and_global_env_tokens(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        foreach (['wrong-token', 'legacy-global-token'] as $token) {
+            $this->withHeaders([
+                'Authorization' => 'Bearer '.$token,
+            ])->postJson(route('api.mt5.metrics', [
+                'accountIdentifier' => $account->account_reference,
+            ]), $this->metricsPayload())
+                ->assertUnauthorized()
+                ->assertExactJson([
+                    'error' => 'Invalid token',
+                ]);
+        }
+    }
+
+    public function test_mt5_metrics_accepts_secret_token_from_request_body(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->postJson(route('api.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), array_merge($this->metricsPayload(), [
+            'secret_token' => data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
+        ]))
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_reference', $account->account_reference);
+    }
+
+    public function test_mt5_metrics_rejects_token_from_another_account(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+        $otherAccount = $this->createChallengeAccount('one_step', [
+            'account_size' => 5000,
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.data_get($otherAccount->fresh()->meta, 'mt5_connector.secret_token'),
+        ])->postJson(route('api.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), $this->metricsPayload())
+            ->assertUnauthorized()
+            ->assertExactJson([
+                'error' => 'Invalid token',
+            ]);
+    }
+
+    public function test_metrics_endpoint_uses_account_reference_for_fusionmarkets_account(): void
     {
         $account = $this->createChallengeAccount('one_step', [
             'account_size' => 25000,
@@ -127,10 +187,10 @@ class ChallengeDashboardTest extends TestCase
         ]);
 
         $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             'Accept' => 'application/json',
         ])->postJson(route('api.integrations.mt5.metrics', [
-            'accountIdentifier' => '335411',
+            'accountIdentifier' => $account->account_reference,
         ]), [
             'balance' => 25080,
             'equity' => 25110,
@@ -175,7 +235,7 @@ class ChallengeDashboardTest extends TestCase
         ]);
 
         $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             'Accept' => 'application/json',
         ])->postJson(route('api.integrations.mt5.metrics', [
             'accountIdentifier' => $account->account_reference,
@@ -206,7 +266,7 @@ class ChallengeDashboardTest extends TestCase
         ]);
 
         $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             'Accept' => 'application/json',
         ])->postJson(route('api.integrations.mt5.metrics', [
             'accountIdentifier' => $account->account_reference,
@@ -240,7 +300,7 @@ class ChallengeDashboardTest extends TestCase
         $account = $this->createChallengeAccount('one_step');
 
         $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
             'Accept' => 'application/json',
         ])->postJson(route('api.integrations.mt5.metrics', [
             'accountIdentifier' => $account->account_reference,
@@ -1688,7 +1748,7 @@ class ChallengeDashboardTest extends TestCase
     private function pushMetrics(TradingAccount $account, string $timestamp, float $balance, float $equity, array $extra = [])
     {
         return $this->withHeaders([
-            'Authorization' => 'Bearer integration-secret',
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
         ])->postJson(route('api.integrations.mt5.metrics', [
             'accountIdentifier' => $account->account_reference,
         ]), array_merge([
@@ -1698,6 +1758,21 @@ class ChallengeDashboardTest extends TestCase
             'server_day' => substr($timestamp, 0, 10),
             'platform_status' => 'connected',
         ], $extra));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function metricsPayload(array $extra = []): array
+    {
+        return array_merge([
+            'balance' => 10000,
+            'equity' => 10000,
+            'timestamp' => '2026-04-07 12:00:00',
+            'server_day' => '2026-04-07',
+            'trade_count' => 0,
+            'has_activity' => false,
+        ], $extra);
     }
 
     private function closedTrade(string $dealId, string $openedAt, string $closedAt, float $netProfit, string $symbol = 'XAUUSD'): array

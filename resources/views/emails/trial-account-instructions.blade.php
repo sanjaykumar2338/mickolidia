@@ -4,7 +4,7 @@
     :primary-url="$demoRegistrationUrl"
     :primary-label="__('Open Demo Registration')"
     :secondary-url="route('trial.setup')"
-    :secondary-label="__('Continue Trial Setup')"
+    :secondary-label="__('View Connector Details')"
 >
     <x-slot:intro>
         Hello,<br><br>
@@ -13,11 +13,11 @@
 
     <p style="margin:0; color:#f4b74a; font-size:12px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;">Get Started</p>
     <p style="margin:12px 0 0 0; color:#ffffff; font-size:24px; font-weight:700; line-height:1.3;">
-        Complete your demo account registration
+        Connect your MT5 demo account with the Wolforix connector
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        To access your demo trading account, please complete your registration using the link below:
+        First, create your IC Markets MT5 demo account using the link below:
     </p>
 
     <p style="margin:14px 0 0 0; color:#f8d57c; font-size:14px; line-height:1.8; word-break:break-all;">
@@ -25,7 +25,19 @@
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        Once you have submitted your details, you will receive your login credentials via email. With these credentials, you can access your demo account and start your free trial.
+        Then open your Wolforix dashboard, download the MT5 connector, and install the EA inside MetaTrader 5. Connection happens inside MT5, not through a website form.
+    </p>
+
+    <ol style="margin:18px 0 0 20px; padding:0; color:#d5deea; font-size:14px; line-height:1.8;">
+        <li>Create your IC Markets MT5 demo account.</li>
+        <li>Download the Wolforix MT5 connector from your trial dashboard.</li>
+        <li>Open MetaTrader 5 and drag the connector EA onto a chart.</li>
+        <li>Enter the Base URL, Account Reference, and Secret Token shown in your dashboard.</li>
+        <li>Click OK. Your account will connect automatically when the EA sends its first update.</li>
+    </ol>
+
+    <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
+        Wolforix does not collect the MT5 account number through a website form. Install the MT5 connector and connect your account using the credentials provided in your dashboard.
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">

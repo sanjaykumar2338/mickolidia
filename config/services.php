@@ -105,10 +105,6 @@ return [
         'output_format' => env('AZURE_TTS_OUTPUT_FORMAT', 'audio-24khz-96kbitrate-mono-mp3'),
     ],
 
-    'mt5_ingestion' => [
-        'token' => env('MT5_INGESTION_TOKEN'),
-    ],
-
     'mt5_deactivation' => [
         'endpoint' => env('MT5_DEACTIVATION_ENDPOINT'),
         'token' => env('MT5_DEACTIVATION_TOKEN'),
