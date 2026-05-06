@@ -10,6 +10,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardCertificateController;
 use App\Http\Controllers\DashboardInvoiceController;
+use App\Http\Controllers\DashboardMt5ConnectorController;
 use App\Http\Controllers\DashboardWolfiController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NewsController;
@@ -87,6 +88,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
         ->name('dashboard.wolfi.respond');
     Route::get('/certificates/{account}/download', DashboardCertificateController::class)->name('dashboard.certificates.download');
     Route::get('/invoices/{invoice}/download', DashboardInvoiceController::class)->name('dashboard.invoices.download');
+    Route::get('/accounts/{account}/mt5-connector/download', DashboardMt5ConnectorController::class)->name('dashboard.accounts.mt5-connector.download');
 });
 
 Route::prefix('dashboard/wolfi')->middleware('admin.basic')->group(function (): void {

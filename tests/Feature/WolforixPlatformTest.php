@@ -37,6 +37,7 @@ use RuntimeException;
 use Tests\Fixtures\FakePayPalPaymentGateway;
 use Tests\Fixtures\FakeStripePaymentGateway;
 use Tests\TestCase;
+use ZipArchive;
 
 class WolforixPlatformTest extends TestCase
 {
@@ -3925,7 +3926,8 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Connect Your MT5 Demo Account')
             ->assertSee('Open Demo Account')
-            ->assertSee('Download MT5 Connector')
+            ->assertSee('Download Preconfigured Connector')
+            ->assertSee('Download generic connector instead')
             ->assertSee('mt5software/wolforix-mt5-connector.zip')
             ->assertDontSee('downloads/mt5-connector.ex5')
             ->assertSee('Step 7: Wait for First Sync')
@@ -4002,6 +4004,105 @@ class WolforixPlatformTest extends TestCase
             ->get(route('trial.dashboard'))
             ->assertOk()
             ->assertSee('Connected');
+    }
+
+    public function test_authenticated_user_can_download_preconfigured_mt5_connector_for_own_account(): void
+    {
+        $user = User::factory()->create();
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-MT5-OWN-1234',
+            'platform' => 'MT5 Demo',
+            'platform_slug' => 'mt5',
+            'platform_login' => '105381073',
+            'platform_environment' => 'IC Markets Demo',
+            'platform_status' => 'pending_connection',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Active',
+            'account_type' => 'trial',
+            'account_status' => 'active',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'allowed_symbols' => [],
+            'trial_status' => 'active',
+            'trial_started_at' => now(),
+            'meta' => [
+                'mt5_connector' => [
+                    'secret_token' => 'account-secret-token-123',
+                    'created_at' => now()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $url = route('dashboard.accounts.mt5-connector.download', $account);
+        $response = $this->actingAs($user)->get($url);
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('account-secret-token-123', $url);
+        $this->assertStringContainsString('Wolforix-MT5-Connector-WFX-MT5-OWN-1234.zip', (string) $response->headers->get('content-disposition'));
+        $this->assertStringNotContainsString('account-secret-token-123', (string) $response->headers->get('content-disposition'));
+
+        $zipPath = $response->baseResponse->getFile()->getPathname();
+        $zip = new ZipArchive;
+
+        $this->assertTrue($zip->open($zipPath));
+        $this->assertNotFalse($zip->locateName('WolforixRuleEngineEA.mq5'));
+        $this->assertNotFalse($zip->locateName('Include/WolforixDisplay.mqh'));
+        $this->assertNotFalse($zip->locateName('Include/WolforixEngine.mqh'));
+        $this->assertNotFalse($zip->locateName('Include/WolforixSync.mqh'));
+        $this->assertNotFalse($zip->locateName('Include/WolforixTypes.mqh'));
+        $this->assertNotFalse($zip->locateName('wolforix-config.json'));
+        $this->assertNotFalse($zip->locateName('README-Wolforix-MT5-Connector.txt'));
+
+        $config = json_decode((string) $zip->getFromName('wolforix-config.json'), true);
+        $readme = (string) $zip->getFromName('README-Wolforix-MT5-Connector.txt');
+        $zip->close();
+
+        $this->assertSame(url('/api/mt5'), $config['base_url']);
+        $this->assertSame('WFX-MT5-OWN-1234', $config['account_reference']);
+        $this->assertSame('account-secret-token-123', $config['secret_token']);
+        $this->assertSame('105381073', $config['account_login']);
+        $this->assertStringContainsString('Secret Token: included in wolforix-config.json', $readme);
+        $this->assertStringNotContainsString('account-secret-token-123', $readme);
+    }
+
+    public function test_authenticated_user_cannot_download_preconfigured_connector_for_another_users_account(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $account = TradingAccount::query()->create([
+            'user_id' => $owner->id,
+            'account_reference' => 'WFX-MT5-OTHER-1234',
+            'platform' => 'MT5 Demo',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'IC Markets Demo',
+            'platform_status' => 'pending_connection',
+            'stage' => 'Trial (Demo)',
+            'status' => 'Active',
+            'account_type' => 'trial',
+            'account_status' => 'active',
+            'is_trial' => true,
+            'starting_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'allowed_symbols' => [],
+            'trial_status' => 'active',
+            'trial_started_at' => now(),
+            'meta' => [
+                'mt5_connector' => [
+                    'secret_token' => 'other-account-secret-token',
+                    'created_at' => now()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $response = $this->actingAs($intruder)
+            ->get(route('dashboard.accounts.mt5-connector.download', $account));
+
+        $response->assertForbidden();
+        $this->assertStringNotContainsString('other-account-secret-token', (string) $response->getContent());
     }
 
     public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void

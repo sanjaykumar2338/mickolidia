@@ -16,6 +16,8 @@ class Mt5ConnectorCredentials
      *     masked_secret_token:string,
      *     download_url:string,
      *     download_file_name:string,
+     *     preconfigured_download_url:string,
+     *     preconfigured_download_file_name:string,
      *     status:string,
      *     status_label:string,
      *     status_badge:string,
@@ -36,6 +38,8 @@ class Mt5ConnectorCredentials
             'masked_secret_token' => $this->mask((string) data_get($account->meta, 'mt5_connector.secret_token')),
             'download_url' => asset($downloadPath),
             'download_file_name' => basename($downloadPath),
+            'preconfigured_download_url' => route('dashboard.accounts.mt5-connector.download', ['account' => $account]),
+            'preconfigured_download_file_name' => 'Wolforix-MT5-Connector-'.$this->safeReference($accountReference).'.zip',
             'status' => $this->connectionStatus($account),
             'status_label' => $this->connectionStatusLabel($account),
             'status_badge' => $this->connectionStatusBadge($account),
@@ -116,5 +120,12 @@ class Mt5ConnectorCredentials
         }
 
         return 'mt5software/WolforixRuleEngineEA.mq5';
+    }
+
+    private function safeReference(string $reference): string
+    {
+        $safe = preg_replace('/[^A-Za-z0-9_-]+/', '-', $reference) ?: 'account';
+
+        return trim($safe, '-') ?: 'account';
     }
 }

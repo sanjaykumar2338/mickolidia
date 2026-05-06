@@ -16,10 +16,13 @@
 
     <div class="mt-6 grid gap-3 sm:grid-cols-2">
         <div>
-            <a href="{{ $connector['download_url'] }}" class="primary-cta justify-center rounded-full px-6 py-3 text-sm font-semibold" download="{{ $connector['download_file_name'] ?? true }}">
-                {{ __('site.trial.connector.download_button') }}
+            <a href="{{ $connector['preconfigured_download_url'] }}" class="primary-cta justify-center rounded-full px-6 py-3 text-sm font-semibold" download="{{ $connector['preconfigured_download_file_name'] ?? true }}">
+                {{ __('site.trial.connector.preconfigured_download_button') }}
             </a>
-            <p class="mt-3 text-xs leading-5 text-slate-400">{{ __('site.trial.connector.download_copy') }}</p>
+            <p class="mt-3 text-xs leading-5 text-slate-400">{{ __('site.trial.connector.preconfigured_download_copy') }}</p>
+            <a href="{{ $connector['download_url'] }}" class="mt-3 inline-flex text-xs font-semibold text-amber-200 underline decoration-amber-300/40 underline-offset-4" download="{{ $connector['download_file_name'] ?? true }}">
+                {{ __('site.trial.connector.manual_download_link') }}
+            </a>
         </div>
         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3 text-sm leading-6 text-slate-300">
             {{ $connector['last_connected_at'] ? __('site.trial.connector.last_connected', ['time' => $connector['last_connected_at']]) : __('site.trial.connector.waiting_sync') }}
