@@ -25,16 +25,28 @@
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        Then open your Wolforix dashboard, download the MT5 connector, and install the EA inside MetaTrader 5. Connection happens inside MT5, not through a website form.
+        Then open your Wolforix trial dashboard, download the MT5 connector, and install the EA inside MetaTrader 5. Connection happens inside MT5, not through a website form.
     </p>
 
     <ol style="margin:18px 0 0 20px; padding:0; color:#d5deea; font-size:14px; line-height:1.8;">
+        <li>Register for Free Trial on Wolforix.</li>
         <li>Create your IC Markets MT5 demo account.</li>
         <li>Download the Wolforix MT5 connector from your trial dashboard.</li>
-        <li>Open MetaTrader 5 and drag the connector EA onto a chart.</li>
-        <li>Enter the Base URL, Account Reference, and Secret Token shown in your dashboard.</li>
-        <li>Click OK. Your account will connect automatically when the EA sends its first update.</li>
+        <li>Install the EA files in MetaTrader 5.</li>
+        <li>Copy the Base URL, Account Reference, and Secret Token from your dashboard.</li>
+        <li>Paste them into the EA settings popup inside MT5.</li>
+        <li>Click OK. Your dashboard will show Connected after the EA sends its first update.</li>
     </ol>
+
+    <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
+        Connector download:
+        <a href="{{ asset('mt5software/wolforix-mt5-connector.zip') }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ asset('mt5software/wolforix-mt5-connector.zip') }}</a>
+    </p>
+
+    <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
+        Dashboard connector details:
+        <a href="{{ route('trial.setup') }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ route('trial.setup') }}</a>
+    </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
         Wolforix does not collect the MT5 account number through a website form. Install the MT5 connector and connect your account using the credentials provided in your dashboard.

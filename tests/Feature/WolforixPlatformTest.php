@@ -2742,9 +2742,10 @@ class WolforixPlatformTest extends TestCase
             'I have successfully passed, what should I do now?',
             'Complete your identity verification (KYC/KYB) in your client area',
             'How is working?',
-            'Open your MT5 demo account with IC Markets using the button in the trial setup screen.',
+            'Create your IC Markets MT5 demo account using the button in the trial setup screen.',
             'Download the Wolforix MT5 connector',
             'Base URL, Account Reference, and Secret Token',
+            'Paste them into the EA settings popup inside MT5.',
         ];
 
         $this->assertStringContainsString('#platform-what-platform-does-wolforix-use', $siteSearchText);
@@ -3900,8 +3901,10 @@ class WolforixPlatformTest extends TestCase
             return $mail->hasTo($user->email)
                 && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
                 && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
-                && str_contains($mail->render(), 'Install the MT5 connector')
+                && str_contains($mail->render(), 'Install the EA files in MetaTrader 5')
                 && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
+                && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
+                && str_contains($mail->render(), route('trial.setup'))
                 && str_contains($mail->render(), (string) config('wolforix.support.email'));
         });
 
@@ -3913,7 +3916,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Not Connected')
             ->assertSee('Base URL')
             ->assertSee('Account Reference')
-            ->assertSee('Secret Token');
+            ->assertSee('Secret Token')
+            ->assertSee('Reveal');
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
@@ -3924,10 +3928,12 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Download MT5 Connector')
             ->assertSee('mt5software/wolforix-mt5-connector.zip')
             ->assertDontSee('downloads/mt5-connector.ex5')
-            ->assertSee('Copy WolforixRuleEngineEA.mq5 into MQL5/Experts')
-            ->assertSee('Copy the Include files into MQL5/Include')
+            ->assertSee('Step 7: Wait for First Sync')
+            ->assertSee('Install the EA files: copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include')
+            ->assertSee('Paste the three values into the EA settings popup inside MetaTrader 5')
             ->assertSee('Base URL')
             ->assertSee($trialAccount->account_reference)
+            ->assertSee('Reveal')
             ->assertDontSee('Enter your MT5 Account Number to continue.')
             ->assertDontSee('I already have my Demo Account');
 

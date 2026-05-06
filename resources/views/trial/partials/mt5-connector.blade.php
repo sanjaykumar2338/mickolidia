@@ -40,16 +40,36 @@
                 @endphp
                 <div class="grid gap-2 rounded-2xl border border-white/6 bg-white/4 px-4 py-3 sm:grid-cols-[10rem_minmax(0,1fr)_auto] sm:items-center">
                     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ $label }}</p>
-                    <p class="break-all font-mono text-sm text-white">{{ $displayValue }}</p>
-                    <button
-                        type="button"
-                        class="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-amber-300/40 hover:text-amber-100"
-                        data-copy-value="{{ $copyValue }}"
-                        data-copy-label="{{ __('site.trial.connector.copy') }}"
-                        data-copied-label="{{ __('site.trial.connector.copied') }}"
-                    >
-                        {{ __('site.trial.connector.copy') }}
-                    </button>
+                    <p
+                        class="break-all font-mono text-sm text-white"
+                        @if ($field === 'secret_token')
+                            data-secret-token-display
+                            data-masked-value="{{ $connector['masked_secret_token'] }}"
+                            data-revealed-value="{{ $connector['secret_token'] }}"
+                        @endif
+                    >{{ $displayValue }}</p>
+                    <div class="flex flex-wrap gap-2 sm:justify-end">
+                        @if ($field === 'secret_token')
+                            <button
+                                type="button"
+                                class="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-amber-300/40 hover:text-amber-100"
+                                data-secret-token-toggle
+                                data-reveal-label="{{ __('site.trial.connector.reveal') }}"
+                                data-hide-label="{{ __('site.trial.connector.hide') }}"
+                            >
+                                {{ __('site.trial.connector.reveal') }}
+                            </button>
+                        @endif
+                        <button
+                            type="button"
+                            class="rounded-full border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-amber-300/40 hover:text-amber-100"
+                            data-copy-value="{{ $copyValue }}"
+                            data-copy-label="{{ __('site.trial.connector.copy') }}"
+                            data-copied-label="{{ __('site.trial.connector.copied') }}"
+                        >
+                            {{ __('site.trial.connector.copy') }}
+                        </button>
+                    </div>
                 </div>
             @endforeach
         </div>

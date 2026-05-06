@@ -38,6 +38,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.addEventListener('click', (event) => {
+        const toggleButton = event.target instanceof Element
+            ? event.target.closest('[data-secret-token-toggle]')
+            : null;
+
+        if (!toggleButton) {
+            return;
+        }
+
+        const credentialRow = toggleButton.closest('.grid');
+        const tokenDisplay = credentialRow?.querySelector('[data-secret-token-display]');
+
+        if (!(tokenDisplay instanceof HTMLElement)) {
+            return;
+        }
+
+        const isRevealed = tokenDisplay.dataset.revealed === 'true';
+        tokenDisplay.textContent = isRevealed
+            ? tokenDisplay.dataset.maskedValue ?? tokenDisplay.textContent
+            : tokenDisplay.dataset.revealedValue ?? tokenDisplay.textContent;
+        tokenDisplay.dataset.revealed = isRevealed ? 'false' : 'true';
+        toggleButton.textContent = isRevealed
+            ? toggleButton.getAttribute('data-reveal-label') ?? 'Reveal'
+            : toggleButton.getAttribute('data-hide-label') ?? 'Hide';
+    });
+
     const storage = {
         get(key) {
             try {

@@ -583,20 +583,32 @@ return [
             'process_label' => 'Trial process',
             'steps' => [
                 [
-                    'title' => 'Step 1: Create Your Free Account',
-                    'body' => 'Sign up with your email and password to start your free trial.',
+                    'title' => 'Step 1: Register for Free Trial',
+                    'body' => 'Sign up with your email and password to create your Wolforix trial dashboard.',
                 ],
                 [
-                    'title' => 'Step 2: Open Your Demo Account',
+                    'title' => 'Step 2: Create Your IC Markets MT5 Demo Account',
                     'body' => 'Open your MT5 demo account with IC Markets. You will be redirected to their website.',
                 ],
                 [
-                    'title' => 'Step 3: Install the MT5 Connector',
-                    'body' => 'Download the Wolforix MT5 connector and attach the Expert Advisor to a chart inside MetaTrader 5.',
+                    'title' => 'Step 3: Download Wolforix MT5 Connector',
+                    'body' => 'Download the Wolforix MT5 connector zip package from this page.',
                 ],
                 [
-                    'title' => 'Step 4: Enter Your Connector Details',
-                    'body' => 'Paste the Base URL, Account Reference, and Secret Token into the EA input dialog. Your dashboard updates automatically after the first sync.',
+                    'title' => 'Step 4: Install the EA in MetaTrader 5',
+                    'body' => 'Copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include.',
+                ],
+                [
+                    'title' => 'Step 5: Copy Your Connector Credentials',
+                    'body' => 'Copy the Base URL, Account Reference, and Secret Token from the connector panel.',
+                ],
+                [
+                    'title' => 'Step 6: Paste Them Into the EA Settings Popup',
+                    'body' => 'Drag the EA onto a chart in MetaTrader 5, paste the three values into the EA input popup, then click OK.',
+                ],
+                [
+                    'title' => 'Step 7: Wait for First Sync',
+                    'body' => 'Your trial dashboard will show Connected after the EA sends its first update.',
                 ],
             ],
             'step_two_label' => 'Step 2',
@@ -630,13 +642,15 @@ return [
             'secret_token' => 'Secret Token',
             'copy' => 'Copy',
             'copied' => 'Copied',
+            'reveal' => 'Reveal',
+            'hide' => 'Hide',
             'steps' => [
                 'Create your demo account using the IC Markets link.',
                 'Download and extract the Wolforix MT5 connector zip package.',
-                'Copy WolforixRuleEngineEA.mq5 into MQL5/Experts.',
-                'Copy the Include files into MQL5/Include.',
+                'Install the EA files: copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include.',
                 'Open MetaTrader 5 and drag the WolforixRuleEngineEA Expert Advisor onto a chart.',
-                'Enter the Base URL, Account Reference, and Secret Token shown here.',
+                'Copy the Base URL, Account Reference, and Secret Token shown here.',
+                'Paste the three values into the EA settings popup inside MetaTrader 5.',
                 'Click OK. Your account will connect automatically when the EA sends its first update.',
             ],
             'notes' => [
@@ -1509,12 +1523,14 @@ return [
                     [
                         'question' => 'How is working?',
                         'answer_paragraphs' => [
-                            'Step 1: Create your free Wolforix account with your email and password.',
-                            'Step 2: Open your MT5 demo account with IC Markets using the button in the trial setup screen. You will be redirected to https://www.icmarkets.eu/de/open-trading-account/demo.',
+                            'Step 1: Register for Free Trial on Wolforix with your email and password.',
+                            'Step 2: Create your IC Markets MT5 demo account using the button in the trial setup screen. You will be redirected to https://www.icmarkets.eu/de/open-trading-account/demo.',
                             'Important: use the same email you used to register on Wolforix, select MT5 as your platform, and save your login details.',
-                            'Step 3: Download the Wolforix MT5 connector from your trial dashboard and install the EA in MetaTrader 5.',
-                            'Step 4: Drag the connector onto a chart, enter the Base URL, Account Reference, and Secret Token from your dashboard, then click OK.',
-                            'Step 5: Your account connects automatically when the EA sends its first update. Wolforix does not collect the account number on the website.',
+                            'Step 3: Download the Wolforix MT5 connector from your trial dashboard.',
+                            'Step 4: Install the EA files in MetaTrader 5.',
+                            'Step 5: Copy the Base URL, Account Reference, and Secret Token from your dashboard.',
+                            'Step 6: Paste them into the EA settings popup inside MT5.',
+                            'Step 7: Your dashboard shows Connected after the EA sends its first update. Wolforix does not collect the account number on the website.',
                             'If you have any issues creating your demo account, contact support@wolforix.com.',
                         ],
                     ],
