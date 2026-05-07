@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\SendTrialAccountInstructionsEmail;
 use App\Mail\ChallengeAccountDetailsMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\ChallengePurchaseSupportNotificationMail;
@@ -33,7 +32,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Tests\Fixtures\FakePayPalPaymentGateway;
@@ -3880,7 +3878,6 @@ class WolforixPlatformTest extends TestCase
     public function test_trial_registration_creates_a_trial_account_and_dashboard(): void
     {
         Mail::fake();
-        Queue::fake();
 
         $response = $this->post(route('trial.store'), [
             'email' => 'trial@example.com',
@@ -3901,11 +3898,22 @@ class WolforixPlatformTest extends TestCase
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
         $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
         $this->assertFileExists(public_path('mt5software/wolforix-mt5-connector.zip'));
-        Mail::assertNotSent(TrialAccountInstructionsMail::class);
-        Queue::assertPushed(SendTrialAccountInstructionsEmail::class, function (SendTrialAccountInstructionsEmail $job) use ($user, $trialAccount): bool {
-            return $job->userId === $user->id
-                && $job->tradingAccountId === $trialAccount->id
-                && $this->queuedTrialInstructionsDelayIsAbout($job, 15);
+        Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
+            return $mail->hasTo($user->email)
+                && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
+                && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
+                && str_contains($mail->render(), 'File &gt; Open Data Folder')
+                && str_contains($mail->render(), 'MQL5 &gt; Experts')
+                && str_contains($mail->render(), 'MQL5 &gt; Include')
+                && str_contains($mail->render(), 'Allow WebRequest for listed URL')
+                && str_contains($mail->render(), 'https://www.wolforix.com')
+                && str_contains($mail->render(), 'https://wolforix.com')
+                && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
+                && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
+                && str_contains($mail->render(), route('trial.setup'))
+                && ($mail->headers()->text['X-Wolforix-Send-Mode'] ?? null) === 'immediate'
+                && ($mail->headers()->text['Importance'] ?? null) === 'High'
+                && str_contains($mail->render(), (string) config('wolforix.support.email'));
         });
 
         $this->actingAs($user)
@@ -3954,9 +3962,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertNull($trialAccount->platform_login);
         $this->assertSame('pending_connection', $trialAccount->platform_status);
         $this->assertNotEmpty($trialAccount->meta['trial_connector_acknowledged_at'] ?? null);
-        $this->assertNotEmpty($trialAccount->meta['trial_instructions_email_queued_at'] ?? null);
-        $this->assertSame(15, $trialAccount->meta['trial_instructions_email_delay_seconds'] ?? null);
-        $this->assertEmpty($trialAccount->meta['trial_instructions_email_sent_at'] ?? null);
+        $this->assertNotEmpty($trialAccount->meta['trial_instructions_email_sent_at'] ?? null);
         $this->assertNotEmpty($trialAccount->meta['mt5_connector']['secret_token'] ?? null);
 
         $this->actingAs($user)
@@ -4012,44 +4018,6 @@ class WolforixPlatformTest extends TestCase
             ->get(route('trial.dashboard'))
             ->assertOk()
             ->assertSee('Connected');
-    }
-
-    public function test_delayed_trial_instructions_job_sends_once_and_marks_account(): void
-    {
-        Mail::fake();
-
-        $user = User::factory()->create([
-            'email' => 'delayed-trial@example.com',
-        ]);
-        $trialAccount = $this->createBasicTrialAccount($user, [
-            'account_reference' => 'WFX-TRIAL-DELAY-001',
-        ]);
-
-        $job = new SendTrialAccountInstructionsEmail($user->id, $trialAccount->id);
-        $job->handle();
-
-        Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
-            return $mail->hasTo($user->email)
-                && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
-                && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
-                && str_contains($mail->render(), 'File &gt; Open Data Folder')
-                && str_contains($mail->render(), 'MQL5 &gt; Experts')
-                && str_contains($mail->render(), 'MQL5 &gt; Include')
-                && str_contains($mail->render(), 'Allow WebRequest for listed URL')
-                && str_contains($mail->render(), 'https://www.wolforix.com')
-                && str_contains($mail->render(), 'https://wolforix.com')
-                && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
-                && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
-                && str_contains($mail->render(), route('trial.setup'))
-                && ($mail->headers()->text['X-Wolforix-Send-Mode'] ?? null) === 'delayed-trial-setup'
-                && ($mail->headers()->text['Importance'] ?? null) === 'High'
-                && str_contains($mail->render(), (string) config('wolforix.support.email'));
-        });
-        $this->assertNotEmpty($trialAccount->fresh()->meta['trial_instructions_email_sent_at'] ?? null);
-
-        $job->handle();
-
-        Mail::assertSent(TrialAccountInstructionsMail::class, 1);
     }
 
     public function test_authenticated_user_can_download_preconfigured_mt5_connector_for_own_account(): void
@@ -4174,7 +4142,6 @@ class WolforixPlatformTest extends TestCase
     public function test_existing_user_can_submit_the_trial_form_and_enter_the_free_demo_flow(): void
     {
         Mail::fake();
-        Queue::fake();
 
         $user = User::factory()->create([
             'email' => 'existing-demo@example.com',
@@ -4197,14 +4164,12 @@ class WolforixPlatformTest extends TestCase
             'is_trial' => true,
             'trial_status' => 'active',
         ]);
-        Mail::assertNotSent(TrialAccountInstructionsMail::class);
-        Queue::assertPushed(SendTrialAccountInstructionsEmail::class, 1);
+        Mail::assertSent(TrialAccountInstructionsMail::class, 1);
     }
 
     public function test_authenticated_user_can_start_a_trial_from_the_trial_page(): void
     {
         Mail::fake();
-        Queue::fake();
 
         $user = User::factory()->create([
             'email' => 'existing-trial-user@example.com',
@@ -4223,8 +4188,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->assertNotNull($trialAccount);
         $this->assertSame('active', $trialAccount->trial_status);
-        Mail::assertNotSent(TrialAccountInstructionsMail::class);
-        Queue::assertPushed(SendTrialAccountInstructionsEmail::class, 1);
+        Mail::assertSent(TrialAccountInstructionsMail::class, 1);
     }
 
     public function test_existing_user_login_from_trial_page_returns_to_trial_access(): void
@@ -4508,55 +4472,6 @@ class WolforixPlatformTest extends TestCase
             'mt5_account_pool_entry_id' => $entry->id,
             'mt5_login' => (string) $entry->login,
         ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $overrides
-     */
-    private function createBasicTrialAccount(User $user, array $overrides = []): TradingAccount
-    {
-        return TradingAccount::query()->create(array_merge([
-            'user_id' => $user->id,
-            'account_reference' => 'WFX-TRIAL-TEST-001',
-            'platform' => 'MT5 Demo',
-            'platform_slug' => 'mt5',
-            'platform_environment' => 'IC Markets Demo',
-            'platform_status' => 'pending_connection',
-            'stage' => 'Trial (Demo)',
-            'status' => 'Active',
-            'account_type' => 'trial',
-            'account_status' => 'active',
-            'is_trial' => true,
-            'starting_balance' => 10000,
-            'balance' => 10000,
-            'equity' => 10000,
-            'allowed_symbols' => [],
-            'trial_status' => 'active',
-            'trial_started_at' => now(),
-            'meta' => [
-                'mt5_connector' => [
-                    'secret_token' => 'trial-secret-token-123',
-                    'created_at' => now()->toIso8601String(),
-                ],
-            ],
-        ], $overrides));
-    }
-
-    private function queuedTrialInstructionsDelayIsAbout(SendTrialAccountInstructionsEmail $job, int $expectedSeconds): bool
-    {
-        $delay = $job->delay ?? null;
-
-        if ($delay instanceof \DateTimeInterface) {
-            $seconds = now()->diffInSeconds(Carbon::instance($delay), false);
-
-            return $seconds >= ($expectedSeconds - 2) && $seconds <= ($expectedSeconds + 2);
-        }
-
-        if (is_int($delay)) {
-            return $delay === $expectedSeconds;
-        }
-
-        return false;
     }
 
     /**
