@@ -46,7 +46,8 @@ class Mt5ConnectorPackageBuilder
             throw new RuntimeException('Unable to create MT5 connector package.');
         }
 
-        $this->addConnectorSources($zip);
+        $this->addConnectorSources($zip, $connector);
+        $zip->addFromString('WolforixRuleEngineEA-'.$reference.'.set', $this->settingsFile($connector));
         $zip->addFromString('wolforix-config.json', json_encode([
             'base_url' => $connector['base_url'],
             'account_reference' => $connector['account_reference'],
@@ -63,16 +64,25 @@ class Mt5ConnectorPackageBuilder
         ];
     }
 
-    private function addConnectorSources(ZipArchive $zip): void
+    /**
+     * @param  array{base_url:string, account_reference:string, secret_token:string}  $connector
+     */
+    private function addConnectorSources(ZipArchive $zip, array $connector): void
     {
         $root = public_path('mt5software');
         $files = [
-            'WolforixRuleEngineEA.mq5',
             'Include/WolforixDisplay.mqh',
             'Include/WolforixEngine.mqh',
             'Include/WolforixSync.mqh',
             'Include/WolforixTypes.mqh',
         ];
+        $eaPath = $root.DIRECTORY_SEPARATOR.'WolforixRuleEngineEA.mq5';
+
+        if (! is_file($eaPath)) {
+            throw new RuntimeException('Missing MT5 connector source file: WolforixRuleEngineEA.mq5');
+        }
+
+        $zip->addFromString('WolforixRuleEngineEA.mq5', $this->preconfiguredEaSource((string) file_get_contents($eaPath), $connector));
 
         foreach ($files as $relativePath) {
             $sourcePath = $root.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
@@ -104,11 +114,53 @@ class Mt5ConnectorPackageBuilder
             '5. If prompted, confirm these values in the EA settings:',
             "   Base URL: {$connector['base_url']}",
             "   Account Reference: {$connector['account_reference']}",
-            '   Secret Token: included in wolforix-config.json',
+            '   Secret Token: already prefilled in the EA input defaults and included in wolforix-config.json',
+            '   You can also click Load in the EA Inputs tab and select the included .set file.',
             '6. Allow WebRequest for the Wolforix Base URL if MetaTrader 5 asks.',
             '',
             'Keep wolforix-config.json private. It contains your Secret Token.',
         ]).PHP_EOL;
+    }
+
+    /**
+     * @param  array{base_url:string, account_reference:string, secret_token:string}  $connector
+     */
+    private function preconfiguredEaSource(string $source, array $connector): string
+    {
+        $replacements = [
+            'ApiBaseUrl' => $connector['base_url'],
+            'ApiToken' => $connector['secret_token'],
+            'AccountReference' => $connector['account_reference'],
+        ];
+
+        foreach ($replacements as $input => $value) {
+            $pattern = '/(input\s+string\s+'.$input.'\s*=\s*")[^"]*(";)/';
+            $source = preg_replace_callback(
+                $pattern,
+                fn (array $matches): string => $matches[1].$this->mqlString($value).$matches[2],
+                $source,
+            ) ?? $source;
+        }
+
+        return $source;
+    }
+
+    /**
+     * @param  array{base_url:string, account_reference:string, secret_token:string}  $connector
+     */
+    private function settingsFile(array $connector): string
+    {
+        return implode(PHP_EOL, [
+            'ApiBaseUrl='.$connector['base_url'],
+            'ApiToken='.$connector['secret_token'],
+            'AccountReference='.$connector['account_reference'],
+            'EnableSync=true',
+        ]).PHP_EOL;
+    }
+
+    private function mqlString(string $value): string
+    {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 
     private function safeReference(string $reference): string
