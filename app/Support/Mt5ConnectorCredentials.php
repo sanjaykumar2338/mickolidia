@@ -31,7 +31,7 @@ class Mt5ConnectorCredentials
         $downloadPath = $this->downloadPath();
 
         return [
-            'base_url' => url('/api/mt5'),
+            'base_url' => url('/'),
             'endpoint_url' => route('api.mt5.metrics', ['accountIdentifier' => $accountReference]),
             'account_reference' => $accountReference,
             'secret_token' => (string) data_get($account->meta, 'mt5_connector.secret_token'),

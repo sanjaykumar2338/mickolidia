@@ -4059,24 +4059,29 @@ class WolforixPlatformTest extends TestCase
 
         $config = json_decode((string) $zip->getFromName('wolforix-config.json'), true);
         $eaSource = (string) $zip->getFromName('WolforixRuleEngineEA.mq5');
+        $syncInclude = (string) $zip->getFromName('Include/WolforixSync.mqh');
         $settings = (string) $zip->getFromName('WolforixRuleEngineEA-WFX-MT5-OWN-1234.set');
         $readme = (string) $zip->getFromName('README-Wolforix-MT5-Connector.txt');
         $zip->close();
 
-        $this->assertSame(url('/api/mt5'), $config['base_url']);
+        $this->assertSame(url('/'), $config['base_url']);
         $this->assertSame('WFX-MT5-OWN-1234', $config['account_reference']);
         $this->assertSame('account-secret-token-123', $config['secret_token']);
         $this->assertSame('105381073', $config['account_login']);
-        $this->assertStringContainsString('ApiBaseUrl              = "'.url('/api/mt5').'"', $eaSource);
+        $this->assertStringContainsString('ApiBaseUrl              = "'.url('/').'"', $eaSource);
         $this->assertStringContainsString('ApiToken                = "account-secret-token-123"', $eaSource);
         $this->assertStringContainsString('AccountReference        = "WFX-MT5-OWN-1234"', $eaSource);
         $this->assertStringNotContainsString('https://mickolidia.easytechinfo.net', $eaSource);
         $this->assertStringNotContainsString('test_token_123', $eaSource);
         $this->assertStringNotContainsString('WFX-CT-00001-CERT', $eaSource);
-        $this->assertStringContainsString('ApiBaseUrl='.url('/api/mt5'), $settings);
+        $this->assertStringContainsString('base_url + "/api/mt5/accounts/" + reference + "/metrics"', $syncInclude);
+        $this->assertStringContainsString('base_url + "/accounts/" + reference + "/metrics"', $syncInclude);
+        $this->assertStringContainsString('WebRequest error 4014: add the Wolforix URL', $syncInclude);
+        $this->assertStringContainsString('ApiBaseUrl='.url('/'), $settings);
         $this->assertStringContainsString('ApiToken=account-secret-token-123', $settings);
         $this->assertStringContainsString('AccountReference=WFX-MT5-OWN-1234', $settings);
         $this->assertStringContainsString('Secret Token: already prefilled in the EA input defaults', $readme);
+        $this->assertStringContainsString('Tools > Options > Expert Advisors', $readme);
         $this->assertStringNotContainsString('account-secret-token-123', $readme);
     }
 

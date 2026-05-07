@@ -1,6 +1,6 @@
 #property strict
 #property version   "1.00"
-#property description "Wolforix Milestone 1 MT5 rule engine"
+#property description "Wolforix MT5 rule engine"
 
 #include "Include\\WolforixTypes.mqh"
 #include "Include\\WolforixEngine.mqh"
@@ -15,9 +15,9 @@ input int               InpTimerIntervalSeconds = 1;
 input int               InpPersistIntervalSeconds = 5;
 input bool              InpWriteBridgeSnapshot  = true;
 input bool              InpResetStoredState     = false;
-input string            ApiBaseUrl              = "https://mickolidia.easytechinfo.net";
-input string            ApiToken                = "test_token_123";
-input string            AccountReference        = "WFX-CT-00001-CERT";
+input string            ApiBaseUrl              = "https://wolforix.com";
+input string            ApiToken                = "";
+input string            AccountReference        = "";
 input bool              EnableSync              = true;
 input int               SyncIntervalSeconds     = 30;
 input int               TradeEventSyncCooldownSeconds = 2;

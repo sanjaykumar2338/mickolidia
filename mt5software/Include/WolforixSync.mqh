@@ -441,11 +441,32 @@ string WFResponseBodyToString(const char &buffer[])
    return CharArrayToString(temp,0,size,CP_UTF8);
   }
 
+bool WFStringEndsWith(const string value,const string suffix)
+  {
+   int value_length = StringLen(value);
+   int suffix_length = StringLen(suffix);
+
+   if(suffix_length <= 0)
+      return true;
+
+   if(value_length < suffix_length)
+      return false;
+
+   return (StringSubstr(value,value_length - suffix_length,suffix_length) == suffix);
+  }
+
 string WFBuildMetricsUrl(const string api_base_url,const string account_reference)
   {
    string base_url = WFTrimTrailingSlash(api_base_url);
    string reference = WFTrimInputValue(account_reference);
-   return base_url + "/api/integrations/mt5/accounts/" + reference + "/metrics";
+
+   if(WFStringEndsWith(base_url,"/api/mt5"))
+      return base_url + "/accounts/" + reference + "/metrics";
+
+   if(WFStringEndsWith(base_url,"/api/integrations/mt5"))
+      return base_url + "/accounts/" + reference + "/metrics";
+
+   return base_url + "/api/mt5/accounts/" + reference + "/metrics";
   }
 
 string WFBuildMetricsPayload(const WFRuleSet &rules,
@@ -562,7 +583,10 @@ bool WFSendMetricsToBackend(const string api_base_url,
    if(http_code == -1)
      {
       sync_state.LastResult = "FAILED";
-      sync_state.LastFailureReason = "WebRequest error " + IntegerToString(request_error);
+      if(request_error == 4014)
+         sync_state.LastFailureReason = "WebRequest error 4014: add the Wolforix URL in MT5 Tools > Options > Expert Advisors > Allow WebRequest";
+      else
+         sync_state.LastFailureReason = "WebRequest error " + IntegerToString(request_error);
       PrintFormat("Wolforix Sync: failure reason %s",sync_state.LastFailureReason);
       return false;
      }

@@ -116,7 +116,8 @@ class Mt5ConnectorPackageBuilder
             "   Account Reference: {$connector['account_reference']}",
             '   Secret Token: already prefilled in the EA input defaults and included in wolforix-config.json',
             '   You can also click Load in the EA Inputs tab and select the included .set file.',
-            '6. Allow WebRequest for the Wolforix Base URL if MetaTrader 5 asks.',
+            '6. In MetaTrader 5, open Tools > Options > Expert Advisors and add this URL to Allow WebRequest:',
+            '   '.$this->webRequestOrigin($connector['base_url']),
             '',
             'Keep wolforix-config.json private. It contains your Secret Token.',
         ]).PHP_EOL;
@@ -161,6 +162,25 @@ class Mt5ConnectorPackageBuilder
     private function mqlString(string $value): string
     {
         return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
+    }
+
+    private function webRequestOrigin(string $baseUrl): string
+    {
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME);
+        $host = parse_url($baseUrl, PHP_URL_HOST);
+
+        if (! is_string($scheme) || ! is_string($host) || $scheme === '' || $host === '') {
+            return rtrim($baseUrl, '/');
+        }
+
+        $origin = $scheme.'://'.$host;
+        $port = parse_url($baseUrl, PHP_URL_PORT);
+
+        if (is_int($port)) {
+            $origin .= ':'.$port;
+        }
+
+        return $origin;
     }
 
     private function safeReference(string $reference): string
