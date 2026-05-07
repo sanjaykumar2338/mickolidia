@@ -8,7 +8,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class TrialAccountInstructionsMail extends Mailable
@@ -26,19 +25,6 @@ class TrialAccountInstructionsMail extends Mailable
     public function envelope(): Envelope
     {
         return $this->automatedEnvelope('Your Wolforix Trial Account – Get Started');
-    }
-
-    public function headers(): Headers
-    {
-        return new Headers(
-            text: [
-                'X-Priority' => '1 (Highest)',
-                'X-MSMail-Priority' => 'High',
-                'Importance' => 'High',
-                'Priority' => 'urgent',
-                'X-Wolforix-Send-Mode' => 'immediate',
-            ],
-        );
     }
 
     public function content(): Content
