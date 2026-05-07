@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendTrialEncouragementEmail;
-use App\Mail\TrialAccountInstructionsMail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Trials\TrialAccountCreator;
 use App\Support\Mt5ConnectorCredentials;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +22,7 @@ class TrialController extends Controller
 {
     public function __construct(
         private readonly Mt5ConnectorCredentials $connectorCredentials,
+        private readonly TrialAccountCreator $trialAccountCreator,
     ) {}
 
     public function create(Request $request): View|RedirectResponse
@@ -252,65 +253,7 @@ class TrialController extends Controller
 
     private function createTrialAccount(User $user): TradingAccount
     {
-        $startingBalance = (float) config('wolforix.trial.starting_balance', 10000);
-        $displayRules = config('wolforix.trial.display_rules', []);
-        $profitTargetPercent = (float) ($displayRules['profit_target'] ?? 8);
-        $dailyDrawdownLimitPercent = (float) ($displayRules['daily_drawdown_limit'] ?? 5);
-        $maxDrawdownLimitPercent = (float) ($displayRules['max_drawdown_limit'] ?? 10);
-
-        $trialAccount = TradingAccount::query()->create([
-            'user_id' => $user->id,
-            'challenge_plan_id' => null,
-            'account_reference' => 'WFX-TRIAL-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT).'-'.Str::upper(Str::random(5)),
-            'platform' => 'MT5 Demo',
-            'platform_slug' => 'mt5',
-            'platform_environment' => 'IC Markets Demo',
-            'platform_status' => 'pending_connection',
-            'stage' => config('wolforix.trial.account_type', 'Trial (Demo)'),
-            'status' => 'Active',
-            'account_status' => 'active',
-            'account_type' => 'trial',
-            'is_trial' => true,
-            'starting_balance' => $startingBalance,
-            'balance' => $startingBalance,
-            'equity' => $startingBalance,
-            'daily_drawdown' => 0,
-            'max_drawdown' => 0,
-            'profit_loss' => 0,
-            'total_profit' => 0,
-            'today_profit' => 0,
-            'drawdown_percent' => 0,
-            'profit_target_percent' => $profitTargetPercent,
-            'profit_target_amount' => round($startingBalance * ($profitTargetPercent / 100), 2),
-            'profit_target_progress_percent' => 0,
-            'daily_drawdown_limit_percent' => $dailyDrawdownLimitPercent,
-            'daily_drawdown_limit_amount' => round($startingBalance * ($dailyDrawdownLimitPercent / 100), 2),
-            'max_drawdown_limit_percent' => $maxDrawdownLimitPercent,
-            'max_drawdown_limit_amount' => round($startingBalance * ($maxDrawdownLimitPercent / 100), 2),
-            'consistency_limit_percent' => 40,
-            'minimum_trading_days' => (int) ($displayRules['minimum_trading_days'] ?? 3),
-            'trading_days_completed' => 0,
-            'allowed_symbols' => config('wolforix.trial.allowed_symbols', []),
-            'trial_status' => 'active',
-            'trial_started_at' => now(),
-            'last_activity_at' => now(),
-            'synced_at' => now(),
-            'meta' => [
-                'source' => 'free-trial-registration',
-                'execution_profile' => 'challenge-matched-demo',
-                'demo_broker' => 'IC Markets',
-                'demo_registration_url' => $this->demoRegistrationUrl(),
-                'trial_onboarding_step' => 'connector_pending',
-                'mt5_connector' => [
-                    'secret_token' => Str::random(48),
-                    'created_at' => now()->toIso8601String(),
-                ],
-            ],
-        ]);
-
-        rescue(fn () => Mail::to($user->email)->send(new TrialAccountInstructionsMail($user)));
-
-        return $trialAccount;
+        return $this->trialAccountCreator->create($user);
     }
 
     private function demoRegistrationUrl(): string
