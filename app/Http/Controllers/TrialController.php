@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -308,9 +309,37 @@ class TrialController extends Controller
             ],
         ]);
 
-        rescue(fn () => Mail::to($user->email)->send(new TrialAccountInstructionsMail($user)));
+        $this->sendTrialInstructionsImmediately($user, $trialAccount);
 
         return $trialAccount;
+    }
+
+    private function sendTrialInstructionsImmediately(User $user, TradingAccount $trialAccount): void
+    {
+        $startedAt = microtime(true);
+
+        try {
+            Mail::to($user->email)->send(new TrialAccountInstructionsMail($user));
+
+            $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+            $meta['trial_instructions_email_sent_at'] = now()->toIso8601String();
+
+            $trialAccount->forceFill(['meta' => $meta])->save();
+
+            Log::info('trial.instructions_email_sent_immediately', [
+                'user_id' => $user->id,
+                'trading_account_id' => $trialAccount->id,
+                'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            Log::warning('trial.instructions_email_immediate_send_failed', [
+                'user_id' => $user->id,
+                'trading_account_id' => $trialAccount->id,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function demoRegistrationUrl(): string

@@ -3911,6 +3911,8 @@ class WolforixPlatformTest extends TestCase
                 && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
                 && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
                 && str_contains($mail->render(), route('trial.setup'))
+                && ($mail->headers()->text['X-Wolforix-Send-Mode'] ?? null) === 'immediate'
+                && ($mail->headers()->text['Importance'] ?? null) === 'High'
                 && str_contains($mail->render(), (string) config('wolforix.support.email'));
         });
 
@@ -3960,6 +3962,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertNull($trialAccount->platform_login);
         $this->assertSame('pending_connection', $trialAccount->platform_status);
         $this->assertNotEmpty($trialAccount->meta['trial_connector_acknowledged_at'] ?? null);
+        $this->assertNotEmpty($trialAccount->meta['trial_instructions_email_sent_at'] ?? null);
         $this->assertNotEmpty($trialAccount->meta['mt5_connector']['secret_token'] ?? null);
 
         $this->actingAs($user)
