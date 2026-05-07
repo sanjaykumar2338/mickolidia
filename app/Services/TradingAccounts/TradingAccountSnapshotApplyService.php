@@ -50,6 +50,34 @@ class TradingAccountSnapshotApplyService
             $previousPhaseIndex = (int) $freshAccount->phase_index;
             $finalStateLockedAtStart = (bool) $freshAccount->final_state_locked
                 && in_array((string) $freshAccount->challenge_status, ['passed', 'failed'], true);
+            $lastSyncedAt = $freshAccount->last_synced_at;
+
+            if (
+                $lastSyncedAt instanceof Carbon
+                && $snapshotAt->lt($lastSyncedAt)
+                && $snapshotAt->diffInHours($lastSyncedAt) <= 6
+            ) {
+                Log::warning('Ignored stale MT5 metrics payload.', [
+                    'trading_account_id' => $freshAccount->id,
+                    'account_reference' => $freshAccount->account_reference,
+                    'incoming_snapshot_at' => $snapshotAt->toIso8601String(),
+                    'last_synced_at' => $lastSyncedAt->toIso8601String(),
+                    'sync_trigger' => $snapshot['sync_trigger'] ?? null,
+                    'payload_summary' => $this->payloadSummary($snapshot),
+                ]);
+
+                $freshAccount->forceFill([
+                    'last_sync_started_at' => $startedAt,
+                    'last_sync_completed_at' => now(),
+                    'meta' => $this->ignoredStaleMeta($freshAccount, $snapshot, $snapshotAt),
+                ])->save();
+
+                return $freshAccount->fresh([
+                    'challengePlan',
+                    'challengePurchase',
+                    'user',
+                ]) ?? $freshAccount;
+            }
 
             if ($finalStateLockedAtStart) {
                 if ($this->hasTradingActivity($snapshot)) {
@@ -115,6 +143,22 @@ class TradingAccountSnapshotApplyService
 
             $workingCopy->trading_days_completed = $tradingDaysCompleted;
             $workingCopy->server_day = $serverDay;
+
+            Log::info('MT5 snapshot prepared for rule evaluation.', [
+                'trading_account_id' => $freshAccount->id,
+                'account_reference' => $freshAccount->account_reference,
+                'is_trial' => (bool) $freshAccount->is_trial,
+                'source' => $source,
+                'snapshot_at' => $snapshotAt->toIso8601String(),
+                'server_day' => $serverDay,
+                'balance' => $metrics['balance'] ?? null,
+                'equity' => $metrics['equity'] ?? null,
+                'profit_loss' => $metrics['profit_loss'] ?? null,
+                'total_profit' => $metrics['total_profit'] ?? null,
+                'today_profit' => $metrics['today_profit'] ?? null,
+                'trading_days_completed' => $tradingDaysCompleted,
+                'payload_summary' => $this->payloadSummary($snapshot),
+            ]);
 
             $evaluation = $this->progressEngine->evaluate($workingCopy, [
                 'evaluated_at' => $snapshotAt,
@@ -235,13 +279,41 @@ class TradingAccountSnapshotApplyService
         $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
 
         $syncMeta['status'] = 'connected';
+        $syncMeta['last_ea_ping_at'] = now()->toIso8601String();
         $syncMeta['last_synced_at'] = $snapshotAt->toIso8601String();
+        $syncMeta['last_successful_metric_update_at'] = $snapshotAt->toIso8601String();
+        $syncMeta['last_server_day'] = $this->resolveServerDay($snapshot, $snapshotAt);
+        $syncMeta['last_sync_trigger'] = (string) ($snapshot['sync_trigger'] ?? 'timer');
+        $syncMeta['last_payload_summary'] = $this->payloadSummary($snapshot);
+        $syncMeta['last_rejected_reason'] = null;
+        $syncMeta['last_error'] = null;
+        $syncMeta['last_ignored_reason'] = null;
 
         foreach (['platform_login', 'platform_account_id', 'platform_environment'] as $field) {
             if (filled($snapshot[$field] ?? null)) {
                 $syncMeta[$field] = (string) $snapshot[$field];
             }
         }
+
+        $meta['mt5_sync'] = $syncMeta;
+
+        return $meta;
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return array<string, mixed>
+     */
+    private function ignoredStaleMeta(TradingAccount $account, array $snapshot, Carbon $snapshotAt): array
+    {
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
+
+        $syncMeta['last_ea_ping_at'] = now()->toIso8601String();
+        $syncMeta['last_ignored_payload_at'] = now()->toIso8601String();
+        $syncMeta['last_ignored_snapshot_at'] = $snapshotAt->toIso8601String();
+        $syncMeta['last_ignored_reason'] = 'stale_timestamp';
+        $syncMeta['last_payload_summary'] = $this->payloadSummary($snapshot);
 
         $meta['mt5_sync'] = $syncMeta;
 
@@ -294,6 +366,8 @@ class TradingAccountSnapshotApplyService
     {
         return (bool) ($snapshot['has_activity'] ?? false)
             || (int) ($snapshot['trade_count'] ?? $snapshot['activity_count'] ?? 0) > 0
+            || (int) ($snapshot['positions_count'] ?? 0) > 0
+            || (int) ($snapshot['closed_positions_count'] ?? 0) > 0
             || (float) ($snapshot['volume'] ?? 0) > 0;
     }
 
@@ -409,10 +483,24 @@ class TradingAccountSnapshotApplyService
         string $source,
     ): int {
         $activityCount = max((int) ($snapshot['trade_count'] ?? $snapshot['activity_count'] ?? 0), 0);
+        $positionsCount = max((int) ($snapshot['positions_count'] ?? 0), 0);
+        $closedPositionsCount = max((int) ($snapshot['closed_positions_count'] ?? 0), 0);
         $volume = round((float) ($snapshot['volume'] ?? 0), 2);
-        $hasActivity = (bool) ($snapshot['has_activity'] ?? false) || $activityCount > 0 || $volume > 0;
+        $hasActivity = (bool) ($snapshot['has_activity'] ?? false)
+            || $activityCount > 0
+            || $positionsCount > 0
+            || $closedPositionsCount > 0
+            || $volume > 0;
 
         if (! $hasActivity) {
+            Log::info('MT5 trading-day update skipped because payload has no activity.', [
+                'trading_account_id' => $account->id,
+                'account_reference' => $account->account_reference,
+                'phase_index' => (int) $account->phase_index,
+                'snapshot_at' => $occurredAt->toIso8601String(),
+                'payload_summary' => $this->payloadSummary($snapshot),
+            ]);
+
             return (int) $account->tradingDays()
                 ->where('phase_index', (int) $account->phase_index)
                 ->count();
@@ -434,7 +522,7 @@ class TradingAccountSnapshotApplyService
         ]);
 
         $day->fill([
-            'activity_count' => max((int) ($day->activity_count ?? 0), max($activityCount, 1)),
+            'activity_count' => max((int) ($day->activity_count ?? 0), max($activityCount, $positionsCount, $closedPositionsCount, 1)),
             'volume' => round(max((float) ($day->volume ?? 0), $volume), 2),
             'first_activity_at' => $day->first_activity_at ?? $occurredAt,
             'last_activity_at' => $occurredAt,
@@ -442,8 +530,50 @@ class TradingAccountSnapshotApplyService
         ]);
         $day->save();
 
+        Log::info('MT5 trading day recorded.', [
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'phase_index' => (int) $account->phase_index,
+            'trading_date' => $tradingDate,
+            'was_created' => $day->wasRecentlyCreated,
+            'activity_count' => (int) $day->activity_count,
+            'volume' => (float) $day->volume,
+            'source' => $source,
+        ]);
+
         return (int) $account->tradingDays()
             ->where('phase_index', (int) $account->phase_index)
             ->count();
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return array<string, mixed>
+     */
+    private function payloadSummary(array $snapshot): array
+    {
+        $raw = is_array($snapshot['raw'] ?? null) ? $snapshot['raw'] : [];
+        $openPositions = $snapshot['open_positions'] ?? $raw['open_positions'] ?? null;
+        $tradeHistory = $snapshot['trade_history'] ?? $raw['trade_history'] ?? null;
+
+        return [
+            'balance' => $snapshot['balance'] ?? null,
+            'equity' => $snapshot['equity'] ?? null,
+            'open_profit' => $snapshot['open_profit'] ?? $snapshot['profit_loss'] ?? null,
+            'total_profit' => $snapshot['total_profit'] ?? null,
+            'today_profit' => $snapshot['today_profit'] ?? null,
+            'trade_count' => $snapshot['trade_count'] ?? null,
+            'activity_count' => $snapshot['activity_count'] ?? null,
+            'positions_count' => $snapshot['positions_count'] ?? null,
+            'closed_positions_count' => $snapshot['closed_positions_count'] ?? null,
+            'open_positions_rows' => is_array($openPositions) ? count($openPositions) : null,
+            'trade_history_rows' => is_array($tradeHistory) ? count($tradeHistory) : null,
+            'has_activity' => $snapshot['has_activity'] ?? null,
+            'timestamp' => $snapshot['timestamp'] ?? null,
+            'server_day' => $snapshot['server_day'] ?? null,
+            'sync_trigger' => $snapshot['sync_trigger'] ?? null,
+            'platform_login' => $snapshot['platform_login'] ?? null,
+            'platform_account_id' => $snapshot['platform_account_id'] ?? null,
+        ];
     }
 }

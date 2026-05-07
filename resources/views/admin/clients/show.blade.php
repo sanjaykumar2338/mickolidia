@@ -476,6 +476,27 @@
                     <dt class="text-slate-400">Sync Source</dt>
                     <dd class="font-semibold text-white">{{ $providerReferences['sync_source'] }}</dd>
                 </div>
+                <div class="rounded-2xl border border-amber-400/16 bg-amber-400/8 px-4 py-3">
+                    <dt class="text-slate-400">MT5 Sync Diagnostics</dt>
+                    <dd class="mt-3 grid gap-2 text-xs leading-6 text-slate-300 sm:grid-cols-2">
+                        <span><strong class="text-white">Last EA ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
+                        <span><strong class="text-white">Last metric update:</strong> {{ $providerReferences['last_successful_metric_update_at'] }}</span>
+                        <span><strong class="text-white">Trigger:</strong> {{ $providerReferences['last_sync_trigger'] }}</span>
+                        <span><strong class="text-white">Latest log:</strong> {{ $providerReferences['latest_sync_log_status'] }}</span>
+                        <span><strong class="text-white">Log completed:</strong> {{ $providerReferences['latest_sync_log_completed_at'] }}</span>
+                        <span><strong class="text-white">Rejected:</strong> {{ $providerReferences['last_rejected_reason'] }} @ {{ $providerReferences['last_rejected_at'] }}</span>
+                        <span><strong class="text-white">Ignored:</strong> {{ $providerReferences['last_ignored_reason'] }} @ {{ $providerReferences['last_ignored_payload_at'] }}</span>
+                        <span><strong class="text-white">Log error:</strong> {{ $providerReferences['latest_sync_log_error'] }}</span>
+                    </dd>
+                    @if (! empty($providerReferences['last_payload_summary']))
+                        <dd class="mt-3 rounded-xl border border-white/6 bg-black/20 px-3 py-3 font-mono text-[11px] leading-5 text-slate-300">
+                            @foreach ($providerReferences['last_payload_summary'] as $key => $value)
+                                <span class="mr-3 inline-block">{{ $key }}={{ is_bool($value) ? ($value ? 'true' : 'false') : (is_array($value) ? json_encode($value) : ($value ?? 'null')) }}</span>
+                            @endforeach
+                        </dd>
+                    @endif
+                    <dd class="mt-3 text-xs leading-6 text-slate-400">{{ $providerReferences['latest_sync_log_message'] }}</dd>
+                </div>
                 <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
                     <dt class="text-slate-400">Authorized Accounts</dt>
                     <dd class="font-semibold text-white">{{ $providerReferences['authorized_accounts_count'] }}</dd>

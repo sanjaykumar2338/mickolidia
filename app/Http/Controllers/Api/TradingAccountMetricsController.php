@@ -72,79 +72,127 @@ class TradingAccountMetricsController extends Controller
         TradingAccountSnapshotApplyService $snapshotApplyService,
         Mt5ConnectorCredentials $connectorCredentials,
     ): JsonResponse {
-        $account = $this->resolveAccount($accountIdentifier);
+        $account = $this->resolveAccount($accountIdentifier, $request);
+        $startedAt = now();
+        $sanitizedPayload = $this->sanitizePayload($request->all());
+        $rawSyncTrigger = $this->normalizeString($request->input('sync_trigger')) ?: 'unknown';
 
-        if ($authFailure = $this->authorizeIngestion($request, $account, $connectorCredentials, $accountIdentifier)) {
+        Log::info('MT5 metrics payload received.', [
+            'account_identifier' => $accountIdentifier,
+            'account_reference' => $account->account_reference,
+            'trading_account_id' => $account->id,
+            'platform_login' => $account->platform_login,
+            'sync_trigger' => $rawSyncTrigger,
+            'ip' => $request->ip(),
+            'payload_summary' => $this->payloadSummary($sanitizedPayload),
+            'payload' => $sanitizedPayload,
+        ]);
+
+        if ($authFailure = $this->authorizeIngestion($request, $account, $connectorCredentials, $accountIdentifier, $startedAt, $sanitizedPayload)) {
             return $authFailure;
         }
+
+        $log = TradingAccountSyncLog::query()->create([
+            'trading_account_id' => $account->id,
+            'platform' => $account->platform_slug ?: 'mt5',
+            'status' => 'started',
+            'message' => "MT5 metrics update received ({$rawSyncTrigger}).",
+            'started_at' => $startedAt,
+            'payload' => $sanitizedPayload,
+        ]);
 
         try {
             $normalizedPayload = $this->normalizePayload($request->all(), $accountIdentifier);
         } catch (\InvalidArgumentException $exception) {
+            $this->markRejectedSync(
+                account: $account,
+                log: $log,
+                startedAt: $startedAt,
+                reason: 'payload_normalization_failed',
+                message: $exception->getMessage(),
+                payload: $sanitizedPayload,
+            );
+
             return response()->json([
                 'status' => 'error',
                 'message' => $exception->getMessage(),
             ], 422);
         }
 
-        $validated = Validator::make($normalizedPayload, [
-            'balance' => ['required', 'numeric'],
-            'equity' => ['required', 'numeric'],
-            'starting_balance' => ['nullable', 'numeric'],
-            'broker_starting_balance' => ['nullable', 'numeric'],
-            'broker_phase_reference_balance' => ['nullable', 'numeric'],
-            'open_profit' => ['nullable', 'numeric'],
-            'profit_loss' => ['nullable', 'numeric'],
-            'total_profit' => ['nullable', 'numeric'],
-            'today_profit' => ['nullable', 'numeric'],
-            'daily_drawdown' => ['nullable', 'numeric'],
-            'max_drawdown' => ['nullable', 'numeric'],
-            'highest_equity_today' => ['nullable', 'numeric'],
-            'daily_loss_used' => ['nullable', 'numeric'],
-            'max_drawdown_used' => ['nullable', 'numeric'],
-            'timestamp' => ['required', 'date'],
-            'server_day' => ['nullable', 'date'],
-            'platform_status' => ['nullable', 'string', 'max:255'],
-            'platform_environment' => ['nullable', 'string', 'max:255'],
-            'platform_account_id' => ['nullable', 'string', 'max:255'],
-            'platform_login' => ['nullable', 'string', 'max:255'],
-            'trade_count' => ['nullable', 'integer', 'min:0'],
-            'activity_count' => ['nullable', 'integer', 'min:0'],
-            'has_activity' => ['nullable', 'boolean'],
-            'volume' => ['nullable', 'numeric', 'min:0'],
-            'positions_count' => ['nullable', 'integer', 'min:0'],
-            'closed_positions_count' => ['nullable', 'integer', 'min:0'],
-            'trading_blocked_ack' => ['nullable', 'boolean'],
-            'phase_index' => ['nullable', 'integer', 'min:1'],
-            'account_phase' => ['nullable', 'string', 'max:255'],
-            'sync_trigger' => ['nullable', 'string', 'max:255'],
-            'trading_days_completed' => ['nullable', 'integer', 'min:0'],
-            'is_funded' => ['nullable', 'boolean'],
-            'raw' => ['nullable', 'array'],
-        ])->validate();
+        try {
+            $validated = Validator::make($normalizedPayload, [
+                'balance' => ['required', 'numeric'],
+                'equity' => ['required', 'numeric'],
+                'starting_balance' => ['nullable', 'numeric'],
+                'broker_starting_balance' => ['nullable', 'numeric'],
+                'broker_phase_reference_balance' => ['nullable', 'numeric'],
+                'open_profit' => ['nullable', 'numeric'],
+                'profit_loss' => ['nullable', 'numeric'],
+                'total_profit' => ['nullable', 'numeric'],
+                'today_profit' => ['nullable', 'numeric'],
+                'daily_drawdown' => ['nullable', 'numeric'],
+                'max_drawdown' => ['nullable', 'numeric'],
+                'highest_equity_today' => ['nullable', 'numeric'],
+                'daily_loss_used' => ['nullable', 'numeric'],
+                'max_drawdown_used' => ['nullable', 'numeric'],
+                'timestamp' => ['required', 'date'],
+                'server_day' => ['nullable', 'date'],
+                'platform_status' => ['nullable', 'string', 'max:255'],
+                'platform_environment' => ['nullable', 'string', 'max:255'],
+                'platform_account_id' => ['nullable', 'string', 'max:255'],
+                'platform_login' => ['nullable', 'string', 'max:255'],
+                'trade_count' => ['nullable', 'integer', 'min:0'],
+                'activity_count' => ['nullable', 'integer', 'min:0'],
+                'has_activity' => ['nullable', 'boolean'],
+                'volume' => ['nullable', 'numeric', 'min:0'],
+                'positions_count' => ['nullable', 'integer', 'min:0'],
+                'closed_positions_count' => ['nullable', 'integer', 'min:0'],
+                'trading_blocked_ack' => ['nullable', 'boolean'],
+                'phase_index' => ['nullable', 'integer', 'min:1'],
+                'account_phase' => ['nullable', 'string', 'max:255'],
+                'sync_trigger' => ['nullable', 'string', 'max:255'],
+                'trading_days_completed' => ['nullable', 'integer', 'min:0'],
+                'is_funded' => ['nullable', 'boolean'],
+                'raw' => ['nullable', 'array'],
+            ])->validate();
+        } catch (ValidationException $exception) {
+            $this->markRejectedSync(
+                account: $account,
+                log: $log,
+                startedAt: $startedAt,
+                reason: 'payload_validation_failed',
+                message: 'MT5 metrics payload validation failed.',
+                payload: $sanitizedPayload,
+                context: ['errors' => $exception->errors()],
+            );
 
-        $startedAt = now();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'MT5 metrics payload rejected.',
+                'errors' => $exception->errors(),
+            ], 422);
+        }
+
         $syncTrigger = (string) ($validated['sync_trigger'] ?? 'timer');
-        $sanitizedPayload = $this->sanitizePayload($request->all());
+        $this->logPlatformIdentityMismatch($account, $validated, $accountIdentifier);
 
         Log::info('MT5 metrics update received.', [
             'account_identifier' => $accountIdentifier,
+            'account_reference' => $account->account_reference,
+            'trading_account_id' => $account->id,
             'sync_trigger' => $syncTrigger,
             'balance' => $validated['balance'],
             'equity' => $validated['equity'],
             'open_profit' => $validated['open_profit'] ?? null,
+            'trade_count' => $validated['trade_count'] ?? null,
+            'activity_count' => $validated['activity_count'] ?? null,
             'positions_count' => $validated['positions_count'] ?? null,
+            'closed_positions_count' => $validated['closed_positions_count'] ?? null,
             'has_activity' => $validated['has_activity'] ?? null,
             'timestamp' => $validated['timestamp'],
-        ]);
-
-        $log = TradingAccountSyncLog::query()->create([
-            'trading_account_id' => $account->id,
-            'platform' => $account->platform_slug ?: 'mt5',
-            'status' => 'started',
-            'message' => "MT5 metrics update received ({$syncTrigger}).",
-            'started_at' => $startedAt,
-            'payload' => $sanitizedPayload,
+            'server_day' => $validated['server_day'] ?? null,
+            'stored_platform_login' => $account->platform_login,
+            'incoming_platform_login' => $validated['platform_login'] ?? null,
         ]);
 
         try {
@@ -157,8 +205,10 @@ class TradingAccountMetricsController extends Controller
             ]);
 
             $log->forceFill([
-                'status' => 'success',
-                'message' => "MT5 metrics applied successfully ({$syncTrigger}).",
+                'status' => data_get($updatedAccount->meta, 'mt5_sync.last_ignored_reason') === 'stale_timestamp' ? 'ignored' : 'success',
+                'message' => data_get($updatedAccount->meta, 'mt5_sync.last_ignored_reason') === 'stale_timestamp'
+                    ? "MT5 metrics ignored as stale ({$syncTrigger})."
+                    : "MT5 metrics applied successfully ({$syncTrigger}).",
                 'completed_at' => now(),
             ])->save();
 
@@ -169,7 +219,13 @@ class TradingAccountMetricsController extends Controller
                 'challenge_status' => $updatedAccount->challenge_status,
                 'phase_index' => (int) $updatedAccount->phase_index,
                 'trading_days_completed' => (int) $updatedAccount->trading_days_completed,
+                'balance' => (float) $updatedAccount->balance,
+                'equity' => (float) $updatedAccount->equity,
+                'profit_loss' => (float) $updatedAccount->profit_loss,
+                'total_profit' => (float) $updatedAccount->total_profit,
+                'today_profit' => (float) $updatedAccount->today_profit,
                 'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
+                'ignored_reason' => data_get($updatedAccount->meta, 'mt5_sync.last_ignored_reason'),
             ]);
 
             return response()->json([
@@ -226,6 +282,8 @@ class TradingAccountMetricsController extends Controller
         TradingAccount $account,
         Mt5ConnectorCredentials $connectorCredentials,
         string $accountIdentifier,
+        Carbon $startedAt,
+        array $sanitizedPayload,
     ): ?JsonResponse
     {
         $providedToken = (string) ($request->bearerToken() ?: $request->input('secret_token', ''));
@@ -239,6 +297,17 @@ class TradingAccountMetricsController extends Controller
             'account_reference' => $account->account_reference,
             'has_token' => $providedToken !== '',
             'ip' => $request->ip(),
+        ]);
+
+        TradingAccountSyncLog::query()->create([
+            'trading_account_id' => $account->id,
+            'platform' => $account->platform_slug ?: 'mt5',
+            'status' => 'rejected',
+            'message' => 'MT5 metrics token rejected.',
+            'error_message' => 'Invalid token',
+            'started_at' => $startedAt,
+            'completed_at' => now(),
+            'payload' => $sanitizedPayload,
         ]);
 
         return response()->json([
@@ -313,13 +382,19 @@ class TradingAccountMetricsController extends Controller
         return $this->mt5DeactivationEvent($account) !== null;
     }
 
-    private function resolveAccount(string $accountIdentifier): TradingAccount
+    private function resolveAccount(string $accountIdentifier, Request $request): TradingAccount
     {
         $account = TradingAccount::query()
             ->where('account_reference', $accountIdentifier)
             ->first();
 
         if (! $account instanceof TradingAccount) {
+            Log::warning('MT5 metrics account reference was not found.', [
+                'account_identifier' => $accountIdentifier,
+                'ip' => $request->ip(),
+                'payload_keys' => array_keys($request->all()),
+            ]);
+
             throw ValidationException::withMessages([
                 'account' => 'Trading account not found for the provided identifier.',
             ]);
@@ -334,9 +409,30 @@ class TradingAccountMetricsController extends Controller
      */
     private function sanitizePayload(array $payload): array
     {
-        unset($payload['secret_token']);
+        return $this->sanitizePayloadValue($payload);
+    }
 
-        return $payload;
+    private function sanitizePayloadValue(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $item) {
+            $normalizedKey = strtolower((string) $key);
+
+            if (str_contains($normalizedKey, 'token') || str_contains($normalizedKey, 'password') || str_contains($normalizedKey, 'secret')) {
+                $sanitized[$key] = '[redacted]';
+
+                continue;
+            }
+
+            $sanitized[$key] = $this->sanitizePayloadValue($item);
+        }
+
+        return $sanitized;
     }
 
     /**
@@ -565,9 +661,122 @@ class TradingAccountMetricsController extends Controller
         }
 
         return match (strtolower(trim($phase))) {
-            'single_phase', 'phase_1', 'phase1', 'phase 1', 'challenge_step_1', 'challenge step 1' => 1,
-            'phase_2', 'phase2', 'phase 2', 'challenge_step_2', 'challenge step 2' => 2,
+            'one_step', 'single_phase', 'phase_1', 'phase1', 'phase 1', 'challenge_step_1', 'challenge step 1', 'two_step_phase_1' => 1,
+            'phase_2', 'phase2', 'phase 2', 'challenge_step_2', 'challenge step 2', 'two_step_phase_2' => 2,
             default => null,
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $context
+     */
+    private function markRejectedSync(
+        TradingAccount $account,
+        TradingAccountSyncLog $log,
+        Carbon $startedAt,
+        string $reason,
+        string $message,
+        array $payload,
+        array $context = [],
+    ): void {
+        $completedAt = now();
+
+        $log->forceFill([
+            'status' => 'rejected',
+            'message' => $message,
+            'error_message' => $reason,
+            'completed_at' => $completedAt,
+        ])->save();
+
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
+        $syncMeta = array_merge($syncMeta, [
+            'status' => 'rejected',
+            'last_rejected_at' => $completedAt->toIso8601String(),
+            'last_rejected_reason' => $reason,
+            'last_error' => $message,
+            'last_payload_summary' => $this->payloadSummary($payload),
+        ]);
+
+        if ($context !== []) {
+            $syncMeta['last_rejected_context'] = $context;
+        }
+
+        $meta['mt5_sync'] = $syncMeta;
+
+        $account->forceFill([
+            'sync_status' => 'error',
+            'sync_source' => 'mt5_ea',
+            'sync_error' => "{$reason}: {$message}",
+            'sync_error_at' => $completedAt,
+            'last_sync_started_at' => $startedAt,
+            'last_sync_completed_at' => $completedAt,
+            'meta' => $meta,
+        ])->save();
+
+        Log::warning('MT5 metrics payload rejected.', array_merge([
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'reason' => $reason,
+            'message' => $message,
+            'payload_summary' => $this->payloadSummary($payload),
+        ], $context));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function logPlatformIdentityMismatch(TradingAccount $account, array $payload, string $accountIdentifier): void
+    {
+        $incomingLogin = (string) ($payload['platform_login'] ?? '');
+        $incomingAccountId = (string) ($payload['platform_account_id'] ?? '');
+        $storedLogin = (string) ($account->platform_login ?: '');
+        $storedAccountId = (string) ($account->platform_account_id ?: '');
+
+        if (
+            ($incomingLogin === '' || $storedLogin === '' || $incomingLogin === $storedLogin)
+            && ($incomingAccountId === '' || $storedAccountId === '' || $incomingAccountId === $storedAccountId)
+        ) {
+            return;
+        }
+
+        Log::warning('MT5 metrics platform identity differs from stored account credentials.', [
+            'account_identifier' => $accountIdentifier,
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'stored_platform_login' => $storedLogin ?: null,
+            'incoming_platform_login' => $incomingLogin ?: null,
+            'stored_platform_account_id' => $storedAccountId ?: null,
+            'incoming_platform_account_id' => $incomingAccountId ?: null,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function payloadSummary(array $payload): array
+    {
+        return [
+            'keys' => array_keys($payload),
+            'balance' => $payload['balance'] ?? null,
+            'equity' => $payload['equity'] ?? null,
+            'open_profit' => $payload['open_profit'] ?? $payload['profit_loss'] ?? null,
+            'total_profit' => $payload['total_profit'] ?? null,
+            'today_profit' => $payload['today_profit'] ?? null,
+            'trade_count' => $payload['trade_count'] ?? null,
+            'activity_count' => $payload['activity_count'] ?? null,
+            'positions_count' => $payload['positions_count'] ?? null,
+            'closed_positions_count' => $payload['closed_positions_count'] ?? null,
+            'open_positions_rows' => is_array($payload['open_positions'] ?? null) ? count($payload['open_positions']) : null,
+            'trade_history_rows' => is_array($payload['trade_history'] ?? null) ? count($payload['trade_history']) : null,
+            'has_activity' => $payload['has_activity'] ?? null,
+            'server_time' => $payload['server_time'] ?? $payload['timestamp'] ?? null,
+            'server_day' => $payload['server_day'] ?? null,
+            'sync_trigger' => $payload['sync_trigger'] ?? null,
+            'platform_login' => $payload['platform_login'] ?? null,
+            'platform_account_id' => $payload['platform_account_id'] ?? null,
+        ];
     }
 }

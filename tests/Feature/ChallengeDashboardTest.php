@@ -11,6 +11,7 @@ use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrustpilotReviewRequestMail;
 use App\Models\ChallengePlan;
 use App\Models\TradingAccount;
+use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -295,6 +296,63 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('success', $account->sync_status);
     }
 
+    public function test_mt5_metrics_counts_activity_from_position_counts_and_derives_today_profit_from_closed_rows(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'account_reference' => 'WFX-CT-00001-LIVE',
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 10075,
+            'equity' => 10115,
+            'open_profit' => 40,
+            'positions_count' => 1,
+            'closed_positions_count' => 1,
+            'phase' => 'one_step',
+            'sync_trigger' => 'trade_history_add',
+            'server_time' => '2026-04-08 10:30:00',
+            'trade_history' => [
+                [
+                    'deal_id' => 90001,
+                    'symbol' => 'XAUUSD',
+                    'execution_timestamp' => '2026-04-08 10:15:00',
+                    'profit' => 75,
+                    'commission' => -3,
+                    'swap' => -1,
+                ],
+                [
+                    'deal_id' => 90002,
+                    'symbol' => 'EURUSD',
+                    'execution_timestamp' => '2026-04-07 16:00:00',
+                    'profit' => 20,
+                ],
+            ],
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('trading_days_completed', 1);
+
+        $account->refresh();
+
+        $this->assertSame(1, (int) $account->trading_days_completed);
+        $this->assertSame('71.00', (string) $account->today_profit);
+        $this->assertSame('40.00', (string) $account->profit_loss);
+        $this->assertSame('75.00', (string) $account->total_profit);
+        $this->assertSame('trade_history_add', data_get($account->meta, 'mt5_sync.last_sync_trigger'));
+        $this->assertSame(2, data_get($account->meta, 'mt5_sync.last_payload_summary.trade_history_rows'));
+        $this->assertDatabaseHas('trading_account_days', [
+            'trading_account_id' => $account->id,
+            'trading_date' => '2026-04-08 00:00:00',
+            'activity_count' => 1,
+        ]);
+        $this->assertSame('success', TradingAccountSyncLog::query()->latest('id')->value('status'));
+    }
+
     public function test_metrics_endpoint_returns_422_for_invalid_server_time_format(): void
     {
         $account = $this->createChallengeAccount('one_step');
@@ -314,6 +372,65 @@ class ChallengeDashboardTest extends TestCase
                 'status' => 'error',
                 'message' => 'Invalid server_time format',
             ]);
+
+        $account->refresh();
+
+        $this->assertSame('error', $account->sync_status);
+        $this->assertSame('payload_normalization_failed', data_get($account->meta, 'mt5_sync.last_rejected_reason'));
+        $this->assertSame('rejected', TradingAccountSyncLog::query()->latest('id')->value('status'));
+    }
+
+    public function test_mt5_metrics_rejects_invalid_payloads_with_diagnostics_after_authentication(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 10000,
+            'server_time' => '2026-04-07 22:11:54',
+            'sync_trigger' => 'timer',
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('status', 'error')
+            ->assertJsonPath('message', 'MT5 metrics payload rejected.');
+
+        $account->refresh();
+        $latestLog = TradingAccountSyncLog::query()->latest('id')->firstOrFail();
+
+        $this->assertSame('error', $account->sync_status);
+        $this->assertStringContainsString('payload_validation_failed', (string) $account->sync_error);
+        $this->assertSame('payload_validation_failed', data_get($account->meta, 'mt5_sync.last_rejected_reason'));
+        $this->assertSame('rejected', $latestLog->status);
+        $this->assertSame('payload_validation_failed', $latestLog->error_message);
+    }
+
+    public function test_mt5_metrics_ignores_stale_sync_payloads_without_regressing_dashboard_metrics(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-08 10:00:00', 10080, 10120, [
+            'open_profit' => 40,
+            'positions_count' => 1,
+        ])->assertOk();
+
+        $this->pushMetrics($account, '2026-04-08 09:59:59', 9990, 9995, [
+            'open_profit' => 5,
+            'positions_count' => 1,
+            'sync_trigger' => 'retry',
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('10080.00', (string) $account->balance);
+        $this->assertSame('10120.00', (string) $account->equity);
+        $this->assertSame('40.00', (string) $account->profit_loss);
+        $this->assertSame('2026-04-08 10:00:00', $account->last_synced_at?->toDateTimeString());
+        $this->assertSame('stale_timestamp', data_get($account->meta, 'mt5_sync.last_ignored_reason'));
+        $this->assertSame('ignored', TradingAccountSyncLog::query()->latest('id')->value('status'));
     }
 
     public function test_one_step_target_does_not_pass_before_minimum_trading_days(): void

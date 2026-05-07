@@ -538,6 +538,19 @@ string WFBuildMetricsPayload(const WFRuleSet &rules,
    return payload;
   }
 
+bool WFShouldRetryTransientSyncFailure(const int http_code,const int request_error)
+  {
+   if(http_code == -1 && request_error != 4014)
+      return true;
+
+   return (http_code == 408 ||
+           http_code == 429 ||
+           http_code == 500 ||
+           http_code == 502 ||
+           http_code == 503 ||
+           http_code == 504);
+  }
+
 bool WFSendMetricsToBackend(const string api_base_url,
                             const string api_token,
                             const string account_reference,
@@ -610,6 +623,19 @@ bool WFSendMetricsToBackend(const string api_base_url,
          response_text = WFResponseBodyToString(response_body);
          sync_state.LastRequestUrl = alternate_url;
         }
+     }
+
+   if(WFShouldRetryTransientSyncFailure(http_code,request_error))
+     {
+      string retry_url = sync_state.LastRequestUrl;
+      PrintFormat("Wolforix Sync: transient failure, retrying URL %s",retry_url);
+
+      ArrayResize(response_body,0);
+      response_headers = "";
+      ResetLastError();
+      http_code = WebRequest("POST",retry_url,headers,WF_SYNC_TIMEOUT_MS,request_body,response_body,response_headers);
+      request_error = GetLastError();
+      response_text = WFResponseBodyToString(response_body);
      }
 
    sync_state.LastHttpCode = http_code;

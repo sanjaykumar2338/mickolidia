@@ -60,6 +60,10 @@ class AdminClientController extends Controller
             : null;
         $selectedAccount ??= $accounts->first();
         $latestOrder = $user->latestOrder;
+        $latestSyncLog = $selectedAccount?->syncLogs()
+            ->latest('id')
+            ->first();
+        $mt5SyncMeta = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
 
         return view('admin.clients.show', [
             'client' => [
@@ -166,6 +170,18 @@ class AdminClientController extends Controller
                 'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
                 'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',
+                'last_ea_ping_at' => $this->formatDateTimeValue($mt5SyncMeta['last_ea_ping_at'] ?? null),
+                'last_successful_metric_update_at' => $this->formatDateTimeValue($mt5SyncMeta['last_successful_metric_update_at'] ?? null),
+                'last_sync_trigger' => $mt5SyncMeta['last_sync_trigger'] ?? 'N/A',
+                'last_rejected_at' => $this->formatDateTimeValue($mt5SyncMeta['last_rejected_at'] ?? null),
+                'last_rejected_reason' => $mt5SyncMeta['last_rejected_reason'] ?? 'None',
+                'last_ignored_payload_at' => $this->formatDateTimeValue($mt5SyncMeta['last_ignored_payload_at'] ?? null),
+                'last_ignored_reason' => $mt5SyncMeta['last_ignored_reason'] ?? 'None',
+                'last_payload_summary' => is_array($mt5SyncMeta['last_payload_summary'] ?? null) ? $mt5SyncMeta['last_payload_summary'] : [],
+                'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
+                'latest_sync_log_message' => $latestSyncLog?->message ?? 'N/A',
+                'latest_sync_log_error' => $latestSyncLog?->error_message ?? 'None',
+                'latest_sync_log_completed_at' => $this->formatDateTime($latestSyncLog?->completed_at),
                 'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
                 'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
             ],
@@ -474,6 +490,23 @@ class AdminClientController extends Controller
         }
 
         return 'Not synced yet';
+    }
+
+    private function formatDateTimeValue(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i');
+        }
+
+        if (is_string($value) && $value !== '') {
+            try {
+                return \Illuminate\Support\Carbon::parse($value)->format('Y-m-d H:i');
+            } catch (\Throwable) {
+                return $value;
+            }
+        }
+
+        return 'N/A';
     }
 
     private function humanizeStatus(string $status): string
