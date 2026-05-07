@@ -650,7 +650,7 @@ return [
             'steps' => [
                 'Create your demo account using the IC Markets link.',
                 'Download and extract the Wolforix MT5 connector zip package.',
-                'Install the EA files: copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include.',
+                'In MetaTrader 5, click File > Open Data Folder. When File Explorer opens, open MQL5 > Experts and paste the WolforixRuleEngineEA.mq5 file or extracted connector folder there. Copy the Include files into MQL5 > Include.',
                 'Open MetaTrader 5 and drag the WolforixRuleEngineEA Expert Advisor onto a chart.',
                 'In MetaTrader 5, open Tools > Options > Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.',
                 'Copy the Base URL, Account Reference, and Secret Token shown here.',
