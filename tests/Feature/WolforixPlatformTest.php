@@ -3909,6 +3909,9 @@ class WolforixPlatformTest extends TestCase
                 && str_contains($mail->render(), 'https://www.wolforix.com')
                 && str_contains($mail->render(), 'https://wolforix.com')
                 && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
+                && str_contains($mail->render(), 'MT5 Setup Tutorial')
+                && str_contains($mail->render(), 'Watch Setup Video')
+                && str_contains($mail->render(), 'https://www.wolforix.com/mt5_demo.mp4')
                 && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
                 && str_contains($mail->render(), route('trial.setup'))
                 && str_contains($mail->render(), (string) config('wolforix.support.email'));
@@ -3931,6 +3934,8 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('Connect Your MT5 Demo Account')
             ->assertSee('Open Demo Account')
+            ->assertSee('Watch MT5 Connector Setup Video')
+            ->assertSee('mt5_demo.mp4')
             ->assertSee('Download Preconfigured Connector')
             ->assertSee('Download generic connector instead')
             ->assertSee('mt5software/wolforix-mt5-connector.zip')

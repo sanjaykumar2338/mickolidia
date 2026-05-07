@@ -29,6 +29,21 @@
         </div>
     </div>
 
+    <div class="mt-6 overflow-hidden rounded-2xl border border-amber-300/16 bg-black/20">
+        <div class="px-4 py-4 sm:px-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">{{ __('site.trial.connector.tutorial_title') }}</p>
+            <p class="mt-3 text-sm leading-7 text-slate-300">{{ __('site.trial.connector.tutorial_description') }}</p>
+        </div>
+        <video
+            class="block aspect-video w-full bg-black object-contain"
+            controls
+            preload="metadata"
+            playsinline
+        >
+            <source src="{{ asset('mt5_demo.mp4') }}" type="video/mp4">
+        </video>
+    </div>
+
     <div class="mt-6 rounded-2xl border border-white/6 bg-black/15 p-4">
         <h3 class="text-sm font-semibold text-white">{{ __('site.trial.connector.details_title') }}</h3>
         <div class="mt-4 space-y-3">

@@ -635,6 +635,8 @@ return [
             'preconfigured_download_button' => 'Download Preconfigured Connector',
             'preconfigured_download_copy' => 'This package is preconfigured for your Wolforix account. Install the EA in MetaTrader 5 and attach it to a chart.',
             'manual_download_link' => 'Download generic connector instead',
+            'tutorial_title' => 'Watch MT5 Connector Setup Video',
+            'tutorial_description' => 'Follow this quick video to see how to install the Wolforix MT5 Connector, allow WebRequest, attach the EA, and connect your account to the Wolforix dashboard.',
             'status_title' => 'Connection Status',
             'last_connected' => 'Last sync: :time',
             'waiting_sync' => 'Waiting for the first EA sync.',
