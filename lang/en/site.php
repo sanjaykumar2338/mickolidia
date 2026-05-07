@@ -652,13 +652,14 @@ return [
                 'Download and extract the Wolforix MT5 connector zip package.',
                 'Install the EA files: copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include.',
                 'Open MetaTrader 5 and drag the WolforixRuleEngineEA Expert Advisor onto a chart.',
+                'In MetaTrader 5, open Tools > Options > Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.',
                 'Copy the Base URL, Account Reference, and Secret Token shown here.',
                 'Paste the three values into the EA settings popup inside MetaTrader 5.',
                 'Click OK. Your account will connect automatically when the EA sends its first update.',
             ],
             'notes' => [
                 'The account number is detected from the EA data. Wolforix does not collect it on the website.',
-                'In MetaTrader 5, allow WebRequest for the Wolforix Base URL if MT5 asks for permission.',
+                'Required MT5 setting: Tools > Options > Expert Advisors > tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.',
                 'Keep your Secret Token private. Support will never ask for your password.',
             ],
             'statuses' => [
