@@ -36,7 +36,7 @@ class TrialAccountInstructionsMail extends Mailable
                 'X-MSMail-Priority' => 'High',
                 'Importance' => 'High',
                 'Priority' => 'urgent',
-                'X-Wolforix-Send-Mode' => 'immediate',
+                'X-Wolforix-Send-Mode' => 'delayed-trial-setup',
             ],
         );
     }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\SendTrialEncouragementEmail;
-use App\Mail\TrialAccountInstructionsMail;
+use App\Jobs\SendTrialAccountInstructionsEmail;
 use App\Mail\TrialBreachedMail;
 use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
@@ -21,6 +21,8 @@ use Illuminate\View\View;
 
 class TrialController extends Controller
 {
+    private const TRIAL_INSTRUCTIONS_EMAIL_DELAY_SECONDS = 15;
+
     public function __construct(
         private readonly Mt5ConnectorCredentials $connectorCredentials,
     ) {}
@@ -309,37 +311,28 @@ class TrialController extends Controller
             ],
         ]);
 
-        $this->sendTrialInstructionsImmediately($user, $trialAccount);
+        $this->queueTrialInstructionsEmail($user, $trialAccount);
 
         return $trialAccount;
     }
 
-    private function sendTrialInstructionsImmediately(User $user, TradingAccount $trialAccount): void
+    private function queueTrialInstructionsEmail(User $user, TradingAccount $trialAccount): void
     {
-        $startedAt = microtime(true);
+        $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
+        $meta['trial_instructions_email_queued_at'] = now()->toIso8601String();
+        $meta['trial_instructions_email_delay_seconds'] = self::TRIAL_INSTRUCTIONS_EMAIL_DELAY_SECONDS;
 
-        try {
-            Mail::to($user->email)->send(new TrialAccountInstructionsMail($user));
+        $trialAccount->forceFill(['meta' => $meta])->save();
 
-            $meta = is_array($trialAccount->meta) ? $trialAccount->meta : [];
-            $meta['trial_instructions_email_sent_at'] = now()->toIso8601String();
+        SendTrialAccountInstructionsEmail::dispatch($user->id, $trialAccount->id)
+            ->delay(now()->addSeconds(self::TRIAL_INSTRUCTIONS_EMAIL_DELAY_SECONDS))
+            ->afterCommit();
 
-            $trialAccount->forceFill(['meta' => $meta])->save();
-
-            Log::info('trial.instructions_email_sent_immediately', [
-                'user_id' => $user->id,
-                'trading_account_id' => $trialAccount->id,
-                'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-            ]);
-        } catch (\Throwable $exception) {
-            report($exception);
-
-            Log::warning('trial.instructions_email_immediate_send_failed', [
-                'user_id' => $user->id,
-                'trading_account_id' => $trialAccount->id,
-                'message' => $exception->getMessage(),
-            ]);
-        }
+        Log::info('trial.instructions_email_queued', [
+            'user_id' => $user->id,
+            'trading_account_id' => $trialAccount->id,
+            'delay_seconds' => self::TRIAL_INSTRUCTIONS_EMAIL_DELAY_SECONDS,
+        ]);
     }
 
     private function demoRegistrationUrl(): string
