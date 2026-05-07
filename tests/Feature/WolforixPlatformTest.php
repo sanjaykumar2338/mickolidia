@@ -4076,7 +4076,10 @@ class WolforixPlatformTest extends TestCase
         $this->assertStringNotContainsString('WFX-CT-00001-CERT', $eaSource);
         $this->assertStringContainsString('base_url + "/api/mt5/accounts/" + reference + "/metrics"', $syncInclude);
         $this->assertStringContainsString('base_url + "/accounts/" + reference + "/metrics"', $syncInclude);
+        $this->assertStringContainsString('User-Agent: Wolforix-MT5-Connector/1.0', $syncInclude);
+        $this->assertStringContainsString('retry URL', $syncInclude);
         $this->assertStringContainsString('WebRequest error 4014: add the Wolforix URL', $syncInclude);
+        $this->assertStringContainsString('HTTP 1001: MT5 could not resolve or reach the Wolforix host', $syncInclude);
         $this->assertStringContainsString('ApiBaseUrl='.url('/'), $settings);
         $this->assertStringContainsString('ApiToken=account-secret-token-123', $settings);
         $this->assertStringContainsString('AccountReference=WFX-MT5-OWN-1234', $settings);

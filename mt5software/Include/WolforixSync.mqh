@@ -455,6 +455,24 @@ bool WFStringEndsWith(const string value,const string suffix)
    return (StringSubstr(value,value_length - suffix_length,suffix_length) == suffix);
   }
 
+string WFBuildAlternateWwwBaseUrl(const string api_base_url)
+  {
+   string base_url = WFTrimTrailingSlash(api_base_url);
+   int scheme_pos = StringFind(base_url,"://");
+
+   if(scheme_pos < 0)
+      return "";
+
+   int host_start = scheme_pos + 3;
+   string prefix = StringSubstr(base_url,0,host_start);
+   string host_and_path = StringSubstr(base_url,host_start);
+
+   if(StringSubstr(host_and_path,0,4) == "www.")
+      return prefix + StringSubstr(host_and_path,4);
+
+   return prefix + "www." + host_and_path;
+  }
+
 string WFBuildMetricsUrl(const string api_base_url,const string account_reference)
   {
    string base_url = WFTrimTrailingSlash(api_base_url);
@@ -558,6 +576,8 @@ bool WFSendMetricsToBackend(const string api_base_url,
    string headers = "Authorization: Bearer " + token + "\r\n";
    headers += "Content-Type: application/json\r\n";
    headers += "Accept: application/json\r\n";
+   headers += "User-Agent: Wolforix-MT5-Connector/1.0\r\n";
+   headers += "Connection: close\r\n";
 
    char request_body[];
    char response_body[];
@@ -574,11 +594,31 @@ bool WFSendMetricsToBackend(const string api_base_url,
    int request_error = GetLastError();
    string response_text = WFResponseBodyToString(response_body);
 
+   if(http_code == 1001 || (http_code == -1 && request_error == 4014))
+     {
+      string alternate_base_url = WFBuildAlternateWwwBaseUrl(base_url);
+      if(StringLen(alternate_base_url) > 0)
+        {
+         string alternate_url = WFBuildMetricsUrl(alternate_base_url,reference);
+         PrintFormat("Wolforix Sync: retry URL %s",alternate_url);
+
+         ArrayResize(response_body,0);
+         response_headers = "";
+         ResetLastError();
+         http_code = WebRequest("POST",alternate_url,headers,WF_SYNC_TIMEOUT_MS,request_body,response_body,response_headers);
+         request_error = GetLastError();
+         response_text = WFResponseBodyToString(response_body);
+         sync_state.LastRequestUrl = alternate_url;
+        }
+     }
+
    sync_state.LastHttpCode = http_code;
    sync_state.LastResponseBody = response_text;
 
    PrintFormat("Wolforix Sync: response code %d",http_code);
    PrintFormat("Wolforix Sync: response body %s",response_text);
+   if(http_code < 200 || http_code >= 300)
+      PrintFormat("Wolforix Sync: response headers %s",response_headers);
 
    if(http_code == -1)
      {
@@ -600,7 +640,10 @@ bool WFSendMetricsToBackend(const string api_base_url,
      }
 
    sync_state.LastResult = "FAILED";
-   sync_state.LastFailureReason = "HTTP " + IntegerToString(http_code);
+   if(http_code == 1001)
+      sync_state.LastFailureReason = "HTTP 1001: MT5 could not resolve or reach the Wolforix host. Add https://wolforix.com and https://www.wolforix.com in MT5 WebRequest settings.";
+   else
+      sync_state.LastFailureReason = "HTTP " + IntegerToString(http_code);
    PrintFormat("Wolforix Sync: failure reason %s",sync_state.LastFailureReason);
    return false;
   }

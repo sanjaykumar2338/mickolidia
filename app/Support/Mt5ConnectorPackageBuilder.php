@@ -118,6 +118,7 @@ class Mt5ConnectorPackageBuilder
             '   You can also click Load in the EA Inputs tab and select the included .set file.',
             '6. In MetaTrader 5, open Tools > Options > Expert Advisors and add this URL to Allow WebRequest:',
             '   '.$this->webRequestOrigin($connector['base_url']),
+            '   If MT5 reports HTTP 1001, also add the alternate host shown in the Experts log.',
             '',
             'Keep wolforix-config.json private. It contains your Secret Token.',
         ]).PHP_EOL;

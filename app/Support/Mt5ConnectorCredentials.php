@@ -31,7 +31,7 @@ class Mt5ConnectorCredentials
         $downloadPath = $this->downloadPath();
 
         return [
-            'base_url' => url('/'),
+            'base_url' => $this->baseUrl(),
             'endpoint_url' => route('api.mt5.metrics', ['accountIdentifier' => $accountReference]),
             'account_reference' => $accountReference,
             'secret_token' => (string) data_get($account->meta, 'mt5_connector.secret_token'),
@@ -120,6 +120,26 @@ class Mt5ConnectorCredentials
         }
 
         return 'mt5software/WolforixRuleEngineEA.mq5';
+    }
+
+    private function baseUrl(): string
+    {
+        $baseUrl = rtrim(url('/'), '/');
+        $host = parse_url($baseUrl, PHP_URL_HOST);
+
+        if ($host !== 'wolforix.com') {
+            return $baseUrl;
+        }
+
+        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
+        $port = parse_url($baseUrl, PHP_URL_PORT);
+        $url = $scheme.'://www.wolforix.com';
+
+        if (is_int($port)) {
+            $url .= ':'.$port;
+        }
+
+        return $url;
     }
 
     private function safeReference(string $reference): string
