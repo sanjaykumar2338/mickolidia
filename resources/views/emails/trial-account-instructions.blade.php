@@ -32,7 +32,9 @@
         <li>Register for Free Trial on Wolforix.</li>
         <li>Create your IC Markets MT5 demo account.</li>
         <li>Download the Wolforix MT5 connector from your trial dashboard.</li>
-        <li>Install the EA files in MetaTrader 5.</li>
+        <li>In MetaTrader 5, click File &gt; Open Data Folder. When File Explorer opens, go to MQL5 &gt; Experts and paste the WolforixRuleEngineEA.mq5 file or extracted connector folder there.</li>
+        <li>Copy the Include files from the connector package into MQL5 &gt; Include.</li>
+        <li>Open Tools &gt; Options &gt; Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.</li>
         <li>Copy the Base URL, Account Reference, and Secret Token from your dashboard.</li>
         <li>Paste them into the EA settings popup inside MT5.</li>
         <li>Click OK. Your dashboard will show Connected after the EA sends its first update.</li>

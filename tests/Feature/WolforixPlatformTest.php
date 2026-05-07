@@ -3902,7 +3902,12 @@ class WolforixPlatformTest extends TestCase
             return $mail->hasTo($user->email)
                 && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
                 && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
-                && str_contains($mail->render(), 'Install the EA files in MetaTrader 5')
+                && str_contains($mail->render(), 'File &gt; Open Data Folder')
+                && str_contains($mail->render(), 'MQL5 &gt; Experts')
+                && str_contains($mail->render(), 'MQL5 &gt; Include')
+                && str_contains($mail->render(), 'Allow WebRequest for listed URL')
+                && str_contains($mail->render(), 'https://www.wolforix.com')
+                && str_contains($mail->render(), 'https://wolforix.com')
                 && str_contains($mail->render(), 'Base URL, Account Reference, and Secret Token')
                 && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
                 && str_contains($mail->render(), route('trial.setup'))
