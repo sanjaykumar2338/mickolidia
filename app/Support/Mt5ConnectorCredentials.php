@@ -124,22 +124,13 @@ class Mt5ConnectorCredentials
 
     private function baseUrl(): string
     {
-        $baseUrl = rtrim(url('/'), '/');
-        $host = parse_url($baseUrl, PHP_URL_HOST);
+        $configuredBaseUrl = config('wolforix.mt5_connector.base_url');
 
-        if ($host !== 'wolforix.com') {
-            return $baseUrl;
+        if (is_string($configuredBaseUrl) && trim($configuredBaseUrl) !== '') {
+            return rtrim(trim($configuredBaseUrl), '/');
         }
 
-        $scheme = parse_url($baseUrl, PHP_URL_SCHEME) ?: 'https';
-        $port = parse_url($baseUrl, PHP_URL_PORT);
-        $url = $scheme.'://www.wolforix.com';
-
-        if (is_int($port)) {
-            $url .= ':'.$port;
-        }
-
-        return $url;
+        return rtrim(url('/'), '/');
     }
 
     private function safeReference(string $reference): string

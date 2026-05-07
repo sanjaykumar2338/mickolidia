@@ -296,6 +296,10 @@ return [
         ],
     ],
 
+    'mt5_connector' => [
+        'base_url' => env('WOLFORIX_MT5_CONNECTOR_BASE_URL'),
+    ],
+
     'admin_auth' => [
         'username' => env('ADMIN_USERNAME', 'admin'),
         'password' => env('ADMIN_PASSWORD', 'wolforix-admin'),
