@@ -299,6 +299,9 @@ class TrialController extends Controller
                 'eyebrow' => __('MT5 Setup'),
                 'title' => __('Connect Your MT5 Account to Wolforix'),
                 'description' => __('Install the Wolforix MT5 Connector EA, attach it to an active MetaTrader 5 chart, and let Wolforix synchronize dashboard metrics, P/L, trading days, and account statistics.'),
+                'desktop_note_title' => __('MT5 Desktop Required'),
+                'desktop_note' => __('This setup must be completed from a Windows or Mac computer using MetaTrader 5 Desktop.'),
+                'setup_time_note' => __('Setup time: approximately 5–10 minutes. No coding required.'),
                 'process_label' => __('MT5 connection process'),
                 'steps' => [
                     [

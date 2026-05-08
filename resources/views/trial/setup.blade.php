@@ -37,6 +37,23 @@
                 </div>
             @endif
 
+            @if (! empty($setupCopy['desktop_note']) || ! empty($setupCopy['setup_time_note']))
+                <section class="mt-8 grid gap-4 md:grid-cols-2">
+                    @if (! empty($setupCopy['desktop_note']))
+                        <div class="rounded-[1.5rem] border border-amber-300/20 bg-amber-300/10 p-5">
+                            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">{{ $setupCopy['desktop_note_title'] ?? __('MT5 Desktop Required') }}</p>
+                            <p class="mt-3 text-sm leading-7 text-amber-50">{{ $setupCopy['desktop_note'] }}</p>
+                        </div>
+                    @endif
+                    @if (! empty($setupCopy['setup_time_note']))
+                        <div class="rounded-[1.5rem] border border-sky-300/18 bg-sky-500/10 p-5">
+                            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-200">{{ __('Setup Time') }}</p>
+                            <p class="mt-3 text-sm leading-7 text-sky-50">{{ $setupCopy['setup_time_note'] }}</p>
+                        </div>
+                    @endif
+                </section>
+            @endif
+
             <div class="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
                 <aside class="surface-panel rounded-[2rem] p-6">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ $setupCopy['process_label'] ?? __('site.trial.setup.process_label') }}</p>
