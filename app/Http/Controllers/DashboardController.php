@@ -1486,8 +1486,8 @@ class DashboardController extends Controller
 
         if ($account->challenge_status === 'failed') {
             return [
-                'title' => __('Failed / final lock'),
-                'message' => __('Challenge failed. Local trading is locked. MT5 disable status: :status.', [
+                'title' => __('Account Closed: Rule Breach Detected'),
+                'message' => __('Your account has been marked inactive because a trading rule was breached earlier. The connector may still show recent sync activity, but dashboard tracking is now locked for this account. MT5 disable status: :status.', [
                     'status' => $status,
                 ]),
             ];

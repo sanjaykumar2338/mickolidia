@@ -8,6 +8,7 @@ use App\Mail\TrialPassedMail;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Mt5\Mt5AccountDeactivationService;
 use App\Services\Trials\TrialAccountCreator;
 use App\Support\Mt5ConnectorCredentials;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,7 @@ class TrialController extends Controller
     public function __construct(
         private readonly Mt5ConnectorCredentials $connectorCredentials,
         private readonly TrialAccountCreator $trialAccountCreator,
+        private readonly Mt5AccountDeactivationService $mt5AccountDeactivationService,
     ) {}
 
     public function create(Request $request): View|RedirectResponse
@@ -180,6 +182,8 @@ class TrialController extends Controller
 
         $trialAccount->refresh();
 
+        $connector = $this->connectorCredentials->forAccount($trialAccount);
+
         return view('trial.dashboard', [
             'trialAccount' => $trialAccount,
             'trialPassed' => $trialPassed,
@@ -187,7 +191,8 @@ class TrialController extends Controller
             'trialStatus' => $trialStatus,
             'milestoneMessage' => $milestoneMessage,
             'displayRules' => config('wolforix.trial.display_rules', []),
-            'connector' => $this->connectorCredentials->forAccount($trialAccount),
+            'connector' => $connector,
+            'trialClosureNotice' => $trialEnded ? $this->trialClosureNotice($trialAccount, $connector) : null,
         ]);
     }
 
@@ -447,23 +452,36 @@ class TrialController extends Controller
         }
 
         if ($outcome === 'ended') {
+            $reasonKey = $this->resolveTrialBreachReasonKey($trialAccount);
             $stateChanged = $trialAccount->trial_status !== 'ended'
                 || $trialAccount->failed_at === null
                 || $trialAccount->ended_at === null
                 || $trialAccount->status !== 'Ended'
-                || $trialAccount->account_status !== 'failed';
+                || $trialAccount->account_status !== 'failed'
+                || $trialAccount->challenge_status !== 'failed'
+                || $trialAccount->failure_reason !== $reasonKey
+                || ! (bool) $trialAccount->trading_blocked
+                || ! (bool) $trialAccount->final_state_locked;
 
             if ($stateChanged) {
                 $trialAccount->forceFill([
                     'trial_status' => 'ended',
                     'status' => 'Ended',
                     'account_status' => 'failed',
+                    'challenge_status' => 'failed',
+                    'failure_reason' => $reasonKey,
+                    'failure_context' => $this->trialBreachContext($trialAccount, $reasonKey),
+                    'trading_blocked' => true,
+                    'final_state_locked' => true,
                     'failed_at' => $trialAccount->failed_at ?? now(),
                     'ended_at' => $trialAccount->ended_at ?? now(),
                 ])->save();
 
                 $trialAccount->refresh();
-                $this->sendTrialBreachedEmail($trialAccount, $user, $this->resolveTrialBreachReason($trialAccount));
+                $trialAccount = $this->requestTrialFailureDeactivation($trialAccount, $reasonKey);
+                $this->sendTrialBreachedEmail($trialAccount, $user, $this->trialBreachReasonLabel($reasonKey));
+            } else {
+                $trialAccount = $this->requestTrialFailureDeactivation($trialAccount, $reasonKey);
             }
 
             return 'ended';
@@ -591,19 +609,167 @@ class TrialController extends Controller
 
     private function resolveTrialBreachReason(TradingAccount $trialAccount): string
     {
+        return $this->trialBreachReasonLabel($this->resolveTrialBreachReasonKey($trialAccount));
+    }
+
+    private function resolveTrialBreachReasonKey(TradingAccount $trialAccount): string
+    {
         if ((float) $trialAccount->daily_drawdown >= $this->trialDailyLossAmount($trialAccount)) {
-            return 'Daily drawdown limit breached.';
+            return 'daily_loss_breached';
         }
 
         if ((float) $trialAccount->max_drawdown >= $this->trialMaxLossAmount($trialAccount)) {
-            return 'Maximum drawdown limit breached.';
+            return 'max_drawdown_breached';
         }
 
         if ((float) $trialAccount->equity <= 0 || (float) $trialAccount->balance <= 0) {
-            return 'Account equity fell below the allowed threshold.';
+            return 'equity_threshold_breached';
         }
 
-        return 'Trial rules were breached.';
+        return 'trial_rule_breached';
+    }
+
+    private function trialBreachReasonLabel(string $reasonKey): string
+    {
+        return match ($reasonKey) {
+            'daily_loss_breached' => 'Daily drawdown limit breached.',
+            'max_drawdown_breached' => 'Maximum drawdown limit breached.',
+            'equity_threshold_breached' => 'Account equity fell below the allowed threshold.',
+            default => 'Trial rules were breached.',
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function trialBreachContext(TradingAccount $trialAccount, string $reasonKey): array
+    {
+        return [
+            'rule_breached' => $reasonKey,
+            'reason_label' => $this->trialBreachReasonLabel($reasonKey),
+            'breach_timestamp' => optional($trialAccount->last_synced_at ?? $trialAccount->last_activity_at ?? now())->toIso8601String(),
+            'balance_at_breach' => (float) $trialAccount->balance,
+            'equity_at_breach' => (float) $trialAccount->equity,
+            'daily_loss_used' => (float) $trialAccount->daily_drawdown,
+            'daily_loss_threshold' => $this->trialDailyLossAmount($trialAccount),
+            'max_drawdown_used' => (float) $trialAccount->max_drawdown,
+            'max_drawdown_threshold' => $this->trialMaxLossAmount($trialAccount),
+            'server_day' => optional($trialAccount->server_day)->toDateString(),
+        ];
+    }
+
+    private function requestTrialFailureDeactivation(TradingAccount $trialAccount, string $reasonKey): TradingAccount
+    {
+        if ($trialAccount->platform_slug !== 'mt5') {
+            return $trialAccount;
+        }
+
+        return $this->mt5AccountDeactivationService->requestForTrialFailure(
+            $trialAccount,
+            'trial_fail_'.Str::of($reasonKey)->slug('_'),
+            [
+                'reason' => $reasonKey,
+                'completed_phase' => 'Trial',
+                'final_status' => 'failed',
+                'failure_reason' => $reasonKey,
+                'source' => 'trial_dashboard_state',
+            ],
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $connector
+     * @return array{title:string,message:string,items:array<int, array{label:string,value:string}>}
+     */
+    private function trialClosureNotice(TradingAccount $trialAccount, array $connector): array
+    {
+        $failureContext = is_array($trialAccount->failure_context) ? $trialAccount->failure_context : [];
+        $payloadSummary = (array) data_get($trialAccount->meta, 'mt5_sync.last_payload_summary', []);
+        $deactivation = (array) data_get($trialAccount->meta, 'mt5_deactivation.current', []);
+
+        return [
+            'title' => __('Account Closed: Rule Breach Detected'),
+            'message' => __('Your account has been marked inactive because a trading rule was breached earlier. The connector may still show recent sync activity, but dashboard tracking is now locked for this account.'),
+            'items' => [
+                [
+                    'label' => __('Breach reason'),
+                    'value' => (string) ($failureContext['reason_label'] ?? $this->resolveTrialBreachReason($trialAccount)),
+                ],
+                [
+                    'label' => __('Breach time'),
+                    'value' => $this->formatTrialDateTime($failureContext['breach_timestamp'] ?? $trialAccount->failed_at),
+                ],
+                [
+                    'label' => __('Equity at breach'),
+                    'value' => $this->formatTrialMoney($failureContext['equity_at_breach'] ?? $trialAccount->equity),
+                ],
+                [
+                    'label' => __('Balance at breach'),
+                    'value' => $this->formatTrialMoney($failureContext['balance_at_breach'] ?? $trialAccount->balance),
+                ],
+                [
+                    'label' => __('Current synced equity'),
+                    'value' => array_key_exists('equity', $payloadSummary)
+                        ? $this->formatTrialMoney($payloadSummary['equity'])
+                        : __('Not available'),
+                ],
+                [
+                    'label' => __('Connector status'),
+                    'value' => (string) ($connector['status_label'] ?? __('Not Connected')),
+                ],
+                [
+                    'label' => __('Last connector sync'),
+                    'value' => $this->formatTrialDateTime($trialAccount->last_synced_at),
+                ],
+                [
+                    'label' => __('MT5 disable status'),
+                    'value' => $this->humanizeTrialStatus((string) ($deactivation['status'] ?? $trialAccount->platform_status ?? 'pending')),
+                ],
+            ],
+        ];
+    }
+
+    private function formatTrialMoney(mixed $value): string
+    {
+        if (! is_numeric($value)) {
+            return __('Not available');
+        }
+
+        return '$'.number_format((float) $value, 2);
+    }
+
+    private function formatTrialDateTime(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('M j, Y g:i A');
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            try {
+                return \Illuminate\Support\Carbon::parse($value)->format('M j, Y g:i A');
+            } catch (\Throwable) {
+                return $value;
+            }
+        }
+
+        return __('Not available');
+    }
+
+    private function humanizeTrialStatus(string $status): string
+    {
+        $status = trim($status);
+
+        if ($status === '') {
+            return __('Not available');
+        }
+
+        return match ($status) {
+            'disable_requested', 'requested' => __('Disable requested'),
+            'disable_pending_ack', 'pending_ea_ack', 'disabled_pending_ack' => __('Pending MT5 acknowledgement'),
+            'disabled' => __('Disabled'),
+            'disable_failed', 'failed' => __('Disable request failed'),
+            default => Str::of($status)->replace(['-', '_'], ' ')->title()->toString(),
+        };
     }
 
     private function sendTrialPassedEmail(TradingAccount $trialAccount, User $user): void

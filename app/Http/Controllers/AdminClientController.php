@@ -64,6 +64,8 @@ class AdminClientController extends Controller
             ->latest('id')
             ->first();
         $mt5SyncMeta = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
+        $failureContext = is_array($selectedAccount?->failure_context) ? $selectedAccount->failure_context : [];
+        $mt5DeactivationCurrent = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_deactivation.current', []) : [];
 
         return view('admin.clients.show', [
             'client' => [
@@ -166,10 +168,25 @@ class AdminClientController extends Controller
                 'platform_account_id' => $selectedAccount?->platform_account_id ?? 'Link pending',
                 'platform_login' => $selectedAccount?->platform_login ?? 'Link pending',
                 'platform_environment' => $selectedAccount?->platform_environment ?? 'N/A',
+                'challenge_status' => $selectedAccount?->challenge_status ? $this->humanizeStatus((string) $selectedAccount->challenge_status) : 'N/A',
+                'trial_status' => $selectedAccount?->trial_status ? $this->humanizeStatus((string) $selectedAccount->trial_status) : 'N/A',
+                'account_status' => $selectedAccount?->account_status ? $this->humanizeStatus((string) $selectedAccount->account_status) : 'N/A',
+                'connector_status' => $mt5SyncMeta['status'] ?? 'N/A',
                 'last_synced_at' => $this->formatDateTime($selectedAccount?->last_synced_at),
                 'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
                 'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',
+                'breach_reason' => $selectedAccount?->failure_reason ? $this->humanizeStatus((string) $selectedAccount->failure_reason) : 'None',
+                'breach_timestamp' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
+                'breach_rule' => isset($failureContext['rule_breached']) ? $this->humanizeStatus((string) $failureContext['rule_breached']) : 'N/A',
+                'breach_equity' => $this->formatMoneyValue($failureContext['equity_at_breach'] ?? null),
+                'breach_balance' => $this->formatMoneyValue($failureContext['balance_at_breach'] ?? null),
+                'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
+                'disable_status' => isset($mt5DeactivationCurrent['status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['status']) : 'N/A',
+                'disable_requested_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['requested_at'] ?? null),
+                'disable_acknowledged_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['acknowledged_at'] ?? null),
+                'disable_source' => $mt5DeactivationCurrent['source'] ?? 'N/A',
+                'disable_error' => $mt5DeactivationCurrent['last_error'] ?? 'None',
                 'last_ea_ping_at' => $this->formatDateTimeValue($mt5SyncMeta['last_ea_ping_at'] ?? null),
                 'last_successful_metric_update_at' => $this->formatDateTimeValue($mt5SyncMeta['last_successful_metric_update_at'] ?? null),
                 'last_sync_trigger' => $mt5SyncMeta['last_sync_trigger'] ?? 'N/A',
@@ -481,6 +498,15 @@ class AdminClientController extends Controller
             'GBP' => '£'.number_format($amount, 2),
             default => '$'.number_format($amount, 2),
         };
+    }
+
+    private function formatMoneyValue(mixed $amount, string $currency = 'USD'): string
+    {
+        if (! is_numeric($amount)) {
+            return 'N/A';
+        }
+
+        return $this->formatMoney((float) $amount, $currency);
     }
 
     private function formatDateTime(mixed $value): string

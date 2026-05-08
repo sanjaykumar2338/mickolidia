@@ -4329,7 +4329,8 @@ class WolforixPlatformTest extends TestCase
         $this->actingAs($user)
             ->get(route('trial.dashboard'))
             ->assertOk()
-            ->assertSee('Your trial has ended.');
+            ->assertSee('Account Closed: Rule Breach Detected')
+            ->assertSee('Daily drawdown limit breached.');
 
         $this->assertCount(1, TradingAccount::query()->where('user_id', $user->id)->where('is_trial', true)->get());
     }
@@ -4401,7 +4402,9 @@ class WolforixPlatformTest extends TestCase
         $trialAccount = TradingAccount::query()->create([
             'user_id' => $user->id,
             'account_reference' => 'WFX-TRIAL-BREACH1',
-            'platform' => 'cTrader Demo',
+            'platform' => 'MT5 Demo',
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
             'stage' => 'Trial (Demo)',
             'status' => 'Active',
             'account_status' => 'active',
@@ -4424,18 +4427,49 @@ class WolforixPlatformTest extends TestCase
             'trial_status' => 'active',
             'trial_started_at' => now()->subDays(1),
             'last_activity_at' => now()->subHour(),
+            'last_synced_at' => now()->subMinutes(3),
+            'sync_source' => 'mt5_ea',
+            'sync_status' => 'success',
+            'meta' => [
+                'mt5_sync' => [
+                    'status' => 'connected',
+                    'last_ea_ping_at' => now()->subMinutes(3)->toIso8601String(),
+                    'last_payload_summary' => [
+                        'balance' => 10220,
+                        'equity' => 10220,
+                    ],
+                ],
+            ],
         ]);
 
         $this->actingAs($user)
             ->withSession(['trial_user_id' => $user->id])
             ->get(route('trial.dashboard'))
             ->assertOk()
-            ->assertSee('Your trial has ended.');
+            ->assertSee('Account Closed: Rule Breach Detected')
+            ->assertSee('connector may still show recent sync activity')
+            ->assertSee('Breach reason')
+            ->assertSee('Daily drawdown limit breached.')
+            ->assertSee('Equity at breach')
+            ->assertSee('$9,800.00')
+            ->assertSee('Current synced equity')
+            ->assertSee('$10,220.00')
+            ->assertSee('Connector status')
+            ->assertSee('Connected')
+            ->assertSee('MT5 disable status')
+            ->assertSee('Pending MT5 acknowledgement')
+            ->assertDontSee('Not Connected');
 
         $trialAccount->refresh();
 
         $this->assertSame('ended', $trialAccount->trial_status);
         $this->assertSame('Ended', $trialAccount->status);
+        $this->assertSame('failed', $trialAccount->challenge_status);
+        $this->assertSame('daily_loss_breached', $trialAccount->failure_reason);
+        $this->assertTrue((bool) $trialAccount->trading_blocked);
+        $this->assertTrue((bool) $trialAccount->final_state_locked);
+        $this->assertSame('disable_pending_ack', $trialAccount->platform_status);
+        $this->assertSame('disable_pending_ack', data_get($trialAccount->meta, 'mt5_deactivation.events.trial_fail_daily_loss_breached.status'));
         $this->assertNotNull($trialAccount->failed_at);
         $this->assertNotNull($trialAccount->ended_at);
 

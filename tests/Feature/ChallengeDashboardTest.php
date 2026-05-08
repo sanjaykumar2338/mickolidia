@@ -789,6 +789,65 @@ class ChallengeDashboardTest extends TestCase
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
     }
 
+    public function test_failed_account_can_remain_connector_connected_without_reopening_status(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $account->refresh();
+        $lockedEquity = (string) $account->equity;
+
+        $this->pushMetrics($account, '2026-04-05 09:05:00', 10220, 10220, [
+            'trade_count' => 0,
+            'has_activity' => false,
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('daily_loss_breached', $account->failure_reason);
+        $this->assertSame($lockedEquity, (string) $account->equity);
+        $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+        $this->assertSame(10220, data_get($account->meta, 'mt5_sync.last_payload_summary.equity'));
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame(9500.0, (float) data_get($account->failure_context, 'equity_at_breach'));
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Account Closed: Rule Breach Detected')
+            ->assertSee('connector may still show recent sync activity')
+            ->assertSee('Pending MT5 acknowledgement')
+            ->assertDontSee('Not Connected');
+
+        $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.clients.show', $account->user))
+            ->assertOk()
+            ->assertSee('MT5 Sync Diagnostics')
+            ->assertSee('Connector status')
+            ->assertSee('connected')
+            ->assertSee('Breach reason')
+            ->assertSee('Daily Loss Breached')
+            ->assertSee('Breach rule')
+            ->assertSee('Equity at breach')
+            ->assertSee('$9,500.00')
+            ->assertSee('Disable event')
+            ->assertSee('fail_daily_loss_breached')
+            ->assertSee('Disable status')
+            ->assertSee('Disable Pending Ack');
+    }
+
     public function test_trustpilot_review_reminder_waits_until_due(): void
     {
         config()->set('wolforix.review_requests.trustpilot.reminder_delay_days', 7);

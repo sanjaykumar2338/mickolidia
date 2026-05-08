@@ -479,13 +479,28 @@
                 <div class="rounded-2xl border border-amber-400/16 bg-amber-400/8 px-4 py-3">
                     <dt class="text-slate-400">MT5 Sync Diagnostics</dt>
                     <dd class="mt-3 grid gap-2 text-xs leading-6 text-slate-300 sm:grid-cols-2">
+                        <span><strong class="text-white">Challenge status:</strong> {{ $providerReferences['challenge_status'] }}</span>
+                        <span><strong class="text-white">Trial status:</strong> {{ $providerReferences['trial_status'] }}</span>
+                        <span><strong class="text-white">Account status:</strong> {{ $providerReferences['account_status'] }}</span>
+                        <span><strong class="text-white">Connector status:</strong> {{ $providerReferences['connector_status'] }}</span>
                         <span><strong class="text-white">Last EA ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
                         <span><strong class="text-white">Last metric update:</strong> {{ $providerReferences['last_successful_metric_update_at'] }}</span>
+                        <span><strong class="text-white">Breach reason:</strong> {{ $providerReferences['breach_reason'] }}</span>
+                        <span><strong class="text-white">Breach time:</strong> {{ $providerReferences['breach_timestamp'] }}</span>
+                        <span><strong class="text-white">Breach rule:</strong> {{ $providerReferences['breach_rule'] }}</span>
+                        <span><strong class="text-white">Equity at breach:</strong> {{ $providerReferences['breach_equity'] }}</span>
+                        <span><strong class="text-white">Balance at breach:</strong> {{ $providerReferences['breach_balance'] }}</span>
+                        <span><strong class="text-white">Disable event:</strong> {{ $providerReferences['disable_event'] }}</span>
+                        <span><strong class="text-white">Disable status:</strong> {{ $providerReferences['disable_status'] }}</span>
+                        <span><strong class="text-white">Disable requested:</strong> {{ $providerReferences['disable_requested_at'] }}</span>
+                        <span><strong class="text-white">Disable ack:</strong> {{ $providerReferences['disable_acknowledged_at'] }}</span>
+                        <span><strong class="text-white">Disable source:</strong> {{ $providerReferences['disable_source'] }}</span>
                         <span><strong class="text-white">Trigger:</strong> {{ $providerReferences['last_sync_trigger'] }}</span>
                         <span><strong class="text-white">Latest log:</strong> {{ $providerReferences['latest_sync_log_status'] }}</span>
                         <span><strong class="text-white">Log completed:</strong> {{ $providerReferences['latest_sync_log_completed_at'] }}</span>
                         <span><strong class="text-white">Rejected:</strong> {{ $providerReferences['last_rejected_reason'] }} @ {{ $providerReferences['last_rejected_at'] }}</span>
                         <span><strong class="text-white">Ignored:</strong> {{ $providerReferences['last_ignored_reason'] }} @ {{ $providerReferences['last_ignored_payload_at'] }}</span>
+                        <span><strong class="text-white">Disable error:</strong> {{ $providerReferences['disable_error'] }}</span>
                         <span><strong class="text-white">Log error:</strong> {{ $providerReferences['latest_sync_log_error'] }}</span>
                     </dd>
                     @if (! empty($providerReferences['last_payload_summary']))

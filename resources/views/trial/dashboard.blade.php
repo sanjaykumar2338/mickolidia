@@ -45,8 +45,18 @@
                 </div>
             @elseif ($trialEnded)
                 <div class="mt-5 rounded-[1.8rem] border border-rose-400/18 bg-rose-500/10 p-5">
-                    <p class="text-lg font-semibold text-rose-100">{{ __('site.trial.dashboard.ended_title') }}</p>
-                    <p class="mt-3 text-sm leading-7 text-rose-50/90">{{ __('site.trial.dashboard.ended_copy') }}</p>
+                    <p class="text-lg font-semibold text-rose-100">{{ $trialClosureNotice['title'] ?? __('site.trial.dashboard.ended_title') }}</p>
+                    <p class="mt-3 text-sm leading-7 text-rose-50/90">{{ $trialClosureNotice['message'] ?? __('site.trial.dashboard.ended_copy') }}</p>
+                    @if (! empty($trialClosureNotice['items']))
+                        <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+                            @foreach ($trialClosureNotice['items'] as $item)
+                                <div class="rounded-2xl border border-white/8 bg-black/18 px-4 py-3">
+                                    <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-rose-100/70">{{ $item['label'] }}</dt>
+                                    <dd class="mt-2 text-sm font-semibold text-white">{{ $item['value'] }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    @endif
                     <form method="POST" action="{{ route('trial.retry') }}" class="mt-5">
                         @csrf
                         <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">

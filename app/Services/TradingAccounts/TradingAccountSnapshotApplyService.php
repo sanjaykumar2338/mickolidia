@@ -392,17 +392,18 @@ class TradingAccountSnapshotApplyService
         }
 
         if ($account->challenge_status === 'failed' && (bool) $account->final_state_locked) {
-            $account = $this->mt5AccountDeactivationService->requestForFinalState(
-                $account,
-                $this->failedFinalStateEventKey($account),
-                [
-                    'reason' => (string) ($account->failure_reason ?: 'rule_violation'),
-                    'completed_phase' => $this->completedPhaseLabel($account),
-                    'final_status' => 'failed',
-                    'failure_reason' => $account->failure_reason,
-                    'source' => 'challenge_final_state',
-                ],
-            );
+            $eventKey = $this->failedFinalStateEventKey($account);
+            $context = [
+                'reason' => (string) ($account->failure_reason ?: 'rule_violation'),
+                'completed_phase' => $this->completedPhaseLabel($account),
+                'final_status' => 'failed',
+                'failure_reason' => $account->failure_reason,
+                'source' => $account->is_trial ? 'trial_final_state' : 'challenge_final_state',
+            ];
+
+            $account = $account->is_trial
+                ? $this->mt5AccountDeactivationService->requestForTrialFailure($account, 'trial_'.$eventKey, $context)
+                : $this->mt5AccountDeactivationService->requestForFinalState($account, $eventKey, $context);
         }
 
         return $account;

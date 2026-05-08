@@ -136,7 +136,12 @@ class ChallengeProgressEngine
                 'failure_reason' => $failureReason,
                 'failure_context' => [
                     'server_day' => $serverDay,
+                    'breach_timestamp' => optional($evaluatedAt)->toIso8601String(),
                     'highest_equity_today' => $highestEquityToday,
+                    'balance_at_breach' => $currentBalance,
+                    'equity_at_breach' => $currentEquity,
+                    'raw_balance_at_breach' => $challengeMetrics['raw_balance'],
+                    'raw_equity_at_breach' => $challengeMetrics['raw_equity'],
                     'daily_loss_used' => $dailyLossUsed,
                     'daily_loss_threshold' => $rules['daily_drawdown_limit_amount'],
                     'max_drawdown_used' => $maxDrawdownUsed,

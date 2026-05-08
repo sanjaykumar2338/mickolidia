@@ -21,9 +21,9 @@ class Mt5AccountDeactivationService
     /**
      * @param  array<string, mixed>  $context
      */
-    public function requestForFinalState(TradingAccount $account, string $eventKey, array $context = []): TradingAccount
+    public function requestForFinalState(TradingAccount $account, string $eventKey, array $context = [], bool $allowTrial = false): TradingAccount
     {
-        if ($account->is_trial || $account->platform_slug !== 'mt5') {
+        if (($account->is_trial && ! $allowTrial) || $account->platform_slug !== 'mt5') {
             return $account;
         }
 
@@ -111,6 +111,14 @@ class Mt5AccountDeactivationService
     public function requestForPass(TradingAccount $account, string $eventKey, array $context = []): TradingAccount
     {
         return $this->requestForFinalState($account, $eventKey, $context);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public function requestForTrialFailure(TradingAccount $account, string $eventKey, array $context = []): TradingAccount
+    {
+        return $this->requestForFinalState($account, $eventKey, $context, allowTrial: true);
     }
 
     /**
