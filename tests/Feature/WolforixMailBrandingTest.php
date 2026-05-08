@@ -8,6 +8,7 @@ use App\Mail\ChallengePassedMail;
 use App\Mail\ChallengePurchaseConfirmationMail;
 use App\Mail\ChallengePurchaseSupportNotificationMail;
 use App\Mail\ConsistencyAlertMail;
+use App\Mail\Mt5OnboardingSetupMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrialAccountInstructionsMail;
@@ -109,6 +110,7 @@ class WolforixMailBrandingTest extends TestCase
             new TrialPassedMail($user, $account),
             new TrialBreachedMail($user, $account, 'Daily loss limit reached'),
             new TrustpilotReviewRequestMail('Mail Trader', 'https://de.trustpilot.com/review/wolforix.com'),
+            new Mt5OnboardingSetupMail(),
             new ConsistencyAlertMail('Mail Trader', $account, [
                 'status' => 'approaching',
                 'rule_label' => 'Approaching threshold',
