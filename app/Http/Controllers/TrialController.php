@@ -115,11 +115,18 @@ class TrialController extends Controller
             return redirect()->route('trial.dashboard');
         }
 
-        return view('trial.setup', [
-            'trialAccount' => $trialAccount,
-            'demoRegistrationUrl' => $this->demoRegistrationUrl(),
-            'connector' => $this->connectorCredentials->forAccount($trialAccount),
-        ]);
+        return $this->renderSetup($trialAccount, 'trial');
+    }
+
+    public function mt5Setup(Request $request): View|RedirectResponse
+    {
+        $account = $this->latestMt5ConnectorAccount($request->user());
+
+        if (! $account instanceof TradingAccount) {
+            return redirect()->route('dashboard');
+        }
+
+        return $this->renderSetup($account, 'mt5');
     }
 
     public function confirmDemo(Request $request): RedirectResponse
@@ -249,6 +256,147 @@ class TrialController extends Controller
         }
 
         return $user->latestTrialAccount()->first();
+    }
+
+    private function latestMt5ConnectorAccount(?User $user): ?TradingAccount
+    {
+        if (! $user instanceof User) {
+            return null;
+        }
+
+        $challengeAccount = $user->tradingAccounts()
+            ->where('platform_slug', 'mt5')
+            ->where('is_trial', false)
+            ->latest('id')
+            ->first();
+
+        if ($challengeAccount instanceof TradingAccount) {
+            return $challengeAccount;
+        }
+
+        return $user->tradingAccounts()
+            ->where('platform_slug', 'mt5')
+            ->latest('id')
+            ->first();
+    }
+
+    private function renderSetup(TradingAccount $account, string $mode): View
+    {
+        return view('trial.setup', [
+            'trialAccount' => $account,
+            'demoRegistrationUrl' => $this->demoRegistrationUrl(),
+            'connector' => $this->connectorCredentials->forAccount($account),
+            'setupCopy' => $this->setupCopy($mode),
+            'connectorCopy' => $this->connectorCopy($mode),
+        ]);
+    }
+
+    private function setupCopy(string $mode): array
+    {
+        if ($mode === 'mt5') {
+            return [
+                'mode' => 'mt5',
+                'eyebrow' => __('MT5 Setup'),
+                'title' => __('Connect Your MT5 Account to Wolforix'),
+                'description' => __('Install the Wolforix MT5 Connector EA, attach it to an active MetaTrader 5 chart, and let Wolforix synchronize dashboard metrics, P/L, trading days, and account statistics.'),
+                'process_label' => __('MT5 connection process'),
+                'steps' => [
+                    [
+                        'title' => __('Step 1: Open Your Wolforix Dashboard'),
+                        'body' => __('Confirm the MT5 account reference you want to connect.'),
+                    ],
+                    [
+                        'title' => __('Step 2: Watch the MT5 Setup Video'),
+                        'body' => __('Review the connector walkthrough before copying files into MetaTrader 5.'),
+                    ],
+                    [
+                        'title' => __('Step 3: Download the Preconfigured Connector'),
+                        'body' => __('Download the package from this page so the connector is prepared for your Wolforix account.'),
+                    ],
+                    [
+                        'title' => __('Step 4: Install the EA in MetaTrader 5'),
+                        'body' => __('Copy WolforixRuleEngineEA.mq5 into MQL5/Experts and copy the Include files into MQL5/Include.'),
+                    ],
+                    [
+                        'title' => __('Step 5: Allow Wolforix WebRequest URLs'),
+                        'body' => __('Enable Algo Trading and allow WebRequest for https://www.wolforix.com and https://wolforix.com.'),
+                    ],
+                    [
+                        'title' => __('Step 6: Attach the EA and Sync'),
+                        'body' => __('Attach the connector to an active chart and wait for the dashboard status to show Connected.'),
+                    ],
+                ],
+                'show_demo_section' => false,
+                'pre_connector_label' => __('MT5 Account'),
+                'pre_connector_title' => __('Use this page for an active MT5 account'),
+                'pre_connector_copy' => __('Your Wolforix account can only update once the connector is installed, attached to a chart, and successfully synced from MetaTrader 5.'),
+                'important_items' => [
+                    __('Keep MetaTrader 5 open while the EA is syncing.'),
+                    __('Use the preconfigured package when possible.'),
+                    __('Contact support if the status does not change to Connected after setup.'),
+                ],
+                'pre_connector_button_url' => route('dashboard'),
+                'pre_connector_button_label' => __('Open Wolforix Dashboard'),
+                'status_label' => __('Connection Status'),
+                'continue_button' => __('Open Dashboard'),
+                'continue_url' => route('dashboard'),
+                'help_title' => __('Need help?'),
+                'help_copy' => __('If you have any issues connecting your MT5 account, contact our support team at'),
+            ];
+        }
+
+        return [
+            'mode' => 'trial',
+            'eyebrow' => __('site.trial.eyebrow'),
+            'title' => __('site.trial.setup.title'),
+            'description' => __('site.trial.setup.description'),
+            'process_label' => __('site.trial.setup.process_label'),
+            'steps' => trans('site.trial.setup.steps'),
+            'show_demo_section' => true,
+            'pre_connector_label' => __('site.trial.setup.step_two_label'),
+            'pre_connector_title' => __('site.trial.setup.open_demo_title'),
+            'pre_connector_copy' => __('site.trial.setup.open_demo_copy'),
+            'important_items' => trans('site.trial.setup.important_items'),
+            'pre_connector_button_url' => $this->demoRegistrationUrl(),
+            'pre_connector_button_label' => __('site.trial.setup.open_demo_button'),
+            'status_label' => __('site.trial.setup.step_three_label'),
+            'continue_button' => __('site.trial.setup.continue_button'),
+            'continue_url' => null,
+            'help_title' => __('site.trial.setup.help_title'),
+            'help_copy' => __('site.trial.setup.help_copy'),
+        ];
+    }
+
+    private function connectorCopy(string $mode): array
+    {
+        if ($mode === 'mt5') {
+            return [
+                'title' => __('Connect Your MT5 Account to Wolforix'),
+                'description' => __('Connection happens inside MetaTrader 5 using the Wolforix connector Expert Advisor. Install the connector, allow the Wolforix WebRequest URLs, paste these details into the EA inputs, then attach it to an active chart.'),
+                'steps' => [
+                    __('Download and extract the Wolforix MT5 connector zip package.'),
+                    __('In MetaTrader 5, click File > Open Data Folder. When File Explorer opens, open MQL5 > Experts and paste the WolforixRuleEngineEA.mq5 file or extracted connector folder there. Copy the Include files into MQL5 > Include.'),
+                    __('Open MetaTrader 5 and enable Algo Trading.'),
+                    __('Open Tools > Options > Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.'),
+                    __('Copy the Base URL, Account Reference, and Secret Token shown here.'),
+                    __('Attach the WolforixRuleEngineEA Expert Advisor to an active chart.'),
+                    __('Paste the three values into the EA settings popup inside MetaTrader 5.'),
+                    __('Click OK. Your Wolforix dashboard will show Connected after the EA sends its first update.'),
+                ],
+                'notes' => [
+                    __('Until the EA connector is installed, attached to a chart, and successfully synced, dashboard metrics such as real-time P/L, trading days, account statistics, and profit updates may not appear.'),
+                    __('Required MT5 setting: Tools > Options > Expert Advisors > tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.'),
+                    __('Keep your Secret Token private. Support will never ask for your password.'),
+                ],
+            ];
+        }
+
+        return [
+            'title' => __('site.trial.connector.title'),
+            'description' => __('site.trial.connector.description'),
+            'steps' => trans('site.trial.connector.steps'),
+            'notes' => trans('site.trial.connector.notes'),
+        ];
     }
 
     private function createTrialAccount(User $user): TradingAccount

@@ -91,6 +91,10 @@ Route::middleware('auth')->prefix('dashboard')->group(function (): void {
     Route::get('/accounts/{account}/mt5-connector/download', DashboardMt5ConnectorController::class)->name('dashboard.accounts.mt5-connector.download');
 });
 
+Route::middleware('auth')->prefix('mt5')->group(function (): void {
+    Route::get('/setup', [TrialController::class, 'mt5Setup'])->name('mt5.setup');
+});
+
 Route::prefix('dashboard/wolfi')->middleware('admin.basic')->group(function (): void {
     Route::get('/voices', [DashboardController::class, 'wolfiVoices'])->name('dashboard.wolfi.voices');
     Route::post('/voices', [DashboardController::class, 'updateWolfiVoice'])->name('dashboard.wolfi.voices.update');

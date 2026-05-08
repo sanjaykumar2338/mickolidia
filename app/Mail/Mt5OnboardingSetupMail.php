@@ -16,7 +16,7 @@ class Mt5OnboardingSetupMail extends Mailable
 
     public string $dashboardUrl = 'https://www.wolforix.com/dashboard';
 
-    public string $setupUrl = 'https://www.wolforix.com/trial/setup';
+    public string $setupUrl = 'https://www.wolforix.com/mt5/setup';
 
     public string $setupVideoUrl = 'https://www.wolforix.com/mt5_demo.mp4';
 

@@ -1,13 +1,14 @@
 @php
     $compact = $compact ?? false;
+    $connectorCopy = $connectorCopy ?? [];
 @endphp
 
 <section class="surface-panel rounded-[2rem] p-6 sm:p-8">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ __('site.trial.connector.download_title') }}</p>
-            <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('site.trial.connector.title') }}</h2>
-            <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{{ __('site.trial.connector.description') }}</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">{{ $connectorCopy['title'] ?? __('site.trial.connector.title') }}</h2>
+            <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{{ $connectorCopy['description'] ?? __('site.trial.connector.description') }}</p>
         </div>
         <div class="inline-flex rounded-full border px-4 py-2 text-sm font-semibold {{ $connector['status_badge'] }}">
             {{ $connector['status_label'] }}
@@ -96,7 +97,7 @@
     @unless ($compact)
         <div class="mt-6 grid gap-4 lg:grid-cols-[1fr_0.85fr]">
             <ol class="space-y-3">
-                @foreach (trans('site.trial.connector.steps') as $index => $step)
+                @foreach (($connectorCopy['steps'] ?? trans('site.trial.connector.steps')) as $index => $step)
                     <li class="flex gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3 text-sm leading-6 text-slate-300">
                         <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/12 text-xs font-semibold text-amber-100">{{ $index + 1 }}</span>
                         <span>{{ $step }}</span>
@@ -105,7 +106,7 @@
             </ol>
 
             <div class="space-y-3">
-                @foreach (trans('site.trial.connector.notes') as $note)
+                @foreach (($connectorCopy['notes'] ?? trans('site.trial.connector.notes')) as $note)
                     <p class="rounded-2xl border border-sky-400/12 bg-sky-500/8 px-4 py-3 text-sm leading-6 text-sky-50">{{ $note }}</p>
                 @endforeach
             </div>

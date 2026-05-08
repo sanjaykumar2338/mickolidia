@@ -27,7 +27,7 @@ class Mt5OnboardingEmailTest extends TestCase
 
         foreach ([
             'https://www.wolforix.com/dashboard',
-            'https://www.wolforix.com/trial/setup',
+            'https://www.wolforix.com/mt5/setup',
             'https://www.wolforix.com/mt5_demo.mp4',
             'https://www.wolforix.com',
             'https://wolforix.com',
@@ -58,6 +58,9 @@ class Mt5OnboardingEmailTest extends TestCase
             $this->assertStringNotContainsString($sensitiveContent, $html);
             $this->assertStringNotContainsString($sensitiveContent, $text);
         }
+
+        $this->assertStringNotContainsString('https://www.wolforix.com/trial/setup', $html);
+        $this->assertStringNotContainsString('https://www.wolforix.com/trial/setup', $text);
     }
 
     public function test_wolforix_send_mt5_onboarding_email_command_sends_to_requested_address(): void

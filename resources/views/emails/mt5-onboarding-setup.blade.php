@@ -66,7 +66,7 @@
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px; border-collapse:collapse;">
         @foreach ([
             'Log in to your Wolforix dashboard.',
-            'Open the trial/setup page.',
+            'Open the MT5 setup page.',
             'Watch the MT5 setup tutorial video.',
             'Download the preconfigured connector package from the setup page.',
             'Extract the ZIP file on your computer.',

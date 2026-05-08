@@ -10,7 +10,7 @@ Required setup:
 
 1. Log in to your Wolforix dashboard:
    {{ $dashboardUrl }}
-2. Open the trial/setup page:
+2. Open the MT5 setup page:
    {{ $setupUrl }}
 3. Watch the MT5 setup tutorial video:
    {{ $setupVideoUrl }}

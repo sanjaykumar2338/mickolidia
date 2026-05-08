@@ -4022,6 +4022,63 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Connected');
     }
 
+    public function test_mt5_setup_route_loads_generic_connector_setup_for_authenticated_mt5_users(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'mt5-setup-user@example.com',
+            'status' => 'active',
+        ]);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'account_reference' => 'WFX-MT5-SETUP-001',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'demo',
+            'platform_status' => 'awaiting_metrics',
+            'stage' => 'Single Phase',
+            'status' => 'Active',
+            'account_type' => 'challenge',
+            'account_phase' => 'single_phase',
+            'phase_index' => 1,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'is_trial' => false,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'highest_equity_today' => 10000,
+            'minimum_trading_days' => 3,
+            'activated_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('mt5.setup'))
+            ->assertOk()
+            ->assertSee('Connect Your MT5 Account to Wolforix')
+            ->assertSee('MT5 connection process')
+            ->assertSee('Download Preconfigured Connector')
+            ->assertSee('Watch MT5 Connector Setup Video')
+            ->assertSee('mt5_demo.mp4')
+            ->assertSee('File &gt; Open Data Folder', false)
+            ->assertSee('MQL5 &gt; Experts', false)
+            ->assertSee('MQL5 &gt; Include', false)
+            ->assertSee('Tools &gt; Options &gt; Expert Advisors', false)
+            ->assertSee('Allow WebRequest for listed URL')
+            ->assertSee('https://www.wolforix.com')
+            ->assertSee('https://wolforix.com')
+            ->assertSee('Base URL')
+            ->assertSee($account->account_reference)
+            ->assertSee('Secret Token')
+            ->assertSee('Connection Status')
+            ->assertDontSee('Connect Your MT5 Demo Account')
+            ->assertDontSee('Open Demo Account');
+    }
+
     public function test_authenticated_user_can_download_preconfigured_mt5_connector_for_own_account(): void
     {
         $user = User::factory()->create();
