@@ -72,6 +72,7 @@ class Mt5OnboardingEmailTest extends TestCase
 
         Mail::assertSent(Mt5OnboardingSetupMail::class, function (Mt5OnboardingSetupMail $mail): bool {
             return $mail->hasTo('sk963070@gmail.com')
+                && $mail->hasCc('Support@wolforix.com')
                 && $mail->envelope()->subject === 'Connect Your MT5 Account to Wolforix Dashboard';
         });
     }
