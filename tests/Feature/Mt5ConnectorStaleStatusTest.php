@@ -17,7 +17,10 @@ class Mt5ConnectorStaleStatusTest extends TestCase
         parent::setUp();
 
         Carbon::setTestNow(Carbon::parse('2026-05-09 12:00:00'));
-        config(['trading.platforms.mt5.freshness.stale_seconds' => 300]);
+        config([
+            'trading.platforms.mt5.freshness.stale_seconds' => 300,
+            'trading.platforms.mt5.freshness.heartbeat_seconds' => 90,
+        ]);
     }
 
     protected function tearDown(): void
@@ -81,6 +84,28 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->assertOk()
             ->assertSee('Connected')
             ->assertDontSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
+    }
+
+    public function test_dashboard_goes_stale_when_ea_ping_expires_even_if_metric_sync_is_recent(): void
+    {
+        $user = User::factory()->create();
+        $account = $this->createMt5Account($user);
+        $lastSyncAt = now()->subMinute();
+        $meta = $account->meta;
+        data_set($meta, 'mt5_sync.last_successful_metric_update_at', $lastSyncAt->toIso8601String());
+        data_set($meta, 'mt5_sync.last_synced_at', $lastSyncAt->toIso8601String());
+        data_set($meta, 'mt5_sync.last_ea_ping_at', now()->subMinutes(3)->toIso8601String());
+
+        $account->forceFill([
+            'last_synced_at' => $lastSyncAt,
+            'meta' => $meta,
+        ])->save();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Disconnected/Stale')
+            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
     }
 
     public function test_admin_diagnostics_show_computed_stale_status_and_stored_flag_separately(): void

@@ -14,7 +14,10 @@ class Mt5ConnectorStatusTest extends TestCase
         parent::setUp();
 
         Carbon::setTestNow(Carbon::parse('2026-05-09 12:00:00'));
-        config(['trading.platforms.mt5.freshness.stale_seconds' => 300]);
+        config([
+            'trading.platforms.mt5.freshness.stale_seconds' => 300,
+            'trading.platforms.mt5.freshness.heartbeat_seconds' => 90,
+        ]);
     }
 
     protected function tearDown(): void
@@ -94,6 +97,27 @@ class Mt5ConnectorStatusTest extends TestCase
 
         $this->assertSame(Mt5ConnectorStatus::CONNECTED, $status['status']);
         $this->assertTrue($status['is_connected']);
+    }
+
+    public function test_stale_heartbeat_marks_connector_stale_even_when_metric_sync_is_recent(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'mt5_ea',
+            'last_synced_at' => now()->subMinute(),
+            'meta' => [
+                'mt5_sync' => [
+                    'last_successful_metric_update_at' => now()->subMinute()->toIso8601String(),
+                    'last_ea_ping_at' => now()->subMinutes(3)->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::STALE, $status['status']);
+        $this->assertFalse($status['is_connected']);
     }
 
     public function test_recent_heartbeat_without_metric_sync_is_connected(): void

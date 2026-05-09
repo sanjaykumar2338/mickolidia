@@ -29,7 +29,8 @@ class Mt5ConnectorStatus
      *     last_metric_update_at:?Carbon,
      *     last_heartbeat_at:?Carbon,
      *     last_activity_at:?Carbon,
-     *     timeout_seconds:int
+     *     timeout_seconds:int,
+     *     heartbeat_timeout_seconds:int
      * }
      */
     public function forAccount(?TradingAccount $account): array
@@ -46,14 +47,14 @@ class Mt5ConnectorStatus
 
         if (! $account instanceof TradingAccount) {
             $status = self::NOT_CONNECTED;
-        } elseif ($lastHeartbeatAt instanceof Carbon && $this->isRecent($lastHeartbeatAt)) {
-            $status = self::CONNECTED;
+        } elseif ($lastHeartbeatAt instanceof Carbon) {
+            $status = $this->isRecentHeartbeat($lastHeartbeatAt)
+                ? self::CONNECTED
+                : self::STALE;
         } elseif ($lastMetricUpdateAt instanceof Carbon) {
             $status = $this->isRecent($lastMetricUpdateAt)
                 ? self::CONNECTED
                 : self::STALE;
-        } elseif ($lastHeartbeatAt instanceof Carbon) {
-            $status = self::STALE;
         } elseif ($this->isConnecting($account)) {
             $status = self::CONNECTING;
         } else {
@@ -73,6 +74,7 @@ class Mt5ConnectorStatus
             'last_heartbeat_at' => $lastHeartbeatAt,
             'last_activity_at' => $lastActivityAt,
             'timeout_seconds' => $this->timeoutSeconds(),
+            'heartbeat_timeout_seconds' => $this->heartbeatTimeoutSeconds(),
         ];
     }
 
@@ -174,6 +176,11 @@ class Mt5ConnectorStatus
         return max((int) config('trading.platforms.mt5.freshness.stale_seconds', 300), 1);
     }
 
+    public function heartbeatTimeoutSeconds(): int
+    {
+        return max((int) config('trading.platforms.mt5.freshness.heartbeat_seconds', 90), 1);
+    }
+
     public function lastMetricUpdateAt(TradingAccount $account): ?Carbon
     {
         return $this->latestDate([
@@ -210,6 +217,13 @@ class Mt5ConnectorStatus
         $ageSeconds = $this->ageSeconds($timestamp);
 
         return $ageSeconds >= 0 && $ageSeconds <= $this->timeoutSeconds();
+    }
+
+    private function isRecentHeartbeat(Carbon $timestamp): bool
+    {
+        $ageSeconds = $this->ageSeconds($timestamp);
+
+        return $ageSeconds >= 0 && $ageSeconds <= $this->heartbeatTimeoutSeconds();
     }
 
     private function ageSeconds(Carbon $timestamp): int

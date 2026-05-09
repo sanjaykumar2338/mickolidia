@@ -9,6 +9,7 @@ return [
                 'live_seconds' => (int) env('MT5_SYNC_LIVE_SECONDS', 15),
                 'recent_seconds' => (int) env('MT5_SYNC_RECENT_SECONDS', 60),
                 'stale_seconds' => (int) env('MT5_SYNC_STALE_SECONDS', 300),
+                'heartbeat_seconds' => (int) env('MT5_CONNECTOR_HEARTBEAT_SECONDS', 90),
             ],
         ],
         'ctrader' => [
