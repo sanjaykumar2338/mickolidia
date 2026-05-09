@@ -7,6 +7,10 @@ use Illuminate\Support\Str;
 
 class Mt5ConnectorCredentials
 {
+    public function __construct(
+        private readonly Mt5ConnectorStatus $connectorStatus,
+    ) {}
+
     /**
      * @return array{
      *     base_url:string,
@@ -21,7 +25,8 @@ class Mt5ConnectorCredentials
      *     status:string,
      *     status_label:string,
      *     status_badge:string,
-     *     last_connected_at:?string
+     *     last_connected_at:?string,
+     *     status_message:?string
      * }
      */
     public function forAccount(TradingAccount $account): array
@@ -29,6 +34,7 @@ class Mt5ConnectorCredentials
         $account = $this->ensureToken($account);
         $accountReference = (string) $account->account_reference;
         $downloadPath = $this->downloadPath();
+        $status = $this->connectorStatus->forAccount($account);
 
         return [
             'base_url' => $this->baseUrl(),
@@ -40,10 +46,11 @@ class Mt5ConnectorCredentials
             'download_file_name' => basename($downloadPath),
             'preconfigured_download_url' => route('dashboard.accounts.mt5-connector.download', ['account' => $account]),
             'preconfigured_download_file_name' => 'Wolforix-MT5-Connector-'.$this->safeReference($accountReference).'.zip',
-            'status' => $this->connectionStatus($account),
-            'status_label' => $this->connectionStatusLabel($account),
-            'status_badge' => $this->connectionStatusBadge($account),
-            'last_connected_at' => $account->last_synced_at?->toDayDateTimeString(),
+            'status' => $status['status'],
+            'status_label' => $status['label'],
+            'status_badge' => $status['badge'],
+            'status_message' => $status['message'],
+            'last_connected_at' => $status['last_sync_at']?->toDayDateTimeString(),
         ];
     }
 
@@ -73,33 +80,17 @@ class Mt5ConnectorCredentials
 
     public function connectionStatus(TradingAccount $account): string
     {
-        if ($account->last_synced_at !== null && $account->sync_source === 'mt5_ea') {
-            return 'connected';
-        }
-
-        if ($account->sync_status === 'syncing' || ($account->last_sync_started_at !== null && $account->last_sync_completed_at === null)) {
-            return 'connecting';
-        }
-
-        return 'not_connected';
+        return $this->connectorStatus->status($account);
     }
 
     public function connectionStatusLabel(TradingAccount $account): string
     {
-        return match ($this->connectionStatus($account)) {
-            'connected' => __('site.trial.connector.statuses.connected'),
-            'connecting' => __('site.trial.connector.statuses.connecting'),
-            default => __('site.trial.connector.statuses.not_connected'),
-        };
+        return $this->connectorStatus->forAccount($account)['label'];
     }
 
     public function connectionStatusBadge(TradingAccount $account): string
     {
-        return match ($this->connectionStatus($account)) {
-            'connected' => 'border-emerald-400/20 bg-emerald-500/12 text-emerald-100',
-            'connecting' => 'border-amber-400/20 bg-amber-500/12 text-amber-100',
-            default => 'border-rose-400/20 bg-rose-500/12 text-rose-100',
-        };
+        return $this->connectorStatus->forAccount($account)['badge'];
     }
 
     private function mask(string $token): string

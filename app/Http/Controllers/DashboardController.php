@@ -10,6 +10,7 @@ use App\Services\Voice\OpenAiTextToSpeechService;
 use App\Services\Wolfi\WolfiAssistantService;
 use App\Services\Wolfi\WolfiVoiceSettings;
 use App\Support\ChallengeAccountMetrics;
+use App\Support\Mt5ConnectorStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
         private readonly WolfiAssistantService $wolfiAssistantService,
+        private readonly Mt5ConnectorStatus $mt5ConnectorStatus,
     ) {}
 
     public function index(Request $request, ChallengePricingService $pricingService): View
@@ -281,7 +283,10 @@ class DashboardController extends Controller
     {
         $plan = $this->planDefinitionForAccount($account);
         $fundedTiming = $this->fundedTiming($account, $plan);
-        $syncFreshness = $this->syncFreshness($account->last_synced_at);
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $syncFreshness = $account->platform_slug === 'mt5'
+            ? $this->mt5ConnectorStatus->freshnessForAccount($account)
+            : $this->syncFreshness($account->last_synced_at);
         $challengeMetrics = $this->challengeMetrics($account);
         $phaseProfit = (float) $challengeMetrics['realized_profit'];
         $challengeBalance = (float) $challengeMetrics['challenge_balance'];
@@ -306,9 +311,15 @@ class DashboardController extends Controller
             'platform_account_id' => $account->platform_account_id ?: __('Link pending'),
             'platform_login' => $account->platform_login ?: __('Link pending'),
             'platform_environment' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')),
-            'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'platform_status' => $account->platform_slug === 'mt5'
+                ? $connectorStatus['label']
+                : $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'connector_status' => $connectorStatus['label'],
+            'connector_status_key' => $connectorStatus['status'],
+            'connector_status_message' => $connectorStatus['message'],
+            'connector_status_tone' => $connectorStatus['tone'],
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
-            'last_synced_at' => $this->formatDateTime($account->last_synced_at),
+            'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
             'sync_freshness' => $syncFreshness['label'],
             'sync_freshness_hint' => $syncFreshness['hint'],
@@ -367,6 +378,10 @@ class DashboardController extends Controller
         $platformAccountId = $account->platform_account_id ?: __('Link pending');
         $challengeMetrics = $this->challengeMetrics($account);
         $phaseProfit = (float) $challengeMetrics['realized_profit'];
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $syncFreshness = $account->platform_slug === 'mt5'
+            ? $this->mt5ConnectorStatus->freshnessForAccount($account)
+            : $this->syncFreshness($account->last_synced_at);
 
         return [
             'title' => $this->planLabel((string) $account->challenge_type, (int) $account->account_size),
@@ -382,7 +397,11 @@ class DashboardController extends Controller
             'challenge_phase' => $this->phaseLabel($account),
             'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
             'sync_status' => $this->humanizeStatus((string) ($account->sync_status ?: 'pending')),
-            'sync_freshness' => $this->syncFreshness($account->last_synced_at),
+            'connector_status' => $connectorStatus['label'],
+            'connector_status_key' => $connectorStatus['status'],
+            'connector_status_message' => $connectorStatus['message'],
+            'connector_status_tone' => $connectorStatus['tone'],
+            'sync_freshness' => $syncFreshness,
             'badges' => $this->dashboardBadges($account),
             'state_notice' => $this->stateNotice($account),
             'metrics' => [
@@ -1221,7 +1240,9 @@ class DashboardController extends Controller
             ];
         }
 
-        $syncFreshness = $this->syncFreshness($account->last_synced_at);
+        $syncFreshness = $account->platform_slug === 'mt5'
+            ? $this->mt5ConnectorStatus->freshnessForAccount($account)
+            : $this->syncFreshness($account->last_synced_at);
         $challengeMetrics = $this->challengeMetrics($account);
 
         return [
@@ -1310,14 +1331,19 @@ class DashboardController extends Controller
         }
 
         if ($account->platform_slug === 'mt5') {
-            $syncFreshness = $this->syncFreshness($account->last_synced_at);
+            $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+            $syncFreshness = $this->mt5ConnectorStatus->freshnessForAccount($account);
 
             return [
-                'title' => __('MT5 live sync'),
-                'message' => __('Challenge balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
+                'title' => $connectorStatus['status'] === Mt5ConnectorStatus::STALE
+                    ? __('MT5 connector stale/offline')
+                    : __('MT5 live sync'),
+                'message' => $connectorStatus['message']
+                    ?? __('Challenge balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
                 'meta' => [
+                    __('Connector status: :value', ['value' => $connectorStatus['label']]),
                     __('Sync freshness: :value', ['value' => $syncFreshness['label']]),
-                    __('Last sync: :value', ['value' => $this->formatDateTime($account->last_synced_at)]),
+                    __('Last sync: :value', ['value' => $this->formatDateTime($connectorStatus['last_sync_at'])]),
                     __('Data source: :value', ['value' => $this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea'))]),
                 ],
             ];
@@ -1339,7 +1365,10 @@ class DashboardController extends Controller
      */
     private function accountCardPayload(TradingAccount $account): array
     {
-        $syncFreshness = $this->syncFreshness($account->last_synced_at);
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $syncFreshness = $account->platform_slug === 'mt5'
+            ? $this->mt5ConnectorStatus->freshnessForAccount($account)
+            : $this->syncFreshness($account->last_synced_at);
         $challengeMetrics = $this->challengeMetrics($account);
         $consistency = $this->consistencyState($account);
 
@@ -1366,7 +1395,7 @@ class DashboardController extends Controller
             'progress' => number_format((float) $account->profit_target_progress_percent, 0).'%',
             'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
-            'last_synced_at' => $this->formatDateTime($account->last_synced_at),
+            'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
             'sync_freshness' => $syncFreshness['label'],
             'sync_freshness_hint' => $syncFreshness['hint'],
@@ -1382,7 +1411,13 @@ class DashboardController extends Controller
             'trading_days' => sprintf('%d / %d', (int) $account->trading_days_completed, (int) $account->minimum_trading_days),
             'platform_environment' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')),
             'platform_account_id' => $account->platform_account_id ?: __('Link pending'),
-            'platform_status' => $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'platform_status' => $account->platform_slug === 'mt5'
+                ? $connectorStatus['label']
+                : $this->humanizeStatus((string) ($account->platform_status ?: 'pending_link')),
+            'connector_status' => $connectorStatus['label'],
+            'connector_status_key' => $connectorStatus['status'],
+            'connector_status_message' => $connectorStatus['message'],
+            'connector_status_tone' => $connectorStatus['tone'],
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
@@ -1607,6 +1642,9 @@ class DashboardController extends Controller
             ->map(function ($purchase): array {
                 $order = $purchase->order;
                 $linkedAccount = $purchase->tradingAccounts->sortByDesc('created_at')->first();
+                $linkedConnectorStatus = $linkedAccount instanceof TradingAccount && $linkedAccount->platform_slug === 'mt5'
+                    ? $this->mt5ConnectorStatus->forAccount($linkedAccount)
+                    : null;
 
                 return [
                     'reference' => $order?->order_number ?? __('N/A'),
@@ -1616,7 +1654,9 @@ class DashboardController extends Controller
                     'payment_status' => $order?->payment_status ? $this->humanizeStatus((string) $order->payment_status) : __('N/A'),
                     'account_status' => $purchase->account_status ? $this->humanizeStatus((string) $purchase->account_status) : __('Not available'),
                     'account_reference' => $linkedAccount?->account_reference ?? __('Pending link'),
-                    'sync_status' => $linkedAccount?->sync_status ? $this->humanizeStatus((string) $linkedAccount->sync_status) : __('Not synced'),
+                    'sync_status' => $linkedConnectorStatus !== null
+                        ? $linkedConnectorStatus['label']
+                        : ($linkedAccount?->sync_status ? $this->humanizeStatus((string) $linkedAccount->sync_status) : __('Not synced')),
                     'created_at' => $purchase->created_at ? $this->formatDate($purchase->created_at) : __('N/A'),
                     'invoice_number' => $order?->invoice?->invoice_number,
                     'invoice_download_url' => $order?->invoice ? route('dashboard.invoices.download', $order->invoice) : null,

@@ -9,6 +9,7 @@ use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\CountryEligibility;
+use App\Support\Mt5ConnectorStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -19,6 +20,7 @@ class AdminClientController extends Controller
     public function __construct(
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
         private readonly CountryEligibility $countryEligibility,
+        private readonly Mt5ConnectorStatus $mt5ConnectorStatus,
     ) {}
 
     public function index(): View
@@ -66,6 +68,7 @@ class AdminClientController extends Controller
         $mt5SyncMeta = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
         $failureContext = is_array($selectedAccount?->failure_context) ? $selectedAccount->failure_context : [];
         $mt5DeactivationCurrent = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_deactivation.current', []) : [];
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
 
         return view('admin.clients.show', [
             'client' => [
@@ -171,8 +174,12 @@ class AdminClientController extends Controller
                 'challenge_status' => $selectedAccount?->challenge_status ? $this->humanizeStatus((string) $selectedAccount->challenge_status) : 'N/A',
                 'trial_status' => $selectedAccount?->trial_status ? $this->humanizeStatus((string) $selectedAccount->trial_status) : 'N/A',
                 'account_status' => $selectedAccount?->account_status ? $this->humanizeStatus((string) $selectedAccount->account_status) : 'N/A',
-                'connector_status' => $mt5SyncMeta['status'] ?? 'N/A',
-                'last_synced_at' => $this->formatDateTime($selectedAccount?->last_synced_at),
+                'connector_status' => $connectorStatus['label'],
+                'connector_status_key' => $connectorStatus['status'],
+                'connector_status_message' => $connectorStatus['message'],
+                'connector_status_timeout_seconds' => $connectorStatus['timeout_seconds'],
+                'stored_connector_status' => $mt5SyncMeta['status'] ?? 'N/A',
+                'last_synced_at' => $this->formatDateTime($connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
                 'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
                 'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',

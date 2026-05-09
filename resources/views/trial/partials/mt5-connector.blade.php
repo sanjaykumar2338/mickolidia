@@ -15,6 +15,12 @@
         </div>
     </div>
 
+    @if (! empty($connector['status_message']))
+        <div class="mt-5 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
+            {{ $connector['status_message'] }}
+        </div>
+    @endif
+
     <div class="mt-6 grid gap-3 sm:grid-cols-2">
         <div>
             <a href="{{ $connector['preconfigured_download_url'] }}" class="primary-cta justify-center rounded-full px-6 py-3 text-sm font-semibold" download="{{ $connector['preconfigured_download_file_name'] ?? true }}">

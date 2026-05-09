@@ -483,6 +483,11 @@
                         <span><strong class="text-white">Trial status:</strong> {{ $providerReferences['trial_status'] }}</span>
                         <span><strong class="text-white">Account status:</strong> {{ $providerReferences['account_status'] }}</span>
                         <span><strong class="text-white">Connector status:</strong> {{ $providerReferences['connector_status'] }}</span>
+                        <span><strong class="text-white">Stored connector flag:</strong> {{ $providerReferences['stored_connector_status'] }}</span>
+                        @if (! empty($providerReferences['connector_status_message']))
+                            <span class="text-rose-100 sm:col-span-2"><strong class="text-white">Connector notice:</strong> {{ $providerReferences['connector_status_message'] }}</span>
+                        @endif
+                        <span><strong class="text-white">Stale timeout:</strong> {{ $providerReferences['connector_status_timeout_seconds'] }}s</span>
                         <span><strong class="text-white">Last EA ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
                         <span><strong class="text-white">Last metric update:</strong> {{ $providerReferences['last_successful_metric_update_at'] }}</span>
                         <span><strong class="text-white">Breach reason:</strong> {{ $providerReferences['breach_reason'] }}</span>

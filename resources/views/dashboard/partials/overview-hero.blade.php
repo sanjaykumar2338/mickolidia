@@ -113,6 +113,12 @@
                 </div>
             @endif
 
+            @if (! empty($hero['connector_status_message']))
+                <div class="{{ $badgeToneClasses[$hero['connector_status_tone'] ?? 'rose'] ?? $badgeToneClasses['rose'] }} rounded-[1.6rem] border px-4 py-3 text-sm leading-7">
+                    {{ $hero['connector_status_message'] }}
+                </div>
+            @endif
+
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach ($primaryMetricCards as $metric)
                     <article class="rounded-[1.7rem] border border-white/8 bg-black/18 p-4 shadow-[0_18px_45px_rgba(2,6,23,0.22)]">
@@ -184,8 +190,8 @@
                         <dd class="font-semibold text-white">{{ $hero['challenge_status'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">{{ __('Sync status') }}</dt>
-                        <dd class="font-semibold text-white">{{ $hero['sync_status'] }}</dd>
+                        <dt class="text-slate-400">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? __('Connector status') : __('Sync status') }}</dt>
+                        <dd class="font-semibold text-white">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? ($hero['connector_status'] ?? $hero['sync_status']) : $hero['sync_status'] }}</dd>
                     </div>
                 </dl>
             </article>

@@ -65,6 +65,12 @@
                     {{ $primaryAccount['sync_error'] }}
                 </div>
             @endif
+
+            @if (! empty($primaryAccount['connector_status_message']))
+                <div class="mt-4 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100">
+                    {{ $primaryAccount['connector_status_message'] }}
+                </div>
+            @endif
         </div>
 
         <x-consistency-banner :title="$consistencyBanner['title']" :message="$consistencyBanner['message']" :meta="$consistencyBanner['meta']" />
@@ -288,6 +294,11 @@
                                         <dt class="text-slate-400">{{ __('Connection') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['platform_status'] }}</dd>
                                     </div>
+                                    @if (! empty($account['connector_status_message']))
+                                        <div class="rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-rose-100">
+                                            {{ $account['connector_status_message'] }}
+                                        </div>
+                                    @endif
                                     @if ($account['mt5_deactivation_status'])
                                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
                                             <dt class="text-amber-100">{{ __('MT5 disable status') }}</dt>

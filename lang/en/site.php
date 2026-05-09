@@ -640,6 +640,7 @@ return [
             'status_title' => 'Connection Status',
             'last_connected' => 'Last sync: :time',
             'waiting_sync' => 'Waiting for the first EA sync.',
+            'offline_message' => 'Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.',
             'details_title' => 'Connector Credentials',
             'base_url' => 'Base URL',
             'endpoint_url' => 'Full API endpoint',
@@ -668,6 +669,7 @@ return [
                 'not_connected' => 'Not Connected',
                 'connecting' => 'Connecting',
                 'connected' => 'Connected',
+                'stale' => 'Disconnected/Stale',
             ],
         ],
         'dashboard' => [

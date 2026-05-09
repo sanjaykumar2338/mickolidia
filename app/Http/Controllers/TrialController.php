@@ -719,7 +719,7 @@ class TrialController extends Controller
                 ],
                 [
                     'label' => __('Last connector sync'),
-                    'value' => $this->formatTrialDateTime($trialAccount->last_synced_at),
+                    'value' => (string) ($connector['last_connected_at'] ?? $this->formatTrialDateTime($trialAccount->last_synced_at)),
                 ],
                 [
                     'label' => __('MT5 disable status'),

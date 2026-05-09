@@ -94,7 +94,9 @@
                     <section class="surface-panel rounded-[2rem] p-6 sm:p-8">
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">{{ $setupCopy['status_label'] ?? __('site.trial.setup.step_three_label') }}</p>
                         <h2 class="mt-3 text-2xl font-semibold text-white">{{ __('site.trial.connector.status_title') }}</h2>
-                        <p class="mt-4 text-sm leading-7 text-slate-300">{{ __('site.trial.connector.waiting_sync') }}</p>
+                        <p class="mt-4 text-sm leading-7 text-slate-300">
+                            {{ $connector['status_message'] ?? ($connector['last_connected_at'] ? __('site.trial.connector.last_connected', ['time' => $connector['last_connected_at']]) : __('site.trial.connector.waiting_sync')) }}
+                        </p>
                         @if (($setupCopy['show_demo_section'] ?? true) === true)
                             <form method="POST" action="{{ route('trial.confirm-demo') }}" class="mt-6">
                                 @csrf
