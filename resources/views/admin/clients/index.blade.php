@@ -66,7 +66,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-5">
-                                <a href="{{ route('admin.clients.show', $client['id']) }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                                <a href="{{ route('admin.clients.metrics', $client['id']) }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                                     {{ __('site.admin.table.view_metrics') }}
                                 </a>
                             </td>

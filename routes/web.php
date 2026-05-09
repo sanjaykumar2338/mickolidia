@@ -125,6 +125,7 @@ Route::prefix('admin')->group(function (): void {
             ->name('admin.wolfi.voices.preview');
         Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
         Route::post('/client/{user}/credentials', [AdminClientController::class, 'updateCredentials'])->name('admin.clients.credentials');
+        Route::get('/client/{user}/metrics', [AdminClientController::class, 'metrics'])->name('admin.clients.metrics');
         Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');
         Route::get('/reviews', [AdminReviewRequestController::class, 'index'])->name('admin.reviews.index');
         Route::post('/reviews/test', [AdminReviewRequestController::class, 'sendTest'])->name('admin.reviews.test');

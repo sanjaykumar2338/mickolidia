@@ -12,7 +12,9 @@ use App\Support\CountryEligibility;
 use App\Support\Mt5ConnectorStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class AdminClientController extends Controller
@@ -212,6 +214,104 @@ class AdminClientController extends Controller
         ]);
     }
 
+    public function metrics(Request $request, User $user): View
+    {
+        $user->loadMissing([
+            'profile',
+            'challengeTradingAccounts.challengePlan',
+            'latestChallengeTradingAccount.challengePlan',
+            'latestTradingAccount.challengePlan',
+            'latestChallengePurchase.order',
+        ]);
+
+        $accounts = $this->availableAccountsForUser($user);
+        $requestedAccountId = (int) $request->query('account', 0);
+        $selectedAccount = $requestedAccountId > 0
+            ? $accounts->firstWhere('id', $requestedAccountId)
+            : null;
+        $selectedAccount ??= $accounts->first();
+
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
+        $mt5SyncMeta = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
+        $mt5DeactivationCurrent = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_deactivation.current', []) : [];
+        $latestSyncLog = $selectedAccount?->syncLogs()
+            ->latest('id')
+            ->first();
+        $tradesPanel = $this->tradeHistoryPanelBuilder->build($selectedAccount, [
+            'empty_message' => __('Detailed trade rows will appear here after this account receives synced MT5 open positions or trade history.'),
+            'available_message' => __('This table is built from the latest persisted MT5 sync snapshots; no duplicate trade store is created.'),
+        ]);
+        $filters = $this->adminTradeFilters($request);
+        $filteredRows = $this->filterAdminTradeRows($tradesPanel['rows'] ?? [], $filters);
+        $tradeRows = $this->paginateAdminTradeRows($filteredRows, $request);
+
+        return view('admin.clients.metrics', [
+            'client' => [
+                'id' => $user->id,
+                'full_name' => $user->name,
+                'email' => $user->email,
+                'plan_selected' => $this->resolvePlanLabel($user),
+            ],
+            'accountOptions' => $accounts
+                ->map(fn (TradingAccount $account): array => [
+                    'id' => $account->id,
+                    'reference' => $account->account_reference ?? 'Pending link',
+                    'url' => route('admin.clients.metrics', ['user' => $user, 'account' => $account->id]),
+                    'is_selected' => (int) $account->id === (int) ($selectedAccount?->id ?? 0),
+                ])
+                ->all(),
+            'account' => [
+                'reference' => $selectedAccount?->account_reference ?? 'N/A',
+                'plan' => $selectedAccount instanceof TradingAccount
+                    ? $this->challengeTypeLabel((string) $selectedAccount->challenge_type)
+                    : $this->resolvePlanLabel($user),
+                'phase' => $selectedAccount instanceof TradingAccount ? $this->phaseLabel($selectedAccount) : 'N/A',
+                'status' => $selectedAccount?->account_status ? $this->humanizeStatus((string) $selectedAccount->account_status) : 'N/A',
+                'challenge_status' => $selectedAccount?->challenge_status ? $this->humanizeStatus((string) $selectedAccount->challenge_status) : 'N/A',
+                'connector_status' => $connectorStatus['label'],
+                'connector_badge' => $connectorStatus['badge'],
+                'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
+                'balance' => $this->formatMoney((float) ($selectedAccount?->balance ?? 0)),
+                'equity' => $this->formatMoney((float) ($selectedAccount?->equity ?? 0)),
+                'floating_pl' => $this->formatMoney((float) ($selectedAccount?->profit_loss ?? 0)),
+                'today_profit' => $this->formatMoney((float) ($selectedAccount?->today_profit ?? 0)),
+                'total_realized_pl' => $this->formatMoney((float) ($selectedAccount?->total_profit ?? 0)),
+                'trading_days' => $selectedAccount instanceof TradingAccount
+                    ? sprintf('%d / %d', (int) $selectedAccount->trading_days_completed, (int) $selectedAccount->minimum_trading_days)
+                    : '0 / 0',
+                'open_positions_count' => (string) ($tradesPanel['summary']['open'] ?? data_get($mt5SyncMeta, 'last_payload_summary.positions_count', 0)),
+                'closed_trades_count' => (string) ($tradesPanel['summary']['closed'] ?? data_get($mt5SyncMeta, 'last_payload_summary.closed_positions_count', 0)),
+                'breach_status' => $selectedAccount?->failure_reason
+                    ? __('Failed: :reason', ['reason' => $this->humanizeStatus((string) $selectedAccount->failure_reason)])
+                    : __('None'),
+            ],
+            'filters' => $filters,
+            'symbols' => collect($tradesPanel['rows'] ?? [])
+                ->pluck('symbol')
+                ->filter(fn (mixed $symbol): bool => is_string($symbol) && $symbol !== '' && $symbol !== '—')
+                ->unique()
+                ->sort()
+                ->values()
+                ->all(),
+            'tradeRows' => $tradeRows,
+            'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
+            'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
+            'diagnostics' => [
+                'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
+                'latest_sync_log_message' => $latestSyncLog?->message ?? 'N/A',
+                'latest_sync_log_error' => $latestSyncLog?->error_message ?? 'None',
+                'latest_sync_log_completed_at' => $this->formatDateTime($latestSyncLog?->completed_at),
+                'last_rejected_reason' => $mt5SyncMeta['last_rejected_reason'] ?? 'None',
+                'last_ignored_reason' => $mt5SyncMeta['last_ignored_reason'] ?? 'None',
+                'last_payload_summary' => is_array($mt5SyncMeta['last_payload_summary'] ?? null) ? $mt5SyncMeta['last_payload_summary'] : [],
+                'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
+                'disable_status' => isset($mt5DeactivationCurrent['status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['status']) : 'N/A',
+                'disable_acknowledged_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['acknowledged_at'] ?? null),
+                'disable_error' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+            ],
+        ]);
+    }
+
     public function activate(User $user, AdminChallengeActivationService $activationService): RedirectResponse
     {
         try {
@@ -312,6 +412,94 @@ class AdminClientController extends Controller
         return redirect()
             ->route('admin.clients.show', ['user' => $user, 'account' => $account->id])
             ->with('status', $status);
+    }
+
+    /**
+     * @return array{status:string,symbol:string,date_from:string,date_to:string}
+     */
+    private function adminTradeFilters(Request $request): array
+    {
+        $status = strtolower((string) $request->query('trade_status', 'both'));
+
+        return [
+            'status' => in_array($status, ['both', 'open', 'closed'], true) ? $status : 'both',
+            'symbol' => trim((string) $request->query('symbol', '')),
+            'date_from' => trim((string) $request->query('date_from', '')),
+            'date_to' => trim((string) $request->query('date_to', '')),
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array{status:string,symbol:string,date_from:string,date_to:string}  $filters
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterAdminTradeRows(array $rows, array $filters): array
+    {
+        $from = $this->parseFilterDate($filters['date_from'], endOfDay: false);
+        $to = $this->parseFilterDate($filters['date_to'], endOfDay: true);
+
+        return collect($rows)
+            ->filter(function (array $row) use ($filters, $from, $to): bool {
+                if ($filters['status'] !== 'both' && ($row['filter'] ?? null) !== $filters['status']) {
+                    return false;
+                }
+
+                if ($filters['symbol'] !== '' && strcasecmp((string) ($row['symbol'] ?? ''), $filters['symbol']) !== 0) {
+                    return false;
+                }
+
+                $tradeAt = $this->parseFilterDate((string) (($row['close_at'] ?? null) ?: ($row['open_at'] ?? '')), endOfDay: false);
+
+                if ($from instanceof Carbon && (! $tradeAt instanceof Carbon || $tradeAt->lt($from))) {
+                    return false;
+                }
+
+                if ($to instanceof Carbon && (! $tradeAt instanceof Carbon || $tradeAt->gt($to))) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    private function paginateAdminTradeRows(array $rows, Request $request): LengthAwarePaginator
+    {
+        $perPage = min(max((int) $request->query('per_page', 25), 10), 100);
+        $page = max((int) $request->query('page', 1), 1);
+        $items = collect($rows)->forPage($page, $perPage)->values();
+
+        return (new LengthAwarePaginator(
+            $items,
+            count($rows),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ],
+        ));
+    }
+
+    private function parseFilterDate(string $value, bool $endOfDay): ?Carbon
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            $date = Carbon::parse($value);
+
+            return $endOfDay ? $date->endOfDay() : $date->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function clientTableRow(User $user): array

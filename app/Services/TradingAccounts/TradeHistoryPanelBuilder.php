@@ -276,8 +276,12 @@ class TradeHistoryPanelBuilder
             'status_tone' => $status['tone'],
             'open_date' => $this->formatTradeDate($openedAt),
             'close_date' => $isOpen ? __('Ongoing') : $this->formatTradeDate($closedAt),
+            'open_at' => $openedAt?->toIso8601String(),
+            'close_at' => $closedAt?->toIso8601String(),
             'entry_price' => $this->formatPrice($this->tradeEntryPriceValue($row)),
             'exit_price' => $isOpen ? null : $this->formatPrice($this->tradeExitPriceValue($row)),
+            'stop_loss' => $this->formatPrice($this->tradeStopLossValue($row)),
+            'take_profit' => $this->formatPrice($this->tradeTakeProfitValue($row)),
             'volume' => $this->formatNumber($this->tradeVolumeValue($row), 0, 2) ?? __('—'),
             'profit' => $this->formatMoney($pnl ?? 0),
             'profit_tone' => $this->metricTone($pnl ?? 0),
@@ -839,6 +843,50 @@ class TradeHistoryPanelBuilder
             'raw.executionPrice',
             'raw.tradeData.closePrice',
             'raw.tradeData.executionPrice',
+        ]);
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    private function tradeStopLossValue(array $row): ?float
+    {
+        $value = $this->firstFilledValue($row, [
+            'stop_loss',
+            'stopLoss',
+            'sl',
+            'SL',
+            'price_sl',
+            'priceSl',
+            'PriceSL',
+            'raw.stop_loss',
+            'raw.stopLoss',
+            'raw.sl',
+            'raw.SL',
+            'raw.price_sl',
+            'raw.PriceSL',
+            'raw.tradeData.stopLoss',
+        ]);
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    private function tradeTakeProfitValue(array $row): ?float
+    {
+        $value = $this->firstFilledValue($row, [
+            'take_profit',
+            'takeProfit',
+            'tp',
+            'TP',
+            'price_tp',
+            'priceTp',
+            'PriceTP',
+            'raw.take_profit',
+            'raw.takeProfit',
+            'raw.tp',
+            'raw.TP',
+            'raw.price_tp',
+            'raw.PriceTP',
+            'raw.tradeData.takeProfit',
         ]);
 
         return $value !== null ? (float) $value : null;
