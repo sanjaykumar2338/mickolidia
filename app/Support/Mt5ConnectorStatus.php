@@ -46,14 +46,14 @@ class Mt5ConnectorStatus
 
         if (! $account instanceof TradingAccount) {
             $status = self::NOT_CONNECTED;
+        } elseif ($lastHeartbeatAt instanceof Carbon && $this->isRecent($lastHeartbeatAt)) {
+            $status = self::CONNECTED;
         } elseif ($lastMetricUpdateAt instanceof Carbon) {
             $status = $this->isRecent($lastMetricUpdateAt)
                 ? self::CONNECTED
                 : self::STALE;
         } elseif ($lastHeartbeatAt instanceof Carbon) {
-            $status = $this->isRecent($lastHeartbeatAt)
-                ? self::CONNECTING
-                : self::STALE;
+            $status = self::STALE;
         } elseif ($this->isConnecting($account)) {
             $status = self::CONNECTING;
         } else {

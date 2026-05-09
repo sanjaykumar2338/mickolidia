@@ -75,7 +75,7 @@ class Mt5ConnectorStatusTest extends TestCase
         $this->assertTrue($status['is_stale']);
     }
 
-    public function test_recent_heartbeat_does_not_override_stale_metric_sync(): void
+    public function test_recent_heartbeat_marks_connector_connected_even_when_metric_time_is_stale(): void
     {
         $account = new TradingAccount([
             'platform_slug' => 'mt5',
@@ -92,11 +92,11 @@ class Mt5ConnectorStatusTest extends TestCase
 
         $status = $this->connectorStatus()->forAccount($account);
 
-        $this->assertSame(Mt5ConnectorStatus::STALE, $status['status']);
-        $this->assertFalse($status['is_connected']);
+        $this->assertSame(Mt5ConnectorStatus::CONNECTED, $status['status']);
+        $this->assertTrue($status['is_connected']);
     }
 
-    public function test_recent_heartbeat_without_metric_sync_is_connecting_not_connected(): void
+    public function test_recent_heartbeat_without_metric_sync_is_connected(): void
     {
         $account = new TradingAccount([
             'platform_slug' => 'mt5',
@@ -111,8 +111,8 @@ class Mt5ConnectorStatusTest extends TestCase
 
         $status = $this->connectorStatus()->forAccount($account);
 
-        $this->assertSame(Mt5ConnectorStatus::CONNECTING, $status['status']);
-        $this->assertFalse($status['is_connected']);
+        $this->assertSame(Mt5ConnectorStatus::CONNECTED, $status['status']);
+        $this->assertTrue($status['is_connected']);
     }
 
     public function test_future_metric_timestamp_is_not_treated_as_connected(): void
