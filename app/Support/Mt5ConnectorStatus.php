@@ -46,9 +46,13 @@ class Mt5ConnectorStatus
 
         if (! $account instanceof TradingAccount) {
             $status = self::NOT_CONNECTED;
-        } elseif ($lastActivityAt instanceof Carbon) {
-            $status = $this->isRecent($lastActivityAt)
+        } elseif ($lastMetricUpdateAt instanceof Carbon) {
+            $status = $this->isRecent($lastMetricUpdateAt)
                 ? self::CONNECTED
+                : self::STALE;
+        } elseif ($lastHeartbeatAt instanceof Carbon) {
+            $status = $this->isRecent($lastHeartbeatAt)
+                ? self::CONNECTING
                 : self::STALE;
         } elseif ($this->isConnecting($account)) {
             $status = self::CONNECTING;
@@ -203,12 +207,14 @@ class Mt5ConnectorStatus
 
     private function isRecent(Carbon $timestamp): bool
     {
-        return $this->ageSeconds($timestamp) <= $this->timeoutSeconds();
+        $ageSeconds = $this->ageSeconds($timestamp);
+
+        return $ageSeconds >= 0 && $ageSeconds <= $this->timeoutSeconds();
     }
 
     private function ageSeconds(Carbon $timestamp): int
     {
-        return max((int) $timestamp->diffInSeconds(now(), false), 0);
+        return (int) $timestamp->diffInSeconds(now(), false);
     }
 
     /**
@@ -261,7 +267,7 @@ class Mt5ConnectorStatus
 
     private function formatRelativeAge(Carbon $timestamp): string
     {
-        $seconds = $this->ageSeconds($timestamp);
+        $seconds = max($this->ageSeconds($timestamp), 0);
 
         return match (true) {
             $seconds < 60 => __(':value s ago', ['value' => $seconds]),

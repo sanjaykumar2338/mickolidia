@@ -75,6 +75,61 @@ class Mt5ConnectorStatusTest extends TestCase
         $this->assertTrue($status['is_stale']);
     }
 
+    public function test_recent_heartbeat_does_not_override_stale_metric_sync(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'mt5_ea',
+            'last_synced_at' => now()->subHours(2),
+            'meta' => [
+                'mt5_sync' => [
+                    'last_successful_metric_update_at' => now()->subHours(2)->toIso8601String(),
+                    'last_ea_ping_at' => now()->subMinute()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::STALE, $status['status']);
+        $this->assertFalse($status['is_connected']);
+    }
+
+    public function test_recent_heartbeat_without_metric_sync_is_connecting_not_connected(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'mt5_ea',
+            'meta' => [
+                'mt5_sync' => [
+                    'last_ea_ping_at' => now()->subMinute()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::CONNECTING, $status['status']);
+        $this->assertFalse($status['is_connected']);
+    }
+
+    public function test_future_metric_timestamp_is_not_treated_as_connected(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'mt5_ea',
+            'last_synced_at' => now()->addMinutes(10),
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::STALE, $status['status']);
+        $this->assertFalse($status['is_connected']);
+    }
+
     public function test_no_sync_is_not_connected_even_when_stored_flag_says_connected(): void
     {
         $account = new TradingAccount([

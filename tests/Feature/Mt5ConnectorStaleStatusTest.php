@@ -67,6 +67,23 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->assertSee('Last synced');
     }
 
+    public function test_recent_ea_ping_does_not_keep_dashboard_connected_when_metrics_are_stale(): void
+    {
+        $user = User::factory()->create();
+        $account = $this->createMt5Account($user);
+        $meta = $account->meta;
+        data_set($meta, 'mt5_sync.last_ea_ping_at', now()->subMinute()->toIso8601String());
+
+        $account->forceFill(['meta' => $meta])->save();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Disconnected/Stale')
+            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.')
+            ->assertDontSee('Connector status</dt> <dd class="font-semibold text-white">Connected', false);
+    }
+
     public function test_admin_diagnostics_show_computed_stale_status_and_stored_flag_separately(): void
     {
         $user = User::factory()->create();
