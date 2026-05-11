@@ -109,6 +109,7 @@ return [
         'endpoint' => env('MT5_DEACTIVATION_ENDPOINT'),
         'token' => env('MT5_DEACTIVATION_TOKEN'),
         'timeout' => (int) env('MT5_DEACTIVATION_TIMEOUT', 10),
+        'retry_after_seconds' => (int) env('MT5_DEACTIVATION_RETRY_AFTER_SECONDS', 300),
     ],
 
     'ctrader' => [

@@ -740,6 +740,95 @@ class ChallengeDashboardTest extends TestCase
         });
     }
 
+    public function test_failed_mt5_deactivation_bridge_response_is_persisted_and_not_spammed(): void
+    {
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+        config()->set('services.mt5_deactivation.retry_after_seconds', 300);
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'message' => 'broker unavailable',
+            ], 500),
+        ]);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('mt5_deactivation_status', 'disable_failed')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('failed', $account->account_status);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_failed', $account->platform_status);
+        $this->assertSame('disable_failed', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame(500, data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_status'));
+        $this->assertSame('Bridge returned HTTP 500.', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.error'));
+        $this->assertSame('broker unavailable', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_response.message'));
+
+        $failureLog = TradingAccountSyncLog::query()
+            ->where('trading_account_id', $account->id)
+            ->where('status', 'error')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertSame('MT5 deactivation bridge request failed.', $failureLog->message);
+        $this->assertSame('Bridge returned HTTP 500.', $failureLog->error_message);
+
+        Http::assertSentCount(1);
+
+        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_failed');
+
+        Http::assertSentCount(1);
+
+        $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.clients.metrics', $account->user))
+            ->assertOk()
+            ->assertSee('EA disable status')
+            ->assertSee('Disable Failed')
+            ->assertSee('Disable failure reason')
+            ->assertSee('Bridge returned HTTP 500.')
+            ->assertSee('Disable response')
+            ->assertSee('broker unavailable');
+    }
+
+    public function test_mt5_permission_flag_can_confirm_disable_without_explicit_ack(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:20', 10000, 9500, [
+            'trade_count' => 0,
+            'trade_allowed' => false,
+        ])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame('Trading disabled by MT5', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.trading_permission_state'));
+        $this->assertFalse(data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.trading_permission_payload.trading_allowed'));
+        $this->assertNotEmpty(data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.executed_at'));
+    }
+
     public function test_final_state_emails_and_fail_actions_are_idempotent_on_repeated_sync(): void
     {
         $account = $this->createChallengeAccount('one_step');

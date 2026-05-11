@@ -45,6 +45,12 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('$50.00')
             ->assertSee('$250.00')
             ->assertSee('2 / 3')
+            ->assertSee('Today Summary')
+            ->assertSee('Today profit/loss')
+            ->assertSee('Today closed trades count')
+            ->assertSee('Today open trades count')
+            ->assertSee('Current floating PnL')
+            ->assertSee('Last synced at')
             ->assertSee('Connected')
             ->assertSee('Ignored reason')
             ->assertSee('stale_timestamp')
@@ -74,6 +80,41 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('closed');
     }
 
+    public function test_today_pnl_calculates_from_closed_trades_when_payload_omits_today_profit(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+        $payload = $snapshot->payload;
+        unset($payload['today_profit']);
+        $payload['trade_history'] = [[
+            'deal_id' => 'TODAY-CLOSED-1',
+            'symbol' => 'EURUSD',
+            'type' => 'buy',
+            'volume' => 0.25,
+            'open_price' => 1.1050,
+            'close_price' => 1.1080,
+            'open_time' => '2026-05-09 10:00:00',
+            'close_time' => '2026-05-09 11:00:00',
+            'profit' => 42,
+            'commission' => -2,
+            'swap' => -1,
+        ]];
+
+        $snapshot->forceFill([
+            'today_profit' => 0,
+            'payload' => $payload,
+        ])->save();
+        $account->forceFill(['today_profit' => 0])->save();
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('TODAY-CLOSED-1')
+            ->assertSee('Calculated from today’s closed trades')
+            ->assertSee('$39.00')
+            ->assertSee('Today closed trades count')
+            ->assertSee('1');
+    }
+
     public function test_trade_filters_work(): void
     {
         [$user] = $this->createTraderWithTrades();
@@ -89,6 +130,19 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('CLOSED-1')
             ->assertSee('XAUUSD')
             ->assertDontSee('OPEN-1');
+    }
+
+    public function test_today_trade_filter_uses_current_day_window(): void
+    {
+        [$user] = $this->createTraderWithTrades();
+
+        $this->adminGet(route('admin.clients.metrics', [
+            'user' => $user,
+            'date_filter' => 'today',
+        ]))
+            ->assertOk()
+            ->assertSee('OPEN-1')
+            ->assertDontSee('CLOSED-1');
     }
 
     public function test_trade_history_is_paginated(): void
@@ -133,6 +187,23 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('PAGE-12')
             ->assertDontSee('PAGE-30')
             ->assertDontSee('PAGE-5');
+    }
+
+    public function test_stale_connector_warning_appears(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+        $meta = $account->meta;
+        data_set($meta, 'mt5_sync.last_ea_ping_at', now()->subMinutes(10)->toIso8601String());
+        data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->subMinutes(10)->toIso8601String());
+
+        $account->forceFill([
+            'last_synced_at' => now()->subMinutes(10),
+            'meta' => $meta,
+        ])->save();
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('MT5 data may be outdated because the EA has not synced recently.');
     }
 
     public function test_unauthorized_users_cannot_access_admin_metrics_page(): void
@@ -216,6 +287,8 @@ class AdminClientMetricsTest extends TestCase
             'total_profit' => 250,
             'today_profit' => 75,
             'payload' => [
+                'today_profit' => 75,
+                'open_profit' => 25,
                 'open_positions' => [[
                     'position_id' => 'OPEN-1',
                     'symbol' => 'EURUSD',

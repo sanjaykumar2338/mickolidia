@@ -9,6 +9,12 @@ trait UsesAutomatedSender
 {
     protected function automatedEnvelope(string $subject): Envelope
     {
+        $automatedMailer = config('mail.automated_mailer');
+
+        if (is_string($automatedMailer) && $automatedMailer !== '') {
+            $this->mailer($automatedMailer);
+        }
+
         return new Envelope(
             from: new Address(
                 (string) config('mail.automated_from.address'),

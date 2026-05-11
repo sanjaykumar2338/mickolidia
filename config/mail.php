@@ -1,5 +1,19 @@
 <?php
 
+$wolforixSmtpMailer = static function (string $prefix, ?string $defaultUsername = null): array {
+    return [
+        'transport' => 'smtp',
+        'scheme' => env("{$prefix}_SCHEME", env('MAIL_SCHEME')),
+        'url' => env("{$prefix}_URL"),
+        'host' => env("{$prefix}_HOST", env('MAIL_HOST', '127.0.0.1')),
+        'port' => env("{$prefix}_PORT", env('MAIL_PORT', 2525)),
+        'username' => env("{$prefix}_USERNAME", $defaultUsername),
+        'password' => env("{$prefix}_PASSWORD"),
+        'timeout' => null,
+        'local_domain' => env("{$prefix}_EHLO_DOMAIN", env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST))),
+    ];
+};
+
 return [
 
     /*
@@ -48,6 +62,16 @@ return [
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
+
+        'support' => $wolforixSmtpMailer('MAIL_SUPPORT', 'support@wolforix.com'),
+
+        'payments' => $wolforixSmtpMailer('MAIL_PAYMENTS', 'payments@wolforix.com'),
+
+        'noreply' => $wolforixSmtpMailer('MAIL_NOREPLY', 'noreply@wolforix.com'),
+
+        'ceo' => $wolforixSmtpMailer('MAIL_CEO', 'ceo@wolforix.com'),
+
+        'partners' => $wolforixSmtpMailer('MAIL_PARTNERS', 'partners@wolforix.com'),
 
         'ses' => [
             'transport' => 'ses',
@@ -129,5 +153,7 @@ return [
         'address' => env('MAIL_AUTOMATED_FROM_ADDRESS', 'noreply@wolforix.com'),
         'name' => env('MAIL_AUTOMATED_FROM_NAME', 'Wolforix Notifications'),
     ],
+
+    'automated_mailer' => env('MAIL_AUTOMATED_MAILER', 'noreply'),
 
 ];

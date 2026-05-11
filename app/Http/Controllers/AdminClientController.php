@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\TradingAccount;
+use App\Models\TradingAccountBalanceSnapshot;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
@@ -186,6 +187,7 @@ class AdminClientController extends Controller
                 'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',
                 'breach_reason' => $selectedAccount?->failure_reason ? $this->humanizeStatus((string) $selectedAccount->failure_reason) : 'None',
+                'breach_detected_at' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
                 'breach_timestamp' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
                 'breach_rule' => isset($failureContext['rule_breached']) ? $this->humanizeStatus((string) $failureContext['rule_breached']) : 'N/A',
                 'breach_equity' => $this->formatMoneyValue($failureContext['equity_at_breach'] ?? null),
@@ -193,9 +195,17 @@ class AdminClientController extends Controller
                 'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
                 'disable_status' => isset($mt5DeactivationCurrent['status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['status']) : 'N/A',
                 'disable_requested_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['requested_at'] ?? null),
+                'disable_last_attempt_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['last_attempt_at'] ?? null),
+                'disable_attempts' => isset($mt5DeactivationCurrent['attempts']) ? (string) $mt5DeactivationCurrent['attempts'] : 'N/A',
+                'disable_executed_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['executed_at'] ?? null),
                 'disable_acknowledged_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['acknowledged_at'] ?? null),
                 'disable_source' => $mt5DeactivationCurrent['source'] ?? 'N/A',
+                'disable_bridge_status' => isset($mt5DeactivationCurrent['bridge_status']) ? (string) $mt5DeactivationCurrent['bridge_status'] : 'N/A',
+                'disable_response_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['bridge_response'] ?? null),
                 'disable_error' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'disable_failure_reason' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'mt5_trading_permission_state' => $mt5DeactivationCurrent['trading_permission_state'] ?? 'Unknown',
+                'mt5_trading_permission_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['trading_permission_payload'] ?? null),
                 'last_ea_ping_at' => $this->formatDateTimeValue($mt5SyncMeta['last_ea_ping_at'] ?? null),
                 'last_successful_metric_update_at' => $this->formatDateTimeValue($mt5SyncMeta['last_successful_metric_update_at'] ?? null),
                 'last_sync_trigger' => $mt5SyncMeta['last_sync_trigger'] ?? 'N/A',
@@ -241,8 +251,11 @@ class AdminClientController extends Controller
             'empty_message' => __('Detailed trade rows will appear here after this account receives synced MT5 open positions or trade history.'),
             'available_message' => __('This table is built from the latest persisted MT5 sync snapshots; no duplicate trade store is created.'),
         ]);
+        $latestSnapshot = $this->latestAdminMetricSnapshot($selectedAccount);
+        $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
+        $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
         $filters = $this->adminTradeFilters($request);
-        $filteredRows = $this->filterAdminTradeRows($tradesPanel['rows'] ?? [], $filters);
+        $filteredRows = $this->filterAdminTradeRows($tradeRowsForSummary, $filters);
         $tradeRows = $this->paginateAdminTradeRows($filteredRows, $request);
 
         return view('admin.clients.metrics', [
@@ -270,12 +283,14 @@ class AdminClientController extends Controller
                 'challenge_status' => $selectedAccount?->challenge_status ? $this->humanizeStatus((string) $selectedAccount->challenge_status) : 'N/A',
                 'connector_status' => $connectorStatus['label'],
                 'connector_badge' => $connectorStatus['badge'],
+                'connector_is_stale' => (bool) $connectorStatus['is_stale'],
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
-                'balance' => $this->formatMoney((float) ($selectedAccount?->balance ?? 0)),
-                'equity' => $this->formatMoney((float) ($selectedAccount?->equity ?? 0)),
-                'floating_pl' => $this->formatMoney((float) ($selectedAccount?->profit_loss ?? 0)),
-                'today_profit' => $this->formatMoney((float) ($selectedAccount?->today_profit ?? 0)),
-                'total_realized_pl' => $this->formatMoney((float) ($selectedAccount?->total_profit ?? 0)),
+                'balance' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->balance, $selectedAccount?->balance)),
+                'equity' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->equity, $selectedAccount?->equity)),
+                'floating_pl' => $this->formatMoney((float) $todaySummary['current_floating_pnl_value']),
+                'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount?->profit_loss)),
+                'today_profit' => $todaySummary['today_profit_loss'],
+                'total_realized_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount?->total_profit)),
                 'trading_days' => $selectedAccount instanceof TradingAccount
                     ? sprintf('%d / %d', (int) $selectedAccount->trading_days_completed, (int) $selectedAccount->minimum_trading_days)
                     : '0 / 0',
@@ -296,6 +311,7 @@ class AdminClientController extends Controller
             'tradeRows' => $tradeRows,
             'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
             'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
+            'todaySummary' => $todaySummary,
             'diagnostics' => [
                 'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
                 'latest_sync_log_message' => $latestSyncLog?->message ?? 'N/A',
@@ -306,8 +322,18 @@ class AdminClientController extends Controller
                 'last_payload_summary' => is_array($mt5SyncMeta['last_payload_summary'] ?? null) ? $mt5SyncMeta['last_payload_summary'] : [],
                 'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
                 'disable_status' => isset($mt5DeactivationCurrent['status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['status']) : 'N/A',
+                'disable_requested_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['requested_at'] ?? null),
+                'disable_last_attempt_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['last_attempt_at'] ?? null),
+                'disable_attempts' => isset($mt5DeactivationCurrent['attempts']) ? (string) $mt5DeactivationCurrent['attempts'] : 'N/A',
+                'disable_executed_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['executed_at'] ?? null),
                 'disable_acknowledged_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['acknowledged_at'] ?? null),
+                'disable_source' => $mt5DeactivationCurrent['source'] ?? 'N/A',
+                'disable_bridge_status' => isset($mt5DeactivationCurrent['bridge_status']) ? (string) $mt5DeactivationCurrent['bridge_status'] : 'N/A',
+                'disable_response_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['bridge_response'] ?? null),
                 'disable_error' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'disable_failure_reason' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'mt5_trading_permission_state' => $mt5DeactivationCurrent['trading_permission_state'] ?? 'Unknown',
+                'mt5_trading_permission_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['trading_permission_payload'] ?? null),
             ],
         ]);
     }
@@ -414,24 +440,219 @@ class AdminClientController extends Controller
             ->with('status', $status);
     }
 
+    private function latestAdminMetricSnapshot(?TradingAccount $account): ?TradingAccountBalanceSnapshot
+    {
+        if (! $account instanceof TradingAccount) {
+            return null;
+        }
+
+        /** @var TradingAccountBalanceSnapshot|null $snapshot */
+        $snapshot = $account->balanceSnapshots()
+            ->orderByDesc('snapshot_at')
+            ->orderByDesc('id')
+            ->first([
+                'id',
+                'trading_account_id',
+                'snapshot_at',
+                'balance',
+                'equity',
+                'profit_loss',
+                'total_profit',
+                'today_profit',
+                'payload',
+            ]);
+
+        return $snapshot;
+    }
+
     /**
-     * @return array{status:string,symbol:string,date_from:string,date_to:string}
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<string, mixed>  $connectorStatus
+     * @return array<string, mixed>
+     */
+    private function adminTodayTradeSummary(
+        ?TradingAccount $account,
+        ?TradingAccountBalanceSnapshot $latestSnapshot,
+        array $rows,
+        array $connectorStatus,
+    ): array {
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $rowCollection = collect($rows);
+        $closedToday = $rowCollection->filter(fn (array $row): bool => ($row['filter'] ?? null) === 'closed'
+            && $this->tradeRowFallsBetween($row, $todayStart, $todayEnd, preferCloseTime: true));
+        $openToday = $rowCollection->filter(fn (array $row): bool => ($row['filter'] ?? null) === 'open'
+            && $this->tradeRowFallsBetween($row, $todayStart, $todayEnd, preferCloseTime: false));
+        $currentOpenRows = $rowCollection->filter(fn (array $row): bool => ($row['filter'] ?? null) === 'open');
+
+        $todayProfitValue = $this->snapshotPayloadHasTodayProfit($latestSnapshot)
+            ? $this->adminMetricAmount($latestSnapshot?->today_profit, $account?->today_profit)
+            : null;
+        $todayProfitSource = __('Latest MT5 payload');
+
+        if ($todayProfitValue === null) {
+            $todayProfitValue = round($closedToday->sum(
+                fn (array $row): float => (float) ($row['net_result_value'] ?? $row['profit_value'] ?? 0)
+            ), 2);
+            $todayProfitSource = __('Calculated from today’s closed trades');
+        }
+
+        $openRowsWithProfit = $currentOpenRows->filter(
+            fn (array $row): bool => is_numeric($row['profit_value'] ?? null)
+        );
+
+        if ($openRowsWithProfit->isNotEmpty()) {
+            $currentFloatingPnl = round($openRowsWithProfit->sum(fn (array $row): float => (float) $row['profit_value']), 2);
+        } else {
+            $currentFloatingPnl = $this->payloadNumericValue($latestSnapshot?->payload, [
+                'open_profit',
+                'openProfit',
+                'floating_profit',
+                'floatingProfit',
+                'floating_pnl',
+                'floatingPnl',
+                'current_floating_pnl',
+                'currentFloatingPnl',
+                'raw.open_profit',
+                'raw.openProfit',
+                'raw.floating_profit',
+                'raw.floatingProfit',
+            ]);
+
+            if ($currentFloatingPnl === null) {
+                $equity = $this->adminMetricAmount($latestSnapshot?->equity, $account?->equity);
+                $balance = $this->adminMetricAmount($latestSnapshot?->balance, $account?->balance);
+                $currentFloatingPnl = round($equity - $balance, 2);
+            }
+        }
+
+        $lastSyncedAt = $connectorStatus['last_heartbeat_at']
+            ?? $connectorStatus['last_sync_at']
+            ?? $latestSnapshot?->snapshot_at
+            ?? $account?->last_synced_at;
+
+        return [
+            'today_profit_loss' => $this->formatMoney($todayProfitValue),
+            'today_profit_loss_value' => $todayProfitValue,
+            'today_profit_source' => $todayProfitSource,
+            'today_closed_trades_count' => $closedToday->count(),
+            'today_open_trades_count' => $openToday->count(),
+            'current_open_positions_count' => $currentOpenRows->count(),
+            'current_floating_pnl' => $this->formatMoney($currentFloatingPnl),
+            'current_floating_pnl_value' => $currentFloatingPnl,
+            'last_synced_at' => $this->formatDateTimeValue($lastSyncedAt),
+            'snapshot_at' => $this->formatDateTime($latestSnapshot?->snapshot_at),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function tradeRowFallsBetween(array $row, Carbon $from, Carbon $to, bool $preferCloseTime): bool
+    {
+        $timestamp = $this->parseFilterDate((string) (($preferCloseTime ? ($row['close_at'] ?? null) : null) ?: ($row['open_at'] ?? '')), endOfDay: false);
+
+        return $timestamp instanceof Carbon
+            && $timestamp->betweenIncluded($from, $to);
+    }
+
+    private function snapshotPayloadHasTodayProfit(?TradingAccountBalanceSnapshot $snapshot): bool
+    {
+        return $this->payloadHasFilledValue($snapshot?->payload, [
+            'today_profit',
+            'todayProfit',
+            'today_pnl',
+            'todayPnl',
+            'today_realized_pnl',
+            'todayRealizedPnl',
+            'raw.today_profit',
+            'raw.todayProfit',
+            'raw.today_pnl',
+            'raw.todayPnl',
+            'mt5.today_profit',
+            'mt5.todayProfit',
+        ]);
+    }
+
+    /**
+     * @param  list<string>  $paths
+     */
+    private function payloadHasFilledValue(mixed $payload, array $paths): bool
+    {
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        foreach ($paths as $path) {
+            if (! blank(Arr::get($payload, $path))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<string>  $paths
+     */
+    private function payloadNumericValue(mixed $payload, array $paths): ?float
+    {
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        foreach ($paths as $path) {
+            $value = Arr::get($payload, $path);
+
+            if (is_numeric($value)) {
+                return round((float) $value, 2);
+            }
+        }
+
+        return null;
+    }
+
+    private function adminMetricAmount(mixed $preferred, mixed $fallback = null): float
+    {
+        if (is_numeric($preferred)) {
+            return (float) $preferred;
+        }
+
+        if (is_numeric($fallback)) {
+            return (float) $fallback;
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * @return array{status:string,symbol:string,date_from:string,date_to:string,date_filter:string}
      */
     private function adminTradeFilters(Request $request): array
     {
         $status = strtolower((string) $request->query('trade_status', 'both'));
+        $dateFilter = strtolower((string) $request->query('date_filter', ''));
+        $dateFilter = $dateFilter === 'today' ? 'today' : '';
+        $dateFrom = trim((string) $request->query('date_from', ''));
+        $dateTo = trim((string) $request->query('date_to', ''));
+
+        if ($dateFilter === 'today') {
+            $dateFrom = now()->toDateString();
+            $dateTo = now()->toDateString();
+        }
 
         return [
             'status' => in_array($status, ['both', 'open', 'closed'], true) ? $status : 'both',
             'symbol' => trim((string) $request->query('symbol', '')),
-            'date_from' => trim((string) $request->query('date_from', '')),
-            'date_to' => trim((string) $request->query('date_to', '')),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'date_filter' => $dateFilter,
         ];
     }
 
     /**
      * @param  array<int, array<string, mixed>>  $rows
-     * @param  array{status:string,symbol:string,date_from:string,date_to:string}  $filters
+     * @param  array{status:string,symbol:string,date_from:string,date_to:string,date_filter:string}  $filters
      * @return array<int, array<string, mixed>>
      */
     private function filterAdminTradeRows(array $rows, array $filters): array
@@ -688,10 +909,13 @@ class AdminClientController extends Controller
 
     private function formatMoney(float $amount, string $currency = 'USD'): string
     {
+        $prefix = $amount < 0 ? '-' : '';
+        $absoluteAmount = abs($amount);
+
         return match (strtoupper($currency)) {
-            'EUR' => '€'.number_format($amount, 2),
-            'GBP' => '£'.number_format($amount, 2),
-            default => '$'.number_format($amount, 2),
+            'EUR' => $prefix.'€'.number_format($absoluteAmount, 2),
+            'GBP' => $prefix.'£'.number_format($absoluteAmount, 2),
+            default => $prefix.'$'.number_format($absoluteAmount, 2),
         };
     }
 
@@ -728,6 +952,23 @@ class AdminClientController extends Controller
         }
 
         return 'N/A';
+    }
+
+    private function formatDiagnosticPayload(mixed $payload): string
+    {
+        if ($payload === null || $payload === '') {
+            return 'N/A';
+        }
+
+        if (is_scalar($payload)) {
+            return (string) $payload;
+        }
+
+        try {
+            return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable) {
+            return 'Unable to render payload';
+        }
     }
 
     private function humanizeStatus(string $status): string

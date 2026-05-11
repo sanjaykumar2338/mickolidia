@@ -491,6 +491,7 @@
                         <span><strong class="text-white">Last EA ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
                         <span><strong class="text-white">Last metric update:</strong> {{ $providerReferences['last_successful_metric_update_at'] }}</span>
                         <span><strong class="text-white">Breach reason:</strong> {{ $providerReferences['breach_reason'] }}</span>
+                        <span><strong class="text-white">Breach detected at:</strong> {{ $providerReferences['breach_detected_at'] }}</span>
                         <span><strong class="text-white">Breach time:</strong> {{ $providerReferences['breach_timestamp'] }}</span>
                         <span><strong class="text-white">Breach rule:</strong> {{ $providerReferences['breach_rule'] }}</span>
                         <span><strong class="text-white">Equity at breach:</strong> {{ $providerReferences['breach_equity'] }}</span>
@@ -498,15 +499,25 @@
                         <span><strong class="text-white">Disable event:</strong> {{ $providerReferences['disable_event'] }}</span>
                         <span><strong class="text-white">Disable status:</strong> {{ $providerReferences['disable_status'] }}</span>
                         <span><strong class="text-white">Disable requested:</strong> {{ $providerReferences['disable_requested_at'] }}</span>
+                        <span><strong class="text-white">Disable last attempt:</strong> {{ $providerReferences['disable_last_attempt_at'] }}</span>
+                        <span><strong class="text-white">Disable attempts:</strong> {{ $providerReferences['disable_attempts'] }}</span>
+                        <span><strong class="text-white">Disable executed:</strong> {{ $providerReferences['disable_executed_at'] }}</span>
                         <span><strong class="text-white">Disable ack:</strong> {{ $providerReferences['disable_acknowledged_at'] }}</span>
                         <span><strong class="text-white">Disable source:</strong> {{ $providerReferences['disable_source'] }}</span>
+                        <span><strong class="text-white">Disable bridge status:</strong> {{ $providerReferences['disable_bridge_status'] }}</span>
+                        <span><strong class="text-white">MT5 trading permission:</strong> {{ $providerReferences['mt5_trading_permission_state'] }}</span>
                         <span><strong class="text-white">Trigger:</strong> {{ $providerReferences['last_sync_trigger'] }}</span>
                         <span><strong class="text-white">Latest log:</strong> {{ $providerReferences['latest_sync_log_status'] }}</span>
                         <span><strong class="text-white">Log completed:</strong> {{ $providerReferences['latest_sync_log_completed_at'] }}</span>
                         <span><strong class="text-white">Rejected:</strong> {{ $providerReferences['last_rejected_reason'] }} @ {{ $providerReferences['last_rejected_at'] }}</span>
                         <span><strong class="text-white">Ignored:</strong> {{ $providerReferences['last_ignored_reason'] }} @ {{ $providerReferences['last_ignored_payload_at'] }}</span>
+                        <span><strong class="text-white">Disable failure reason:</strong> {{ $providerReferences['disable_failure_reason'] }}</span>
                         <span><strong class="text-white">Disable error:</strong> {{ $providerReferences['disable_error'] }}</span>
                         <span><strong class="text-white">Log error:</strong> {{ $providerReferences['latest_sync_log_error'] }}</span>
+                    </dd>
+                    <dd class="mt-3 rounded-xl border border-white/6 bg-black/20 px-3 py-3 font-mono text-[11px] leading-5 text-slate-300">
+                        <span class="mr-3 inline-block"><strong class="text-white">Disable response payload:</strong> {{ $providerReferences['disable_response_payload'] }}</span>
+                        <span class="mr-3 inline-block"><strong class="text-white">MT5 permission payload:</strong> {{ $providerReferences['mt5_trading_permission_payload'] }}</span>
                     </dd>
                     @if (! empty($providerReferences['last_payload_summary']))
                         <dd class="mt-3 rounded-xl border border-white/6 bg-black/20 px-3 py-3 font-mono text-[11px] leading-5 text-slate-300">

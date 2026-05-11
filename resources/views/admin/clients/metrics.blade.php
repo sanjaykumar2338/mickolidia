@@ -32,7 +32,8 @@
             'Last EA sync' => $account['last_ea_sync'],
             'Balance' => $account['balance'],
             'Equity' => $account['equity'],
-            'Floating P/L' => $account['floating_pl'],
+            'Current floating PnL' => $account['floating_pl'],
+            'Snapshot P/L' => $account['snapshot_pl'],
             'Today profit' => $account['today_profit'],
             'Total realized P/L' => $account['total_realized_pl'],
             'Trading days' => $account['trading_days'],
@@ -61,6 +62,36 @@
         </div>
     </div>
 
+    @if ($account['connector_is_stale'])
+        <div class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm font-semibold text-rose-100">
+            MT5 data may be outdated because the EA has not synced recently.
+        </div>
+    @endif
+
+    <section class="mt-8 surface-panel rounded-[2rem] p-6">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">Today Summary</p>
+                <h2 class="mt-3 text-2xl font-semibold text-white">Client trading activity today</h2>
+            </div>
+            <p class="text-sm text-slate-300">Source: {{ $todaySummary['today_profit_source'] }}</p>
+        </div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            @foreach ([
+                'Today profit/loss' => $todaySummary['today_profit_loss'],
+                'Today closed trades count' => $todaySummary['today_closed_trades_count'],
+                'Today open trades count' => $todaySummary['today_open_trades_count'],
+                'Current floating PnL' => $todaySummary['current_floating_pnl'],
+                'Last synced at' => $todaySummary['last_synced_at'],
+            ] as $label => $value)
+                <div class="rounded-2xl border border-white/6 bg-black/15 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ $label }}</dt>
+                    <dd class="mt-2 text-lg font-semibold text-white">{{ $value }}</dd>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
     <section class="mt-8 surface-panel rounded-[2rem] p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -73,7 +104,7 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('admin.clients.metrics', $client['id']) }}" class="mt-6 grid gap-3 md:grid-cols-5">
+        <form method="GET" action="{{ route('admin.clients.metrics', $client['id']) }}" class="mt-6 grid gap-3 md:grid-cols-6">
             @foreach ($accountOptions as $option)
                 @if ($option['is_selected'])
                     <input type="hidden" name="account" value="{{ $option['id'] }}">
@@ -90,6 +121,10 @@
                     <option value="{{ $symbol }}" @selected($filters['symbol'] === $symbol)>{{ $symbol }}</option>
                 @endforeach
             </select>
+            <select name="date_filter" class="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white">
+                <option value="" @selected($filters['date_filter'] === '')>Any date</option>
+                <option value="today" @selected($filters['date_filter'] === 'today')>Today</option>
+            </select>
             <input type="date" name="date_from" value="{{ $filters['date_from'] }}" class="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white">
             <input type="date" name="date_to" value="{{ $filters['date_to'] }}" class="rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white">
             <button type="submit" class="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/18">
@@ -101,7 +136,7 @@
             <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                 <thead class="bg-white/3 text-xs uppercase tracking-[0.18em] text-slate-400">
                     <tr>
-                        @foreach (['Ticket / order', 'Symbol', 'Type', 'Lot size', 'Open price', 'Close price', 'Stop loss', 'Take profit', 'Open time', 'Close time', 'Commission', 'Swap', 'Profit', 'Status'] as $heading)
+                        @foreach (['Ticket / order', 'Symbol', 'Type', 'Lot size', 'Open price', 'Close price', 'Stop loss', 'Take profit', 'Open time', 'Close time', 'Commission', 'Swap', 'Profit', 'Floating PnL', 'Status'] as $heading)
                             <th class="px-4 py-3 font-semibold">{{ $heading }}</th>
                         @endforeach
                     </tr>
@@ -122,11 +157,12 @@
                             <td class="px-4 py-4">{{ $row['commission'] ?? '—' }}</td>
                             <td class="px-4 py-4">{{ $row['swap'] ?? '—' }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['profit'] }}</td>
+                            <td class="px-4 py-4 font-semibold text-white">{{ $row['filter'] === 'open' ? $row['profit'] : '—' }}</td>
                             <td class="px-4 py-4">{{ $row['filter'] === 'open' ? 'open' : 'closed' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="14" class="px-4 py-8 text-center text-slate-400">No trades match these filters.</td>
+                            <td colspan="15" class="px-4 py-8 text-center text-slate-400">No trades match these filters.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -150,7 +186,15 @@
                 'Ignored reason' => $diagnostics['last_ignored_reason'],
                 'EA disable event' => $diagnostics['disable_event'],
                 'EA disable status' => $diagnostics['disable_status'],
+                'EA disable requested' => $diagnostics['disable_requested_at'],
+                'EA disable last attempt' => $diagnostics['disable_last_attempt_at'],
+                'EA disable attempts' => $diagnostics['disable_attempts'],
+                'EA disable executed' => $diagnostics['disable_executed_at'],
                 'EA disable ack' => $diagnostics['disable_acknowledged_at'],
+                'EA disable source' => $diagnostics['disable_source'],
+                'Bridge status' => $diagnostics['disable_bridge_status'],
+                'MT5 trading permission' => $diagnostics['mt5_trading_permission_state'],
+                'Disable failure reason' => $diagnostics['disable_failure_reason'],
                 'EA disable error' => $diagnostics['disable_error'],
             ] as $label => $value)
                 <div class="rounded-2xl border border-white/6 bg-black/15 p-4">
@@ -170,5 +214,13 @@
                 </dd>
             </div>
         @endif
+
+        <div class="mt-5 rounded-2xl border border-white/6 bg-black/15 p-4">
+            <dt class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Disable response and permission payloads</dt>
+            <dd class="mt-3 grid gap-2 font-mono text-[11px] leading-5 text-slate-300 lg:grid-cols-2">
+                <span><strong class="text-white">Disable response:</strong> {{ $diagnostics['disable_response_payload'] }}</span>
+                <span><strong class="text-white">MT5 permission:</strong> {{ $diagnostics['mt5_trading_permission_payload'] }}</span>
+            </dd>
+        </div>
     </section>
 @endsection
