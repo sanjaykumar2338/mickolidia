@@ -148,6 +148,32 @@ string WFOppositeSide(const string side)
    return "";
   }
 
+bool WFJsonStringArrayContainsValue(const string json,const string value)
+  {
+   if(StringLen(value) == 0)
+      return false;
+
+   return StringFind(json,"\"" + value + "\"") >= 0;
+  }
+
+bool WFCloseReportMatchesClosedTrade(const WFCloseReport &close_report,const long position_id,const ulong row_deal_id)
+  {
+   if(!close_report.Attempted || close_report.ClosedPositionsCount <= 0)
+      return false;
+
+   string position_value = StringFormat("%I64d",position_id);
+   if(WFJsonStringArrayContainsValue(close_report.ClosedPositionIdentifiersJson,position_value))
+      return true;
+
+   if(WFJsonStringArrayContainsValue(close_report.ClosedPositionTicketsJson,position_value))
+      return true;
+
+   if(row_deal_id > 0 && WFJsonStringArrayContainsValue(close_report.ClosedPositionTicketsJson,StringFormat("%I64u",row_deal_id)))
+      return true;
+
+   return false;
+  }
+
 bool WFPositionIdentifierOpen(const long position_id)
   {
    if(position_id <= 0)
@@ -258,7 +284,10 @@ string WFBuildOpenPositionsJson(int &row_count)
    return payload;
   }
 
-string WFBuildClosedTradeHistoryJson(const WFRuntimeState &state,const datetime server_now,int &row_count)
+string WFBuildClosedTradeHistoryJson(const WFRuntimeState &state,
+                                     const datetime server_now,
+                                     int &row_count,
+                                     const WFCloseReport &close_report)
   {
    row_count = 0;
 
@@ -383,6 +412,7 @@ string WFBuildClosedTradeHistoryJson(const WFRuntimeState &state,const datetime 
          row_deal_id = rows[i].EntryDealTicket;
       string entry_price_value = rows[i].HasEntry ? WFJsonPriceValue(rows[i].Symbol,rows[i].EntryPrice) : "null";
       string exit_price_value = rows[i].HasExit ? WFJsonPriceValue(rows[i].Symbol,rows[i].ExitPrice) : "null";
+      bool auto_closed_by_breach = WFCloseReportMatchesClosedTrade(close_report,rows[i].PositionId,row_deal_id);
 
       payload += "{";
       payload += "\"deal_id\":" + StringFormat("%I64u",row_deal_id);
@@ -397,6 +427,12 @@ string WFBuildClosedTradeHistoryJson(const WFRuntimeState &state,const datetime 
       payload += ",\"profit\":" + WFJsonDoubleValue(rows[i].Profit,2);
       payload += ",\"commission\":" + WFJsonDoubleValue(rows[i].Commission,2);
       payload += ",\"swap\":" + WFJsonDoubleValue(rows[i].Swap,2);
+      if(auto_closed_by_breach)
+        {
+         payload += ",\"auto_closed_by_breach\":true";
+         payload += ",\"close_reason\":\"rule_breach\"";
+         payload += ",\"close_source\":\"wolforix_ea\"";
+        }
       payload += "}";
 
       row_count++;
@@ -497,7 +533,7 @@ string WFBuildMetricsPayload(const WFRuleSet &rules,
    int open_positions_count = 0;
    int closed_trades_count = 0;
    string open_positions_json = WFBuildOpenPositionsJson(open_positions_count);
-   string trade_history_json = WFBuildClosedTradeHistoryJson(state,server_now,closed_trades_count);
+   string trade_history_json = WFBuildClosedTradeHistoryJson(state,server_now,closed_trades_count,close_report);
    bool has_activity = (StringFind(trigger,"trade") >= 0 ||
                         StringFind(trigger,"deal") >= 0 ||
                         StringFind(trigger,"order") >= 0 ||
@@ -550,6 +586,8 @@ string WFBuildMetricsPayload(const WFRuleSet &rules,
       payload += ",\"positions_close_status\":\"" + WFJsonEscape(close_status) + "\"";
       payload += ",\"closed_positions_on_disable_count\":" + IntegerToString(close_report.ClosedPositionsCount);
       payload += ",\"positions_remaining_count\":" + IntegerToString(close_report.PositionsRemainingCount);
+      payload += ",\"closed_position_tickets\":" + close_report.ClosedPositionTicketsJson;
+      payload += ",\"closed_position_identifiers\":" + close_report.ClosedPositionIdentifiersJson;
       payload += ",\"failed_close_tickets\":" + close_report.FailedCloseTicketsJson;
       payload += ",\"close_failed_reasons\":" + close_report.CloseFailedReasonsJson;
       payload += ",\"close_result_message\":\"" + WFJsonEscape(close_report.LastMessage) + "\"";

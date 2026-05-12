@@ -525,6 +525,10 @@ bool WFCloseAllPositions(CTrade &trade,
 
    string reasons_json = "[";
    bool first_reason = true;
+   string closed_tickets_json = "[";
+   bool first_closed_ticket = true;
+   string closed_identifiers_json = "[";
+   bool first_closed_identifier = true;
 
    for(int attempt = 1; attempt <= attempts; ++attempt)
      {
@@ -543,6 +547,8 @@ bool WFCloseAllPositions(CTrade &trade,
 
          string symbol = PositionGetString(POSITION_SYMBOL);
          double volume = PositionGetDouble(POSITION_VOLUME);
+         long position_identifier = (long)PositionGetInteger(POSITION_IDENTIFIER);
+         long position_ticket = (long)PositionGetInteger(POSITION_TICKET);
          ENUM_POSITION_TYPE position_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
          int digits = (int)SymbolInfoInteger(symbol,SYMBOL_DIGITS);
          double close_price = 0.0;
@@ -571,6 +577,11 @@ bool WFCloseAllPositions(CTrade &trade,
          if(closed)
            {
             string ticket_str = StringFormat("%I64u",ticket);
+            WFAppendJsonString(closed_tickets_json,first_closed_ticket,ticket_str);
+            if(position_ticket > 0 && (ulong)position_ticket != ticket)
+               WFAppendJsonString(closed_tickets_json,first_closed_ticket,StringFormat("%I64d",position_ticket));
+            if(position_identifier > 0)
+               WFAppendJsonString(closed_identifiers_json,first_closed_identifier,StringFormat("%I64d",position_identifier));
             report.ClosedPositionsCount++;
             last_action = "Closed position " + symbol + " #" + ticket_str;
             continue;
@@ -606,7 +617,11 @@ bool WFCloseAllPositions(CTrade &trade,
         }
      }
 
+   closed_tickets_json += "]";
+   closed_identifiers_json += "]";
    reasons_json += "]";
+   report.ClosedPositionTicketsJson = closed_tickets_json;
+   report.ClosedPositionIdentifiersJson = closed_identifiers_json;
    report.CloseFailedReasonsJson = reasons_json;
    WFCollectRemainingCloseTickets(report.FailedCloseTicketsJson,report.PositionsRemainingCount);
    report.Success = (report.PositionsRemainingCount == 0);

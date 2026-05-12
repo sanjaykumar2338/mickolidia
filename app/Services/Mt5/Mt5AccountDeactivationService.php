@@ -460,6 +460,8 @@ class Mt5AccountDeactivationService
             'close_success' => $event['close_success'] ?? null,
             'closed_positions_count' => $event['closed_positions_count'] ?? null,
             'positions_remaining_count' => $event['positions_remaining_count'] ?? null,
+            'closed_position_tickets' => $event['closed_position_tickets'] ?? null,
+            'closed_position_identifiers' => $event['closed_position_identifiers'] ?? null,
             'failed_close_tickets' => $event['failed_close_tickets'] ?? null,
             'close_failed_reasons' => $event['close_failed_reasons'] ?? null,
             'close_result_message' => $event['close_result_message'] ?? null,
@@ -478,6 +480,8 @@ class Mt5AccountDeactivationService
             || array_key_exists('close_pending', $snapshot)
             || array_key_exists('positions_close_status', $snapshot)
             || array_key_exists('failed_close_tickets', $snapshot)
+            || array_key_exists('closed_position_tickets', $snapshot)
+            || array_key_exists('closed_position_identifiers', $snapshot)
             || array_key_exists('closed_positions_on_disable_count', $snapshot)
             || array_key_exists('positions_remaining_count', $snapshot);
 
@@ -491,6 +495,8 @@ class Mt5AccountDeactivationService
             ? max((int) $snapshot['positions_remaining_count'], 0)
             : (isset($snapshot['positions_count']) ? max((int) $snapshot['positions_count'], 0) : null);
         $failedTickets = array_values(array_filter((array) ($snapshot['failed_close_tickets'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
+        $closedTickets = array_values(array_filter((array) ($snapshot['closed_position_tickets'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
+        $closedIdentifiers = array_values(array_filter((array) ($snapshot['closed_position_identifiers'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
         $failedReasons = array_values(array_filter((array) ($snapshot['close_failed_reasons'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
 
         $status = (string) ($snapshot['positions_close_status'] ?? '');
@@ -510,6 +516,8 @@ class Mt5AccountDeactivationService
                 ? max((int) $snapshot['closed_positions_on_disable_count'], 0)
                 : max((int) ($snapshot['closed_positions_count'] ?? 0), 0),
             'positions_remaining_count' => $remaining,
+            'closed_position_tickets' => $closedTickets,
+            'closed_position_identifiers' => $closedIdentifiers,
             'failed_close_tickets' => $failedTickets,
             'close_failed_reasons' => $failedReasons,
             'message' => $snapshot['close_result_message'] ?? null,
@@ -556,6 +564,8 @@ class Mt5AccountDeactivationService
             $event['close_success'] = $closeState['success'] ?? null;
             $event['closed_positions_count'] = $closeState['closed_positions_count'] ?? null;
             $event['positions_remaining_count'] = $closeState['positions_remaining_count'] ?? null;
+            $event['closed_position_tickets'] = $closeState['closed_position_tickets'] ?? null;
+            $event['closed_position_identifiers'] = $closeState['closed_position_identifiers'] ?? null;
             $event['failed_close_tickets'] = $closeState['failed_close_tickets'] ?? null;
             $event['close_failed_reasons'] = $closeState['close_failed_reasons'] ?? null;
             $event['close_result_message'] = $closeState['message'] ?? null;

@@ -158,7 +158,7 @@
                             <td class="px-4 py-4">{{ $row['swap'] ?? '—' }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['profit'] }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['filter'] === 'open' ? $row['profit'] : '—' }}</td>
-                            <td class="px-4 py-4">{{ $row['filter'] === 'open' ? 'open' : 'closed' }}</td>
+                            <td class="px-4 py-4">{{ ($row['auto_closed_by_breach'] ?? false) ? 'auto closed by breach' : ($row['filter'] === 'open' ? 'open' : 'closed') }}</td>
                         </tr>
                     @empty
                         <tr>
@@ -225,6 +225,8 @@
             <dd class="mt-3 grid gap-2 font-mono text-[11px] leading-5 text-slate-300 lg:grid-cols-2">
                 <span><strong class="text-white">Disable response:</strong> {{ $diagnostics['disable_response_payload'] }}</span>
                 <span><strong class="text-white">MT5 permission:</strong> {{ $diagnostics['mt5_trading_permission_payload'] }}</span>
+                <span><strong class="text-white">Closed position tickets:</strong> {{ $diagnostics['closed_position_tickets'] }}</span>
+                <span><strong class="text-white">Closed position identifiers:</strong> {{ $diagnostics['closed_position_identifiers'] }}</span>
                 <span><strong class="text-white">Failed close tickets:</strong> {{ $diagnostics['failed_close_tickets'] }}</span>
                 <span><strong class="text-white">Close failed reasons:</strong> {{ $diagnostics['close_failed_reasons'] }}</span>
             </dd>

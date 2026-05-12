@@ -99,6 +99,8 @@ struct WFCloseReport
    int               ClosedPositionsCount;
    int               FailedCloseCount;
    int               PositionsRemainingCount;
+   string            ClosedPositionTicketsJson;
+   string            ClosedPositionIdentifiersJson;
    string            FailedCloseTicketsJson;
    string            CloseFailedReasonsJson;
    string            LastMessage;
@@ -253,6 +255,8 @@ void WFResetCloseReport(WFCloseReport &report)
    report.ClosedPositionsCount      = 0;
    report.FailedCloseCount          = 0;
    report.PositionsRemainingCount   = PositionsTotal();
+   report.ClosedPositionTicketsJson = "[]";
+   report.ClosedPositionIdentifiersJson = "[]";
    report.FailedCloseTicketsJson    = "[]";
    report.CloseFailedReasonsJson    = "[]";
    report.LastMessage               = "No close attempt required";

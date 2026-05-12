@@ -80,6 +80,52 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('closed');
     }
 
+    public function test_breach_closed_trade_rows_are_labeled_without_hiding_profit(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+        $payload = $snapshot->payload;
+        $payload['trade_history'][0]['profit'] = -5;
+        $payload['trade_history'][0]['auto_closed_by_breach'] = true;
+        $payload['trade_history'][0]['close_reason'] = 'rule_breach';
+        $payload['trade_history'][0]['close_source'] = 'wolforix_ea';
+
+        $snapshot->forceFill([
+            'payload' => $payload,
+        ])->save();
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('CLOSED-1')
+            ->assertSee('auto closed by breach')
+            ->assertSee('-$5.00');
+    }
+
+    public function test_breach_closed_trade_rows_can_be_labeled_from_close_ack_references(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+        $payload = $snapshot->payload;
+        $payload['trade_history'][0]['position_id'] = 'AUTO-CLOSED-POSITION-1';
+        $payload['trade_history'][0]['profit'] = 5;
+
+        $snapshot->forceFill([
+            'payload' => $payload,
+        ])->save();
+
+        $meta = $account->meta;
+        $meta['mt5_deactivation']['current']['closed_position_identifiers'] = ['AUTO-CLOSED-POSITION-1'];
+
+        $account->forceFill([
+            'meta' => $meta,
+        ])->save();
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('auto closed by breach')
+            ->assertSee('$5.00');
+    }
+
     public function test_today_pnl_calculates_from_closed_trades_when_payload_omits_today_profit(): void
     {
         [$user, $account] = $this->createTraderWithTrades();

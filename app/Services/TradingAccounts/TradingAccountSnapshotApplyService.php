@@ -571,6 +571,8 @@ class TradingAccountSnapshotApplyService
             'closed_positions_on_disable_count' => $snapshot['closed_positions_on_disable_count'] ?? null,
             'positions_close_status' => $snapshot['positions_close_status'] ?? null,
             'close_success' => $snapshot['close_success'] ?? null,
+            'closed_position_tickets' => $snapshot['closed_position_tickets'] ?? null,
+            'closed_position_identifiers' => $snapshot['closed_position_identifiers'] ?? null,
             'failed_close_tickets' => $snapshot['failed_close_tickets'] ?? null,
             'open_positions_rows' => is_array($openPositions) ? count($openPositions) : null,
             'trade_history_rows' => is_array($tradeHistory) ? count($tradeHistory) : null,

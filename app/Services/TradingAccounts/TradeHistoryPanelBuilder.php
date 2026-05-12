@@ -164,10 +164,11 @@ class TradeHistoryPanelBuilder
         $snapshotReferenceAt = $snapshotTradePayload['snapshot_at'] instanceof Carbon
             ? $snapshotTradePayload['snapshot_at']->copy()
             : null;
+        $autoCloseReferences = $this->autoCloseReferences($account);
         $openRows = collect($snapshotTradePayload['open_positions'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, true, $snapshotReferenceAt));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, true, $snapshotReferenceAt, $autoCloseReferences));
         $closedRows = collect($snapshotTradePayload['trade_history'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, false, $snapshotReferenceAt));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, false, $snapshotReferenceAt, $autoCloseReferences));
 
         $rows = $openRows
             ->concat($closedRows)
@@ -254,7 +255,7 @@ class TradeHistoryPanelBuilder
     /**
      * @return array<string, mixed>
      */
-    private function buildTradeRow(array $row, bool $isOpen, ?Carbon $snapshotReferenceAt = null): array
+    private function buildTradeRow(array $row, bool $isOpen, ?Carbon $snapshotReferenceAt = null, array $autoCloseReferences = []): array
     {
         $openedAt = $this->tradeOpenTimestamp($row);
         $closedAt = $isOpen ? null : $this->tradeCloseTimestamp($row);
@@ -264,6 +265,7 @@ class TradeHistoryPanelBuilder
         $netResult = $this->tradeNetResultValue($row, $pnl, $commission, $swap);
         $resultAmount = $netResult ?? $pnl ?? 0.0;
         $status = $this->tradeStatus($isOpen, $resultAmount);
+        $autoClosedByBreach = ! $isOpen && $this->tradeAutoClosedByBreach($row, $autoCloseReferences);
         $sideLabel = $this->tradeSideLabel($this->tradeSideValue($row));
 
         return [
@@ -272,8 +274,10 @@ class TradeHistoryPanelBuilder
             'symbol' => $this->tradeSymbolLabel($row),
             'side' => $sideLabel,
             'side_tone' => $this->tradeSideTone($sideLabel),
-            'status' => $status['label'],
-            'status_tone' => $status['tone'],
+            'status' => $autoClosedByBreach ? __('Auto closed by breach') : $status['label'],
+            'status_tone' => $autoClosedByBreach ? 'amber' : $status['tone'],
+            'auto_closed_by_breach' => $autoClosedByBreach,
+            'close_reason' => $autoClosedByBreach ? __('Rule breach') : null,
             'open_date' => $this->formatTradeDate($openedAt),
             'close_date' => $isOpen ? __('Ongoing') : $this->formatTradeDate($closedAt),
             'open_at' => $openedAt?->toIso8601String(),
@@ -738,6 +742,105 @@ class TradeHistoryPanelBuilder
         }
 
         return round($pnl + ($commission ?? 0) + ($swap ?? 0), 2);
+    }
+
+    private function tradeAutoClosedByBreach(array $row, array $autoCloseReferences = []): bool
+    {
+        $flag = $this->payloadBooleanValue($row, [
+            'auto_closed_by_breach',
+            'autoClosedByBreach',
+            'closed_by_breach',
+            'closedByBreach',
+            'raw.auto_closed_by_breach',
+            'raw.autoClosedByBreach',
+            'raw.closed_by_breach',
+            'raw.closedByBreach',
+        ]);
+
+        if ($flag !== null) {
+            return $flag;
+        }
+
+        if ($autoCloseReferences !== [] && $this->tradeMatchesAutoCloseReference($row, $autoCloseReferences)) {
+            return true;
+        }
+
+        $reason = $this->firstFilledValue($row, [
+            'close_reason',
+            'closeReason',
+            'reason',
+            'raw.close_reason',
+            'raw.closeReason',
+            'raw.reason',
+        ]);
+
+        if (! is_string($reason) || trim($reason) === '') {
+            return false;
+        }
+
+        return in_array(strtolower(trim($reason)), [
+            'rule_breach',
+            'breach',
+            'daily_loss_breached',
+            'max_drawdown_breached',
+            'max_loss_breached',
+        ], true);
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function autoCloseReferences(TradingAccount $account): array
+    {
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $values = [];
+
+        foreach ([
+            'mt5_deactivation.current.closed_position_tickets',
+            'mt5_deactivation.current.closed_position_identifiers',
+            'mt5_deactivation.last_close_state.closed_position_tickets',
+            'mt5_deactivation.last_close_state.closed_position_identifiers',
+        ] as $path) {
+            foreach ((array) Arr::get($meta, $path, []) as $value) {
+                if (! is_scalar($value) || trim((string) $value) === '') {
+                    continue;
+                }
+
+                $values[] = trim((string) $value);
+            }
+        }
+
+        return array_fill_keys(array_values(array_unique($values)), true);
+    }
+
+    /**
+     * @param  array<string, true>  $autoCloseReferences
+     */
+    private function tradeMatchesAutoCloseReference(array $row, array $autoCloseReferences): bool
+    {
+        foreach ([
+            'position_id',
+            'positionId',
+            'position_ticket',
+            'positionTicket',
+            'raw.position_id',
+            'raw.positionId',
+            'raw.position_ticket',
+            'raw.positionTicket',
+        ] as $key) {
+            $value = Arr::get($row, $key);
+
+            if (! is_scalar($value)) {
+                continue;
+            }
+
+            $reference = trim((string) $value);
+            if ($reference !== '' && isset($autoCloseReferences[$reference])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function tradeSideValue(array $row): mixed
