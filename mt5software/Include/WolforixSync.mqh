@@ -490,6 +490,7 @@ string WFBuildMetricsUrl(const string api_base_url,const string account_referenc
 string WFBuildMetricsPayload(const WFRuleSet &rules,
                              const WFRuntimeState &state,
                              const WFMetrics &metrics,
+                             const WFCloseReport &close_report,
                              const datetime server_now,
                              const string trigger)
   {
@@ -534,6 +535,25 @@ string WFBuildMetricsPayload(const WFRuleSet &rules,
    payload += ",\"server_time\":\"" + WFJsonEscape(WFSerializeDateTime(server_now)) + "\"";
    payload += ",\"open_positions\":" + open_positions_json;
    payload += ",\"trade_history\":" + trade_history_json;
+   if(state.TradingBlocked || state.Status == WF_STATUS_FAILED || close_report.Attempted)
+     {
+      bool close_success = close_report.Success && close_report.PositionsRemainingCount == 0;
+      string close_status = close_success ? "closed_successfully" : "close_failed";
+      if(!close_report.Attempted && close_report.PositionsRemainingCount <= 0)
+         close_status = "closed_successfully";
+      else if(!close_success && close_report.FailedCloseCount <= 0)
+         close_status = "close_pending";
+
+      payload += ",\"trading_blocked_ack\":" + WFJsonBool(close_success);
+      payload += ",\"close_success\":" + WFJsonBool(close_success);
+      payload += ",\"close_pending\":" + WFJsonBool(!close_success && close_report.FailedCloseCount <= 0);
+      payload += ",\"positions_close_status\":\"" + WFJsonEscape(close_status) + "\"";
+      payload += ",\"closed_positions_on_disable_count\":" + IntegerToString(close_report.ClosedPositionsCount);
+      payload += ",\"positions_remaining_count\":" + IntegerToString(close_report.PositionsRemainingCount);
+      payload += ",\"failed_close_tickets\":" + close_report.FailedCloseTicketsJson;
+      payload += ",\"close_failed_reasons\":" + close_report.CloseFailedReasonsJson;
+      payload += ",\"close_result_message\":\"" + WFJsonEscape(close_report.LastMessage) + "\"";
+     }
    payload += "}";
    return payload;
   }
@@ -557,6 +577,7 @@ bool WFSendMetricsToBackend(const string api_base_url,
                             const WFRuleSet &rules,
                             const WFRuntimeState &state,
                             const WFMetrics &metrics,
+                            const WFCloseReport &close_report,
                             const datetime server_now,
                             const string trigger,
                             WFSyncState &sync_state)
@@ -585,7 +606,7 @@ bool WFSendMetricsToBackend(const string api_base_url,
      }
 
    string url = WFBuildMetricsUrl(base_url,reference);
-   string payload = WFBuildMetricsPayload(rules,state,metrics,server_now,trigger);
+   string payload = WFBuildMetricsPayload(rules,state,metrics,close_report,server_now,trigger);
    string headers = "Authorization: Bearer " + token + "\r\n";
    headers += "Content-Type: application/json\r\n";
    headers += "Accept: application/json\r\n";

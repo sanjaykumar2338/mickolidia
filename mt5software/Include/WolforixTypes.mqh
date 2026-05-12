@@ -92,6 +92,18 @@ struct WFSyncState
    string            LastResponseBody;
   };
 
+struct WFCloseReport
+  {
+   bool              Attempted;
+   bool              Success;
+   int               ClosedPositionsCount;
+   int               FailedCloseCount;
+   int               PositionsRemainingCount;
+   string            FailedCloseTicketsJson;
+   string            CloseFailedReasonsJson;
+   string            LastMessage;
+  };
+
 void WFPopulateRuleSet(const WFChallengePreset preset,WFRuleSet &rules)
   {
    switch(preset)
@@ -232,6 +244,18 @@ void WFResetSyncState(WFSyncState &state)
    state.LastFailureReason = "";
    state.LastRequestUrl    = "";
    state.LastResponseBody  = "";
+  }
+
+void WFResetCloseReport(WFCloseReport &report)
+  {
+   report.Attempted                 = false;
+   report.Success                   = true;
+   report.ClosedPositionsCount      = 0;
+   report.FailedCloseCount          = 0;
+   report.PositionsRemainingCount   = PositionsTotal();
+   report.FailedCloseTicketsJson    = "[]";
+   report.CloseFailedReasonsJson    = "[]";
+   report.LastMessage               = "No close attempt required";
   }
 
 #endif

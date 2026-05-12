@@ -44,12 +44,16 @@ class TradingAccountMetricsController extends Controller
         'phase_index',
         'positions_count',
         'closed_positions_count',
+        'positions_remaining_count',
+        'closed_positions_on_disable_count',
     ];
 
     private const BOOLEAN_FIELDS = [
         'has_activity',
         'is_funded',
         'trading_blocked_ack',
+        'close_success',
+        'close_pending',
     ];
 
     private const TRIMMED_STRING_FIELDS = [
@@ -64,6 +68,8 @@ class TradingAccountMetricsController extends Controller
         'challenge_status',
         'sync_trigger',
         'server_day',
+        'positions_close_status',
+        'close_result_message',
     ];
 
     public function __invoke(
@@ -147,7 +153,15 @@ class TradingAccountMetricsController extends Controller
                 'volume' => ['nullable', 'numeric', 'min:0'],
                 'positions_count' => ['nullable', 'integer', 'min:0'],
                 'closed_positions_count' => ['nullable', 'integer', 'min:0'],
+                'positions_remaining_count' => ['nullable', 'integer', 'min:0'],
+                'closed_positions_on_disable_count' => ['nullable', 'integer', 'min:0'],
                 'trading_blocked_ack' => ['nullable', 'boolean'],
+                'close_success' => ['nullable', 'boolean'],
+                'close_pending' => ['nullable', 'boolean'],
+                'failed_close_tickets' => ['nullable', 'array'],
+                'close_failed_reasons' => ['nullable', 'array'],
+                'positions_close_status' => ['nullable', 'string', 'max:255'],
+                'close_result_message' => ['nullable', 'string', 'max:500'],
                 'phase_index' => ['nullable', 'integer', 'min:1'],
                 'account_phase' => ['nullable', 'string', 'max:255'],
                 'sync_trigger' => ['nullable', 'string', 'max:255'],
@@ -768,7 +782,12 @@ class TradingAccountMetricsController extends Controller
             'trade_count' => $payload['trade_count'] ?? null,
             'activity_count' => $payload['activity_count'] ?? null,
             'positions_count' => $payload['positions_count'] ?? null,
+            'positions_remaining_count' => $payload['positions_remaining_count'] ?? null,
             'closed_positions_count' => $payload['closed_positions_count'] ?? null,
+            'closed_positions_on_disable_count' => $payload['closed_positions_on_disable_count'] ?? null,
+            'positions_close_status' => $payload['positions_close_status'] ?? null,
+            'close_success' => $payload['close_success'] ?? null,
+            'failed_close_tickets' => $payload['failed_close_tickets'] ?? null,
             'open_positions_rows' => is_array($payload['open_positions'] ?? null) ? count($payload['open_positions']) : null,
             'trade_history_rows' => is_array($payload['trade_history'] ?? null) ? count($payload['trade_history']) : null,
             'has_activity' => $payload['has_activity'] ?? null,

@@ -681,6 +681,56 @@ class ChallengeDashboardTest extends TestCase
             ->assertSee('Disabled');
     }
 
+    public function test_failed_account_does_not_reach_disabled_until_positions_close_successfully(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:20', 10000, 9500, [
+            'trading_blocked_ack' => false,
+            'close_success' => false,
+            'close_pending' => false,
+            'positions_close_status' => 'close_failed',
+            'positions_remaining_count' => 1,
+            'closed_positions_on_disable_count' => 0,
+            'failed_close_tickets' => ['123456'],
+            'close_failed_reasons' => ['ticket=123456 retcode=10027 error=4752 message=auto trading disabled by client'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_required', true)
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $account->refresh();
+
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('close_failed', data_get($account->meta, 'mt5_deactivation.current.close_status'));
+        $this->assertSame(['123456'], data_get($account->meta, 'mt5_deactivation.current.failed_close_tickets'));
+
+        $this->pushMetrics($account, '2026-04-05 09:00:40', 10000, 9500, [
+            'trading_blocked_ack' => true,
+            'close_success' => true,
+            'positions_close_status' => 'closed_successfully',
+            'positions_remaining_count' => 0,
+            'closed_positions_on_disable_count' => 1,
+            'failed_close_tickets' => [],
+        ])
+            ->assertOk()
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('closed_successfully', data_get($account->meta, 'mt5_deactivation.current.close_status'));
+        $this->assertSame(1, data_get($account->meta, 'mt5_deactivation.current.closed_positions_count'));
+    }
+
     public function test_failed_account_support_notification_can_be_enabled_without_duplicates(): void
     {
         config()->set('wolforix.support.notify_failures', true);

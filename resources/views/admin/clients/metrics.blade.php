@@ -194,6 +194,11 @@
                 'EA disable source' => $diagnostics['disable_source'],
                 'Bridge status' => $diagnostics['disable_bridge_status'],
                 'MT5 trading permission' => $diagnostics['mt5_trading_permission_state'],
+                'Position close status' => $diagnostics['close_status'],
+                'Position close success' => $diagnostics['close_success'],
+                'Closed positions' => $diagnostics['closed_positions_count'],
+                'Positions remaining' => $diagnostics['positions_remaining_count'],
+                'Close result' => $diagnostics['close_result_message'],
                 'Disable failure reason' => $diagnostics['disable_failure_reason'],
                 'EA disable error' => $diagnostics['disable_error'],
             ] as $label => $value)
@@ -220,6 +225,8 @@
             <dd class="mt-3 grid gap-2 font-mono text-[11px] leading-5 text-slate-300 lg:grid-cols-2">
                 <span><strong class="text-white">Disable response:</strong> {{ $diagnostics['disable_response_payload'] }}</span>
                 <span><strong class="text-white">MT5 permission:</strong> {{ $diagnostics['mt5_trading_permission_payload'] }}</span>
+                <span><strong class="text-white">Failed close tickets:</strong> {{ $diagnostics['failed_close_tickets'] }}</span>
+                <span><strong class="text-white">Close failed reasons:</strong> {{ $diagnostics['close_failed_reasons'] }}</span>
             </dd>
         </div>
     </section>

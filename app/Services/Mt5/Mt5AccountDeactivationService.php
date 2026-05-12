@@ -154,8 +154,19 @@ class Mt5AccountDeactivationService
     public function acknowledgeIfNeeded(TradingAccount $account, array $snapshot): TradingAccount
     {
         $permissionState = $this->tradingPermissionState($snapshot);
-        $acknowledged = (bool) ($snapshot['trading_blocked_ack'] ?? false)
-            || $this->permissionConfirmsDisabled($permissionState);
+        $closeState = $this->closeState($snapshot);
+        $explicitCloseFailure = ($closeState['status'] ?? null) === 'close_failed';
+        $explicitClosePending = ($closeState['status'] ?? null) === 'close_pending';
+        $permissionAcknowledged = $this->permissionConfirmsDisabled($permissionState)
+            && ! $explicitCloseFailure
+            && ! $explicitClosePending
+            && $this->closeStateAllowsDisable($snapshot, $closeState);
+        $acknowledged = (! $explicitCloseFailure
+            && ! $explicitClosePending
+            && ((bool) ($snapshot['trading_blocked_ack'] ?? false)
+                && $this->closeStateAllowsDisable($snapshot, $closeState)
+            ))
+            || $permissionAcknowledged;
 
         /** @var TradingAccount|null $freshAccount */
         $freshAccount = TradingAccount::query()->find($account->id);
@@ -165,11 +176,15 @@ class Mt5AccountDeactivationService
         }
 
         if (! $acknowledged) {
+            if ($closeState !== []) {
+                $freshAccount = $this->recordCloseState($freshAccount, $closeState);
+            }
+
             if ($permissionState['state'] !== 'unknown') {
                 return $this->recordPermissionState($freshAccount, $snapshot, $permissionState);
             }
 
-            return $account;
+            return $freshAccount;
         }
 
         $meta = $this->meta($freshAccount);
@@ -193,6 +208,15 @@ class Mt5AccountDeactivationService
             $event['source'] = $this->permissionConfirmsDisabled($permissionState)
                 ? 'mt5_permission_state'
                 : 'mt5_metrics_ack';
+            if ($closeState !== []) {
+                $event['close_status'] = $closeState['status'] ?? null;
+                $event['close_success'] = $closeState['success'] ?? null;
+                $event['closed_positions_count'] = $closeState['closed_positions_count'] ?? null;
+                $event['positions_remaining_count'] = $closeState['positions_remaining_count'] ?? null;
+                $event['failed_close_tickets'] = $closeState['failed_close_tickets'] ?? null;
+                $event['close_failed_reasons'] = $closeState['close_failed_reasons'] ?? null;
+                $event['close_result_message'] = $closeState['message'] ?? null;
+            }
             $event['trading_permission_state'] = $permissionState['label'];
             $event['trading_permission_payload'] = $permissionState['payload'];
             $events[$key] = $event;
@@ -206,6 +230,9 @@ class Mt5AccountDeactivationService
         Arr::set($meta, 'mt5_deactivation.events', $events);
         Arr::set($meta, 'mt5_deactivation.last_confirmed_at', $acknowledgedAt);
         Arr::set($meta, 'mt5_deactivation.last_permission_state', $permissionState);
+        if ($closeState !== []) {
+            Arr::set($meta, 'mt5_deactivation.last_close_state', $closeState);
+        }
         $currentEventKey = (string) Arr::get($meta, 'mt5_deactivation.current_event_key', '');
 
         if ($currentEventKey !== '' && isset($events[$currentEventKey]) && is_array($events[$currentEventKey])) {
@@ -429,9 +456,133 @@ class Mt5AccountDeactivationService
             'bridge_response' => $event['bridge_response'] ?? null,
             'trading_permission_state' => $event['trading_permission_state'] ?? null,
             'trading_permission_payload' => $event['trading_permission_payload'] ?? null,
+            'close_status' => $event['close_status'] ?? null,
+            'close_success' => $event['close_success'] ?? null,
+            'closed_positions_count' => $event['closed_positions_count'] ?? null,
+            'positions_remaining_count' => $event['positions_remaining_count'] ?? null,
+            'failed_close_tickets' => $event['failed_close_tickets'] ?? null,
+            'close_failed_reasons' => $event['close_failed_reasons'] ?? null,
+            'close_result_message' => $event['close_result_message'] ?? null,
             'failed_at' => $event['failed_at'] ?? null,
             'last_error' => $event['error'] ?? null,
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @return array<string, mixed>
+     */
+    private function closeState(array $snapshot): array
+    {
+        $hasExplicitCloseState = array_key_exists('close_success', $snapshot)
+            || array_key_exists('close_pending', $snapshot)
+            || array_key_exists('positions_close_status', $snapshot)
+            || array_key_exists('failed_close_tickets', $snapshot)
+            || array_key_exists('closed_positions_on_disable_count', $snapshot)
+            || array_key_exists('positions_remaining_count', $snapshot);
+
+        if (! $hasExplicitCloseState) {
+            return [];
+        }
+
+        $closeSuccess = array_key_exists('close_success', $snapshot) ? (bool) $snapshot['close_success'] : null;
+        $closePending = (bool) ($snapshot['close_pending'] ?? false);
+        $remaining = isset($snapshot['positions_remaining_count'])
+            ? max((int) $snapshot['positions_remaining_count'], 0)
+            : (isset($snapshot['positions_count']) ? max((int) $snapshot['positions_count'], 0) : null);
+        $failedTickets = array_values(array_filter((array) ($snapshot['failed_close_tickets'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
+        $failedReasons = array_values(array_filter((array) ($snapshot['close_failed_reasons'] ?? []), static fn (mixed $value): bool => $value !== null && $value !== ''));
+
+        $status = (string) ($snapshot['positions_close_status'] ?? '');
+        if ($status === '') {
+            $status = match (true) {
+                $closeSuccess === true && ($remaining === null || $remaining === 0) => 'closed_successfully',
+                $failedTickets !== [] || $closeSuccess === false => 'close_failed',
+                $closePending => 'close_pending',
+                default => 'close_pending',
+            };
+        }
+
+        return array_filter([
+            'status' => $status,
+            'success' => $closeSuccess,
+            'closed_positions_count' => isset($snapshot['closed_positions_on_disable_count'])
+                ? max((int) $snapshot['closed_positions_on_disable_count'], 0)
+                : max((int) ($snapshot['closed_positions_count'] ?? 0), 0),
+            'positions_remaining_count' => $remaining,
+            'failed_close_tickets' => $failedTickets,
+            'close_failed_reasons' => $failedReasons,
+            'message' => $snapshot['close_result_message'] ?? null,
+            'reported_at' => now()->toIso8601String(),
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $snapshot
+     * @param  array<string, mixed>  $closeState
+     */
+    private function closeStateAllowsDisable(array $snapshot, array $closeState): bool
+    {
+        if ($closeState === []) {
+            return true;
+        }
+
+        if (($closeState['success'] ?? null) === true && (int) ($closeState['positions_remaining_count'] ?? 0) === 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $closeState
+     */
+    private function recordCloseState(TradingAccount $account, array $closeState): TradingAccount
+    {
+        $meta = $this->meta($account);
+        $events = (array) Arr::get($meta, 'mt5_deactivation.events', []);
+        $currentEventKey = (string) Arr::get($meta, 'mt5_deactivation.current_event_key', '');
+
+        foreach ($events as $key => $event) {
+            if (! is_array($event)) {
+                continue;
+            }
+
+            if (! in_array((string) ($event['status'] ?? ''), self::ACTIVE_DISABLE_STATUSES, true)) {
+                continue;
+            }
+
+            $event['close_status'] = $closeState['status'] ?? null;
+            $event['close_success'] = $closeState['success'] ?? null;
+            $event['closed_positions_count'] = $closeState['closed_positions_count'] ?? null;
+            $event['positions_remaining_count'] = $closeState['positions_remaining_count'] ?? null;
+            $event['failed_close_tickets'] = $closeState['failed_close_tickets'] ?? null;
+            $event['close_failed_reasons'] = $closeState['close_failed_reasons'] ?? null;
+            $event['close_result_message'] = $closeState['message'] ?? null;
+            $event['last_close_reported_at'] = $closeState['reported_at'] ?? now()->toIso8601String();
+
+            $events[$key] = $event;
+        }
+
+        Arr::set($meta, 'mt5_deactivation.events', $events);
+        Arr::set($meta, 'mt5_deactivation.last_close_state', $closeState);
+
+        if ($currentEventKey !== '' && isset($events[$currentEventKey]) && is_array($events[$currentEventKey])) {
+            Arr::set($meta, 'mt5_deactivation.current', $this->currentStatePayload($currentEventKey, $events[$currentEventKey]));
+        }
+
+        $account->forceFill(['meta' => $meta])->save();
+
+        if (($closeState['status'] ?? null) === 'close_failed') {
+            Log::warning('MT5 position closure failed before final deactivation acknowledgement.', [
+                'trading_account_id' => $account->id,
+                'account_reference' => $account->account_reference,
+                'failed_close_tickets' => $closeState['failed_close_tickets'] ?? [],
+                'close_failed_reasons' => $closeState['close_failed_reasons'] ?? [],
+            ]);
+        }
+
+        return $account->fresh() ?? $account;
     }
 
     /**

@@ -24,11 +24,14 @@ input int               TradeEventSyncCooldownSeconds = 2;
 input int               FloatingSyncMinIntervalSeconds = 3;
 input int               OpenPositionHeartbeatSeconds = 10;
 input double            FloatingSyncThresholdAmount = 10.0;
+input int               CloseRetryAttempts       = 3;
+input int               CloseRetryDelayMilliseconds = 1500;
 
 WFRuleSet      g_rules;
 WFRuntimeState g_state;
 WFMetrics      g_metrics;
 WFSyncState    g_sync_state;
+WFCloseReport  g_close_report;
 CTrade         g_trade;
 string         g_state_file_path = "";
 string         g_snapshot_file_path = "";
@@ -199,6 +202,7 @@ bool MaybeSyncMetricsWithPolicy(const bool force_sync,
                                         g_rules,
                                         g_state,
                                         g_metrics,
+                                        g_close_report,
                                         now,
                                         trigger,
                                         g_sync_state);
@@ -309,7 +313,11 @@ void EvaluateEngine(const string source)
    if(g_state.Status == WF_STATUS_FAILED || g_state.TradingBlocked)
      {
       string last_trade_action = g_last_action;
-      bool positions_ok = WFCloseAllPositions(g_trade,last_trade_action);
+      bool positions_ok = WFCloseAllPositions(g_trade,
+                                              g_close_report,
+                                              last_trade_action,
+                                              CloseRetryAttempts,
+                                              CloseRetryDelayMilliseconds);
       bool orders_ok    = WFDeleteAllPendingOrders(g_trade,last_trade_action);
 
       if(last_trade_action != g_last_action)
@@ -320,7 +328,14 @@ void EvaluateEngine(const string source)
 
       if(!positions_ok || !orders_ok)
         {
-         g_last_action = "Trading block active; retrying close/delete";
+         g_state.TradingBlocked = false;
+         g_last_action = "Close pending; retrying before trading block";
+         MarkStateDirty();
+        }
+      else if(!g_state.TradingBlocked)
+        {
+         g_state.TradingBlocked = true;
+         g_last_action = "Positions closed; trading block confirmed";
          MarkStateDirty();
         }
      }
@@ -336,6 +351,7 @@ int OnInit()
    WFPopulateRuleSet(InpChallengePreset,g_rules);
    WFEnsureStorageFolders();
    WFResetSyncState(g_sync_state);
+   WFResetCloseReport(g_close_report);
    g_sync_state.Enabled = EnableSync;
    if(EnableSync)
       g_sync_state.LastResult = "Pending";

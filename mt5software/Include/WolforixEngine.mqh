@@ -5,6 +5,8 @@
 #include "WolforixTypes.mqh"
 
 #define WF_ENGINE_VERSION 1
+#define WF_TRADE_RETCODE_CLIENT_DISABLES_AT 10027
+#define WF_ERROR_TRADE_DISABLED 4752
 
 datetime WFServerNow()
   {
@@ -465,9 +467,27 @@ void WFComputeMetrics(const WFRuleSet &rules,
                                     !metrics.DailyLossBreached && !metrics.MaxDrawdownBreached);
   }
 
-bool WFCloseAllPositions(CTrade &trade,string &last_action)
+void WFAppendJsonString(string &payload,bool &first,const string value)
   {
-   bool all_ok = true;
+   if(!first)
+      payload += ",";
+   first = false;
+
+   string escaped = value;
+   StringReplace(escaped,"\\","\\\\");
+   StringReplace(escaped,"\"","\\\"");
+   StringReplace(escaped,"\r","\\r");
+   StringReplace(escaped,"\n","\\n");
+   StringReplace(escaped,"\t","\\t");
+   payload += "\"" + escaped + "\"";
+  }
+
+void WFCollectRemainingCloseTickets(string &tickets_json,int &remaining_count)
+  {
+   tickets_json = "[";
+   bool first = true;
+   remaining_count = 0;
+
    for(int i = PositionsTotal() - 1; i >= 0; --i)
      {
       ulong ticket = PositionGetTicket(i);
@@ -477,20 +497,126 @@ bool WFCloseAllPositions(CTrade &trade,string &last_action)
       if(!PositionSelectByTicket(ticket))
          continue;
 
-      string symbol = PositionGetString(POSITION_SYMBOL);
-      if(trade.PositionClose(ticket))
+      WFAppendJsonString(tickets_json,first,StringFormat("%I64u",ticket));
+      remaining_count++;
+     }
+
+   tickets_json += "]";
+  }
+
+bool WFCloseAllPositions(CTrade &trade,
+                         WFCloseReport &report,
+                         string &last_action,
+                         const int retry_attempts,
+                         const int retry_delay_ms)
+  {
+   WFResetCloseReport(report);
+   int attempts = MathMax(retry_attempts,1);
+   int delay_ms = MathMax(retry_delay_ms,250);
+   int initial_positions = PositionsTotal();
+
+   report.Attempted = (initial_positions > 0);
+   if(initial_positions <= 0)
+     {
+      report.Success = true;
+      report.LastMessage = "No open positions to close";
+      return true;
+     }
+
+   string reasons_json = "[";
+   bool first_reason = true;
+
+   for(int attempt = 1; attempt <= attempts; ++attempt)
+     {
+      int positions_before_attempt = PositionsTotal();
+      if(positions_before_attempt <= 0)
+         break;
+
+      for(int i = PositionsTotal() - 1; i >= 0; --i)
         {
-         string ticket_str = StringFormat("%I64u",ticket);
-         last_action = "Closed position " + symbol + " #" + ticket_str;
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0)
+            continue;
+
+         if(!PositionSelectByTicket(ticket))
+            continue;
+
+         string symbol = PositionGetString(POSITION_SYMBOL);
+         double volume = PositionGetDouble(POSITION_VOLUME);
+         ENUM_POSITION_TYPE position_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+         int digits = (int)SymbolInfoInteger(symbol,SYMBOL_DIGITS);
+         double close_price = 0.0;
+         if(position_type == POSITION_TYPE_BUY)
+            close_price = SymbolInfoDouble(symbol,SYMBOL_BID);
+         else if(position_type == POSITION_TYPE_SELL)
+            close_price = SymbolInfoDouble(symbol,SYMBOL_ASK);
+
+         ResetLastError();
+         bool closed = trade.PositionClose(ticket);
+         uint retcode = trade.ResultRetcode();
+         int error_code = GetLastError();
+         string result_message = trade.ResultRetcodeDescription();
+
+         PrintFormat("Wolforix Close: attempt=%d ticket=%I64u symbol=%s volume=%.2f close_price=%.*f retcode=%u error=%d message=%s",
+                     attempt,
+                     ticket,
+                     symbol,
+                     volume,
+                     digits,
+                     close_price,
+                     retcode,
+                     error_code,
+                     result_message);
+
+         if(closed)
+           {
+            string ticket_str = StringFormat("%I64u",ticket);
+            report.ClosedPositionsCount++;
+            last_action = "Closed position " + symbol + " #" + ticket_str;
+            continue;
+           }
+
+         report.FailedCloseCount++;
+         string reason = StringFormat("ticket=%I64u symbol=%s volume=%.2f close_price=%.*f retcode=%u error=%d message=%s",
+                                      ticket,
+                                      symbol,
+                                      volume,
+                                      digits,
+                                      close_price,
+                                      retcode,
+                                      error_code,
+                                      result_message);
+         WFAppendJsonString(reasons_json,first_reason,reason);
+         last_action = "Close failed retcode=" + IntegerToString((int)retcode);
+
+         if(retcode == WF_TRADE_RETCODE_CLIENT_DISABLES_AT || error_code == WF_ERROR_TRADE_DISABLED)
+           {
+            Print("Wolforix Close: Cannot close positions because MT5 AutoTrading is disabled. Enable Algo Trading to allow EA to close positions.");
+            report.LastMessage = "Cannot close positions because MT5 AutoTrading is disabled. Enable Algo Trading to allow EA to close positions.";
+           }
         }
-      else
+
+      if(PositionsTotal() <= 0)
+         break;
+
+      if(attempt < attempts)
         {
-         all_ok = false;
-         last_action = "Close failed retcode=" + IntegerToString((int)trade.ResultRetcode());
-         PrintFormat("Wolforix: failed to close position #%I64u on %s (retcode %u, error %d)",ticket,symbol,trade.ResultRetcode(),GetLastError());
+         PrintFormat("Wolforix Close: retrying remaining positions after %d ms",delay_ms);
+         Sleep(delay_ms);
         }
      }
-   return all_ok;
+
+   reasons_json += "]";
+   report.CloseFailedReasonsJson = reasons_json;
+   WFCollectRemainingCloseTickets(report.FailedCloseTicketsJson,report.PositionsRemainingCount);
+   report.Success = (report.PositionsRemainingCount == 0);
+
+   if(report.Success)
+      report.LastMessage = "All open positions closed successfully before final trading block";
+   else if(StringLen(report.LastMessage) == 0 || report.LastMessage == "No close attempt required")
+      report.LastMessage = "Some open positions could not be closed before final trading block";
+
+   return report.Success;
   }
 
 bool WFDeleteAllPendingOrders(CTrade &trade,string &last_action)
@@ -524,7 +650,7 @@ bool WFDeleteAllPendingOrders(CTrade &trade,string &last_action)
 void WFMarkFailure(WFRuntimeState &state,const datetime now,const string reason)
   {
    state.Status         = WF_STATUS_FAILED;
-   state.TradingBlocked = true;
+   state.TradingBlocked = false;
    state.BreachReason   = reason;
    state.FailedAt       = now;
   }
