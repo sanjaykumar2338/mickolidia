@@ -70,7 +70,12 @@ class TrialAccountCreator
         ]);
 
         try {
-            Mail::to($user->email)->send(new TrialAccountInstructionsMail($user));
+            $mailerName = config('mail.automated_mailer');
+            $mailer = is_string($mailerName) && $mailerName !== ''
+                ? Mail::mailer($mailerName)
+                : Mail::mailer();
+
+            $mailer->to($user->email)->send(new TrialAccountInstructionsMail($user));
 
             Log::info('trial.instructions_email_sent', [
                 'user_id' => $user->id,
