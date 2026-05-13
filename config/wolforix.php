@@ -298,6 +298,8 @@ return [
 
     'mt5_connector' => [
         'base_url' => env('WOLFORIX_MT5_CONNECTOR_BASE_URL'),
+        'release_label' => env('WOLFORIX_MT5_CONNECTOR_RELEASE_LABEL', '2026.05.13 recovery build'),
+        'download_path' => env('WOLFORIX_MT5_CONNECTOR_DOWNLOAD_PATH', 'mt5software/wolforix-mt5-connector.zip'),
     ],
 
     'admin_auth' => [

@@ -298,12 +298,14 @@ class TrialController extends Controller
 
     private function setupCopy(string $mode): array
     {
+        $connectorReleaseLabel = (string) config('wolforix.mt5_connector.release_label', 'latest recovery build');
+
         if ($mode === 'mt5') {
             return [
                 'mode' => 'mt5',
                 'eyebrow' => __('MT5 Setup'),
                 'title' => __('Connect Your MT5 Account to Wolforix'),
-                'description' => __('Install the Wolforix MT5 Connector EA, attach it to an active MetaTrader 5 chart, and let Wolforix synchronize dashboard metrics, P/L, trading days, and account statistics.'),
+                'description' => __('Install the updated Wolforix MT5 Connector EA (:version), attach it to an active MetaTrader 5 chart, and let Wolforix synchronize dashboard metrics, P/L, trading days, and account statistics.', ['version' => $connectorReleaseLabel]),
                 'desktop_note_title' => __('MT5 Desktop Required'),
                 'desktop_note' => __('This setup must be completed from a Windows or Mac computer using MetaTrader 5 Desktop.'),
                 'setup_time_note' => __('Setup time: approximately 5–10 minutes. No coding required.'),
@@ -319,7 +321,7 @@ class TrialController extends Controller
                     ],
                     [
                         'title' => __('Step 3: Download the Preconfigured Connector'),
-                        'body' => __('Download the package from this page so the connector is prepared for your Wolforix account.'),
+                        'body' => __('Download the latest updated package (:version) from this page so the connector is prepared for your Wolforix account.', ['version' => $connectorReleaseLabel]),
                     ],
                     [
                         'title' => __('Step 4: Install the EA in MetaTrader 5'),
@@ -337,7 +339,7 @@ class TrialController extends Controller
                 'show_demo_section' => false,
                 'pre_connector_label' => __('MT5 Account'),
                 'pre_connector_title' => __('Use this page for an active MT5 account'),
-                'pre_connector_copy' => __('Your Wolforix account can only update once the connector is installed, attached to a chart, and successfully synced from MetaTrader 5.'),
+                'pre_connector_copy' => __('Your Wolforix account can only update once the updated connector (:version) is installed, attached to a chart, and successfully synced from MetaTrader 5.', ['version' => $connectorReleaseLabel]),
                 'important_items' => [
                     __('Keep MetaTrader 5 open while the EA is syncing.'),
                     __('Use the preconfigured package when possible.'),
@@ -377,12 +379,14 @@ class TrialController extends Controller
 
     private function connectorCopy(string $mode): array
     {
+        $connectorReleaseLabel = (string) config('wolforix.mt5_connector.release_label', 'latest recovery build');
+
         if ($mode === 'mt5') {
             return [
                 'title' => __('Connect Your MT5 Account to Wolforix'),
-                'description' => __('Connection happens inside MetaTrader 5 using the Wolforix connector Expert Advisor. Install the connector, allow the Wolforix WebRequest URLs, paste these details into the EA inputs, then attach it to an active chart.'),
+                'description' => __('Connection happens inside MetaTrader 5 using the updated Wolforix connector Expert Advisor (:version). Install the connector, allow the Wolforix WebRequest URLs, paste these details into the EA inputs, then attach it to an active chart.', ['version' => $connectorReleaseLabel]),
                 'steps' => [
-                    __('Download and extract the Wolforix MT5 connector zip package.'),
+                    __('Download and extract the updated Wolforix MT5 connector zip package (:version).', ['version' => $connectorReleaseLabel]),
                     __('In MetaTrader 5, click File > Open Data Folder. When File Explorer opens, open MQL5 > Experts and paste the WolforixRuleEngineEA.mq5 file or extracted connector folder there. Copy the Include files into MQL5 > Include.'),
                     __('Open MetaTrader 5 and enable Algo Trading.'),
                     __('Open Tools > Options > Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.'),

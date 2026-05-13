@@ -1,6 +1,6 @@
 <x-emails.layout
     :status="__('MT5 Connector')"
-    :title="__('Connect MT5 to Wolforix')"
+    :title="__('Install the Updated MT5 Connector')"
     :primary-url="$dashboardUrl"
     :primary-label="__('Open Wolforix Dashboard')"
     :secondary-url="$setupUrl"
@@ -9,7 +9,7 @@
 >
     <x-slot:intro>
         Hello,<br><br>
-        Your MT5 account is active. To start synchronizing Wolforix dashboard metrics, install and attach the Wolforix MT5 Connector EA inside MetaTrader 5.
+        We recently released updated Wolforix MT5 Connector improvements ({{ $connectorReleaseLabel }}). Please log in to your Wolforix dashboard, download the latest EA connector files, and reconnect MetaTrader 5 so live synchronization, rule monitoring, and dashboard metrics work correctly.
     </x-slot:intro>
 
     <x-slot:cards>
@@ -20,8 +20,8 @@
                         <tr>
                             <td style="padding:18px 18px 16px 18px;">
                                 <p style="margin:0; color:#f4b74a; font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;">Account</p>
-                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Active</p>
-                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">Your MT5 account is ready for connector sync.</p>
+                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Updated</p>
+                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">The latest connector files are ready in your dashboard.</p>
                             </td>
                         </tr>
                     </table>
@@ -31,8 +31,8 @@
                         <tr>
                             <td style="padding:18px 18px 16px 18px;">
                                 <p style="margin:0; color:#f4b74a; font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;">Metrics</p>
-                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Pending Sync</p>
-                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">P/L, days, and stats update after connection.</p>
+                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Reconnect</p>
+                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">Reconnect MT5 to restore live sync and rule checks.</p>
                             </td>
                         </tr>
                     </table>
@@ -42,8 +42,8 @@
                         <tr>
                             <td style="padding:18px 18px 16px 18px;">
                                 <p style="margin:0; color:#f4b74a; font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;">EA</p>
-                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Required</p>
-                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">Attach the connector to an active MT5 chart.</p>
+                                <p style="margin:10px 0 0 0; color:#ffffff; font-size:19px; font-weight:700;">Free Account</p>
+                                <p style="margin:8px 0 0 0; color:#94a3b8; font-size:13px; line-height:1.7;">A free funded account opportunity will be provided.</p>
                             </td>
                         </tr>
                     </table>
@@ -56,11 +56,15 @@
         Required Setup
     </p>
     <p style="margin:12px 0 0 0; color:#ffffff; font-size:24px; font-weight:700; line-height:1.3;">
-        Install the Wolforix MT5 Connector EA
+        Install the updated Wolforix MT5 Connector EA
     </p>
 
     <p style="margin:14px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        Your MT5 account is active, but dashboard metrics only update after the connector is installed, attached to a chart, and successfully synced. The connector sends Wolforix the dashboard metrics needed for real-time P/L, trading days, account statistics, and profit updates.
+        Some earlier MT5 sync/connectivity issues may have affected proper rule tracking and monitoring. To make sure your Wolforix dashboard reads the correct live data, please replace the previous connector files with the latest package from your dashboard, attach the updated EA to MT5, and allow it to complete a fresh sync.
+    </p>
+
+    <p style="margin:14px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
+        Thank you sincerely for your patience and support while we stabilized the connector. As a goodwill step, Wolforix will provide you with a completely free funded account opportunity so you can continue testing your trading skills with us.
     </p>
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18px; border-collapse:collapse;">
@@ -68,8 +72,9 @@
             'Log in to your Wolforix dashboard.',
             'Open the MT5 setup page.',
             'Watch the MT5 setup tutorial video.',
-            'Download the preconfigured connector package from the setup page.',
+            'Download the latest preconfigured connector package from the setup page.',
             'Extract the ZIP file on your computer.',
+            'Replace any older Wolforix connector files with the updated package files.',
             'Copy WolforixRuleEngineEA.mq5 into MQL5/Experts.',
             'Copy the Include files from the package into MQL5/Include.',
             'Open MetaTrader 5.',
@@ -99,7 +104,7 @@
     <div style="margin:22px 0 0 0; padding:18px; border:1px solid rgba(248,213,124,0.22); border-radius:18px; background-color:rgba(244,183,74,0.08);">
         <p style="margin:0; color:#f4b74a; font-size:12px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;">Important</p>
         <p style="margin:12px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-            Until the EA connector is installed, attached to a chart, and successfully synced, dashboard metrics such as real-time P/L, trading days, account statistics, and profit updates may not appear.
+            Please use the updated connector package from your dashboard rather than an older ZIP. Until the updated EA connector is installed, attached to a chart, and successfully synced, live P/L, rule monitoring, trading days, account statistics, and profit updates may not appear correctly.
         </p>
     </div>
 
@@ -114,6 +119,8 @@
     <p style="margin:8px 0 0 0; color:#94a3b8; font-size:12px; line-height:1.8; word-break:break-all;">
         Dashboard: <a href="{{ $dashboardUrl }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ $dashboardUrl }}</a><br>
         Setup page: <a href="{{ $setupUrl }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ $setupUrl }}</a><br>
+        Latest connector ZIP: <a href="{{ $connectorDownloadUrl }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ $connectorDownloadUrl }}</a><br>
+        Connector release: {{ $connectorReleaseLabel }}<br>
         Setup video: <a href="{{ $setupVideoUrl }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ $setupVideoUrl }}</a>
     </p>
 

@@ -3913,6 +3913,7 @@ class WolforixPlatformTest extends TestCase
                 && str_contains($mail->render(), 'Watch Setup Video')
                 && str_contains($mail->render(), 'https://www.wolforix.com/mt5_demo.mp4')
                 && str_contains($mail->render(), 'mt5software/wolforix-mt5-connector.zip')
+                && str_contains($mail->render(), '2026.05.13 recovery build')
                 && str_contains($mail->render(), route('trial.setup'))
                 && str_contains($mail->render(), (string) config('wolforix.support.email'));
         });

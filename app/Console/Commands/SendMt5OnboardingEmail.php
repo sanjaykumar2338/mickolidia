@@ -24,16 +24,16 @@ class SendMt5OnboardingEmail extends Command
         }
 
         Mail::to($email)
-            ->cc('Support@wolforix.com')
+            ->cc('ceo@wolforix.com')
             ->send(new Mt5OnboardingSetupMail());
 
         Log::info('Wolforix MT5 onboarding email sent.', [
             'email' => $email,
-            'cc' => 'Support@wolforix.com',
+            'cc' => 'ceo@wolforix.com',
             'template' => Mt5OnboardingSetupMail::class,
         ]);
 
-        $this->info('Wolforix MT5 onboarding email sent to: '.$email.'; CC: Support@wolforix.com');
+        $this->info('Wolforix MT5 onboarding email sent to: '.$email.'; CC: ceo@wolforix.com');
 
         return self::SUCCESS;
     }

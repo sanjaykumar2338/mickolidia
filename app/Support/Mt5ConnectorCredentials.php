@@ -104,7 +104,7 @@ class Mt5ConnectorCredentials
 
     private function downloadPath(): string
     {
-        $zipPath = 'mt5software/wolforix-mt5-connector.zip';
+        $zipPath = (string) config('wolforix.mt5_connector.download_path', 'mt5software/wolforix-mt5-connector.zip');
 
         if (file_exists(public_path($zipPath))) {
             return $zipPath;

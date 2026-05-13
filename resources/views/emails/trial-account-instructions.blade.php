@@ -8,6 +8,7 @@
 >
     @php
         $setupVideoUrl = 'https://www.wolforix.com/mt5_demo.mp4';
+        $connectorReleaseLabel = (string) config('wolforix.mt5_connector.release_label', 'latest recovery build');
     @endphp
 
     <x-slot:intro>
@@ -29,7 +30,7 @@
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        Then log in to your Wolforix dashboard, open the trial setup page, watch the setup video, download your preconfigured MT5 connector package, and install the EA inside MetaTrader 5. Connection happens inside MT5, not through a website form.
+        Then log in to your Wolforix dashboard, open the trial setup page, watch the setup video, download your updated preconfigured MT5 connector package ({{ $connectorReleaseLabel }}), and install the EA inside MetaTrader 5. Connection happens inside MT5, not through a website form.
     </p>
 
     <div style="margin:22px 0 0 0; padding:18px; border:1px solid rgba(248,213,124,0.22); border-radius:18px; background-color:rgba(244,183,74,0.08);">
@@ -50,7 +51,7 @@
         <li>Create your IC Markets MT5 demo account.</li>
         <li>Log in to your Wolforix dashboard and open the trial setup page.</li>
         <li>Watch the MT5 setup tutorial video before connecting your account.</li>
-        <li>Download the preconfigured Wolforix MT5 connector package from your trial dashboard.</li>
+        <li>Download the updated preconfigured Wolforix MT5 connector package ({{ $connectorReleaseLabel }}) from your trial dashboard.</li>
         <li>In MetaTrader 5, click File &gt; Open Data Folder. When File Explorer opens, go to MQL5 &gt; Experts and paste the WolforixRuleEngineEA.mq5 file or extracted connector folder there.</li>
         <li>Copy the Include files from the connector package into MQL5 &gt; Include.</li>
         <li>Open Tools &gt; Options &gt; Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.</li>
@@ -62,6 +63,8 @@
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
         Connector download:
         <a href="{{ asset('mt5software/wolforix-mt5-connector.zip') }}" style="color:#f8d57c; font-weight:700; text-decoration:none;">{{ asset('mt5software/wolforix-mt5-connector.zip') }}</a>
+        <br>
+        Connector release: {{ $connectorReleaseLabel }}
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
