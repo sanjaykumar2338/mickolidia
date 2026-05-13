@@ -158,7 +158,7 @@
                             <td class="px-4 py-4">{{ $row['swap'] ?? '—' }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['profit'] }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['filter'] === 'open' ? $row['profit'] : '—' }}</td>
-                            <td class="px-4 py-4">{{ ($row['auto_closed_by_breach'] ?? false) ? 'auto closed by breach' : ($row['filter'] === 'open' ? 'open' : 'closed') }}</td>
+                            <td class="px-4 py-4">{{ ($row['auto_closed_by_breach'] ?? false) ? 'auto closed by breach' : strtolower((string) ($row['status'] ?? ($row['filter'] === 'open' ? 'open' : 'closed'))) }}</td>
                         </tr>
                     @empty
                         <tr>

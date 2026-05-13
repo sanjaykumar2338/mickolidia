@@ -165,10 +165,11 @@ class TradeHistoryPanelBuilder
             ? $snapshotTradePayload['snapshot_at']->copy()
             : null;
         $autoCloseReferences = $this->autoCloseReferences($account);
+        $autoCloseContext = $this->autoCloseContext($account);
         $openRows = collect($snapshotTradePayload['open_positions'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, true, $snapshotReferenceAt, $autoCloseReferences));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, true, $snapshotReferenceAt, $autoCloseReferences, $autoCloseContext));
         $closedRows = collect($snapshotTradePayload['trade_history'] ?? [])
-            ->map(fn (array $row): array => $this->buildTradeRow($row, false, $snapshotReferenceAt, $autoCloseReferences));
+            ->map(fn (array $row): array => $this->buildTradeRow($row, false, $snapshotReferenceAt, $autoCloseReferences, $autoCloseContext));
 
         $rows = $openRows
             ->concat($closedRows)
@@ -255,8 +256,13 @@ class TradeHistoryPanelBuilder
     /**
      * @return array<string, mixed>
      */
-    private function buildTradeRow(array $row, bool $isOpen, ?Carbon $snapshotReferenceAt = null, array $autoCloseReferences = []): array
-    {
+    private function buildTradeRow(
+        array $row,
+        bool $isOpen,
+        ?Carbon $snapshotReferenceAt = null,
+        array $autoCloseReferences = [],
+        array $autoCloseContext = [],
+    ): array {
         $openedAt = $this->tradeOpenTimestamp($row);
         $closedAt = $isOpen ? null : $this->tradeCloseTimestamp($row);
         $commission = $this->tradeCommissionValue($row);
@@ -265,7 +271,7 @@ class TradeHistoryPanelBuilder
         $netResult = $this->tradeNetResultValue($row, $pnl, $commission, $swap);
         $resultAmount = $netResult ?? $pnl ?? 0.0;
         $status = $this->tradeStatus($isOpen, $resultAmount);
-        $autoClosedByBreach = ! $isOpen && $this->tradeAutoClosedByBreach($row, $autoCloseReferences);
+        $autoClosedByBreach = ! $isOpen && $this->tradeAutoClosedByBreach($row, $autoCloseReferences, $autoCloseContext, $closedAt);
         $sideLabel = $this->tradeSideLabel($this->tradeSideValue($row));
 
         return [
@@ -744,8 +750,12 @@ class TradeHistoryPanelBuilder
         return round($pnl + ($commission ?? 0) + ($swap ?? 0), 2);
     }
 
-    private function tradeAutoClosedByBreach(array $row, array $autoCloseReferences = []): bool
-    {
+    private function tradeAutoClosedByBreach(
+        array $row,
+        array $autoCloseReferences = [],
+        array $autoCloseContext = [],
+        ?Carbon $closedAt = null,
+    ): bool {
         $flag = $this->payloadBooleanValue($row, [
             'auto_closed_by_breach',
             'autoClosedByBreach',
@@ -775,16 +785,20 @@ class TradeHistoryPanelBuilder
         ]);
 
         if (! is_string($reason) || trim($reason) === '') {
-            return false;
+            return $this->tradeFallsInsideAutoCloseWindow($closedAt, $autoCloseContext);
         }
 
-        return in_array(strtolower(trim($reason)), [
+        if (in_array(strtolower(trim($reason)), [
             'rule_breach',
             'breach',
             'daily_loss_breached',
             'max_drawdown_breached',
             'max_loss_breached',
-        ], true);
+        ], true)) {
+            return true;
+        }
+
+        return $this->tradeFallsInsideAutoCloseWindow($closedAt, $autoCloseContext);
     }
 
     /**
@@ -811,6 +825,56 @@ class TradeHistoryPanelBuilder
         }
 
         return array_fill_keys(array_values(array_unique($values)), true);
+    }
+
+    /**
+     * @return array{closed_count:int,breach_at:?Carbon,close_ack_at:?Carbon}
+     */
+    private function autoCloseContext(TradingAccount $account): array
+    {
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $current = (array) data_get($meta, 'mt5_deactivation.current', []);
+        $failureContext = is_array($account->failure_context) ? $account->failure_context : [];
+        $closedCount = max(
+            (int) data_get($current, 'closed_positions_count', 0),
+            (int) data_get($current, 'closed_positions_on_disable_count', 0),
+            count((array) data_get($current, 'closed_position_tickets', [])),
+            count((array) data_get($current, 'closed_position_identifiers', [])),
+        );
+
+        return [
+            'closed_count' => $closedCount,
+            'breach_at' => $this->parseTradeTimestamp($failureContext['breach_timestamp'] ?? $account->failed_at),
+            'close_ack_at' => $this->parseTradeTimestamp(
+                $current['acknowledged_at']
+                    ?? $current['executed_at']
+                    ?? $current['last_attempt_at']
+                    ?? $current['requested_at']
+                    ?? null
+            ),
+        ];
+    }
+
+    /**
+     * @param  array{closed_count?:int,breach_at?:?Carbon,close_ack_at?:?Carbon}  $autoCloseContext
+     */
+    private function tradeFallsInsideAutoCloseWindow(?Carbon $closedAt, array $autoCloseContext): bool
+    {
+        if (! $closedAt instanceof Carbon || (int) ($autoCloseContext['closed_count'] ?? 0) <= 0) {
+            return false;
+        }
+
+        $breachAt = $autoCloseContext['breach_at'] ?? null;
+        if (! $breachAt instanceof Carbon) {
+            return false;
+        }
+
+        $windowStart = $breachAt->copy()->subMinutes(2);
+        $windowEnd = ($autoCloseContext['close_ack_at'] ?? null) instanceof Carbon
+            ? $autoCloseContext['close_ack_at']->copy()->addMinutes(10)
+            : $breachAt->copy()->addMinutes(30);
+
+        return $closedAt->greaterThanOrEqualTo($windowStart) && $closedAt->lessThanOrEqualTo($windowEnd);
     }
 
     /**

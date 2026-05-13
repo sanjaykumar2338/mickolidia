@@ -126,6 +126,46 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('$5.00');
     }
 
+    public function test_breach_closed_trade_rows_can_be_labeled_from_breach_close_window(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+        $payload = $snapshot->payload;
+        $payload['trade_history'][0]['deal_id'] = 'WINDOW-CLOSED-1';
+        $payload['trade_history'][0]['position_id'] = 'MT5-HISTORY-ID-DID-NOT-MATCH-CLOSE-ACK';
+        $payload['trade_history'][0]['close_time'] = '2026-05-09 12:01:00';
+        $payload['trade_history'][0]['profit'] = -15;
+
+        $snapshot->forceFill([
+            'snapshot_at' => '2026-05-09 12:01:30',
+            'payload' => $payload,
+        ])->save();
+
+        $meta = $account->meta;
+        $meta['mt5_deactivation']['current'] = array_merge($meta['mt5_deactivation']['current'], [
+            'closed_positions_count' => 1,
+            'requested_at' => '2026-05-09T12:00:05+00:00',
+            'executed_at' => '2026-05-09T12:01:30+00:00',
+        ]);
+
+        $account->forceFill([
+            'challenge_status' => 'failed',
+            'failure_reason' => 'daily_loss_breached',
+            'failed_at' => '2026-05-09 12:00:00',
+            'failure_context' => [
+                'breach_timestamp' => '2026-05-09T12:00:00+00:00',
+                'rule_breached' => 'daily_loss_breached',
+            ],
+            'meta' => $meta,
+        ])->save();
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('WINDOW-CLOSED-1')
+            ->assertSee('auto closed by breach')
+            ->assertSee('-$15.00');
+    }
+
     public function test_today_pnl_calculates_from_closed_trades_when_payload_omits_today_profit(): void
     {
         [$user, $account] = $this->createTraderWithTrades();
