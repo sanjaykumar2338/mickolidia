@@ -7,6 +7,7 @@ use App\Models\Mt5PromoCode;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -95,10 +96,14 @@ class RepairMt5PoolCredentials extends Command
                     return self::SUCCESS;
                 }
 
-                $entry->forceFill([
-                    'password' => $password,
-                    'investor_password' => $investorPassword,
-                ])->save();
+                DB::table($entry->getTable())
+                    ->where('id', $entry->id)
+                    ->where('login', self::ALLOWED_LOGIN)
+                    ->update([
+                        'password' => Crypt::encryptString($password),
+                        'investor_password' => Crypt::encryptString($investorPassword),
+                        'updated_at' => now(),
+                    ]);
 
                 /** @var Mt5AccountPoolEntry $reloadedEntry */
                 $reloadedEntry = Mt5AccountPoolEntry::query()->findOrFail($entry->id);
