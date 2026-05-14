@@ -4109,9 +4109,9 @@ body.wolfi-modal-scroll-lock {
     line-height: 1.6;
 }
 
-.community-access-card--instagram {
-    --community-accent: rgba(217, 70, 239, 0.28);
-    --community-accent-strong: #f5d0fe;
+.community-access-card--tiktok {
+    --community-accent: rgba(236, 72, 153, 0.24);
+    --community-accent-strong: #a5f3fc;
 }
 
 .community-access-card--telegram {
@@ -4255,13 +4255,13 @@ body.wolfi-modal-scroll-lock {
     background: rgba(239, 68, 68, 0.35);
 }
 
-.community-icon-card--instagram .community-card-icon {
-    color: #fbcfe8;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.14), rgba(124, 58, 237, 0.14));
+.community-icon-card--tiktok .community-card-icon {
+    color: #a5f3fc;
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(236, 72, 153, 0.13));
 }
 
-.community-icon-card--instagram::before {
-    background: rgba(217, 70, 239, 0.3);
+.community-icon-card--tiktok::before {
+    background: rgba(236, 72, 153, 0.3);
 }
 
 .community-icon-card--telegram .community-card-icon {

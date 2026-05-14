@@ -44,31 +44,31 @@
     $communityImageLocale = explode('-', strtolower(str_replace('_', '-', app()->getLocale())))[0] ?: 'en';
     $communityImageSets = [
         'en' => [
-            'instagram' => 'photo/mickolidia-attachments-englsih/14A600E1-31EF-45B2-9371-117EE60A3E51.png',
+            'tiktok' => 'tiktok.webp',
             'telegram' => 'photo/mickolidia-attachments-englsih/866B008F-4AC9-4341-ADBB-74AF5B7C0584.png',
             'whatsapp' => 'photo/mickolidia-attachments-englsih/7C41556E-3E1A-407A-97CD-22A84970EA82.png',
             'youtube' => 'photo/mickolidia-attachments-englsih/DECE0553-9101-497D-AF85-8B62BB21A3EA.png',
         ],
         'es' => [
-            'instagram' => 'photo/mickolidia-attachments-spanish/4D02D06C-F184-40F3-A843-11FCB7F7BB9D.png',
+            'tiktok' => 'tiktok.webp',
             'telegram' => 'photo/mickolidia-attachments-spanish/2E180800-8FFA-44FA-B231-C84F32D425C8.png',
             'whatsapp' => 'photo/mickolidia-attachments-spanish/3D3A8551-F94D-4B95-AD71-51B381E7D2A5.png',
             'youtube' => 'photo/mickolidia-attachments-spanish/A3EBA35E-6E4D-42C6-86C3-60261AB729ED.png',
         ],
         'fr' => [
-            'instagram' => 'photo/mickolidia-attachments-france/90ED6E5E-2AE5-4212-B38E-890B7339D195.png',
+            'tiktok' => 'tiktok.webp',
             'youtube' => 'photo/mickolidia-attachments-france/B737867F-DFB9-46B1-85DF-2FAD244F49ED.png',
         ],
         'hi' => [
-            'instagram' => 'photo/mickolidia-attachments-hindi/691B4344-37E5-4D47-A838-98BCB9F8CDAD.png',
+            'tiktok' => 'tiktok.webp',
             'youtube' => 'photo/mickolidia-attachments-hindi/C33805EC-5A03-4ACC-AA9C-A448309EFB33.png',
         ],
         'it' => [
-            'instagram' => 'photo/mickolidia-attachments-italian/BCA6ED34-FB3A-4360-9A8D-6BB99F5228A1.png',
+            'tiktok' => 'tiktok.webp',
             'youtube' => 'photo/mickolidia-attachments-italian/0249830F-F136-446A-B6B6-AF4EBEBFD5A6.png',
         ],
         'pt' => [
-            'instagram' => 'photo/mickolidia-attachments-portugal/F61C70BD-CF73-4B79-B41C-9BD7C06BA9BF.png',
+            'tiktok' => 'tiktok.webp',
         ],
     ];
     $communityImages = array_merge(
@@ -78,13 +78,13 @@
 
     $communityLinks = [
         [
-            'key' => 'instagram',
-            'platform' => 'Instagram',
+            'key' => 'tiktok',
+            'platform' => 'TikTok',
             'badge' => 'Primary Entry',
             'title' => 'Start here',
             'description' => 'Discover Wolforix and stay connected',
-            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
-            'image' => asset($communityImages['instagram']),
+            'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
+            'image' => asset($communityImages['tiktok']),
             'primary' => true,
         ],
         [

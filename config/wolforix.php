@@ -255,9 +255,9 @@ return [
             'label' => 'Facebook',
             'url' => 'https://www.facebook.com/share/1JQhTJwzJq/',
         ],
-        'instagram' => [
-            'label' => 'Instagram',
-            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
+        'tiktok' => [
+            'label' => 'TikTok',
+            'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
         ],
         'telegram' => [
             'label' => 'Telegram',
