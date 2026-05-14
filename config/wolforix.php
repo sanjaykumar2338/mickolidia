@@ -251,10 +251,6 @@ return [
     ],
 
     'social_links' => [
-        'facebook' => [
-            'label' => 'Facebook',
-            'url' => 'https://www.facebook.com/share/1JQhTJwzJq/',
-        ],
         'tiktok' => [
             'label' => 'TikTok',
             'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
