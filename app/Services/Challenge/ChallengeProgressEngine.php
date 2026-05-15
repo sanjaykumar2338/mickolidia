@@ -5,6 +5,7 @@ namespace App\Services\Challenge;
 use App\Models\TradingAccount;
 use App\Support\ChallengeAccountMetrics;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Log;
 
 class ChallengeProgressEngine
 {
@@ -77,6 +78,36 @@ class ChallengeProgressEngine
         $profitTargetMet = $challengeStatus === 'active' && $profitTargetAmount > 0 && $phaseProfit >= $profitTargetAmount;
         $minimumDaysMet = $challengeStatus === 'active' && $tradingDaysCompleted >= $rules['minimum_trading_days'];
         $phasePassed = $profitTargetMet && $minimumDaysMet;
+        $decisionContext = [
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'source' => static::class.'::evaluate',
+            'stored_challenge_status' => $storedStatus,
+            'computed_challenge_status' => $challengeStatus,
+            'phase_index' => (int) $account->phase_index,
+            'phase_steps' => $phaseSteps,
+            'server_day' => $serverDay,
+            'normalized_challenge_balance' => $currentBalance,
+            'normalized_challenge_equity' => $currentEquity,
+            'challenge_starting_balance' => $phaseStartingBalance,
+            'realized_profit' => $phaseProfit,
+            'profit_target_amount' => $profitTargetAmount,
+            'profit_target_progress_percent' => $profitTargetProgressPercent,
+            'profit_target_met' => $profitTargetMet,
+            'minimum_trading_days' => $rules['minimum_trading_days'],
+            'minimum_trading_days_met' => $minimumDaysMet,
+            'trading_days_completed' => $tradingDaysCompleted,
+            'daily_loss_used' => $dailyLossUsed,
+            'daily_loss_limit' => $rules['daily_drawdown_limit_amount'],
+            'daily_breach' => $dailyBreach,
+            'max_drawdown_used' => $maxDrawdownUsed,
+            'max_drawdown_limit' => $rules['max_drawdown_limit_amount'],
+            'max_breach' => $maxBreach,
+            'raw_mt5_balance' => $challengeMetrics['raw_balance'],
+            'raw_mt5_equity' => $challengeMetrics['raw_equity'],
+            'broker_phase_reference_balance' => $challengeMetrics['broker_phase_reference_balance'],
+            'broker_reference_source' => $challengeMetrics['broker_reference_source'],
+        ];
 
         $ruleState = array_merge((array) ($account->rule_state ?? []), [
             'phase_steps' => $phaseSteps,
@@ -116,6 +147,11 @@ class ChallengeProgressEngine
         ]);
 
         if ($challengeStatus === 'failed') {
+            $this->logEvaluationDecision('failed', array_merge($decisionContext, [
+                'computed_challenge_status' => 'failed',
+                'failure_reason' => $failureReason,
+            ]));
+
             return array_merge($this->baseState(
                 account: $account,
                 rules: $rules,
@@ -185,6 +221,11 @@ class ChallengeProgressEngine
         }
 
         if ($challengeStatus === 'passed') {
+            $this->logEvaluationDecision('stored_passed', array_merge($decisionContext, [
+                'computed_challenge_status' => 'passed',
+                'failure_reason' => null,
+            ]));
+
             return array_merge($this->baseState(
                 account: $account,
                 rules: $rules,
@@ -212,6 +253,12 @@ class ChallengeProgressEngine
         }
 
         if ($phasePassed && (int) $account->phase_index < $phaseSteps) {
+            $this->logEvaluationDecision('phase_transition', array_merge($decisionContext, [
+                'computed_challenge_status' => 'active',
+                'next_phase_index' => (int) $account->phase_index + 1,
+                'failure_reason' => null,
+            ]));
+
             $nextPhaseIndex = (int) $account->phase_index + 1;
             $nextRules = $this->rulesForAccount($account, $nextPhaseIndex);
             $phaseHistory = (array) ($ruleState['phase_history'] ?? []);
@@ -297,6 +344,11 @@ class ChallengeProgressEngine
         }
 
         if ($phasePassed) {
+            $this->logEvaluationDecision('final_pass', array_merge($decisionContext, [
+                'computed_challenge_status' => 'passed',
+                'failure_reason' => null,
+            ]));
+
             return array_merge($this->baseState(
                 account: $account,
                 rules: $rules,
@@ -332,6 +384,11 @@ class ChallengeProgressEngine
             ]);
         }
 
+        $this->logEvaluationDecision('continue', array_merge($decisionContext, [
+            'computed_challenge_status' => $challengeStatus,
+            'failure_reason' => null,
+        ]));
+
         return array_merge($this->baseState(
             account: $account,
             rules: $rules,
@@ -355,6 +412,16 @@ class ChallengeProgressEngine
             'final_state_locked' => (bool) $account->final_state_locked,
             'rule_state' => $ruleState,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function logEvaluationDecision(string $decision, array $context): void
+    {
+        Log::info('Challenge evaluation decision.', array_merge($context, [
+            'decision' => $decision,
+        ]));
     }
 
     /**

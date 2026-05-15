@@ -9,6 +9,7 @@ use App\Models\TradingAccount;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ChallengeFinalStateMailer
@@ -75,6 +76,16 @@ class ChallengeFinalStateMailer
             $fundedPassAlreadySent = $freshAccount->funded_pass_email_sent_at !== null
                 || $freshAccount->passed_email_sent_at !== null;
 
+            if ($freshAccount->challenge_status === 'passed' && ! $this->normalizedFinalPassIsConfirmed($freshAccount)) {
+                Log::warning('Blocked challenge pass email because normalized rule state does not confirm pass.', $this->passAuditContext(
+                    account: $freshAccount,
+                    source: static::class.'::sendIfNeeded',
+                    mailType: 'challenge_passed',
+                ));
+
+                return null;
+            }
+
             if (
                 $freshAccount->challenge_status === 'passed'
                 && $freshAccount->funded_pass_email_sent_at === null
@@ -122,6 +133,12 @@ class ChallengeFinalStateMailer
 
         if ($mailPayload['type'] === 'failed') {
             if ($mailPayload['send_client'] ?? true) {
+                Log::info('Sending challenge failed email.', $this->passAuditContext(
+                    account: $mailPayload['account'],
+                    source: static::class.'::sendIfNeeded',
+                    mailType: ChallengeFailedMail::class,
+                ));
+
                 Mail::to($mailPayload['user']->email)->send(new ChallengeFailedMail(
                     user: $mailPayload['user'],
                     tradingAccount: $mailPayload['account'],
@@ -131,6 +148,12 @@ class ChallengeFinalStateMailer
             }
 
             if ($mailPayload['send_support'] ?? false) {
+                Log::info('Sending challenge failure support notification.', $this->passAuditContext(
+                    account: $mailPayload['account'],
+                    source: static::class.'::sendIfNeeded',
+                    mailType: ChallengePhasePassSupportNotificationMail::class,
+                ));
+
                 Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
                     user: $mailPayload['user'],
                     tradingAccount: $mailPayload['account'],
@@ -142,6 +165,12 @@ class ChallengeFinalStateMailer
         }
 
         if ($mailPayload['send_client'] ?? true) {
+            Log::info('Sending challenge pass email.', $this->passAuditContext(
+                account: $mailPayload['account'],
+                source: static::class.'::sendIfNeeded',
+                mailType: ChallengePassedMail::class,
+            ));
+
             Mail::to($mailPayload['user']->email)->send(new ChallengePassedMail(
                 user: $mailPayload['user'],
                 tradingAccount: $mailPayload['account'],
@@ -152,6 +181,12 @@ class ChallengeFinalStateMailer
         }
 
         if ($mailPayload['send_support'] ?? false) {
+            Log::info('Sending challenge final-state support notification.', $this->passAuditContext(
+                account: $mailPayload['account'],
+                source: static::class.'::sendIfNeeded',
+                mailType: ChallengePhasePassSupportNotificationMail::class,
+            ));
+
             Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
                 user: $mailPayload['user'],
                 tradingAccount: $mailPayload['account'],
@@ -309,6 +344,42 @@ class ChallengeFinalStateMailer
     {
         return (bool) config('wolforix.support.notify_failures', false)
             && $account->challenge_status === 'failed';
+    }
+
+    private function normalizedFinalPassIsConfirmed(TradingAccount $account): bool
+    {
+        return filter_var(data_get($account->rule_state, 'profit_target_met'), FILTER_VALIDATE_BOOL)
+            && filter_var(data_get($account->rule_state, 'minimum_trading_days_met'), FILTER_VALIDATE_BOOL)
+            && (float) data_get($account->rule_state, 'phase_profit', $account->total_profit) >= (float) data_get($account->rule_state, 'phase_profit_target_amount', $account->profit_target_amount);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function passAuditContext(TradingAccount $account, string $source, string $mailType): array
+    {
+        return [
+            'source' => $source,
+            'mail_type' => $mailType,
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'user_email' => $account->user?->email,
+            'challenge_status' => $account->challenge_status,
+            'account_status' => $account->account_status,
+            'phase_index' => (int) $account->phase_index,
+            'passed_at' => optional($account->passed_at)->toIso8601String(),
+            'passed_email_sent_at' => optional($account->passed_email_sent_at)->toIso8601String(),
+            'funded_pass_email_sent_at' => optional($account->funded_pass_email_sent_at)->toIso8601String(),
+            'normalized_challenge_balance' => data_get($account->rule_state, 'challenge_balance'),
+            'normalized_challenge_equity' => data_get($account->rule_state, 'challenge_equity'),
+            'realized_profit' => data_get($account->rule_state, 'phase_profit', $account->total_profit),
+            'profit_target_amount' => data_get($account->rule_state, 'phase_profit_target_amount', $account->profit_target_amount),
+            'profit_target_met' => data_get($account->rule_state, 'profit_target_met'),
+            'minimum_trading_days_met' => data_get($account->rule_state, 'minimum_trading_days_met'),
+            'trading_days_completed' => data_get($account->rule_state, 'trading_days_completed', $account->trading_days_completed),
+            'daily_loss_used' => data_get($account->rule_state, 'daily_loss_used', $account->daily_loss_used),
+            'max_drawdown_used' => data_get($account->rule_state, 'max_drawdown_used', $account->max_drawdown_used),
+        ];
     }
 
     private function mt5DisableStatus(TradingAccount $account): string

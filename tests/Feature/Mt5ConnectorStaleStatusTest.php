@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Support\Mt5ConnectorStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -108,6 +109,45 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
     }
 
+    public function test_successful_metrics_sync_immediately_clears_stale_connector_warning(): void
+    {
+        $user = User::factory()->create();
+        $account = $this->createMt5Account($user);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Disconnected/Stale');
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.data_get($account->meta, 'mt5_connector.secret_token'),
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => $account->account_reference,
+        ]), [
+            'balance' => 10000,
+            'equity' => 10000,
+            'timestamp' => now()->toDateTimeString(),
+            'server_day' => now()->toDateString(),
+            'platform_login' => $account->platform_login,
+            'platform_status' => 'connected',
+            'trade_count' => 0,
+        ])->assertOk();
+
+        $account->refresh();
+
+        $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+        $this->assertNull(data_get($account->meta, 'mt5_sync.last_ignored_reason'));
+        $this->assertNotNull(data_get($account->meta, 'mt5_sync.last_successful_metric_update_at'));
+        $connectorStatus = app(Mt5ConnectorStatus::class)->forAccount($account);
+        $this->assertSame(Mt5ConnectorStatus::CONNECTED, $connectorStatus['status']);
+        $this->assertNull($connectorStatus['message']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Connected');
+    }
+
     public function test_admin_diagnostics_show_computed_stale_status_and_stored_flag_separately(): void
     {
         $user = User::factory()->create();
@@ -135,6 +175,8 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             'account_reference' => $isTrial ? 'WFX-TRIAL-STALE' : 'WFX-MT5-STALE',
             'platform' => $isTrial ? 'MT5 Demo' : 'MT5',
             'platform_slug' => 'mt5',
+            'platform_login' => $isTrial ? '991100' : '991101',
+            'platform_account_id' => $isTrial ? '991100' : '991101',
             'platform_status' => 'connected',
             'account_type' => $isTrial ? 'trial' : 'challenge',
             'is_trial' => $isTrial,
@@ -143,9 +185,12 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             'challenge_type' => 'one_step',
             'account_size' => 10000,
             'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
             'balance' => 10000,
             'equity' => 10000,
             'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
             'daily_drawdown_limit_amount' => 500,
             'max_drawdown_limit_amount' => 1000,
             'minimum_trading_days' => 3,
@@ -161,6 +206,9 @@ class Mt5ConnectorStaleStatusTest extends TestCase
                     'status' => 'connected',
                     'last_successful_metric_update_at' => $lastSyncAt->toIso8601String(),
                     'last_synced_at' => $lastSyncAt->toIso8601String(),
+                ],
+                'mt5_connector' => [
+                    'secret_token' => 'status-test-token',
                 ],
             ],
         ]);

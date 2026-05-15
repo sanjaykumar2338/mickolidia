@@ -14,6 +14,7 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ChallengeLifecycleMailer
@@ -201,6 +202,16 @@ class ChallengeLifecycleMailer
                 return null;
             }
 
+            if (! $this->normalizedPhaseOnePassIsConfirmed($freshAccount)) {
+                Log::warning('Blocked phase-one/phase-two email because normalized rule state does not confirm phase one pass.', $this->phasePassAuditContext(
+                    account: $freshAccount,
+                    source: static::class.'::sendPhaseProgressIfNeeded',
+                    mailType: 'phase_one_pass_or_phase_two_credentials',
+                ));
+
+                return null;
+            }
+
             $eventKey = 'phase_1_pass_finalized';
             $shouldSendPhaseOne = $freshAccount->phase_one_pass_email_sent_at === null;
             $shouldSendPhaseTwoCredentials = $freshAccount->phase_two_credentials_email_sent_at === null;
@@ -244,6 +255,12 @@ class ChallengeLifecycleMailer
         }
 
         if ($payload['send_phase_one']) {
+            Log::info('Sending phase-one pass email.', $this->phasePassAuditContext(
+                account: $payload['account'],
+                source: static::class.'::sendPhaseProgressIfNeeded',
+                mailType: PhaseOnePassedMail::class,
+            ));
+
             Mail::to($payload['email'])->send(new PhaseOnePassedMail(
                 traderName: $payload['trader_name'],
                 tradingAccount: $payload['account'],
@@ -252,6 +269,12 @@ class ChallengeLifecycleMailer
         }
 
         if ($payload['send_phase_two_credentials']) {
+            Log::info('Sending phase-two credentials email.', $this->phasePassAuditContext(
+                account: $payload['account'],
+                source: static::class.'::sendPhaseProgressIfNeeded',
+                mailType: PhaseTwoAccountDetailsMail::class,
+            ));
+
             Mail::to($payload['email'])->send(new PhaseTwoAccountDetailsMail(
                 traderName: $payload['trader_name'],
                 tradingAccount: $payload['account'],
@@ -260,6 +283,12 @@ class ChallengeLifecycleMailer
         }
 
         if ($payload['send_support'] && $payload['account']->user instanceof User) {
+            Log::info('Sending phase-one pass support notification.', $this->phasePassAuditContext(
+                account: $payload['account'],
+                source: static::class.'::sendPhaseProgressIfNeeded',
+                mailType: ChallengePhasePassSupportNotificationMail::class,
+            ));
+
             Mail::to((string) config('wolforix.support.email'))->send(new ChallengePhasePassSupportNotificationMail(
                 user: $payload['account']->user,
                 tradingAccount: $payload['account'],
@@ -307,6 +336,59 @@ class ChallengeLifecycleMailer
 
         return [
             'email' => $email,
+        ];
+    }
+
+    private function normalizedPhaseOnePassIsConfirmed(TradingAccount $account): bool
+    {
+        foreach ((array) data_get($account->rule_state, 'phase_history', []) as $phase) {
+            if (! is_array($phase) || (int) ($phase['phase_index'] ?? 0) !== 1) {
+                continue;
+            }
+
+            $phaseProfit = (float) ($phase['phase_profit'] ?? 0);
+            $targetAmount = (float) ($phase['phase_profit_target_amount'] ?? 0);
+
+            return $targetAmount > 0 && $phaseProfit >= $targetAmount;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function phasePassAuditContext(TradingAccount $account, string $source, string $mailType): array
+    {
+        $phaseOneHistory = null;
+
+        foreach ((array) data_get($account->rule_state, 'phase_history', []) as $phase) {
+            if (is_array($phase) && (int) ($phase['phase_index'] ?? 0) === 1) {
+                $phaseOneHistory = $phase;
+                break;
+            }
+        }
+
+        return [
+            'source' => $source,
+            'mail_type' => $mailType,
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'user_email' => $account->user?->email,
+            'challenge_status' => $account->challenge_status,
+            'account_status' => $account->account_status,
+            'phase_index' => (int) $account->phase_index,
+            'phase_one_pass_email_sent_at' => optional($account->phase_one_pass_email_sent_at)->toIso8601String(),
+            'phase_two_credentials_email_sent_at' => optional($account->phase_two_credentials_email_sent_at)->toIso8601String(),
+            'phase_one_completed_at' => is_array($phaseOneHistory) ? ($phaseOneHistory['completed_at'] ?? null) : null,
+            'phase_one_realized_profit' => is_array($phaseOneHistory) ? ($phaseOneHistory['phase_profit'] ?? null) : null,
+            'phase_one_profit_target_amount' => is_array($phaseOneHistory) ? ($phaseOneHistory['phase_profit_target_amount'] ?? null) : null,
+            'normalized_challenge_balance' => data_get($account->rule_state, 'challenge_balance'),
+            'normalized_challenge_equity' => data_get($account->rule_state, 'challenge_equity'),
+            'realized_profit' => data_get($account->rule_state, 'phase_profit', $account->total_profit),
+            'profit_target_amount' => data_get($account->rule_state, 'phase_profit_target_amount', $account->profit_target_amount),
+            'profit_target_met' => data_get($account->rule_state, 'profit_target_met'),
+            'minimum_trading_days_met' => data_get($account->rule_state, 'minimum_trading_days_met'),
         ];
     }
 

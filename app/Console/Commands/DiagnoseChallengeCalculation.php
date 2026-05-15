@@ -76,6 +76,18 @@ class DiagnoseChallengeCalculation extends Command
             ['failure_reason', (string) ($account->failure_reason ?: '-')],
             ['trading_blocked', $this->yesNo((bool) $account->trading_blocked)],
             ['final_state_locked', $this->yesNo((bool) $account->final_state_locked)],
+            ['passed_at', $this->formatValue($account->passed_at)],
+            ['failed_at', $this->formatValue($account->failed_at)],
+            ['last_evaluated_at', $this->formatValue($account->last_evaluated_at)],
+            ['passed_email_sent_at', $this->formatValue($account->passed_email_sent_at)],
+            ['funded_pass_email_sent_at', $this->formatValue($account->funded_pass_email_sent_at)],
+            ['phase_one_pass_email_sent_at', $this->formatValue($account->phase_one_pass_email_sent_at)],
+            ['phase_two_credentials_email_sent_at', $this->formatValue($account->phase_two_credentials_email_sent_at)],
+            ['rule_state.profit_target_met', $this->formatValue(data_get($account->rule_state, 'profit_target_met'))],
+            ['rule_state.minimum_trading_days_met', $this->formatValue(data_get($account->rule_state, 'minimum_trading_days_met'))],
+            ['rule_state.phase_profit', $this->moneyValue(data_get($account->rule_state, 'phase_profit'))],
+            ['rule_state.phase_profit_target_amount', $this->moneyValue(data_get($account->rule_state, 'phase_profit_target_amount'))],
+            ['rule_state.phase_history_count', (string) count((array) data_get($account->rule_state, 'phase_history', []))],
             ['challenge_type', (string) ($account->challenge_type ?: '-')],
             ['account_size', $this->moneyValue($account->account_size)],
             ['starting_balance', $this->moneyValue($account->starting_balance)],
@@ -160,6 +172,28 @@ class DiagnoseChallengeCalculation extends Command
         if ((bool) $account->trading_blocked || (bool) $account->final_state_locked) {
             $this->line('- Stored trading lock flags are set; review before allowing trading.');
         }
+
+        if ($account->challenge_status === 'passed' && ! (bool) data_get($account->rule_state, 'profit_target_met')) {
+            $this->warn('- Stored challenge_status is passed, but rule_state.profit_target_met is not true. Treat pass/email state as historical or suspect until manually reviewed.');
+        }
+
+        if ((int) $account->phase_index >= 2 && ! $this->hasConfirmedPhaseOnePass($account)) {
+            $this->warn('- Account is in phase 2+, but rule_state.phase_history does not confirm phase-one target completion. Phase-two/evaluation emails should be blocked by the safety guard.');
+        }
+    }
+
+    private function hasConfirmedPhaseOnePass(TradingAccount $account): bool
+    {
+        foreach ((array) data_get($account->rule_state, 'phase_history', []) as $phase) {
+            if (! is_array($phase) || (int) ($phase['phase_index'] ?? 0) !== 1) {
+                continue;
+            }
+
+            return (float) ($phase['phase_profit'] ?? 0) >= (float) ($phase['phase_profit_target_amount'] ?? 0)
+                && (float) ($phase['phase_profit_target_amount'] ?? 0) > 0;
+        }
+
+        return false;
     }
 
     private function printLatestPayload(?TradingAccountBalanceSnapshot $snapshot, ?TradingAccountSyncLog $syncLog): void

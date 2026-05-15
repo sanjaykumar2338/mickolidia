@@ -1913,6 +1913,100 @@ class ChallengeDashboardTest extends TestCase
         Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, 2);
     }
 
+    public function test_phase_progress_emails_are_blocked_when_phase_two_state_lacks_normalized_phase_one_pass_evidence(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'activated_at' => Carbon::parse('2026-04-05 09:00:00'),
+            'status' => 'Active',
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'stage' => 'Challenge Step 2',
+            'account_phase' => 'phase_2',
+            'phase_index' => 2,
+            'balance' => 99750,
+            'equity' => 99750,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'profit_target_percent' => 5,
+            'profit_target_amount' => 500,
+            'profit_target_progress_percent' => 0,
+            'rule_state' => [
+                'broker_phase_reference_balance' => 100000,
+                'broker_reference_source' => 'rule_state',
+                'challenge_starting_balance' => 10000,
+                'challenge_balance' => 9750,
+                'challenge_equity' => 9750,
+                'phase_profit' => -250,
+                'phase_profit_target_amount' => 500,
+                'profit_target_met' => false,
+                'minimum_trading_days_met' => false,
+                'phase_history' => [],
+            ],
+        ]);
+
+        $this->pushMetrics($account, '2026-04-08 09:00:00', 99750, 99750, [
+            'trade_count' => 1,
+            'platform_login' => $account->platform_login,
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'active');
+
+        $account->refresh();
+
+        $this->assertNull($account->phase_one_pass_email_sent_at);
+        $this->assertNull($account->phase_two_credentials_email_sent_at);
+        Mail::assertNotSent(PhaseOnePassedMail::class);
+        Mail::assertNotSent(PhaseTwoAccountDetailsMail::class);
+        Mail::assertNotSent(ChallengePhasePassSupportNotificationMail::class);
+    }
+
+    public function test_final_pass_email_is_blocked_when_passed_state_lacks_normalized_profit_target_evidence(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'activated_at' => Carbon::parse('2026-04-05 09:00:00'),
+            'status' => 'Passed',
+            'account_status' => 'passed',
+            'challenge_status' => 'passed',
+            'passed_at' => Carbon::parse('2026-04-07 09:00:00'),
+            'final_state_locked' => true,
+            'trading_blocked' => true,
+            'balance' => 99415.87,
+            'equity' => 99415.87,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
+            'profit_target_progress_percent' => 0,
+            'passed_email_sent_at' => null,
+            'funded_pass_email_sent_at' => null,
+            'rule_state' => [
+                'broker_phase_reference_balance' => 100000,
+                'broker_reference_source' => 'rule_state',
+                'challenge_starting_balance' => 10000,
+                'challenge_balance' => 9415.87,
+                'challenge_equity' => 9415.87,
+                'phase_profit' => -584.13,
+                'phase_profit_target_amount' => 1000,
+                'profit_target_met' => false,
+                'minimum_trading_days_met' => true,
+            ],
+        ]);
+
+        $this->pushMetrics($account, '2026-04-08 09:00:00', 99415.87, 99415.87, [
+            'trade_count' => 1,
+            'platform_login' => $account->platform_login,
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'passed');
+
+        $account->refresh();
+
+        $this->assertNull($account->passed_email_sent_at);
+        $this->assertNull($account->funded_pass_email_sent_at);
+        Mail::assertNotSent(ChallengePassedMail::class);
+        Mail::assertNotSent(TrustpilotReviewRequestMail::class);
+    }
+
     public function test_two_step_phase_two_breach_fails_the_challenge(): void
     {
         $account = $this->createChallengeAccount('two_step');
