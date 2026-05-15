@@ -244,7 +244,8 @@ class TradingAccountMetricsController extends Controller
                 'ignored_reason' => data_get($updatedAccount->meta, 'mt5_sync.last_ignored_reason'),
             ]);
 
-            return response()->json([
+            $deactivationEvent = $this->mt5DeactivationEvent($updatedAccount, includeDisabled: true);
+            $responsePayload = [
                 'status' => 'ok',
                 'account_id' => $updatedAccount->id,
                 'account_reference' => $updatedAccount->account_reference,
@@ -256,11 +257,44 @@ class TradingAccountMetricsController extends Controller
                 'final_state_locked' => (bool) $updatedAccount->final_state_locked,
                 'close_positions_required' => $this->shouldRequestPositionClosure($updatedAccount),
                 'mt5_deactivation_required' => $this->mt5DeactivationRequired($updatedAccount),
-                'mt5_deactivation_event' => $this->mt5DeactivationEvent($updatedAccount, includeDisabled: true)['event'] ?? null,
-                'mt5_deactivation_status' => $this->mt5DeactivationEvent($updatedAccount, includeDisabled: true)['status'] ?? null,
+                'mt5_deactivation_event' => $deactivationEvent['event'] ?? null,
+                'mt5_deactivation_status' => $deactivationEvent['status'] ?? null,
                 'ea_action' => $this->eaAction($updatedAccount),
+                'ea_action_reason' => $this->eaActionReason($updatedAccount),
                 'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
+            ];
+
+            Log::info('MT5 metrics EA action decision.', [
+                'account_identifier' => $accountIdentifier,
+                'account_reference' => $updatedAccount->account_reference,
+                'trading_account_id' => $updatedAccount->id,
+                'sync_trigger' => $syncTrigger,
+                'ea_action' => $responsePayload['ea_action'],
+                'ea_action_reason' => $responsePayload['ea_action_reason'],
+                'close_positions_required' => $responsePayload['close_positions_required'],
+                'mt5_deactivation_required' => $responsePayload['mt5_deactivation_required'],
+                'mt5_deactivation_event' => $responsePayload['mt5_deactivation_event'],
+                'mt5_deactivation_status' => $responsePayload['mt5_deactivation_status'],
+                'trading_blocked' => $responsePayload['trading_blocked'],
+                'final_state_locked' => $responsePayload['final_state_locked'],
+                'challenge_status' => $updatedAccount->challenge_status,
+                'account_status' => $updatedAccount->account_status,
+                'failure_reason' => $updatedAccount->failure_reason,
+                'platform_status' => $updatedAccount->platform_status,
+                'rule_state' => [
+                    'daily_drawdown_breached' => data_get($updatedAccount->rule_state, 'daily_drawdown_breached'),
+                    'max_drawdown_breached' => data_get($updatedAccount->rule_state, 'max_drawdown_breached'),
+                    'daily_loss_used' => data_get($updatedAccount->rule_state, 'daily_loss_used'),
+                    'daily_loss_remaining' => data_get($updatedAccount->rule_state, 'daily_loss_remaining'),
+                    'max_drawdown_used' => data_get($updatedAccount->rule_state, 'max_drawdown_used'),
+                    'max_drawdown_remaining' => data_get($updatedAccount->rule_state, 'max_drawdown_remaining'),
+                    'phase_profit' => data_get($updatedAccount->rule_state, 'phase_profit'),
+                    'profit_target_met' => data_get($updatedAccount->rule_state, 'profit_target_met'),
+                    'minimum_trading_days_met' => data_get($updatedAccount->rule_state, 'minimum_trading_days_met'),
+                ],
             ]);
+
+            return response()->json($responsePayload);
         } catch (\Throwable $exception) {
             report($exception);
 
@@ -347,6 +381,25 @@ class TradingAccountMetricsController extends Controller
         }
 
         return 'continue';
+    }
+
+    private function eaActionReason(TradingAccount $account): string
+    {
+        $event = $this->mt5DeactivationEvent($account);
+
+        if ($event !== null) {
+            return sprintf(
+                'active_mt5_deactivation_event:%s/%s',
+                $event['event'] ?: 'unknown',
+                $event['status'] ?: 'unknown',
+            );
+        }
+
+        if ((bool) $account->trading_blocked) {
+            return 'trading_blocked_without_active_deactivation_event';
+        }
+
+        return 'account_can_continue';
     }
 
     /**
