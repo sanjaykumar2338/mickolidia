@@ -168,12 +168,12 @@
                             <dd class="mt-2 font-semibold text-white">{{ str($consistencyStatus)->replace('_', ' ')->title() }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                            <dt class="text-slate-400">{{ __('site.admin.account.balance') }}</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->balance, 2) }}</dd>
+                            <dt class="text-slate-400">Challenge Balance</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccountMetrics['challenge_balance'] }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                            <dt class="text-slate-400">Equity</dt>
-                            <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->equity, 2) }}</dd>
+                            <dt class="text-slate-400">Challenge Equity</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccountMetrics['challenge_equity'] }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Platform Account ID</dt>
@@ -198,9 +198,9 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Daily Loss Used / Remaining</dt>
                             <dd class="mt-2 font-semibold text-white">
-                                ${{ number_format((float) $selectedAccount->daily_loss_used, 2) }}
+                                {{ $selectedAccountMetrics['daily_loss_used'] }}
                                 /
-                                ${{ number_format(max((float) $selectedAccount->daily_drawdown_limit_amount - (float) $selectedAccount->daily_loss_used, 0), 2) }}
+                                {{ $selectedAccountMetrics['daily_loss_remaining'] }}
                             </dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
@@ -210,14 +210,18 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Max Drawdown Used / Remaining</dt>
                             <dd class="mt-2 font-semibold text-white">
-                                ${{ number_format((float) $selectedAccount->max_drawdown_used, 2) }}
+                                {{ $selectedAccountMetrics['max_drawdown_used'] }}
                                 /
-                                ${{ number_format(max((float) $selectedAccount->max_drawdown_limit_amount - (float) $selectedAccount->max_drawdown_used, 0), 2) }}
+                                {{ $selectedAccountMetrics['max_drawdown_remaining'] }}
                             </dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Profit Target Progress</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ number_format((float) $selectedAccount->profit_target_progress_percent, 1) }}%</dd>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccountMetrics['profit_target_progress'] }}</dd>
+                        </div>
+                        <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                            <dt class="text-slate-400">Breach Status</dt>
+                            <dd class="mt-2 font-semibold text-white">{{ $selectedAccountMetrics['breach_status'] }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Failure Reason</dt>

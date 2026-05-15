@@ -342,12 +342,60 @@ class AdminClientMetricsTest extends TestCase
             ->assertOk()
             ->assertSee('Challenge balance')
             ->assertSee('$9,412.37')
-            ->assertSee('MT5 broker balance')
+            ->assertSee('Raw MT5 Broker Balance')
             ->assertSee('$99,412.37')
             ->assertSee('Broker reference')
             ->assertSee('$100,000.00')
             ->assertSee('Profit target progress')
             ->assertSee('0.0%');
+    }
+
+    public function test_admin_client_show_uses_challenge_balance_not_raw_mt5_balance(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+
+        $account->forceFill([
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'balance' => 99412.37,
+            'equity' => 99411.67,
+            'total_profit' => -587.63,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
+            'rule_state' => [
+                'broker_phase_reference_balance' => 100000,
+                'highest_challenge_equity_today' => 10000,
+                'rules' => [
+                    'profit_target_percent' => 10,
+                    'daily_drawdown_limit_amount' => 400,
+                    'max_drawdown_limit_amount' => 800,
+                ],
+            ],
+        ])->save();
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => now()->addSecond(),
+            'balance' => 99412.37,
+            'equity' => 99411.67,
+            'profit_loss' => -0.70,
+            'total_profit' => -587.63,
+            'today_profit' => 0,
+            'payload' => [
+                'broker_phase_reference_balance' => 100000,
+                'open_positions' => [],
+                'trade_history' => [],
+            ],
+        ]);
+
+        $this->adminGet(route('admin.clients.show', $user))
+            ->assertOk()
+            ->assertSee('Challenge Balance')
+            ->assertSee('$9,412.37')
+            ->assertSee('Challenge Equity')
+            ->assertSee('$9,411.67')
+            ->assertSee('Breach Status')
+            ->assertDontSee('$99,412.37');
     }
 
     public function test_challenge_calculation_diagnostic_command_reports_sources(): void

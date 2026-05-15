@@ -69,11 +69,11 @@
                 <div class="mt-4 flex items-center gap-5 text-xs text-slate-400">
                     <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-full bg-amber-300"></span>
-                        <span>{{ __('Balance') }}</span>
+                        <span>{{ __('Challenge Balance') }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="h-2 w-2 rounded-full bg-sky-300"></span>
-                        <span>{{ __('Equity') }}</span>
+                        <span>{{ __('Challenge Equity') }}</span>
                     </div>
                 </div>
 
@@ -98,15 +98,15 @@
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Current balance') }}</p>
+                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Challenge Balance') }}</p>
                 <p class="mt-3 text-2xl font-semibold text-white" data-dashboard-chart-balance-value>{{ $defaultRange['summary']['last_balance'] ?? '$0.00' }}</p>
-                <p class="mt-2 text-xs text-slate-400">{{ __('Latest synced balance point') }}</p>
+                <p class="mt-2 text-xs text-slate-400">{{ __('Latest normalized challenge balance point') }}</p>
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Current equity') }}</p>
+                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Challenge Equity') }}</p>
                 <p class="mt-3 text-2xl font-semibold text-white" data-dashboard-chart-equity-value>{{ $defaultRange['summary']['last_equity'] ?? '$0.00' }}</p>
-                <p class="mt-2 text-xs text-slate-400">{{ __('Latest synced equity point') }}</p>
+                <p class="mt-2 text-xs text-slate-400">{{ __('Latest normalized challenge equity point') }}</p>
             </article>
 
             <article class="rounded-[1.6rem] border border-white/8 bg-black/18 p-4">

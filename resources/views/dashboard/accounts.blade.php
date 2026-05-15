@@ -191,16 +191,20 @@
                                 <p class="{{ $metricValueClasses }}">{{ $account['starting_balance'] }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
-                                <p class="{{ $metricLabelClasses }}">{{ __('Current balance') }}</p>
+                                <p class="{{ $metricLabelClasses }}">{{ __('Challenge Balance') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ $account['balance'] }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
-                                <p class="{{ $metricLabelClasses }}">{{ __('Challenge equity') }}</p>
+                                <p class="{{ $metricLabelClasses }}">{{ __('Challenge Equity') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ $account['equity'] }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
-                                <p class="{{ $metricLabelClasses }}">{{ __('Recognized profit') }}</p>
+                                <p class="{{ $metricLabelClasses }}">{{ __('Realized P/L') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ $account['total_profit'] }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Today P/L') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['today_profit'] }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Floating P&L') }}</p>
@@ -217,6 +221,10 @@
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Max drawdown used') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ $account['max_drawdown_used'] }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Breach Status') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['breach_status'] }}</p>
                             </div>
                         </div>
 

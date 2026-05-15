@@ -103,8 +103,8 @@ class DiagnoseChallengeCalculation extends Command
         $this->newLine();
         $this->info('Separated calculation values');
         $this->table(['Metric', 'Value'], [
-            ['MT5 broker balance', $this->moneyValue($calculation['raw_balance'])],
-            ['MT5 broker equity', $this->moneyValue($calculation['raw_equity'])],
+            ['Raw MT5 Broker Balance', $this->moneyValue($calculation['raw_balance'])],
+            ['Raw MT5 Broker Equity', $this->moneyValue($calculation['raw_equity'])],
             ['Broker phase reference balance', $this->moneyValue($calculation['broker_phase_reference_balance']).' ('.$calculation['broker_reference_source'].')'],
             ['Challenge starting balance', $this->moneyValue($calculation['challenge_starting_balance']).' ('.$calculation['challenge_starting_balance_source'].')'],
             ['Challenge balance', $this->moneyValue($calculation['challenge_balance'])],

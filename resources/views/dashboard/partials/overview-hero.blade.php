@@ -16,28 +16,28 @@
     $syncToneClass = $badgeToneClasses[$hero['sync_freshness']['tone'] ?? 'slate'] ?? $badgeToneClasses['slate'];
     $primaryMetricCards = [
         [
-            'label' => __('Balance'),
-            'value' => $insights['balance'] ?? $primaryAccount['balance'],
+            'label' => __('Challenge Balance'),
+            'value' => $primaryAccount['balance'],
             'hint' => $insights['balance_hint'] ?? __('Challenge-relative current balance'),
             'tone' => 'amber',
         ],
         [
-            'label' => __('Equity'),
-            'value' => $insights['equity'] ?? $primaryAccount['equity'],
+            'label' => __('Challenge Equity'),
+            'value' => $primaryAccount['equity'],
             'hint' => $insights['equity_hint'] ?? __('Challenge-relative equity'),
             'tone' => 'sky',
         ],
         [
-            'label' => __('Trading days'),
-            'value' => $insights['trading_days'] ?? $primaryAccount['trading_days_completed'].' / '.$primaryAccount['minimum_trading_days'],
-            'hint' => __('Current / required'),
-            'tone' => 'slate',
+            'label' => __('Realized P/L'),
+            'value' => $primaryAccount['total_profit'],
+            'hint' => __('Closed challenge performance'),
+            'tone' => str_starts_with($primaryAccount['total_profit'], '-$') ? 'rose' : 'emerald',
         ],
         [
-            'label' => __('Win ratio'),
-            'value' => $insights['win_rate'] ?? __('No closed trades'),
-            'hint' => $insights['win_rate_hint'] ?? __('Closed trades only'),
-            'tone' => ($insights['win_rate_value'] ?? 0) >= 50 ? 'emerald' : 'amber',
+            'label' => __('Today P/L'),
+            'value' => $primaryAccount['today_profit'],
+            'hint' => __('Latest server-day result'),
+            'tone' => str_starts_with($primaryAccount['today_profit'], '-$') ? 'rose' : 'slate',
         ],
     ];
 @endphp

@@ -39,8 +39,6 @@
             'Last EA sync' => $account['last_ea_sync'],
             'Challenge balance' => $account['balance'],
             'Challenge equity' => $account['equity'],
-            'MT5 broker balance' => $account['raw_balance'],
-            'MT5 broker equity' => $account['raw_equity'],
             'Current floating PnL' => $account['floating_pl'],
             'Snapshot P/L' => $account['snapshot_pl'],
             'Today profit' => $account['today_profit'],

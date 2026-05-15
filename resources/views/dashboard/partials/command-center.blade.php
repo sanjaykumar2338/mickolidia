@@ -17,13 +17,13 @@
             <h3 class="mt-3 text-2xl font-semibold text-white">{{ __('Everything important within reach') }}</h3>
         </div>
         <p class="max-w-4xl text-sm leading-7 text-slate-400 xl:pt-2">
-            {{ __('Account access, win ratio, balance, first-trade timing, and traded symbols are grouped here for faster mobile scanning.') }}
+            {{ __('Account access, win ratio, challenge balance, first-trade timing, and traded symbols are grouped here for faster mobile scanning.') }}
         </p>
     </div>
 
     <div class="mt-6 grid items-stretch gap-4 lg:grid-cols-3">
         <article class="flex h-full flex-col rounded-[1.75rem] border border-amber-400/14 bg-amber-400/8 p-5 shadow-[0_22px_60px_rgba(2,6,23,0.26)]">
-            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('Current balance') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.26em] text-amber-200">{{ __('Challenge Balance') }}</p>
             <p class="mt-4 text-3xl font-semibold text-white sm:text-4xl">{{ $insights['balance'] }}</p>
             <p class="mt-2 text-sm leading-6 text-amber-50/70">{{ $insights['balance_hint'] }}</p>
 

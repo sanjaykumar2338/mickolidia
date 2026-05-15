@@ -77,6 +77,11 @@ class AdminClientController extends Controller
         $failureContext = is_array($selectedAccount?->failure_context) ? $selectedAccount->failure_context : [];
         $mt5DeactivationCurrent = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_deactivation.current', []) : [];
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
+        $latestSnapshot = $this->latestAdminMetricSnapshot($selectedAccount);
+        $calculation = $selectedAccount instanceof TradingAccount
+            ? $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot)
+            : [];
+        $accountMetrics = $this->formatSelectedAccountMetrics($calculation, $selectedAccount);
 
         return view('admin.clients.show', [
             'client' => [
@@ -108,15 +113,15 @@ class AdminClientController extends Controller
             'metrics' => [
                 [
                     'label' => __('site.admin.metrics.profit'),
-                    'value' => $this->formatMoney((float) ($selectedAccount?->total_profit ?? 0)),
+                    'value' => $accountMetrics['realized_profit'],
                 ],
                 [
-                    'label' => 'Balance',
-                    'value' => $this->formatMoney((float) ($selectedAccount?->balance ?? 0)),
+                    'label' => 'Challenge Balance',
+                    'value' => $accountMetrics['challenge_balance'],
                 ],
                 [
-                    'label' => 'Equity',
-                    'value' => $this->formatMoney((float) ($selectedAccount?->equity ?? 0)),
+                    'label' => 'Challenge Equity',
+                    'value' => $accountMetrics['challenge_equity'],
                 ],
                 [
                     'label' => __('site.admin.metrics.max_drawdown'),
@@ -158,6 +163,7 @@ class AdminClientController extends Controller
                 ],
             ],
             'selectedAccount' => $selectedAccount,
+            'selectedAccountMetrics' => $accountMetrics,
             'tradesPanel' => $this->tradeHistoryPanelBuilder->build($selectedAccount, [
                 'empty_message' => __('Detailed trade rows will appear here after the selected account receives a synced snapshot with open positions or trade history.'),
                 'available_message' => __('The latest persisted sync snapshot powers this admin trade review. Open and closed rows appear only when that snapshot includes them.'),
@@ -307,8 +313,6 @@ class AdminClientController extends Controller
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
                 'balance' => $this->formatMoney((float) ($calculation['challenge_balance'] ?? 0)),
                 'equity' => $this->formatMoney((float) ($calculation['challenge_equity'] ?? 0)),
-                'raw_balance' => $this->formatMoney((float) ($calculation['raw_balance'] ?? $this->adminMetricAmount($latestSnapshot?->balance, $selectedAccount?->balance))),
-                'raw_equity' => $this->formatMoney((float) ($calculation['raw_equity'] ?? $this->adminMetricAmount($latestSnapshot?->equity, $selectedAccount?->equity))),
                 'floating_pl' => $this->formatMoney((float) ($calculation['floating_pnl'] ?? $todaySummary['current_floating_pnl_value'])),
                 'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount?->profit_loss)),
                 'today_profit' => $todaySummary['today_profit_loss'],
@@ -695,7 +699,8 @@ class AdminClientController extends Controller
             'cards' => [
                 ['label' => 'Challenge baseline', 'value' => $this->formatMoney((float) $calculation['challenge_starting_balance']).' · '.$calculation['challenge_starting_balance_source']],
                 ['label' => 'Broker reference', 'value' => $this->formatMoney((float) $calculation['broker_phase_reference_balance']).' · '.$calculation['broker_reference_source']],
-                ['label' => 'MT5 balance / equity', 'value' => $this->formatMoney((float) $calculation['raw_balance']).' / '.$this->formatMoney((float) $calculation['raw_equity'])],
+                ['label' => 'Raw MT5 Broker Balance', 'value' => $this->formatMoney((float) $calculation['raw_balance'])],
+                ['label' => 'Raw MT5 Broker Equity', 'value' => $this->formatMoney((float) $calculation['raw_equity'])],
                 ['label' => 'Challenge balance / equity', 'value' => $this->formatMoney((float) $calculation['challenge_balance']).' / '.$this->formatMoney((float) $calculation['challenge_equity'])],
                 ['label' => 'Realized P/L', 'value' => $this->formatMoney((float) $calculation['realized_profit'])],
                 ['label' => 'Today P/L', 'value' => $this->formatMoney((float) $calculation['today_profit'])],
@@ -707,6 +712,47 @@ class AdminClientController extends Controller
                 ['label' => 'Max breach', 'value' => (bool) $calculation['max_breach'] ? 'Yes' : 'No'],
             ],
             'formulas' => (array) ($calculation['formula'] ?? []),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $calculation
+     * @return array<string, string>
+     */
+    private function formatSelectedAccountMetrics(array $calculation, ?TradingAccount $account): array
+    {
+        if ($calculation !== []) {
+            return [
+                'challenge_balance' => $this->formatMoney((float) $calculation['challenge_balance']),
+                'challenge_equity' => $this->formatMoney((float) $calculation['challenge_equity']),
+                'realized_profit' => $this->formatMoney((float) $calculation['realized_profit']),
+                'today_profit' => $this->formatMoney((float) $calculation['today_profit']),
+                'daily_loss_used' => $this->formatMoney((float) $calculation['daily_loss_used']),
+                'daily_loss_remaining' => $this->formatMoney((float) $calculation['daily_loss_remaining']),
+                'daily_loss_limit' => $this->formatMoney((float) $calculation['daily_loss_limit']),
+                'max_drawdown_used' => $this->formatMoney((float) $calculation['max_drawdown_used']),
+                'max_drawdown_remaining' => $this->formatMoney((float) $calculation['max_drawdown_remaining']),
+                'max_drawdown_limit' => $this->formatMoney((float) $calculation['max_drawdown_limit']),
+                'profit_target_progress' => number_format((float) $calculation['profit_target_progress_percent'], 1).'%',
+                'breach_status' => (bool) $calculation['breach']
+                    ? $this->humanizeStatus((string) $calculation['breach_reason'])
+                    : 'No breach',
+            ];
+        }
+
+        return [
+            'challenge_balance' => $this->formatMoney((float) ($account?->balance ?? 0)),
+            'challenge_equity' => $this->formatMoney((float) ($account?->equity ?? 0)),
+            'realized_profit' => $this->formatMoney((float) ($account?->total_profit ?? 0)),
+            'today_profit' => $this->formatMoney((float) ($account?->today_profit ?? 0)),
+            'daily_loss_used' => $this->formatMoney((float) ($account?->daily_loss_used ?? 0)),
+            'daily_loss_remaining' => $this->formatMoney(max((float) ($account?->daily_drawdown_limit_amount ?? 0) - (float) ($account?->daily_loss_used ?? 0), 0)),
+            'daily_loss_limit' => $this->formatMoney((float) ($account?->daily_drawdown_limit_amount ?? 0)),
+            'max_drawdown_used' => $this->formatMoney((float) ($account?->max_drawdown_used ?? 0)),
+            'max_drawdown_remaining' => $this->formatMoney(max((float) ($account?->max_drawdown_limit_amount ?? 0) - (float) ($account?->max_drawdown_used ?? 0), 0)),
+            'max_drawdown_limit' => $this->formatMoney((float) ($account?->max_drawdown_limit_amount ?? 0)),
+            'profit_target_progress' => number_format((float) ($account?->profit_target_progress_percent ?? 0), 1).'%',
+            'breach_status' => $account?->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : 'No breach',
         ];
     }
 

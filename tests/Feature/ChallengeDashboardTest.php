@@ -1238,11 +1238,11 @@ class ChallengeDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Initial balance')
             ->assertSee('$5,000.00')
-            ->assertSee('Current balance')
+            ->assertSee('Challenge Balance')
             ->assertSee('$5,562.64')
-            ->assertSee('Challenge equity')
+            ->assertSee('Challenge Equity')
             ->assertSee('$5,596.80')
-            ->assertSee('Recognized profit')
+            ->assertSee('Realized P/L')
             ->assertSee('$562.64')
             ->assertDontSee('$10,562.64');
     }
@@ -1349,7 +1349,7 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('Share metrics')
                 ->assertSee('Go to metrics')
                 ->assertSee('Trading command center')
-                ->assertSee('Current balance')
+                ->assertSee('Challenge Balance')
                 ->assertSee('$10,140.00')
                 ->assertSee('Time since first trade')
                 ->assertSee('2 days')
@@ -1969,6 +1969,74 @@ class ChallengeDashboardTest extends TestCase
             ->get(route('dashboard.accounts'))
             ->assertOk()
             ->assertSee('No challenge accounts linked yet');
+    }
+
+    public function test_client_dashboard_cards_use_normalized_challenge_values_for_broker_sized_mt5_accounts(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-NORMALIZED',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'balance' => 99415.87,
+            'equity' => 99415.87,
+            'profit_loss' => 0,
+            'today_profit' => 1.50,
+            'total_profit' => -584.13,
+            'daily_loss_used' => 0.10,
+            'max_drawdown_used' => 584.13,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
+            'daily_drawdown_limit_amount' => 500,
+            'max_drawdown_limit_amount' => 1000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+            'sync_status' => 'success',
+            'sync_source' => 'mt5_ea',
+            'last_synced_at' => now(),
+            'last_sync_completed_at' => now(),
+            'rule_state' => [
+                'broker_phase_reference_balance' => 100000,
+                'highest_challenge_equity_today' => 9415.97,
+                'rules' => [
+                    'profit_target_percent' => 10,
+                    'daily_drawdown_limit_amount' => 500,
+                    'max_drawdown_limit_amount' => 1000,
+                ],
+            ],
+        ]);
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => now(),
+            'balance' => 99415.87,
+            'equity' => 99415.87,
+            'profit_loss' => 0,
+            'total_profit' => -584.13,
+            'today_profit' => 1.50,
+            'payload' => [
+                'balance' => 99415.87,
+                'equity' => 99415.87,
+                'broker_phase_reference_balance' => 100000,
+                'open_positions' => [],
+                'trade_history' => [],
+            ],
+        ]);
+
+        foreach ([route('dashboard'), route('dashboard.accounts')] as $url) {
+            $this->actingAs($account->user)
+                ->get($url)
+                ->assertOk()
+                ->assertSee('Challenge Balance')
+                ->assertSee('$9,415.87')
+                ->assertSee('Challenge Equity')
+                ->assertSee('Realized P/L')
+                ->assertSee('-$584.13')
+                ->assertSee('Today P/L')
+                ->assertSee('$1.50')
+                ->assertSee('No breach')
+                ->assertDontSee('$99,415.87');
+        }
     }
 
     /**

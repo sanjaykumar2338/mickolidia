@@ -292,6 +292,8 @@ class DashboardController extends Controller
         $challengeBalance = (float) $challengeMetrics['challenge_balance'];
         $challengeEquity = (float) $challengeMetrics['challenge_equity'];
         $challengeStartingBalance = (float) $challengeMetrics['challenge_starting_balance'];
+        $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
+        $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
 
         return [
             'id' => $account->id,
@@ -331,8 +333,6 @@ class DashboardController extends Controller
             'floating_pnl_tone' => $this->metricTone((float) $account->profit_loss),
             'total_profit' => $this->formatMoney($phaseProfit),
             'phase_profit' => $this->formatMoney($phaseProfit),
-            'raw_balance' => $this->formatMoney((float) $challengeMetrics['raw_balance']),
-            'raw_equity' => $this->formatMoney((float) $challengeMetrics['raw_equity']),
             'today_profit' => $this->formatMoney((float) $account->today_profit),
             'daily_drawdown' => $this->formatMoney((float) $account->daily_drawdown),
             'max_drawdown' => $this->formatMoney((float) $account->max_drawdown),
@@ -346,14 +346,16 @@ class DashboardController extends Controller
             'max_drawdown_limit_percent' => number_format((float) $account->max_drawdown_limit_percent, 1).'%',
             'minimum_trading_days' => (int) $account->minimum_trading_days,
             'trading_days_completed' => (int) $account->trading_days_completed,
-            'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
-            'progress_label' => number_format((float) $account->profit_target_progress_percent, 0).'%',
+            'progress_value' => max(min($targetProgress, 100), 0),
+            'progress_label' => number_format($targetProgress, 0).'%',
+            'profit_target_amount' => $this->formatMoney($targetAmount),
             'profit_split' => number_format((float) $account->profit_split, 0).'%',
             'payout_eligible_at' => $this->formatDateTime($fundedTiming['payout_eligible_at']),
             'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
+            'breach_status' => $this->breachStatusLabel($account),
             'trading_blocked' => (bool) $account->trading_blocked,
             'final_state_locked' => (bool) $account->final_state_locked,
             'state_notice' => $this->stateNotice($account),
@@ -373,11 +375,12 @@ class DashboardController extends Controller
             return null;
         }
 
-        $targetAmount = $this->profitTargetAmount($account);
         $reference = $account->account_reference ?? __('N/A');
         $platformAccountId = $account->platform_account_id ?: __('Link pending');
         $challengeMetrics = $this->challengeMetrics($account);
         $phaseProfit = (float) $challengeMetrics['realized_profit'];
+        $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
+        $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
@@ -412,13 +415,37 @@ class DashboardController extends Controller
                     'tone' => 'slate',
                 ],
                 [
-                    'label' => __('Current balance'),
+                    'label' => __('Profit target progress'),
+                    'value' => number_format($targetProgress, 1).'%',
+                    'hint' => $this->formatMoney($phaseProfit).' / '.$this->formatMoney($targetAmount),
+                    'tone' => $targetProgress >= 100 ? 'emerald' : 'amber',
+                ],
+                [
+                    'label' => __('Daily loss used'),
+                    'value' => $this->formatMoney((float) $account->daily_loss_used),
+                    'hint' => __('Limit: :value', ['value' => $this->formatMoney((float) $account->daily_drawdown_limit_amount)]),
+                    'tone' => (float) $account->daily_loss_used >= (float) $account->daily_drawdown_limit_amount && (float) $account->daily_drawdown_limit_amount > 0 ? 'rose' : 'sky',
+                ],
+                [
+                    'label' => __('Max drawdown used'),
+                    'value' => $this->formatMoney((float) $account->max_drawdown_used),
+                    'hint' => __('Limit: :value', ['value' => $this->formatMoney((float) $account->max_drawdown_limit_amount)]),
+                    'tone' => (float) $account->max_drawdown_used >= (float) $account->max_drawdown_limit_amount && (float) $account->max_drawdown_limit_amount > 0 ? 'rose' : 'slate',
+                ],
+                [
+                    'label' => __('Breach status'),
+                    'value' => $this->breachStatusLabel($account),
+                    'hint' => __('Backend rule decision'),
+                    'tone' => $account->challenge_status === 'failed' || (bool) $account->trading_blocked ? 'rose' : 'emerald',
+                ],
+                [
+                    'label' => __('Challenge balance'),
                     'value' => $this->formatMoney((float) $challengeMetrics['challenge_balance']),
                     'hint' => __('Initial balance plus realized profit'),
                     'tone' => 'amber',
                 ],
                 [
-                    'label' => __('Equity'),
+                    'label' => __('Challenge equity'),
                     'value' => $this->formatMoney((float) $challengeMetrics['challenge_equity']),
                     'hint' => __('Challenge balance plus open P&L'),
                     'tone' => 'sky',
@@ -430,16 +457,10 @@ class DashboardController extends Controller
                     'tone' => $this->metricTone((float) $account->profit_loss),
                 ],
                 [
-                    'label' => __('Recognized profit'),
+                    'label' => __('Realized P/L'),
                     'value' => $this->formatMoney($phaseProfit),
                     'hint' => __('Closed performance'),
                     'tone' => $this->metricTone($phaseProfit),
-                ],
-                [
-                    'label' => __('Profit target'),
-                    'value' => $this->formatMoney($targetAmount),
-                    'hint' => number_format((float) $account->profit_target_percent, 1).'%',
-                    'tone' => 'emerald',
                 ],
             ],
         ];
@@ -486,12 +507,10 @@ class DashboardController extends Controller
             return [];
         }
 
-        $targetAmount = $this->profitTargetAmount($account);
         $challengeMetrics = $this->challengeMetrics($account);
         $phaseProfit = (float) $challengeMetrics['realized_profit'];
-        $targetProgress = $targetAmount > 0
-            ? round(max(min(($phaseProfit / $targetAmount) * 100, 100), 0), 2)
-            : (float) $account->profit_target_progress_percent;
+        $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
+        $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
         $dailyLossLimit = (float) $account->daily_drawdown_limit_amount;
         $maxDrawdownLimit = (float) $account->max_drawdown_limit_amount;
         $minimumTradingDays = max((int) $account->minimum_trading_days, 1);
@@ -1371,6 +1390,9 @@ class DashboardController extends Controller
             : $this->syncFreshness($account->last_synced_at);
         $challengeMetrics = $this->challengeMetrics($account);
         $consistency = $this->consistencyState($account);
+        $phaseProfit = (float) $challengeMetrics['realized_profit'];
+        $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
+        $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
 
         return [
             'id' => $account->id,
@@ -1387,13 +1409,13 @@ class DashboardController extends Controller
             'balance' => $this->formatMoney((float) $challengeMetrics['challenge_balance']),
             'equity' => $this->formatMoney((float) $challengeMetrics['challenge_equity']),
             'starting_balance' => $this->formatMoney((float) $challengeMetrics['challenge_starting_balance']),
-            'total_profit' => $this->formatMoney((float) $challengeMetrics['realized_profit']),
-            'raw_balance' => $this->formatMoney((float) $challengeMetrics['raw_balance']),
-            'raw_equity' => $this->formatMoney((float) $challengeMetrics['raw_equity']),
+            'total_profit' => $this->formatMoney($phaseProfit),
             'floating_pnl' => $this->formatMoney((float) $account->profit_loss),
             'floating_pnl_tone' => $this->metricTone((float) $account->profit_loss),
-            'progress' => number_format((float) $account->profit_target_progress_percent, 0).'%',
-            'progress_value' => max(min((float) $account->profit_target_progress_percent, 100), 0),
+            'today_profit' => $this->formatMoney((float) $account->today_profit),
+            'progress' => number_format($targetProgress, 0).'%',
+            'progress_value' => max(min($targetProgress, 100), 0),
+            'profit_target_amount' => $this->formatMoney($targetAmount),
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
@@ -1421,6 +1443,7 @@ class DashboardController extends Controller
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
+            'breach_status' => $this->breachStatusLabel($account),
             'trading_blocked' => (bool) $account->trading_blocked,
             'final_state_locked' => (bool) $account->final_state_locked,
             'state_notice' => $this->stateNotice($account),
@@ -1583,7 +1606,8 @@ class DashboardController extends Controller
             ];
         }
 
-        $eligibleProfit = max((float) $account->total_profit, 0) * (((float) $account->profit_split) / 100);
+        $challengeMetrics = $this->challengeMetrics($account);
+        $eligibleProfit = max((float) $challengeMetrics['realized_profit'], 0) * (((float) $account->profit_split) / 100);
         $fundedTiming = $this->fundedTiming($account, $this->planDefinitionForAccount($account));
 
         return [
@@ -1664,7 +1688,10 @@ class DashboardController extends Controller
             });
     }
 
-    private function profitTargetAmount(TradingAccount $account): float
+    /**
+     * @param  array<string, mixed>|null  $challengeMetrics
+     */
+    private function profitTargetAmount(TradingAccount $account, ?array $challengeMetrics = null): float
     {
         $storedAmount = (float) $account->profit_target_amount;
 
@@ -1672,7 +1699,34 @@ class DashboardController extends Controller
             return $storedAmount;
         }
 
-        return round(((float) $account->starting_balance * (float) $account->profit_target_percent) / 100, 2);
+        $challengeMetrics ??= $this->challengeMetrics($account);
+        $startingBalance = (float) ($challengeMetrics['challenge_starting_balance'] ?? $account->starting_balance ?? $account->account_size ?? 0);
+
+        return round(($startingBalance * (float) $account->profit_target_percent) / 100, 2);
+    }
+
+    private function profitTargetProgressPercent(float $phaseProfit, float $targetAmount): float
+    {
+        if ($targetAmount <= 0) {
+            return 0.0;
+        }
+
+        return round(max(min(($phaseProfit / $targetAmount) * 100, 100), 0), 2);
+    }
+
+    private function breachStatusLabel(TradingAccount $account): string
+    {
+        if ($account->challenge_status === 'failed') {
+            return $account->failure_reason
+                ? $this->humanizeStatus((string) $account->failure_reason)
+                : __('Breached');
+        }
+
+        if ((bool) $account->trading_blocked) {
+            return __('Trading blocked');
+        }
+
+        return __('No breach');
     }
 
     /**
