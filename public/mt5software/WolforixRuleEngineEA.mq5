@@ -26,6 +26,7 @@ input int               OpenPositionHeartbeatSeconds = 10;
 input double            FloatingSyncThresholdAmount = 10.0;
 input int               CloseRetryAttempts       = 3;
 input int               CloseRetryDelayMilliseconds = 1500;
+input bool              DiagnosticOnly           = true;
 
 WFRuleSet      g_rules;
 WFRuntimeState g_state;
@@ -313,12 +314,41 @@ void EvaluateEngine(const string source)
    if(g_state.Status == WF_STATUS_FAILED || g_state.TradingBlocked)
      {
       string last_trade_action = g_last_action;
+      string close_reason = g_state.BreachReason;
+      if(StringLen(close_reason) == 0)
+         close_reason = (g_state.Status == WF_STATUS_FAILED) ? "Local EA status failed" : "Local EA trading block";
+      string close_source = "local_ea_rule_engine";
+      bool close_positions_required = false;
+      bool mt5_deactivation_required = false;
+
+      PrintFormat("Wolforix Close Decision: source=%s reason=%s status=%s trading_blocked=%s close_positions_required=%s mt5_deactivation_required=%s diagnostic_only=%s positions=%d backend_response_body=%s",
+                  close_source,
+                  close_reason,
+                  WFEngineStatusText(g_state.Status),
+                  WFYesNo(g_state.TradingBlocked),
+                  WFYesNo(close_positions_required),
+                  WFYesNo(mt5_deactivation_required),
+                  WFYesNo(DiagnosticOnly),
+                  PositionsTotal(),
+                  g_sync_state.LastResponseBody);
+
       bool positions_ok = WFCloseAllPositions(g_trade,
                                               g_close_report,
                                               last_trade_action,
                                               CloseRetryAttempts,
-                                              CloseRetryDelayMilliseconds);
-      bool orders_ok    = WFDeleteAllPendingOrders(g_trade,last_trade_action);
+                                              CloseRetryDelayMilliseconds,
+                                              DiagnosticOnly,
+                                              close_reason,
+                                              close_source,
+                                              g_state.TradingBlocked,
+                                              close_positions_required,
+                                              mt5_deactivation_required,
+                                              g_sync_state.LastResponseBody);
+      bool orders_ok    = WFDeleteAllPendingOrders(g_trade,
+                                                   last_trade_action,
+                                                   DiagnosticOnly,
+                                                   close_reason,
+                                                   close_source);
 
       if(last_trade_action != g_last_action)
         {

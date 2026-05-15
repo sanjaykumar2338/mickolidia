@@ -264,11 +264,12 @@ class TradingAccountMetricsController extends Controller
                 'last_synced_at' => optional($updatedAccount->last_synced_at)->toIso8601String(),
             ];
 
-            Log::info('MT5 metrics EA action decision.', [
+            Log::info('MT5 metrics API response sent to EA.', [
                 'account_identifier' => $accountIdentifier,
                 'account_reference' => $updatedAccount->account_reference,
                 'trading_account_id' => $updatedAccount->id,
                 'sync_trigger' => $syncTrigger,
+                'response' => $responsePayload,
                 'ea_action' => $responsePayload['ea_action'],
                 'ea_action_reason' => $responsePayload['ea_action_reason'],
                 'close_positions_required' => $responsePayload['close_positions_required'],
@@ -281,6 +282,10 @@ class TradingAccountMetricsController extends Controller
                 'account_status' => $updatedAccount->account_status,
                 'failure_reason' => $updatedAccount->failure_reason,
                 'platform_status' => $updatedAccount->platform_status,
+                'balance' => (float) $updatedAccount->balance,
+                'equity' => (float) $updatedAccount->equity,
+                'incoming_platform_login' => $validated['platform_login'] ?? null,
+                'stored_platform_login' => $updatedAccount->platform_login,
                 'rule_state' => [
                     'daily_drawdown_breached' => data_get($updatedAccount->rule_state, 'daily_drawdown_breached'),
                     'max_drawdown_breached' => data_get($updatedAccount->rule_state, 'max_drawdown_breached'),

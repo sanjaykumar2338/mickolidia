@@ -508,7 +508,14 @@ bool WFCloseAllPositions(CTrade &trade,
                          WFCloseReport &report,
                          string &last_action,
                          const int retry_attempts,
-                         const int retry_delay_ms)
+                         const int retry_delay_ms,
+                         const bool diagnostic_only,
+                         const string close_reason,
+                         const string close_source,
+                         const bool trading_blocked,
+                         const bool close_positions_required,
+                         const bool mt5_deactivation_required,
+                         const string backend_response_body)
   {
    WFResetCloseReport(report);
    int attempts = MathMax(retry_attempts,1);
@@ -556,6 +563,39 @@ bool WFCloseAllPositions(CTrade &trade,
             close_price = SymbolInfoDouble(symbol,SYMBOL_BID);
          else if(position_type == POSITION_TYPE_SELL)
             close_price = SymbolInfoDouble(symbol,SYMBOL_ASK);
+
+         PrintFormat("Wolforix AutoClose Triggered: reason=%s source=%s ticket=%I64u symbol=%s volume=%.2f trading_blocked=%s close_positions_required=%s mt5_deactivation_required=%s diagnostic_only=%s server_response_body=%s",
+                     close_reason,
+                     close_source,
+                     ticket,
+                     symbol,
+                     volume,
+                     WFYesNo(trading_blocked),
+                     WFYesNo(close_positions_required),
+                     WFYesNo(mt5_deactivation_required),
+                     WFYesNo(diagnostic_only),
+                     backend_response_body);
+
+         if(diagnostic_only)
+           {
+            string diagnostic_reason = StringFormat("diagnostic_only=true; would_close ticket=%I64u symbol=%s volume=%.2f close_price=%.*f reason=%s source=%s",
+                                                    ticket,
+                                                    symbol,
+                                                    volume,
+                                                    digits,
+                                                    close_price,
+                                                    close_reason,
+                                                    close_source);
+            WFAppendJsonString(reasons_json,first_reason,diagnostic_reason);
+            last_action = "DiagnosticOnly: would close " + symbol + " #" + StringFormat("%I64u",ticket);
+            PrintFormat("Wolforix DiagnosticOnly: NOT closing ticket=%I64u symbol=%s volume=%.2f reason=%s source=%s",
+                        ticket,
+                        symbol,
+                        volume,
+                        close_reason,
+                        close_source);
+            continue;
+           }
 
          ResetLastError();
          bool closed = trade.PositionClose(ticket);
@@ -626,7 +666,9 @@ bool WFCloseAllPositions(CTrade &trade,
    WFCollectRemainingCloseTickets(report.FailedCloseTicketsJson,report.PositionsRemainingCount);
    report.Success = (report.PositionsRemainingCount == 0);
 
-   if(report.Success)
+   if(diagnostic_only)
+      report.LastMessage = "DiagnosticOnly enabled; no positions were closed";
+   else if(report.Success)
       report.LastMessage = "All open positions closed successfully before final trading block";
    else if(StringLen(report.LastMessage) == 0 || report.LastMessage == "No close attempt required")
       report.LastMessage = "Some open positions could not be closed before final trading block";
@@ -634,7 +676,11 @@ bool WFCloseAllPositions(CTrade &trade,
    return report.Success;
   }
 
-bool WFDeleteAllPendingOrders(CTrade &trade,string &last_action)
+bool WFDeleteAllPendingOrders(CTrade &trade,
+                              string &last_action,
+                              const bool diagnostic_only,
+                              const string close_reason,
+                              const string close_source)
   {
    bool all_ok = true;
    for(int i = OrdersTotal() - 1; i >= 0; --i)
@@ -647,6 +693,18 @@ bool WFDeleteAllPendingOrders(CTrade &trade,string &last_action)
          continue;
 
       string symbol = OrderGetString(ORDER_SYMBOL);
+      if(diagnostic_only)
+        {
+         PrintFormat("Wolforix DiagnosticOnly: NOT deleting pending order ticket=%I64u symbol=%s reason=%s source=%s",
+                     ticket,
+                     symbol,
+                     close_reason,
+                     close_source);
+         last_action = "DiagnosticOnly: would delete pending order " + symbol + " #" + StringFormat("%I64u",ticket);
+         all_ok = false;
+         continue;
+        }
+
       if(trade.OrderDelete(ticket))
         {
          string ticket_str = StringFormat("%I64u",ticket);

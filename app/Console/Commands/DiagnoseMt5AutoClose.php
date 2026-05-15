@@ -388,7 +388,7 @@ class DiagnoseMt5AutoClose extends Command
             (string) $account->id,
             (string) $account->platform_login,
             (string) $account->platform_account_id,
-            'MT5 metrics EA action decision',
+            'MT5 metrics API response sent to EA',
             'MT5 deactivation',
             'close_all_positions',
             'close_positions',
