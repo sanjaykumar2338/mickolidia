@@ -172,6 +172,82 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertSame('fusion-investor-updated', $fusionEntry->fresh()->investor_password);
     }
 
+    public function test_show_mt5_credentials_masks_by_default_and_reveals_only_with_flag(): void
+    {
+        $user = User::factory()->create();
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+        ]);
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '335405',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'REAL_PASSWORD',
+            'investor_password' => 'REAL_INVESTOR_PASSWORD',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => $account->id,
+            'allocated_user_id' => $user->id,
+            'allocated_at' => now(),
+        ]);
+
+        $this->artisan('wolforix:show-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+        ])
+            ->expectsOutputToContain('Secrets are masked.')
+            ->expectsOutputToContain('335405')
+            ->expectsOutputToContain('FusionMarkets-Demo')
+            ->expectsOutputToContain('WFX-MT5-00057-8HN7')
+            ->doesntExpectOutputToContain('REAL_PASSWORD')
+            ->doesntExpectOutputToContain('REAL_INVESTOR_PASSWORD')
+            ->assertSuccessful();
+
+        $this->artisan('wolforix:show-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('Sensitive credentials shown once, do not share publicly')
+            ->expectsOutputToContain('REAL_PASSWORD')
+            ->expectsOutputToContain('REAL_INVESTOR_PASSWORD')
+            ->assertSuccessful();
+    }
+
+    public function test_show_mt5_credentials_refuses_other_targets(): void
+    {
+        $this->artisan('wolforix:show-mt5-credentials', [
+            'login' => '335406',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('Refusing to run')
+            ->assertFailed();
+
+        $this->artisan('wolforix:show-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-OTHER',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('Refusing to run')
+            ->assertFailed();
+    }
+
     public function test_fusionmarkets_import_can_rewrite_existing_entry_with_wrong_key_encrypted_credentials(): void
     {
         $entry = Mt5AccountPoolEntry::factory()->create([
