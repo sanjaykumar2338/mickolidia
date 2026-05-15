@@ -27,6 +27,8 @@ input double            FloatingSyncThresholdAmount = 10.0;
 input int               CloseRetryAttempts       = 3;
 input int               CloseRetryDelayMilliseconds = 1500;
 input bool              DiagnosticOnly           = true;
+input bool              UseBackendRuleDecision   = true;
+input bool              EnforceLocalRulesWhenBackendUnavailable = false;
 
 WFRuleSet      g_rules;
 WFRuntimeState g_state;
@@ -219,6 +221,96 @@ bool MaybeSyncMetrics(const bool force_sync,const string trigger)
    return MaybeSyncMetricsWithPolicy(force_sync,trigger,SyncIntervalSeconds,false);
   }
 
+bool BackendHasSuccessfulResponse()
+  {
+   return (g_sync_state.LastHttpCode >= 200 &&
+           g_sync_state.LastHttpCode < 300 &&
+           StringLen(g_sync_state.LastResponseBody) > 0);
+  }
+
+bool BackendBoolFieldTrue(const string field_name)
+  {
+   string body = g_sync_state.LastResponseBody;
+   string pattern = "\"" + field_name + "\":true";
+   return StringFind(body,pattern) >= 0;
+  }
+
+bool BackendStringFieldEquals(const string field_name,const string expected)
+  {
+   string body = g_sync_state.LastResponseBody;
+   string pattern = "\"" + field_name + "\":\"" + expected + "\"";
+   return StringFind(body,pattern) >= 0;
+  }
+
+string BackendStringFieldValue(const string field_name,const string fallback)
+  {
+   string body = g_sync_state.LastResponseBody;
+   string pattern = "\"" + field_name + "\":\"";
+   int start = StringFind(body,pattern);
+   if(start < 0)
+      return fallback;
+
+   start += StringLen(pattern);
+   int finish = StringFind(body,"\"",start);
+   if(finish <= start)
+      return fallback;
+
+   return StringSubstr(body,start,finish - start);
+  }
+
+bool BackendRequiresClose()
+  {
+   if(!BackendHasSuccessfulResponse())
+      return false;
+
+   return BackendBoolFieldTrue("trading_blocked") ||
+          BackendBoolFieldTrue("close_positions_required") ||
+          BackendBoolFieldTrue("mt5_deactivation_required") ||
+          BackendStringFieldEquals("ea_action","close_all_positions_and_disable_account") ||
+          BackendStringFieldEquals("ea_action","close_positions");
+  }
+
+bool BackendAllowsContinue()
+  {
+   if(!BackendHasSuccessfulResponse())
+      return false;
+
+   return BackendStringFieldEquals("ea_action","continue") &&
+          !BackendBoolFieldTrue("trading_blocked") &&
+          !BackendBoolFieldTrue("close_positions_required") &&
+          !BackendBoolFieldTrue("mt5_deactivation_required");
+  }
+
+bool LocalRulesAreAuthoritative()
+  {
+   if(!UseBackendRuleDecision || !EnableSync)
+      return true;
+
+   if(EnforceLocalRulesWhenBackendUnavailable && !BackendHasSuccessfulResponse())
+      return true;
+
+   return false;
+  }
+
+void ClearLocalFinalStateFromBackendContinue()
+  {
+   if(!UseBackendRuleDecision || !EnableSync || !BackendAllowsContinue())
+      return;
+
+   if(g_state.Status == WF_STATUS_ACTIVE && !g_state.TradingBlocked && StringLen(g_state.BreachReason) == 0)
+      return;
+
+   g_state.Status = WF_STATUS_ACTIVE;
+   g_state.TradingBlocked = false;
+   g_state.BreachReason = "";
+   g_state.FailedAt = 0;
+   g_state.PassedAt = 0;
+   g_last_action = "Backend continue cleared local close state";
+   PrintFormat("Wolforix Backend Authority: cleared local final/blocked state because backend response is continue. response=%s",
+               g_sync_state.LastResponseBody);
+   MarkStateDirty();
+  }
+
 void MaybeSyncFloatingState()
   {
    if(!EnableSync)
@@ -291,41 +383,94 @@ void EvaluateEngine(const string source)
 
    if(g_state.Status == WF_STATUS_ACTIVE)
      {
+      bool local_rules_authoritative = LocalRulesAreAuthoritative();
+
       if(g_metrics.DailyLossBreached)
         {
-         WFMarkFailure(g_state,now,"Daily loss limit breached");
-         g_last_action = "Daily loss breach detected";
-         MarkStateDirty();
+         if(local_rules_authoritative)
+           {
+            WFMarkFailure(g_state,now,"Daily loss limit breached");
+            g_last_action = "Daily loss breach detected";
+            MarkStateDirty();
+           }
+         else
+           {
+            g_last_action = "Local daily loss breach observed; waiting for backend decision";
+            PrintFormat("Wolforix Local Rule Observation: daily_loss_breached=true but backend authority is enabled. balance=%.2f equity=%.2f daily_loss=%.2f limit=%.2f backend_response=%s",
+                        balance,
+                        equity,
+                        g_metrics.DailyLossAmount,
+                        g_metrics.DailyLossLimitAmount,
+                        g_sync_state.LastResponseBody);
+           }
         }
       else if(g_metrics.MaxDrawdownBreached)
         {
-         WFMarkFailure(g_state,now,"Maximum drawdown limit breached");
-         g_last_action = "Maximum drawdown breach detected";
-         MarkStateDirty();
+         if(local_rules_authoritative)
+           {
+            WFMarkFailure(g_state,now,"Maximum drawdown limit breached");
+            g_last_action = "Maximum drawdown breach detected";
+            MarkStateDirty();
+           }
+         else
+           {
+            g_last_action = "Local max drawdown breach observed; waiting for backend decision";
+            PrintFormat("Wolforix Local Rule Observation: max_drawdown_breached=true but backend authority is enabled. balance=%.2f equity=%.2f max_drawdown=%.2f limit=%.2f backend_response=%s",
+                        balance,
+                        equity,
+                        g_metrics.MaxDrawdownAmount,
+                        g_metrics.MaxDrawdownLimitAmount,
+                        g_sync_state.LastResponseBody);
+           }
         }
       else if(g_metrics.Passed)
         {
-         WFMarkPassed(g_state,now);
-         g_last_action = "Challenge passed";
-         MarkStateDirty();
+         if(local_rules_authoritative)
+           {
+            WFMarkPassed(g_state,now);
+            g_last_action = "Challenge passed";
+            MarkStateDirty();
+           }
+         else
+           {
+            g_last_action = "Local pass observed; waiting for backend decision";
+            PrintFormat("Wolforix Local Rule Observation: profit_target_reached=true but backend authority is enabled. profit=%.2f target=%.2f backend_response=%s",
+                        g_metrics.ProfitAmount,
+                        g_metrics.ProfitTargetAmount,
+                        g_sync_state.LastResponseBody);
+           }
         }
      }
 
-   if(g_state.Status == WF_STATUS_FAILED || g_state.TradingBlocked)
+   ClearLocalFinalStateFromBackendContinue();
+
+   bool backend_close_required = UseBackendRuleDecision && EnableSync && BackendRequiresClose();
+   bool local_close_required = (g_state.Status == WF_STATUS_FAILED || g_state.TradingBlocked) && LocalRulesAreAuthoritative();
+
+   if(backend_close_required || local_close_required)
      {
       string last_trade_action = g_last_action;
-      string close_reason = g_state.BreachReason;
+      string close_reason = backend_close_required
+         ? BackendStringFieldValue("ea_action_reason","backend_requested_close")
+         : g_state.BreachReason;
       if(StringLen(close_reason) == 0)
-         close_reason = (g_state.Status == WF_STATUS_FAILED) ? "Local EA status failed" : "Local EA trading block";
-      string close_source = "local_ea_rule_engine";
-      bool close_positions_required = false;
-      bool mt5_deactivation_required = false;
+         close_reason = backend_close_required ? "Backend requested close" : ((g_state.Status == WF_STATUS_FAILED) ? "Local EA status failed" : "Local EA trading block");
+      string close_source = backend_close_required ? "backend_api_response" : "local_ea_rule_engine";
+      bool close_positions_required = backend_close_required
+         ? BackendBoolFieldTrue("close_positions_required")
+         : false;
+      bool mt5_deactivation_required = backend_close_required
+         ? BackendBoolFieldTrue("mt5_deactivation_required")
+         : false;
+      bool trading_blocked = backend_close_required
+         ? BackendBoolFieldTrue("trading_blocked")
+         : g_state.TradingBlocked;
 
       PrintFormat("Wolforix Close Decision: source=%s reason=%s status=%s trading_blocked=%s close_positions_required=%s mt5_deactivation_required=%s diagnostic_only=%s positions=%d backend_response_body=%s",
                   close_source,
                   close_reason,
                   WFEngineStatusText(g_state.Status),
-                  WFYesNo(g_state.TradingBlocked),
+                  WFYesNo(trading_blocked),
                   WFYesNo(close_positions_required),
                   WFYesNo(mt5_deactivation_required),
                   WFYesNo(DiagnosticOnly),
@@ -340,7 +485,7 @@ void EvaluateEngine(const string source)
                                               DiagnosticOnly,
                                               close_reason,
                                               close_source,
-                                              g_state.TradingBlocked,
+                                              trading_blocked,
                                               close_positions_required,
                                               mt5_deactivation_required,
                                               g_sync_state.LastResponseBody);

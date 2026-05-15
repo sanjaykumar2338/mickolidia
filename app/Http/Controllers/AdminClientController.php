@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
+use App\Support\ChallengeCalculationBreakdown;
 use App\Support\CountryEligibility;
 use App\Support\Mt5ConnectorCredentials;
 use App\Support\Mt5ConnectorPackageBuilder;
@@ -27,6 +28,7 @@ class AdminClientController extends Controller
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
         private readonly CountryEligibility $countryEligibility,
         private readonly Mt5ConnectorStatus $mt5ConnectorStatus,
+        private readonly ChallengeCalculationBreakdown $challengeCalculationBreakdown,
     ) {}
 
     public function index(): View
@@ -264,6 +266,9 @@ class AdminClientController extends Controller
             'available_message' => __('This table is built from the latest persisted MT5 sync snapshots; no duplicate trade store is created.'),
         ]);
         $latestSnapshot = $this->latestAdminMetricSnapshot($selectedAccount);
+        $calculation = $selectedAccount instanceof TradingAccount
+            ? $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot)
+            : [];
         $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
         $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
         $filters = $this->adminTradeFilters($request);
@@ -300,12 +305,15 @@ class AdminClientController extends Controller
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
                     : null,
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
-                'balance' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->balance, $selectedAccount?->balance)),
-                'equity' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->equity, $selectedAccount?->equity)),
-                'floating_pl' => $this->formatMoney((float) $todaySummary['current_floating_pnl_value']),
+                'balance' => $this->formatMoney((float) ($calculation['challenge_balance'] ?? 0)),
+                'equity' => $this->formatMoney((float) ($calculation['challenge_equity'] ?? 0)),
+                'raw_balance' => $this->formatMoney((float) ($calculation['raw_balance'] ?? $this->adminMetricAmount($latestSnapshot?->balance, $selectedAccount?->balance))),
+                'raw_equity' => $this->formatMoney((float) ($calculation['raw_equity'] ?? $this->adminMetricAmount($latestSnapshot?->equity, $selectedAccount?->equity))),
+                'floating_pl' => $this->formatMoney((float) ($calculation['floating_pnl'] ?? $todaySummary['current_floating_pnl_value'])),
                 'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount?->profit_loss)),
                 'today_profit' => $todaySummary['today_profit_loss'],
-                'total_realized_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount?->total_profit)),
+                'total_realized_pl' => $this->formatMoney((float) ($calculation['realized_profit'] ?? $this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount?->total_profit))),
+                'profit_target_progress' => number_format((float) ($calculation['profit_target_progress_percent'] ?? 0), 1).'%',
                 'trading_days' => $selectedAccount instanceof TradingAccount
                     ? sprintf('%d / %d', (int) $selectedAccount->trading_days_completed, (int) $selectedAccount->minimum_trading_days)
                     : '0 / 0',
@@ -327,6 +335,7 @@ class AdminClientController extends Controller
             'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
             'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
             'todaySummary' => $todaySummary,
+            'calculation' => $this->formatAdminCalculationBreakdown($calculation),
             'diagnostics' => [
                 'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
                 'latest_sync_log_message' => $latestSyncLog?->message ?? 'N/A',
@@ -667,6 +676,38 @@ class AdminClientController extends Controller
         }
 
         return 0.0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $calculation
+     * @return array{cards:list<array{label:string,value:string}>,formulas:array<string,string>}
+     */
+    private function formatAdminCalculationBreakdown(array $calculation): array
+    {
+        if ($calculation === []) {
+            return [
+                'cards' => [],
+                'formulas' => [],
+            ];
+        }
+
+        return [
+            'cards' => [
+                ['label' => 'Challenge baseline', 'value' => $this->formatMoney((float) $calculation['challenge_starting_balance']).' · '.$calculation['challenge_starting_balance_source']],
+                ['label' => 'Broker reference', 'value' => $this->formatMoney((float) $calculation['broker_phase_reference_balance']).' · '.$calculation['broker_reference_source']],
+                ['label' => 'MT5 balance / equity', 'value' => $this->formatMoney((float) $calculation['raw_balance']).' / '.$this->formatMoney((float) $calculation['raw_equity'])],
+                ['label' => 'Challenge balance / equity', 'value' => $this->formatMoney((float) $calculation['challenge_balance']).' / '.$this->formatMoney((float) $calculation['challenge_equity'])],
+                ['label' => 'Realized P/L', 'value' => $this->formatMoney((float) $calculation['realized_profit'])],
+                ['label' => 'Today P/L', 'value' => $this->formatMoney((float) $calculation['today_profit'])],
+                ['label' => 'Profit target', 'value' => $this->formatMoney((float) $calculation['profit_target_amount']).' · '.number_format((float) $calculation['profit_target_progress_percent'], 1).'%'],
+                ['label' => 'Profit target met', 'value' => (bool) $calculation['profit_target_met'] ? 'Yes' : 'No'],
+                ['label' => 'Daily loss', 'value' => $this->formatMoney((float) $calculation['daily_loss_used']).' / '.$this->formatMoney((float) $calculation['daily_loss_limit'])],
+                ['label' => 'Daily breach', 'value' => (bool) $calculation['daily_breach'] ? 'Yes' : 'No'],
+                ['label' => 'Max drawdown', 'value' => $this->formatMoney((float) $calculation['max_drawdown_used']).' / '.$this->formatMoney((float) $calculation['max_drawdown_limit'])],
+                ['label' => 'Max breach', 'value' => (bool) $calculation['max_breach'] ? 'Yes' : 'No'],
+            ],
+            'formulas' => (array) ($calculation['formula'] ?? []),
+        ];
     }
 
     /**

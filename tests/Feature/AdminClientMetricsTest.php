@@ -7,6 +7,7 @@ use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class AdminClientMetricsTest extends TestCase
@@ -290,6 +291,81 @@ class AdminClientMetricsTest extends TestCase
         $this->adminGet(route('admin.clients.metrics', $user))
             ->assertOk()
             ->assertSee('MT5 data may be outdated because the EA has not synced recently.');
+    }
+
+    public function test_admin_metrics_separate_mt5_broker_balance_from_challenge_calculation(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+
+        $account->forceFill([
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'balance' => 99412.37,
+            'equity' => 99411.67,
+            'profit_loss' => -0.70,
+            'total_profit' => -587.63,
+            'profit_target_percent' => 10,
+            'profit_target_amount' => 1000,
+            'daily_drawdown_limit_amount' => 400,
+            'max_drawdown_limit_amount' => 800,
+            'rule_state' => [
+                'broker_phase_reference_balance' => 100000,
+                'broker_reference_source' => 'test_reference',
+                'highest_challenge_equity_today' => 10000,
+                'rules' => [
+                    'profit_target_percent' => 10,
+                    'daily_drawdown_limit_amount' => 400,
+                    'max_drawdown_limit_amount' => 800,
+                ],
+            ],
+        ])->save();
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => now()->addSecond(),
+            'balance' => 99412.37,
+            'equity' => 99411.67,
+            'profit_loss' => -0.70,
+            'total_profit' => -587.63,
+            'today_profit' => 0,
+            'payload' => [
+                'starting_balance' => 10000,
+                'broker_phase_reference_balance' => 100000,
+                'balance' => 99412.37,
+                'equity' => 99411.67,
+                'open_positions' => [],
+                'trade_history' => [],
+            ],
+        ]);
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('Challenge balance')
+            ->assertSee('$9,412.37')
+            ->assertSee('MT5 broker balance')
+            ->assertSee('$99,412.37')
+            ->assertSee('Broker reference')
+            ->assertSee('$100,000.00')
+            ->assertSee('Profit target progress')
+            ->assertSee('0.0%');
+    }
+
+    public function test_challenge_calculation_diagnostic_command_reports_sources(): void
+    {
+        [, $account] = $this->createTraderWithTrades();
+
+        $exitCode = Artisan::call('wolforix:diagnose-challenge-calculation', [
+            'account_reference' => $account->account_reference,
+        ]);
+
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Read-only challenge calculation diagnosis', $output);
+        $this->assertStringContainsString('Account and baseline sources', $output);
+        $this->assertStringContainsString('Separated calculation values', $output);
+        $this->assertStringContainsString('Broker phase reference balance', $output);
+        $this->assertStringContainsString('Diagnostic decision', $output);
     }
 
     public function test_unauthorized_users_cannot_access_admin_metrics_page(): void

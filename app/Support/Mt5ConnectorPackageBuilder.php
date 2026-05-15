@@ -116,6 +116,7 @@ class Mt5ConnectorPackageBuilder
             "   Account Reference: {$connector['account_reference']}",
             '   Secret Token: already prefilled in the EA input defaults and included in wolforix-config.json',
             '   You can also click Load in the EA Inputs tab and select the included .set file.',
+            '   UseBackendRuleDecision should remain true so Wolforix backend rule checks control any close-only action.',
             '6. In MetaTrader 5, open Tools > Options > Expert Advisors and add this URL to Allow WebRequest:',
             '   '.$this->webRequestOrigin($connector['base_url']),
             '   If MT5 reports HTTP 1001, also add the alternate host shown in the Experts log.',
@@ -157,6 +158,8 @@ class Mt5ConnectorPackageBuilder
             'ApiToken='.$connector['secret_token'],
             'AccountReference='.$connector['account_reference'],
             'EnableSync=true',
+            'UseBackendRuleDecision=true',
+            'EnforceLocalRulesWhenBackendUnavailable=false',
         ]).PHP_EOL;
     }
 

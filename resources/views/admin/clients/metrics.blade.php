@@ -37,12 +37,15 @@
             'Plan / challenge' => $account['plan'].' / '.$account['phase'],
             'Account status' => $account['status'].' / '.$account['challenge_status'],
             'Last EA sync' => $account['last_ea_sync'],
-            'Balance' => $account['balance'],
-            'Equity' => $account['equity'],
+            'Challenge balance' => $account['balance'],
+            'Challenge equity' => $account['equity'],
+            'MT5 broker balance' => $account['raw_balance'],
+            'MT5 broker equity' => $account['raw_equity'],
             'Current floating PnL' => $account['floating_pl'],
             'Snapshot P/L' => $account['snapshot_pl'],
             'Today profit' => $account['today_profit'],
             'Total realized P/L' => $account['total_realized_pl'],
+            'Profit target progress' => $account['profit_target_progress'],
             'Trading days' => $account['trading_days'],
             'Open positions' => $account['open_positions_count'],
             'Closed trades' => $account['closed_trades_count'],
@@ -79,6 +82,29 @@
             MT5 data may be outdated because the EA has not synced recently.
         </div>
     @endif
+
+    <section class="mt-8 surface-panel rounded-[2rem] p-6">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">Calculation Breakdown</p>
+            <h2 class="mt-3 text-2xl font-semibold text-white">Challenge progress and rule checks</h2>
+        </div>
+        <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            @foreach ($calculation['cards'] as $item)
+                <div class="rounded-2xl border border-white/6 bg-black/15 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ $item['label'] }}</dt>
+                    <dd class="mt-2 break-words text-sm font-semibold text-white">{{ $item['value'] }}</dd>
+                </div>
+            @endforeach
+        </div>
+        <div class="mt-5 grid gap-3 lg:grid-cols-2">
+            @foreach ($calculation['formulas'] as $label => $formula)
+                <div class="rounded-2xl border border-white/6 bg-black/15 p-4">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ $label }}</dt>
+                    <dd class="mt-2 font-mono text-xs leading-5 text-slate-300">{{ $formula }}</dd>
+                </div>
+            @endforeach
+        </div>
+    </section>
 
     <section class="mt-8 surface-panel rounded-[2rem] p-6">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
