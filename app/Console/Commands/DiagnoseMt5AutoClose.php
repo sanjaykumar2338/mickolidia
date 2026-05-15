@@ -374,7 +374,7 @@ class DiagnoseMt5AutoClose extends Command
     private function printLogMatches(TradingAccount $account, int $maxLines, int $tailLines): void
     {
         $this->newLine();
-        $this->info('Recent Laravel log matches');
+        $this->info('Recent MT5 auto-close / Laravel log matches');
 
         $logDir = storage_path('logs');
         if (! File::isDirectory($logDir)) {
@@ -399,7 +399,11 @@ class DiagnoseMt5AutoClose extends Command
         ], static fn (string $term): bool => $term !== ''));
 
         $files = collect(File::files($logDir))
-            ->filter(fn (\SplFileInfo $file): bool => Str::startsWith($file->getFilename(), 'laravel') && $file->isFile())
+            ->filter(fn (\SplFileInfo $file): bool => $file->isFile()
+                && (
+                    Str::startsWith($file->getFilename(), 'mt5-autoclose')
+                    || Str::startsWith($file->getFilename(), 'laravel')
+                ))
             ->sortByDesc(fn (\SplFileInfo $file): int => $file->getMTime())
             ->values();
 

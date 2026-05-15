@@ -299,6 +299,33 @@ class TradingAccountMetricsController extends Controller
                 ],
             ]);
 
+            $this->logMt5AutoCloseEvent('api_response_sent_to_ea', [
+                'account_reference' => $updatedAccount->account_reference,
+                'trading_account_id' => $updatedAccount->id,
+                'mt5_login' => $updatedAccount->platform_login ?: $updatedAccount->platform_account_id,
+                'trigger_source' => $syncTrigger,
+                'timestamp' => now()->toIso8601String(),
+                'response_payload' => $responsePayload,
+                'ea_action' => $responsePayload['ea_action'],
+                'ea_action_reason' => $responsePayload['ea_action_reason'],
+                'close_positions_required' => $responsePayload['close_positions_required'],
+                'mt5_deactivation_required' => $responsePayload['mt5_deactivation_required'],
+                'trading_blocked' => $responsePayload['trading_blocked'],
+                'challenge_status' => $updatedAccount->challenge_status,
+                'failure_reason' => $updatedAccount->failure_reason,
+                'balance' => (float) $updatedAccount->balance,
+                'equity' => (float) $updatedAccount->equity,
+                'incoming_platform_login' => $validated['platform_login'] ?? null,
+                'stored_platform_login' => $updatedAccount->platform_login,
+            ]);
+
+            $this->logMt5AutoClosePayloadReport(
+                account: $updatedAccount,
+                payload: $validated,
+                responsePayload: $responsePayload,
+                triggerSource: $syncTrigger,
+            );
+
             return response()->json($responsePayload);
         } catch (\Throwable $exception) {
             report($exception);
@@ -405,6 +432,130 @@ class TradingAccountMetricsController extends Controller
         }
 
         return 'account_can_continue';
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $responsePayload
+     */
+    private function logMt5AutoClosePayloadReport(
+        TradingAccount $account,
+        array $payload,
+        array $responsePayload,
+        string $triggerSource,
+    ): void {
+        if (! $this->payloadHasCloseReport($payload)) {
+            return;
+        }
+
+        $baseContext = [
+            'account_reference' => $account->account_reference,
+            'trading_account_id' => $account->id,
+            'mt5_login' => $account->platform_login ?: $account->platform_account_id,
+            'trigger_source' => $triggerSource,
+            'timestamp' => now()->toIso8601String(),
+            'ea_action' => $responsePayload['ea_action'] ?? null,
+            'ea_action_reason' => $responsePayload['ea_action_reason'] ?? null,
+            'close_positions_required' => $responsePayload['close_positions_required'] ?? null,
+            'mt5_deactivation_required' => $responsePayload['mt5_deactivation_required'] ?? null,
+            'trading_blocked' => $responsePayload['trading_blocked'] ?? null,
+            'incoming_platform_login' => $payload['platform_login'] ?? null,
+            'stored_platform_login' => $account->platform_login,
+            'positions_close_status' => $payload['positions_close_status'] ?? null,
+            'close_success' => $payload['close_success'] ?? null,
+            'close_pending' => $payload['close_pending'] ?? null,
+            'close_result_message' => $payload['close_result_message'] ?? null,
+            'closed_positions_on_disable_count' => $payload['closed_positions_on_disable_count'] ?? null,
+            'positions_remaining_count' => $payload['positions_remaining_count'] ?? null,
+            'closed_position_tickets' => $payload['closed_position_tickets'] ?? [],
+            'closed_position_identifiers' => $payload['closed_position_identifiers'] ?? [],
+            'failed_close_tickets' => $payload['failed_close_tickets'] ?? [],
+            'close_failed_reasons' => $payload['close_failed_reasons'] ?? [],
+        ];
+
+        $this->logMt5AutoCloseEvent('ea_close_report_received', $baseContext);
+
+        foreach ($this->closeTicketRows($payload) as $row) {
+            $this->logMt5AutoCloseEvent('ea_close_ticket_reported', array_merge($baseContext, $row));
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function payloadHasCloseReport(array $payload): bool
+    {
+        foreach ([
+            'trading_blocked_ack',
+            'close_success',
+            'close_pending',
+            'positions_close_status',
+            'closed_positions_on_disable_count',
+            'positions_remaining_count',
+            'closed_position_tickets',
+            'closed_position_identifiers',
+            'failed_close_tickets',
+            'close_failed_reasons',
+            'close_result_message',
+        ] as $key) {
+            if (array_key_exists($key, $payload)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
+    private function closeTicketRows(array $payload): array
+    {
+        $rows = [];
+
+        foreach ((array) ($payload['closed_position_tickets'] ?? []) as $ticket) {
+            $rows[] = [
+                'ticket' => (string) $ticket,
+                'close_report_kind' => 'closed_position_ticket',
+                'source' => 'ea_payload',
+            ];
+        }
+
+        foreach ((array) ($payload['failed_close_tickets'] ?? []) as $ticket) {
+            $rows[] = [
+                'ticket' => (string) $ticket,
+                'close_report_kind' => 'failed_or_remaining_ticket',
+                'source' => 'ea_payload',
+            ];
+        }
+
+        foreach ((array) ($payload['close_failed_reasons'] ?? []) as $reason) {
+            $reason = (string) $reason;
+            preg_match('/ticket=([0-9]+)/', $reason, $matches);
+            preg_match('/symbol=([^ ]+)/', $reason, $symbolMatches);
+
+            $rows[] = [
+                'ticket' => $matches[1] ?? null,
+                'symbol' => $symbolMatches[1] ?? null,
+                'close_report_kind' => str_contains($reason, 'diagnostic_only=true') ? 'diagnostic_only_simulated_close' : 'close_failure_reason',
+                'source' => str_contains($reason, 'diagnostic_only=true') ? 'ea_diagnostic_only' : 'ea_payload',
+                'reason' => $reason,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function logMt5AutoCloseEvent(string $event, array $context = []): void
+    {
+        Log::channel('mt5_autoclose')->info('================ MT5 AUTO CLOSE EVENT ================', array_merge([
+            'event' => $event,
+            'logged_at' => now()->toIso8601String(),
+        ], $context));
     }
 
     /**

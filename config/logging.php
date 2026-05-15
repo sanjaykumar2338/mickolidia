@@ -72,6 +72,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'mt5_autoclose' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/mt5-autoclose.log'),
+            'level' => env('MT5_AUTOCLOSE_LOG_LEVEL', env('LOG_LEVEL', 'debug')),
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
