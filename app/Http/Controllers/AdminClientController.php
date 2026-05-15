@@ -10,6 +10,8 @@ use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\CountryEligibility;
+use App\Support\Mt5ConnectorCredentials;
+use App\Support\Mt5ConnectorPackageBuilder;
 use App\Support\Mt5ConnectorStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +19,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AdminClientController extends Controller
 {
@@ -293,6 +296,9 @@ class AdminClientController extends Controller
                 'connector_status' => $connectorStatus['label'],
                 'connector_badge' => $connectorStatus['badge'],
                 'connector_is_stale' => (bool) $connectorStatus['is_stale'],
+                'connector_download_url' => $selectedAccount instanceof TradingAccount && $this->isMt5Account($selectedAccount)
+                    ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
+                    : null,
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
                 'balance' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->balance, $selectedAccount?->balance)),
                 'equity' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->equity, $selectedAccount?->equity)),
@@ -354,6 +360,26 @@ class AdminClientController extends Controller
                 'close_result_message' => $mt5DeactivationCurrent['close_result_message'] ?? 'None',
             ],
         ]);
+    }
+
+    public function downloadMt5Connector(
+        User $user,
+        TradingAccount $account,
+        Mt5ConnectorCredentials $connectorCredentials,
+        Mt5ConnectorPackageBuilder $packageBuilder,
+    ): BinaryFileResponse {
+        abort_unless((int) $account->user_id === (int) $user->id, 404);
+        abort_unless($this->isMt5Account($account), 404);
+
+        $connector = $connectorCredentials->forAccount($account);
+        $package = $packageBuilder->build($account->fresh() ?? $account, $connector);
+
+        return response()
+            ->download($package['path'], $package['filename'], [
+                'Content-Type' => 'application/zip',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            ])
+            ->deleteFileAfterSend(true);
     }
 
     public function activate(User $user, AdminChallengeActivationService $activationService): RedirectResponse
@@ -901,6 +927,12 @@ class AdminClientController extends Controller
         return $fallbackAccount instanceof TradingAccount
             ? collect([$fallbackAccount])
             : collect();
+    }
+
+    private function isMt5Account(TradingAccount $account): bool
+    {
+        return strtolower((string) $account->platform_slug) === 'mt5'
+            || strtolower((string) $account->platform) === 'mt5';
     }
 
     private function challengeTypeLabel(string $challengeType): string

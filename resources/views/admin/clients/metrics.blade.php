@@ -9,9 +9,16 @@
             <h1 class="mt-5 text-3xl font-semibold text-white sm:text-4xl">{{ $client['full_name'] }}</h1>
             <p class="mt-4 max-w-3xl text-base leading-8 text-slate-300">{{ $client['email'] }}</p>
         </div>
-        <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
-            Back to clients
-        </a>
+        <div class="flex flex-wrap gap-3">
+            @if (! empty($account['connector_download_url']))
+                <a href="{{ $account['connector_download_url'] }}" class="rounded-full border border-amber-300/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/18">
+                    Download EA connector
+                </a>
+            @endif
+            <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                Back to clients
+            </a>
+        </div>
     </div>
 
     @if (count($accountOptions) > 1)
@@ -55,6 +62,11 @@
                     {{ $account['connector_status'] }}
                 </span>
             </dd>
+            @if (! empty($account['connector_download_url']))
+                <a href="{{ $account['connector_download_url'] }}" class="mt-4 inline-flex rounded-full border border-amber-300/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/18">
+                    Download preconfigured EA connector
+                </a>
+            @endif
         </div>
         <div class="surface-panel rounded-[1.4rem] p-5">
             <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Rule breach status</dt>
