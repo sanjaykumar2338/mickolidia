@@ -7,6 +7,7 @@ use App\Models\ChallengePurchase;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\Order;
 use App\Models\TradingAccount;
+use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Mt5\Mt5AccountPoolImportService;
@@ -240,6 +241,112 @@ class Mt5AccountPoolImportTest extends TestCase
             ->assertFailed();
 
         $this->artisan('wolforix:show-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-OTHER',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('Refusing to run')
+            ->assertFailed();
+    }
+
+    public function test_diagnose_mt5_credentials_masks_secrets_and_reports_integrity(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'client@example.test',
+        ]);
+
+        $account = TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+            'meta' => [
+                'mt5_sync' => [
+                    'server' => 'FusionMarkets-Demo',
+                    'broker' => 'FusionMarkets',
+                ],
+            ],
+        ]);
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '335405',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'N7-live-master-83',
+            'investor_password' => 'N7-live-investor-83',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => $account->id,
+            'allocated_user_id' => $user->id,
+            'allocated_at' => now(),
+            'meta' => [
+                'broker' => 'FusionMarkets',
+                'platform' => 'MT5',
+            ],
+        ]);
+
+        TradingAccountSyncLog::query()->create([
+            'trading_account_id' => $account->id,
+            'platform' => 'mt5',
+            'status' => 'success',
+            'message' => 'MT5 metrics accepted',
+            'started_at' => now()->subMinute(),
+            'completed_at' => now(),
+            'payload' => [
+                'platform_login' => '335405',
+                'platform_account_id' => '335405',
+                'server' => 'FusionMarkets-Demo',
+            ],
+        ]);
+
+        $this->artisan('wolforix:diagnose-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+        ])
+            ->expectsOutputToContain('Read-only MT5 credential integrity diagnosis')
+            ->expectsOutputToContain('source pool entry id')
+            ->expectsOutputToContain('password equals REAL_PASSWORD')
+            ->expectsOutputToContain('investor password equals REAL_INVESTOR_PASSWORD')
+            ->expectsOutputToContain('All trading_accounts using platform_login/account_id 335405')
+            ->expectsOutputToContain('auth success/accepted')
+            ->expectsOutputToContain('Final decision: credentials look real')
+            ->doesntExpectOutputToContain('N7-live-master-83')
+            ->doesntExpectOutputToContain('N7-live-investor-83')
+            ->assertSuccessful();
+
+        $this->artisan('wolforix:diagnose-mt5-credentials', [
+            'login' => '335405',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('N7-live-master-83')
+            ->expectsOutputToContain('N7-live-investor-83')
+            ->assertSuccessful();
+    }
+
+    public function test_diagnose_mt5_credentials_refuses_other_targets(): void
+    {
+        $this->artisan('wolforix:diagnose-mt5-credentials', [
+            'login' => '335406',
+            '--account-reference' => 'WFX-MT5-00057-8HN7',
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('Refusing to run')
+            ->assertFailed();
+
+        $this->artisan('wolforix:diagnose-mt5-credentials', [
             'login' => '335405',
             '--account-reference' => 'WFX-MT5-OTHER',
             '--show-secret' => true,
