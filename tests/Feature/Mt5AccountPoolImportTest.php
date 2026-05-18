@@ -604,6 +604,146 @@ class Mt5AccountPoolImportTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_import_fresh_mt5_credentials_dry_run_does_not_write_or_print_passwords(): void
+    {
+        $path = $this->createFreshMt5Csv([
+            ['login', 'server', 'password', 'investor_password', 'account_size', 'broker'],
+            ['336001', 'FusionMarkets-Demo', 'fresh-import-pass-1', 'fresh-import-investor-1', '10000', 'FusionMarkets'],
+        ]);
+
+        $this->artisan('wolforix:import-fresh-mt5-credentials', [
+            '--file' => $path,
+        ])
+            ->expectsOutputToContain('DRY RUN fresh MT5 credential import')
+            ->expectsOutputToContain('Import dry-run verification table')
+            ->expectsOutputToContain('planned')
+            ->doesntExpectOutputToContain('fresh-import-pass-1')
+            ->doesntExpectOutputToContain('fresh-import-investor-1')
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('mt5_account_pool_entries', [
+            'login' => '336001',
+            'server' => 'FusionMarkets-Demo',
+        ]);
+    }
+
+    public function test_import_fresh_mt5_credentials_confirm_encrypts_and_verifies_with_current_key(): void
+    {
+        $path = $this->createFreshMt5Csv([
+            ['login', 'server', 'password', 'investor_password', 'account_size', 'broker'],
+            ['336002', 'FusionMarkets-Demo', 'fresh-import-pass-2', 'fresh-import-investor-2', '10000', 'FusionMarkets'],
+        ]);
+
+        $this->artisan('wolforix:import-fresh-mt5-credentials', [
+            '--file' => $path,
+            '--confirm' => true,
+        ])
+            ->expectsOutputToContain('CONFIRMED fresh MT5 credential import')
+            ->expectsOutputToContain('Import verification table')
+            ->expectsOutputToContain('saved')
+            ->expectsOutputToContain('decrypt_ok')
+            ->doesntExpectOutputToContain('fresh-import-pass-2')
+            ->doesntExpectOutputToContain('fresh-import-investor-2')
+            ->assertSuccessful();
+
+        $entry = Mt5AccountPoolEntry::query()
+            ->where('login', '336002')
+            ->where('server', 'FusionMarkets-Demo')
+            ->firstOrFail();
+
+        $this->assertSame('fresh-import-pass-2', $entry->password);
+        $this->assertSame('fresh-import-investor-2', $entry->investor_password);
+        $this->assertNotSame('fresh-import-pass-2', $entry->getRawOriginal('password'));
+        $this->assertSame('fresh-import-pass-2', Crypt::decryptString((string) $entry->getRawOriginal('password')));
+        $this->assertTrue($entry->is_available);
+        $this->assertNull($entry->allocated_trading_account_id);
+    }
+
+    public function test_import_fresh_mt5_credentials_rejects_placeholders_and_prints_secrets_only_with_flag(): void
+    {
+        $path = $this->createFreshMt5Csv([
+            ['login', 'server', 'password', 'investor_password', 'account_size', 'broker'],
+            ['336003', 'FusionMarkets-Demo', 'REAL_PASSWORD', 'REAL_INVESTOR_PASSWORD', '10000', 'FusionMarkets'],
+            ['336004', 'FusionMarkets-Demo', 'fresh-import-pass-4', 'fresh-import-investor-4', '10000', 'FusionMarkets'],
+        ]);
+
+        $this->artisan('wolforix:import-fresh-mt5-credentials', [
+            '--file' => $path,
+            '--show-secret' => true,
+        ])
+            ->expectsOutputToContain('placeholder_password')
+            ->expectsOutputToContain('fresh-import-pass-4')
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('mt5_account_pool_entries', [
+            'login' => '336003',
+            'server' => 'FusionMarkets-Demo',
+        ]);
+        $this->assertDatabaseMissing('mt5_account_pool_entries', [
+            'login' => '336004',
+            'server' => 'FusionMarkets-Demo',
+        ]);
+    }
+
+    public function test_import_fresh_mt5_credentials_updates_unallocated_existing_and_skips_allocated(): void
+    {
+        $unallocated = Mt5AccountPoolEntry::factory()->create([
+            'login' => '336005',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'old-pass',
+            'investor_password' => 'old-investor',
+            'allocated_at' => null,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'is_available' => false,
+        ]);
+        $allocatedUser = User::factory()->create();
+        $allocatedAccount = TradingAccount::query()->create([
+            'user_id' => $allocatedUser->id,
+            'account_reference' => 'WFX-MT5-ALLOCATED-IMPORT',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+        ]);
+        $allocated = Mt5AccountPoolEntry::factory()->allocated()->create([
+            'login' => '336006',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'allocated-pass',
+            'investor_password' => 'allocated-investor',
+            'allocated_trading_account_id' => $allocatedAccount->id,
+            'allocated_user_id' => $allocatedUser->id,
+        ]);
+        $path = $this->createFreshMt5Csv([
+            ['login', 'server', 'password', 'investor_password', 'account_size', 'broker'],
+            ['336005', 'FusionMarkets-Demo', 'new-pass', 'new-investor', '10000', 'FusionMarkets'],
+            ['336006', 'FusionMarkets-Demo', 'should-not-save', 'should-not-save-investor', '10000', 'FusionMarkets'],
+        ]);
+
+        $this->artisan('wolforix:import-fresh-mt5-credentials', [
+            '--file' => $path,
+            '--confirm' => true,
+        ])
+            ->expectsOutputToContain('update_unallocated')
+            ->expectsOutputToContain('existing_entry_allocated')
+            ->assertSuccessful();
+
+        $this->assertSame('new-pass', $unallocated->fresh()->password);
+        $this->assertSame('new-investor', $unallocated->fresh()->investor_password);
+        $this->assertTrue($unallocated->fresh()->is_available);
+        $this->assertSame('allocated-pass', $allocated->fresh()->password);
+        $this->assertSame('allocated-investor', $allocated->fresh()->investor_password);
+    }
+
     public function test_fusionmarkets_import_can_rewrite_existing_entry_with_wrong_key_encrypted_credentials(): void
     {
         $entry = Mt5AccountPoolEntry::factory()->create([
@@ -1026,6 +1166,29 @@ class Mt5AccountPoolImportTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    /**
+     * @param  list<list<string>>  $rows
+     */
+    private function createFreshMt5Csv(array $rows): string
+    {
+        $directory = storage_path('framework/testing');
+
+        if (! is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        $path = $directory.'/'.Str::uuid()->toString().'.csv';
+        $handle = fopen($path, 'wb');
+
+        foreach ($rows as $row) {
+            fputcsv($handle, $row);
+        }
+
+        fclose($handle);
+
+        return $path;
     }
 
     /**
