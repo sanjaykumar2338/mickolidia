@@ -169,6 +169,14 @@ class CheckoutController extends Controller
 
         $launchDiscountApplied = $launchPromoCode !== null;
 
+        if ($launchDiscountApplied && $this->customerAlreadyUsedLaunchPromo($request->user(), $validated['email'], $launchPromoCode, (string) ($validated['order'] ?? ''))) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'promo_code' => __('site.checkout.validation.promo_code_used'),
+                ]);
+        }
+
         try {
             $selectedPlan = $pricingService->resolvePlan(
                 $validated['challenge_type'],
@@ -269,8 +277,10 @@ class CheckoutController extends Controller
                     ],
                     'launch_promo' => [
                         'code' => $launchPromoCode,
-                        'campaign' => $launchPromoCode !== null ? 'launch_20' : null,
+                        'campaign' => $launchPromoCode !== null ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
                         'applied' => $launchPromoCode !== null,
+                        'percent' => $launchPromoCode !== null ? $selectedPlan['discount']['percent'] : null,
+                        'amount' => $launchPromoCode !== null ? $selectedPlan['discount']['amount'] : null,
                     ],
                     'mt5_giveaway_promo' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? [
                         'id' => $giveawayPromoCode->id,
@@ -550,6 +560,23 @@ class CheckoutController extends Controller
             ->with('poolEntry')
             ->whereRaw("LOWER(REPLACE(REPLACE(code, '-', ''), ' ', '')) = ?", [$normalizedCode])
             ->first();
+    }
+
+    private function customerAlreadyUsedLaunchPromo(User $user, string $email, string $promoCode, string $currentOrderNumber = ''): bool
+    {
+        if (! (bool) config('wolforix.launch_discount.single_use_per_customer', true)) {
+            return false;
+        }
+
+        return Order::query()
+            ->where(function ($query) use ($user, $email): void {
+                $query->where('user_id', $user->id)
+                    ->orWhereRaw('LOWER(email) = ?', [strtolower($email)]);
+            })
+            ->where('metadata->launch_promo->code', $promoCode)
+            ->whereNotIn('payment_status', [Order::PAYMENT_FAILED, Order::PAYMENT_CANCELED])
+            ->when($currentOrderNumber !== '', fn ($query) => $query->where('order_number', '!=', $currentOrderNumber))
+            ->exists();
     }
 
     private function normalizeGiveawayPromoCode(string $promoCode): string

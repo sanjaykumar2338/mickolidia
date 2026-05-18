@@ -28,6 +28,16 @@ class FakeStripePaymentGateway implements PaymentGatewayInterface
             'currency' => $order->currency,
             'payload' => [
                 'fake' => true,
+                'metadata' => [
+                    'order_id' => (string) $order->id,
+                    'order_number' => $order->order_number,
+                    'coupon_code' => (string) data_get($order->metadata, 'launch_promo.code', ''),
+                    'coupon_campaign' => (string) data_get($order->metadata, 'launch_promo.campaign', ''),
+                    'coupon_percent' => (string) data_get($order->metadata, 'launch_promo.percent', ''),
+                    'discount_amount' => (string) $order->discount_amount,
+                    'base_price' => (string) $order->base_price,
+                    'final_price' => (string) $order->final_price,
+                ],
             ],
         ];
     }
@@ -50,6 +60,16 @@ class FakeStripePaymentGateway implements PaymentGatewayInterface
             'status' => 'paid',
             'payload' => [
                 'fake' => true,
+                'metadata' => [
+                    'order_id' => (string) $order->id,
+                    'order_number' => $order->order_number,
+                    'coupon_code' => (string) data_get($order->metadata, 'launch_promo.code', ''),
+                    'coupon_campaign' => (string) data_get($order->metadata, 'launch_promo.campaign', ''),
+                    'coupon_percent' => (string) data_get($order->metadata, 'launch_promo.percent', ''),
+                    'discount_amount' => (string) $order->discount_amount,
+                    'base_price' => (string) $order->base_price,
+                    'final_price' => (string) $order->final_price,
+                ],
             ],
             'source' => 'success_page',
         ];

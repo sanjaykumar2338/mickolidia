@@ -114,6 +114,8 @@ class ChallengePricingService
                 'amount' => $priceSnapshot['discount_amount'],
                 'badge' => config('wolforix.launch_discount.badge', '20% OFF - Limited Launch Offer'),
                 'urgency_text' => config('wolforix.launch_discount.urgency_text', 'Launch Discount - Limited Time Only'),
+                'code' => config('wolforix.launch_discount.code'),
+                'campaign' => config('wolforix.launch_discount.campaign', 'launch_discount'),
             ],
             'steps' => $definition['steps'],
             'phases' => array_values($definition['phases']),

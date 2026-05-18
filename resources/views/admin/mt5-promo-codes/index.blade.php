@@ -9,6 +9,14 @@
             <h1 class="mt-4 text-3xl font-semibold text-white">MT5 Promo Codes</h1>
         </div>
 
+        <div class="rounded-[1.2rem] border border-amber-300/20 bg-amber-400/10 p-5 text-sm text-amber-50">
+            <p class="font-semibold">Active goodwill checkout coupon</p>
+            <p class="mt-1">
+                {{ config('wolforix.launch_discount.code') }} gives {{ (int) config('wolforix.launch_discount.percent') }}% off eligible challenge/funding checkout orders.
+                Campaign: {{ config('wolforix.launch_discount.campaign') }}.
+            </p>
+        </div>
+
         <div class="overflow-hidden rounded-[1.6rem] border border-white/8 bg-white/4">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-white/8 text-left text-sm">

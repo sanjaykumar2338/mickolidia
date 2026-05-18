@@ -23,6 +23,7 @@ class StripePaymentGateway implements PaymentGatewayInterface
     public function createCheckoutSession(Order $order, array $context = []): array
     {
         $challengeLabel = $this->challengeTypeLabel($order->challenge_type);
+        $metadata = $this->metadata($order);
 
         $session = $this->client()->checkout->sessions->create([
             'mode' => 'payment',
@@ -32,23 +33,9 @@ class StripePaymentGateway implements PaymentGatewayInterface
             'customer_email' => $order->email,
             'billing_address_collection' => 'required',
             'payment_intent_data' => [
-                'metadata' => [
-                    'order_id' => (string) $order->id,
-                    'order_number' => $order->order_number,
-                    'challenge_type' => $order->challenge_type,
-                    'account_size' => (string) $order->account_size,
-                    'payment_provider' => $this->provider(),
-                    'user_id' => (string) ($order->user_id ?? ''),
-                ],
+                'metadata' => $metadata,
             ],
-            'metadata' => [
-                'order_id' => (string) $order->id,
-                'order_number' => $order->order_number,
-                'challenge_type' => $order->challenge_type,
-                'account_size' => (string) $order->account_size,
-                'payment_provider' => $this->provider(),
-                'user_id' => (string) ($order->user_id ?? ''),
-            ],
+            'metadata' => $metadata,
             'line_items' => [[
                 'quantity' => 1,
                 'price_data' => [
@@ -185,5 +172,26 @@ class StripePaymentGateway implements PaymentGatewayInterface
             'wolforix.challenge_catalog.'.$challengeType.'.label',
             $challengeType === 'one_step' ? '1-Step Instant' : '2-Step Pro',
         );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function metadata(Order $order): array
+    {
+        return [
+            'order_id' => (string) $order->id,
+            'order_number' => $order->order_number,
+            'challenge_type' => $order->challenge_type,
+            'account_size' => (string) $order->account_size,
+            'payment_provider' => $this->provider(),
+            'user_id' => (string) ($order->user_id ?? ''),
+            'coupon_code' => (string) data_get($order->metadata, 'launch_promo.code', ''),
+            'coupon_campaign' => (string) data_get($order->metadata, 'launch_promo.campaign', ''),
+            'coupon_percent' => (string) data_get($order->metadata, 'launch_promo.percent', ''),
+            'discount_amount' => (string) $order->discount_amount,
+            'base_price' => (string) $order->base_price,
+            'final_price' => (string) $order->final_price,
+        ];
     }
 }

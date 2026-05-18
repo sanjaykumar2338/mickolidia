@@ -781,8 +781,8 @@ class WolforixPlatformTest extends TestCase
         ])->get(route('home'))
             ->assertOk()
             ->assertSee('Get Plan')
-            ->assertSee('$39')
-            ->assertSee('20% OFF - Limited Launch Offer');
+            ->assertSee('$25')
+            ->assertSee('50% OFF - Support Courtesy');
     }
 
     public function test_launch_offer_ignore_keeps_regular_pricing_visible(): void
@@ -1035,11 +1035,157 @@ class WolforixPlatformTest extends TestCase
                 'message' => 'Code applied successfully',
                 'pricing' => [
                     'discount_enabled' => true,
-                    'discounted_price' => '231.00',
+                    'discounted_price' => '145.00',
                     'list_price' => '289.00',
                     'currency' => 'USD',
                 ],
             ]);
+    }
+
+    public function test_goodwill_coupon_calculates_fifty_percent_discount_for_funding_checkout(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'one_step',
+                'account_size' => 100000,
+                'currency' => 'USD',
+                'promo_code' => 'WOLF50HQ',
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', true)
+            ->assertJsonPath('promo_code', 'WOLF50HQ')
+            ->assertJsonPath('pricing.list_price', '599.00')
+            ->assertJsonPath('pricing.discounted_price', '300.00')
+            ->assertJsonPath('pricing.discount_enabled', true);
+    }
+
+    public function test_goodwill_coupon_is_eligible_for_all_funding_account_types(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (array_keys(config('wolforix.challenge_models')) as $challengeType) {
+            $accountSize = (int) array_key_first(config("wolforix.challenge_models.{$challengeType}.pricing"));
+
+            $this->actingAs($user)
+                ->postJson(route('checkout.promo.preview'), [
+                    'challenge_type' => $challengeType,
+                    'account_size' => $accountSize,
+                    'currency' => 'USD',
+                    'promo_code' => 'WOLF50HQ',
+                ])
+                ->assertOk()
+                ->assertJsonPath('applied', true)
+                ->assertJsonPath('promo_code', 'WOLF50HQ');
+        }
+    }
+
+    public function test_goodwill_coupon_is_single_use_per_customer(): void
+    {
+        $this->useFakeStripeGateway();
+        $user = User::factory()->create([
+            'email' => 'single-use@example.com',
+        ]);
+
+        $payload = [
+            'full_name' => 'Single Use Trader',
+            'email' => 'single-use@example.com',
+            'street_address' => '1 Discount Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WOLF50HQ',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ];
+
+        $this->actingAs($user)->post(route('checkout.store'), $payload)->assertRedirect();
+        $this->actingAs($user)->post(route('checkout.store'), $payload)
+            ->assertSessionHasErrors(['promo_code' => 'This promo code has already been used.']);
+
+        $this->assertSame(1, Order::query()->where('email', 'single-use@example.com')->count());
+    }
+
+    public function test_goodwill_coupon_does_not_stack_with_other_promo_codes(): void
+    {
+        $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335499');
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => 'WOLF50HQ '.$promoCode->code,
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('payment_required', true);
+    }
+
+    public function test_goodwill_coupon_checkout_metadata_and_fluko_gateway_payload_are_correct(): void
+    {
+        $this->useFakeStripeGateway();
+        $user = User::factory()->create([
+            'email' => 'fluko-coupon@example.com',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('checkout.store'), [
+            'full_name' => 'Fluko Coupon Trader',
+            'email' => 'fluko-coupon@example.com',
+            'street_address' => '5 Gateway Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'one_step',
+            'account_size' => 25000,
+            'currency' => 'USD',
+            'promo_code' => 'WOLF50HQ',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ]);
+
+        $order = Order::query()->firstOrFail();
+        $attempt = $order->paymentAttempts()->latest('id')->firstOrFail();
+
+        $response->assertRedirect('https://stripe.test/checkout/fake-session-'.$order->id);
+        $this->assertSame('199.00', (string) $order->base_price);
+        $this->assertSame('50.00', (string) $order->discount_percent);
+        $this->assertSame('99.00', (string) $order->discount_amount);
+        $this->assertSame('100.00', (string) $order->final_price);
+        $this->assertSame('WOLF50HQ', data_get($order->metadata, 'launch_promo.code'));
+        $this->assertSame('mt5_goodwill_support', data_get($order->metadata, 'launch_promo.campaign'));
+        $this->assertSame(50.0, (float) data_get($order->metadata, 'launch_promo.percent'));
+        $this->assertSame('WOLF50HQ', data_get($attempt->payload, 'metadata.coupon_code'));
+        $this->assertSame('mt5_goodwill_support', data_get($attempt->payload, 'metadata.coupon_campaign'));
+        $this->assertSame('50', data_get($attempt->payload, 'metadata.coupon_percent'));
+
+        $this->postJson(route('payments.stripe.webhook'), [
+            'provider' => 'stripe',
+            'event_id' => 'evt_coupon_fluko',
+            'type' => 'checkout.session.completed',
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'external_checkout_id' => $order->external_checkout_id,
+            'external_payment_id' => $order->external_payment_id,
+            'external_customer_id' => $order->external_customer_id,
+            'amount' => 100.00,
+            'currency' => 'USD',
+            'status' => 'paid',
+            'payload' => [
+                'metadata' => data_get($attempt->payload, 'metadata'),
+            ],
+            'source' => 'webhook',
+        ])->assertOk();
+
+        $completedAttempt = $order->fresh()->paymentAttempts()->latest('id')->firstOrFail();
+        $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
+        $this->assertSame('WOLF50HQ', data_get($completedAttempt->payload, 'metadata.coupon_code'));
     }
 
     public function test_checkout_giveaway_promo_preview_returns_zero_payment_state(): void

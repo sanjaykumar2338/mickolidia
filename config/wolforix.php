@@ -63,10 +63,12 @@ $supportedLocales = [
 $launchDiscount = [
     'enabled' => true,
     'type' => 'percentage',
-    'percent' => 20,
-    'code' => env('LAUNCH_PROMO_CODE', 'Wolforix2026'),
-    'badge' => '20% OFF - Limited Launch Offer',
-    'urgency_text' => 'Launch Discount - Limited Time Only',
+    'percent' => 50,
+    'code' => 'WOLF50HQ',
+    'campaign' => 'mt5_goodwill_support',
+    'single_use_per_customer' => true,
+    'badge' => '50% OFF - Support Courtesy',
+    'urgency_text' => 'Support goodwill discount for affected clients',
 ];
 
 $currencies = [
