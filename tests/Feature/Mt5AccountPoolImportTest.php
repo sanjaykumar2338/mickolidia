@@ -355,6 +355,72 @@ class Mt5AccountPoolImportTest extends TestCase
             ->assertFailed();
     }
 
+    public function test_repair_mt5_credential_mapping_dry_run_does_not_change_rows(): void
+    {
+        [$wrongAccount, $correctAccount, $poolEntry] = $this->createMt5MappingRepairFixture();
+
+        $this->artisan('wolforix:repair-mt5-credential-mapping')
+            ->expectsOutputToContain('DRY RUN MT5 credential/account mapping repair')
+            ->expectsOutputToContain('Dry run only. Re-run with --confirm')
+            ->expectsOutputToContain('Trading account mapping before')
+            ->expectsOutputToContain('Trading account mapping after')
+            ->expectsOutputToContain('Pool entry mapping before')
+            ->expectsOutputToContain('Pool entry mapping after')
+            ->expectsOutputToContain('pending_credential_repair')
+            ->doesntExpectOutputToContain('REAL_PASSWORD')
+            ->doesntExpectOutputToContain('REAL_INVESTOR_PASSWORD')
+            ->assertSuccessful();
+
+        $this->assertSame('335405', $wrongAccount->fresh()->platform_login);
+        $this->assertSame('335405', $wrongAccount->fresh()->platform_account_id);
+        $this->assertSame('REAL_PASSWORD', data_get($wrongAccount->fresh()->meta, 'credentials.password'));
+        $this->assertSame('REAL_INVESTOR_PASSWORD', data_get($wrongAccount->fresh()->meta, 'credentials.investor_password'));
+        $this->assertNull($correctAccount->fresh()->platform_login);
+        $this->assertSame($wrongAccount->id, $poolEntry->fresh()->allocated_trading_account_id);
+    }
+
+    public function test_repair_mt5_credential_mapping_confirm_moves_login_and_marks_wrong_account_pending(): void
+    {
+        [$wrongAccount, $correctAccount, $poolEntry] = $this->createMt5MappingRepairFixture();
+
+        $this->artisan('wolforix:repair-mt5-credential-mapping', [
+            '--confirm' => true,
+        ])
+            ->expectsOutputToContain('CONFIRMED MT5 credential/account mapping repair')
+            ->expectsOutputToContain('Repair applied')
+            ->doesntExpectOutputToContain('REAL_PASSWORD')
+            ->doesntExpectOutputToContain('REAL_INVESTOR_PASSWORD')
+            ->assertSuccessful();
+
+        $wrongAccount = $wrongAccount->fresh();
+        $correctAccount = $correctAccount->fresh();
+        $poolEntry = $poolEntry->fresh();
+
+        $this->assertNull($wrongAccount->platform_login);
+        $this->assertNull($wrongAccount->platform_account_id);
+        $this->assertSame('pending_credential_repair', $wrongAccount->platform_status);
+        $this->assertSame('pending', $wrongAccount->sync_status);
+        $this->assertNull(data_get($wrongAccount->meta, 'credentials.password'));
+        $this->assertNull(data_get($wrongAccount->meta, 'credentials.investor_password'));
+        $this->assertSame('pending', data_get($wrongAccount->meta, 'mt5_credential_repair.status'));
+        $this->assertSame('active', $wrongAccount->account_status);
+        $this->assertSame('active', $wrongAccount->challenge_status);
+        $this->assertNull($wrongAccount->passed_at);
+        $this->assertNull($wrongAccount->failed_at);
+
+        $this->assertSame('335405', $correctAccount->platform_login);
+        $this->assertSame('335405', $correctAccount->platform_account_id);
+        $this->assertSame('FusionMarkets-Demo', $correctAccount->platform_environment);
+        $this->assertSame('pending_credential_repair', $correctAccount->platform_status);
+        $this->assertSame('pending', data_get($correctAccount->meta, 'mt5_credential_repair.status'));
+        $this->assertSame('335405', data_get($correctAccount->meta, 'mt5_sync.identifier'));
+        $this->assertSame('WFX-MT5-00062-NSTY', data_get($correctAccount->meta, 'mt5_sync.account_reference'));
+
+        $this->assertSame($correctAccount->id, $poolEntry->allocated_trading_account_id);
+        $this->assertSame($correctAccount->user_id, $poolEntry->allocated_user_id);
+        $this->assertFalse($poolEntry->is_available);
+    }
+
     public function test_fusionmarkets_import_can_rewrite_existing_entry_with_wrong_key_encrypted_credentials(): void
     {
         $entry = Mt5AccountPoolEntry::factory()->create([
@@ -594,6 +660,99 @@ class Mt5AccountPoolImportTest extends TestCase
         $this->assertTrue((bool) $oldClientEntry->is_available);
         $this->assertSame('880001', $internalEntry->login);
         $this->assertSame($account->id, $activatedAccount->id);
+    }
+
+    /**
+     * @return array{TradingAccount, TradingAccount, Mt5AccountPoolEntry}
+     */
+    private function createMt5MappingRepairFixture(): array
+    {
+        $wrongUser = User::factory()->create([
+            'email' => 'wrong-client@example.test',
+        ]);
+        $correctUser = User::factory()->create([
+            'email' => 'correct-client@example.test',
+        ]);
+
+        $wrongAccount = TradingAccount::query()->create([
+            'user_id' => $wrongUser->id,
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'connected',
+            'sync_status' => 'success',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+            'meta' => [
+                'credentials' => [
+                    'server' => 'FusionMarkets-Demo',
+                    'password' => 'REAL_PASSWORD',
+                    'trading_password' => 'REAL_PASSWORD',
+                    'investor_password' => 'REAL_INVESTOR_PASSWORD',
+                    'readonly_password' => 'REAL_INVESTOR_PASSWORD',
+                ],
+                'mt5_sync' => [
+                    'identifier' => '335405',
+                    'account_reference' => 'WFX-MT5-00057-8HN7',
+                    'server' => 'FusionMarkets-Demo',
+                ],
+                'mt5_pool_entry' => [
+                    'id' => 999,
+                ],
+            ],
+        ]);
+
+        $correctAccount = TradingAccount::query()->create([
+            'user_id' => $correctUser->id,
+            'account_reference' => 'WFX-MT5-00062-NSTY',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'pending_link',
+            'sync_status' => 'pending',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+            'meta' => [],
+        ]);
+
+        $poolEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '335405',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'REAL_PASSWORD',
+            'investor_password' => 'REAL_INVESTOR_PASSWORD',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => $wrongAccount->id,
+            'allocated_user_id' => $wrongUser->id,
+            'allocated_at' => now()->subDay(),
+            'is_available' => false,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        return [$wrongAccount, $correctAccount, $poolEntry];
     }
 
     /**
