@@ -7,6 +7,7 @@ use App\Models\TradingAccount;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -267,6 +268,9 @@ class AssignFreshMt5DemoAccount extends Command
      */
     private function poolRow(Mt5AccountPoolEntry $entry): array
     {
+        $password = $this->readCredential($entry, 'password');
+        $investorPassword = $this->readCredential($entry, 'investor_password');
+
         return [
             (string) $entry->id,
             (string) $entry->login,
@@ -275,13 +279,36 @@ class AssignFreshMt5DemoAccount extends Command
             (string) ($entry->allocated_user_id ?: '-'),
             $this->formatValue($entry->allocated_at),
             $entry->is_available ? 'yes' : 'no',
-            $this->credentialStateLabel($this->credentialState($entry)),
+            $this->boolString($password['raw_present']),
+            $this->boolString($password['cast_readable']),
+            $this->boolString($password['manual_decrypt_readable']),
+            $password['state'],
+            $this->boolString($investorPassword['raw_present']),
+            $this->boolString($investorPassword['cast_readable']),
+            $this->boolString($investorPassword['manual_decrypt_readable']),
+            $investorPassword['state'],
         ];
     }
 
     private function poolHeaders(): array
     {
-        return ['id', 'login', 'server', 'allocated_trading_account_id', 'allocated_user_id', 'allocated_at', 'is_available', 'credential_state'];
+        return [
+            'id',
+            'login',
+            'server',
+            'allocated_trading_account_id',
+            'allocated_user_id',
+            'allocated_at',
+            'is_available',
+            'password_raw',
+            'password_cast',
+            'password_manual',
+            'password_state',
+            'investor_raw',
+            'investor_cast',
+            'investor_manual',
+            'investor_state',
+        ];
     }
 
     /**
@@ -289,6 +316,9 @@ class AssignFreshMt5DemoAccount extends Command
      */
     private function printVerificationSummary(TradingAccount $account, Mt5AccountPoolEntry $poolEntry, array $credentials, bool $applied, bool $showSecret): void
     {
+        $passwordRead = $this->readCredential($poolEntry, 'password');
+        $investorRead = $this->readCredential($poolEntry, 'investor_password');
+
         $this->newLine();
         $this->info('Final verification summary');
         $this->table(['Check', 'Value'], [
@@ -297,7 +327,13 @@ class AssignFreshMt5DemoAccount extends Command
             ['selected_pool_entry_id', (string) $poolEntry->id],
             ['selected_login', (string) $poolEntry->login],
             ['selected_server', (string) $poolEntry->server],
+            ['pass_raw_present', $this->boolString($passwordRead['raw_present'])],
+            ['pass_cast_readable', $this->boolString($passwordRead['cast_readable'])],
+            ['pass_manual_readable', $this->boolString($passwordRead['manual_decrypt_readable'])],
             ['password_state', $this->looksLikePlaceholder($credentials['password']) ? 'placeholder' : 'real_value'],
+            ['inv_raw_present', $this->boolString($investorRead['raw_present'])],
+            ['inv_cast_readable', $this->boolString($investorRead['cast_readable'])],
+            ['inv_manual_readable', $this->boolString($investorRead['manual_decrypt_readable'])],
             ['investor_password_state', $this->looksLikePlaceholder($credentials['investor_password']) ? 'placeholder' : 'real_value'],
             ['password', $this->secretDisplay($credentials['password'], $showSecret)],
             ['investor_password', $this->secretDisplay($credentials['investor_password'], $showSecret)],
@@ -332,9 +368,12 @@ class AssignFreshMt5DemoAccount extends Command
      */
     private function credentialValues(Mt5AccountPoolEntry $entry): array
     {
+        $password = $this->readCredential($entry, 'password');
+        $investorPassword = $this->readCredential($entry, 'investor_password');
+
         return [
-            'password' => (string) $entry->password,
-            'investor_password' => (string) $entry->investor_password,
+            'password' => (string) $password['value'],
+            'investor_password' => (string) $investorPassword['value'],
         ];
     }
 
@@ -351,17 +390,58 @@ class AssignFreshMt5DemoAccount extends Command
 
     private function credentialFieldState(Mt5AccountPoolEntry $entry, string $field): string
     {
+        return $this->readCredential($entry, $field)['state'];
+    }
+
+    /**
+     * @return array{
+     *     raw_present: bool,
+     *     cast_readable: bool,
+     *     manual_decrypt_readable: bool,
+     *     value: string,
+     *     state: string
+     * }
+     */
+    private function readCredential(Mt5AccountPoolEntry $entry, string $field): array
+    {
+        $rawValue = $entry->getRawOriginal($field);
+        $rawPresent = filled($rawValue);
+        $castReadable = false;
+        $manualReadable = false;
+        $castValue = '';
+        $manualValue = '';
+
         try {
-            $value = (string) $entry->{$field};
-
-            if ($value === '') {
-                return 'missing';
-            }
-
-            return $this->looksLikePlaceholder($value) ? 'placeholder' : 'real_value';
+            $castValue = (string) $entry->{$field};
+            $castReadable = $castValue !== '';
         } catch (DecryptException) {
-            return 'decrypt_failed';
+            $castReadable = false;
         }
+
+        if ($rawPresent) {
+            try {
+                $manualValue = Crypt::decryptString((string) $rawValue);
+                $manualReadable = $manualValue !== '';
+            } catch (DecryptException) {
+                $manualReadable = false;
+            }
+        }
+
+        $value = $castReadable ? $castValue : ($manualReadable ? $manualValue : '');
+        $state = match (true) {
+            ! $rawPresent => 'missing',
+            $value === '' => 'decrypt_failed',
+            $this->looksLikePlaceholder($value) => 'placeholder',
+            default => 'real_value',
+        };
+
+        return [
+            'raw_present' => $rawPresent,
+            'cast_readable' => $castReadable,
+            'manual_decrypt_readable' => $manualReadable,
+            'value' => $value,
+            'state' => $state,
+        ];
     }
 
     private function credentialStateLabel(array $state): string
@@ -425,5 +505,10 @@ class AssignFreshMt5DemoAccount extends Command
         }
 
         return (string) $value;
+    }
+
+    private function boolString(bool $value): string
+    {
+        return $value ? 'yes' : 'no';
     }
 }

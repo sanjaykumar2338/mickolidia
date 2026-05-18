@@ -191,7 +191,15 @@ class DiagnoseMt5Credentials extends Command
             ['server', $this->serverValue($account, $poolEntry)],
             ['broker', $this->brokerValue($account, $poolEntry)],
             ['source pool entry id', $poolEntry instanceof Mt5AccountPoolEntry ? (string) $poolEntry->id : '-'],
+            ['pass_raw_present', $this->boolString((bool) ($passwordResult['raw_present'] ?? false))],
+            ['pass_cast_readable', $this->boolString((bool) ($passwordResult['cast_readable'] ?? false))],
+            ['pass_manual_readable', $this->boolString((bool) ($passwordResult['manual_decrypt_readable'] ?? false))],
+            ['pass_final_state', $passwordResult['state']],
             ['decrypted password', $this->credentialDisplay($passwordResult, $showSecret)],
+            ['inv_raw_present', $this->boolString((bool) ($investorPasswordResult['raw_present'] ?? false))],
+            ['inv_cast_readable', $this->boolString((bool) ($investorPasswordResult['cast_readable'] ?? false))],
+            ['inv_manual_readable', $this->boolString((bool) ($investorPasswordResult['manual_decrypt_readable'] ?? false))],
+            ['inv_final_state', $investorPasswordResult['state']],
             ['decrypted investor password', $this->credentialDisplay($investorPasswordResult, $showSecret)],
             ['password equals REAL_PASSWORD', $this->boolString($passwordResult['ok'] && hash_equals(self::REAL_PASSWORD_MARKER, $passwordResult['value']))],
             ['investor password equals REAL_INVESTOR_PASSWORD', $this->boolString($investorPasswordResult['ok'] && hash_equals(self::REAL_INVESTOR_PASSWORD_MARKER, $investorPasswordResult['value']))],
@@ -296,39 +304,52 @@ class DiagnoseMt5Credentials extends Command
     }
 
     /**
-     * @return array{ok: bool, value: string, state: string}
+     * @return array{ok: bool, value: string, state: string, raw_present: bool, cast_readable: bool, manual_decrypt_readable: bool}
      */
     private function decryptRawCredential(Mt5AccountPoolEntry $poolEntry, string $field): array
     {
-        $rawValue = (string) $poolEntry->getRawOriginal($field);
-
-        if ($rawValue === '') {
-            return [
-                'ok' => false,
-                'value' => '',
-                'state' => 'missing',
-            ];
-        }
+        $rawValue = $poolEntry->getRawOriginal($field);
+        $rawPresent = filled($rawValue);
+        $castReadable = false;
+        $manualReadable = false;
+        $castValue = '';
+        $manualValue = '';
 
         try {
-            $decrypted = Crypt::decryptString($rawValue);
-
-            return [
-                'ok' => $decrypted !== '',
-                'value' => $decrypted,
-                'state' => $decrypted !== '' ? 'decryptable_present' : 'empty_after_decrypt',
-            ];
-        } catch (DecryptException $exception) {
-            return [
-                'ok' => false,
-                'value' => '',
-                'state' => 'decrypt_failed: '.$exception->getMessage(),
-            ];
+            $castValue = (string) $poolEntry->{$field};
+            $castReadable = $castValue !== '';
+        } catch (DecryptException) {
+            $castReadable = false;
         }
+
+        if ($rawPresent) {
+            try {
+                $manualValue = Crypt::decryptString((string) $rawValue);
+                $manualReadable = $manualValue !== '';
+            } catch (DecryptException) {
+                $manualReadable = false;
+            }
+        }
+
+        $value = $castReadable ? $castValue : ($manualReadable ? $manualValue : '');
+        $state = match (true) {
+            ! $rawPresent => 'missing',
+            $value === '' => 'decrypt_failed',
+            default => 'decryptable_present',
+        };
+
+        return [
+            'ok' => $value !== '',
+            'value' => $value,
+            'state' => $state,
+            'raw_present' => $rawPresent,
+            'cast_readable' => $castReadable,
+            'manual_decrypt_readable' => $manualReadable,
+        ];
     }
 
     /**
-     * @return array{ok: bool, value: string, state: string}
+     * @return array{ok: bool, value: string, state: string, raw_present: bool, cast_readable: bool, manual_decrypt_readable: bool}
      */
     private function missingCredentialResult(): array
     {
@@ -336,6 +357,9 @@ class DiagnoseMt5Credentials extends Command
             'ok' => false,
             'value' => '',
             'state' => 'pool_entry_missing',
+            'raw_present' => false,
+            'cast_readable' => false,
+            'manual_decrypt_readable' => false,
         ];
     }
 

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Mt5\Mt5AccountPoolImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -317,7 +318,13 @@ class Mt5AccountPoolImportTest extends TestCase
         ])
             ->expectsOutputToContain('Read-only MT5 credential integrity diagnosis')
             ->expectsOutputToContain('source pool entry id')
+            ->expectsOutputToContain('pass_raw_present')
+            ->expectsOutputToContain('pass_cast_readable')
+            ->expectsOutputToContain('pass_manual_readable')
             ->expectsOutputToContain('password equals REAL_PASSWORD')
+            ->expectsOutputToContain('inv_raw_present')
+            ->expectsOutputToContain('inv_cast_readable')
+            ->expectsOutputToContain('inv_manual_readable')
             ->expectsOutputToContain('investor password equals REAL_INVESTOR_PASSWORD')
             ->expectsOutputToContain('All trading_accounts using platform_login/account_id 335405')
             ->expectsOutputToContain('auth success/accepted')
@@ -431,6 +438,10 @@ class Mt5AccountPoolImportTest extends TestCase
             ->expectsOutputToContain('Trading account mapping before')
             ->expectsOutputToContain('Trading account mapping after')
             ->expectsOutputToContain('Final verification summary')
+            ->expectsOutputToContain('pass_raw_present')
+            ->expectsOutputToContain('pass_cast_readable')
+            ->expectsOutputToContain('pass_manual_readable')
+            ->expectsOutputToContain('real_value')
             ->expectsOutputToContain((string) $realEntry->id)
             ->doesntExpectOutputToContain('fresh-master-pass-57')
             ->doesntExpectOutputToContain('fresh-investor-pass-57')
@@ -500,6 +511,97 @@ class Mt5AccountPoolImportTest extends TestCase
             ->expectsOutputToContain('fresh-master-pass-57')
             ->expectsOutputToContain('fresh-investor-pass-57')
             ->assertSuccessful();
+    }
+
+    public function test_assign_fresh_mt5_demo_account_accepts_raw_encrypted_string_credentials(): void
+    {
+        $account = $this->createFreshMt5AssignmentTargetAccount();
+
+        DB::table('mt5_account_pool_entries')->insert([
+            'login' => '335779',
+            'server' => 'FusionMarkets-Demo',
+            'password' => Crypt::encryptString('raw-master-pass-57'),
+            'investor_password' => Crypt::encryptString('raw-investor-pass-57'),
+            'account_size' => 10000,
+            'currency_code' => 'USD',
+            'source_status' => 'available',
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_batch' => 'raw-encrypted-test',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'source_created_at' => now()->subDay()->toDateString(),
+            'is_available' => true,
+            'is_promo' => false,
+            'meta' => json_encode([
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->artisan('wolforix:assign-fresh-mt5-demo-account', [
+            '--confirm' => true,
+        ])
+            ->expectsOutputToContain('password_manual')
+            ->expectsOutputToContain('real_value')
+            ->doesntExpectOutputToContain('raw-master-pass-57')
+            ->doesntExpectOutputToContain('raw-investor-pass-57')
+            ->assertSuccessful();
+
+        $account = $account->fresh();
+
+        $this->assertSame('335779', $account->platform_login);
+        $this->assertSame('raw-master-pass-57', data_get($account->meta, 'credentials.password'));
+        $this->assertSame('raw-investor-pass-57', data_get($account->meta, 'credentials.investor_password'));
+    }
+
+    public function test_assign_fresh_mt5_demo_account_rejects_placeholder_only_credentials(): void
+    {
+        $this->createFreshMt5AssignmentTargetAccount();
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '335780',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'REAL_PASSWORD',
+            'investor_password' => 'REAL_INVESTOR_PASSWORD',
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+        ]);
+
+        $this->artisan('wolforix:assign-fresh-mt5-demo-account')
+            ->expectsOutputToContain('no unused FusionMarkets-Demo pool entry with real non-placeholder credentials')
+            ->expectsOutputToContain('placeholder')
+            ->assertFailed();
+    }
+
+    public function test_assign_fresh_mt5_demo_account_rejects_real_decrypt_failure(): void
+    {
+        $this->createFreshMt5AssignmentTargetAccount();
+
+        DB::table('mt5_account_pool_entries')->insert([
+            'login' => '335781',
+            'server' => 'FusionMarkets-Demo',
+            'password' => 'not-a-valid-laravel-encrypted-value',
+            'investor_password' => 'also-not-valid',
+            'account_size' => 10000,
+            'currency_code' => 'USD',
+            'source_status' => 'available',
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_batch' => 'decrypt-failure-test',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'source_created_at' => now()->subDay()->toDateString(),
+            'is_available' => true,
+            'is_promo' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->artisan('wolforix:assign-fresh-mt5-demo-account')
+            ->expectsOutputToContain('no unused FusionMarkets-Demo pool entry with real non-placeholder credentials')
+            ->expectsOutputToContain('decrypt_failed')
+            ->assertFailed();
     }
 
     public function test_fusionmarkets_import_can_rewrite_existing_entry_with_wrong_key_encrypted_credentials(): void
@@ -841,40 +943,7 @@ class Mt5AccountPoolImportTest extends TestCase
      */
     private function createFreshMt5AssignmentFixture(): array
     {
-        $user = User::factory()->create([
-            'email' => 'fresh-client@example.test',
-        ]);
-
-        $account = TradingAccount::query()->create([
-            'user_id' => $user->id,
-            'account_reference' => 'WFX-MT5-00057-8HN7',
-            'platform' => 'MT5',
-            'platform_slug' => 'mt5',
-            'platform_environment' => 'FusionMarkets-Demo',
-            'platform_status' => 'pending_credential_repair',
-            'sync_status' => 'pending',
-            'account_type' => 'challenge',
-            'challenge_type' => 'two_step',
-            'account_size' => 10000,
-            'starting_balance' => 10000,
-            'phase_starting_balance' => 10000,
-            'phase_reference_balance' => 10000,
-            'balance' => 10000,
-            'equity' => 10000,
-            'account_status' => 'active',
-            'challenge_status' => 'active',
-            'status' => 'Active',
-            'meta' => [
-                'mt5_credential_repair' => [
-                    'status' => 'pending',
-                    'reason' => 'test_fixture',
-                ],
-                'mt5_sync' => [
-                    'status' => 'pending_credential_repair',
-                    'account_reference' => 'WFX-MT5-00057-8HN7',
-                ],
-            ],
-        ]);
+        $account = $this->createFreshMt5AssignmentTargetAccount();
 
         $placeholderEntry = Mt5AccountPoolEntry::factory()->create([
             'login' => '335776',
@@ -919,6 +988,44 @@ class Mt5AccountPoolImportTest extends TestCase
         ]);
 
         return [$account, $placeholderEntry, $realEntry];
+    }
+
+    private function createFreshMt5AssignmentTargetAccount(): TradingAccount
+    {
+        $user = User::factory()->create([
+            'email' => 'fresh-client@example.test',
+        ]);
+
+        return TradingAccount::query()->create([
+            'user_id' => $user->id,
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'pending_credential_repair',
+            'sync_status' => 'pending',
+            'account_type' => 'challenge',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'status' => 'Active',
+            'meta' => [
+                'mt5_credential_repair' => [
+                    'status' => 'pending',
+                    'reason' => 'test_fixture',
+                ],
+                'mt5_sync' => [
+                    'status' => 'pending_credential_repair',
+                    'account_reference' => 'WFX-MT5-00057-8HN7',
+                ],
+            ],
+        ]);
     }
 
     /**
