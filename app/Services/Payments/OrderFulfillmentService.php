@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Billing\OrderInvoiceService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
+use App\Services\Promotions\LaunchPromoRedemptionService;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
 use App\Support\CountryEligibility;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class OrderFulfillmentService
         private readonly OrderInvoiceService $invoiceService,
         private readonly ChallengeLifecycleMailer $lifecycleMailer,
         private readonly CountryEligibility $countryEligibility,
+        private readonly LaunchPromoRedemptionService $launchPromoRedemptions,
     ) {}
 
     /**
@@ -38,6 +40,10 @@ class OrderFulfillmentService
                 ->lockForUpdate()
                 ->findOrFail($order->id);
 
+            if ($this->launchPromoRedemptions->anotherCustomerOrderHasRedeemed($lockedOrder)) {
+                throw new \RuntimeException('This promo code has already been used.');
+            }
+
             $lockedOrder->forceFill([
                 'payment_status' => Order::PAYMENT_PAID,
                 'order_status' => Order::STATUS_COMPLETED,
@@ -49,6 +55,8 @@ class OrderFulfillmentService
                     'payment_sync_source' => $paymentData['source'] ?? 'provider',
                 ]),
             ])->save();
+
+            $this->launchPromoRedemptions->stampRedeemed($lockedOrder);
 
             $this->syncPaymentAttempt($lockedOrder, $paymentData, 'completed');
 

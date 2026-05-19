@@ -1081,9 +1081,10 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
-    public function test_goodwill_coupon_is_single_use_per_customer(): void
+    public function test_goodwill_coupon_is_single_use_after_successful_payment(): void
     {
         $this->useFakeStripeGateway();
+        Mail::fake();
         $user = User::factory()->create([
             'email' => 'single-use@example.com',
         ]);
@@ -1106,9 +1107,116 @@ class WolforixPlatformTest extends TestCase
 
         $this->actingAs($user)->post(route('checkout.store'), $payload)->assertRedirect();
         $this->actingAs($user)->post(route('checkout.store'), $payload)
+            ->assertRedirect();
+
+        $this->assertSame(2, Order::query()->where('email', 'single-use@example.com')->count());
+
+        $firstOrder = Order::query()->oldest('id')->firstOrFail();
+
+        $this->postJson(route('payments.stripe.webhook'), [
+            'provider' => 'stripe',
+            'event_id' => 'evt_single_use_coupon',
+            'type' => 'checkout.session.completed',
+            'order_id' => $firstOrder->id,
+            'order_number' => $firstOrder->order_number,
+            'external_checkout_id' => $firstOrder->external_checkout_id,
+            'external_payment_id' => $firstOrder->external_payment_id,
+            'external_customer_id' => $firstOrder->external_customer_id,
+            'amount' => (float) $firstOrder->final_price,
+            'currency' => $firstOrder->currency,
+            'status' => 'paid',
+            'payload' => ['fake' => true],
+            'source' => 'webhook',
+        ])->assertOk();
+
+        $this->actingAs($user)->post(route('checkout.store'), $payload)
             ->assertSessionHasErrors(['promo_code' => 'This promo code has already been used.']);
 
-        $this->assertSame(1, Order::query()->where('email', 'single-use@example.com')->count());
+        $this->assertSame(Order::PAYMENT_PAID, $firstOrder->fresh()->payment_status);
+        $this->assertTrue((bool) data_get($firstOrder->fresh()->metadata, 'launch_promo.redeemed'));
+        $this->assertNotEmpty(data_get($firstOrder->fresh()->metadata, 'launch_promo.redeemed_at'));
+        $this->assertSame(2, Order::query()->where('email', 'single-use@example.com')->count());
+    }
+
+    public function test_goodwill_coupon_redeemed_by_same_billing_email_blocks_another_account(): void
+    {
+        $this->useFakeStripeGateway();
+        $paidUser = User::factory()->create([
+            'email' => 'owner-used@example.com',
+        ]);
+        $otherUser = User::factory()->create([
+            'email' => 'owner-new@example.com',
+        ]);
+
+        Order::query()->create([
+            'user_id' => $paidUser->id,
+            'email' => 'shared-billing@example.com',
+            'full_name' => 'Paid Coupon Trader',
+            'street_address' => '1 Discount Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 79,
+            'discount_percent' => 50,
+            'discount_amount' => 39,
+            'final_price' => 40,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_COMPLETED,
+            'metadata' => [
+                'launch_promo' => [
+                    'code' => 'WOLF50HQ',
+                    'applied' => true,
+                    'redeemed' => true,
+                    'redeemed_at' => now()->subMinute()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $this->actingAs($paidUser)
+            ->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => 'WOLF50HQ',
+            ]))
+            ->assertOk()
+            ->assertSee('79.00')
+            ->assertDontSee('>Code applied successfully<', false);
+
+        $this->actingAs($paidUser)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => 'WOLF50HQ',
+                'email' => 'shared-billing@example.com',
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('message', 'This promo code has already been used.')
+            ->assertJsonPath('pricing.discounted_price', '79.00');
+
+        $this->actingAs($otherUser)->post(route('checkout.store'), [
+            'full_name' => 'New Coupon Trader',
+            'email' => 'shared-billing@example.com',
+            'street_address' => '2 Discount Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'promo_code' => 'WOLF50HQ',
+            'payment_provider' => 'stripe',
+            'accept_terms_and_residency' => '1',
+            'accept_refund_policy' => '1',
+        ])->assertSessionHasErrors(['promo_code' => 'This promo code has already been used.']);
+
+        $this->assertSame(0, FakeStripePaymentGateway::$checkoutSessionsCreated);
     }
 
     public function test_goodwill_coupon_does_not_stack_with_other_promo_codes(): void

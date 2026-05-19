@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Payments\OrderFulfillmentService;
 use App\Services\Payments\PaymentManager;
 use App\Services\Pricing\ChallengePricingService;
+use App\Services\Promotions\LaunchPromoRedemptionService;
 use App\Support\CountryEligibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class CheckoutController extends Controller
         ChallengePricingService $pricingService,
         PaymentManager $paymentManager,
         CountryEligibility $countryEligibility,
+        LaunchPromoRedemptionService $launchPromoRedemptions,
     ): View|RedirectResponse {
         $retryOrder = null;
         /** @var User $user */
@@ -71,6 +73,18 @@ class CheckoutController extends Controller
         if (! $hasOldPromoCodeInput && $launchPromoCode === null && $launchPromoCodeInput === '') {
             $launchPromoCode = $pricingService->launchPromoCodeForRequest($request);
             $launchPromoCodeInput = $launchPromoCode ?? '';
+        }
+
+        if (
+            $launchPromoCode !== null
+            && $launchPromoRedemptions->customerHasRedeemed(
+                $user,
+                (string) ($retryOrder?->email ?: $user->email),
+                $launchPromoCode,
+                $retryOrder?->id,
+            )
+        ) {
+            $launchPromoCode = null;
         }
 
         $launchDiscountApplied = $launchPromoCode !== null;
@@ -117,6 +131,7 @@ class CheckoutController extends Controller
         PaymentManager $paymentManager,
         OrderFulfillmentService $fulfillmentService,
         CountryEligibility $countryEligibility,
+        LaunchPromoRedemptionService $launchPromoRedemptions,
     ): RedirectResponse {
         $request->merge([
             'country' => $countryEligibility->normalizeCountryCode($request->input('country')),
@@ -169,14 +184,6 @@ class CheckoutController extends Controller
 
         $launchDiscountApplied = $launchPromoCode !== null;
 
-        if ($launchDiscountApplied && $this->customerAlreadyUsedLaunchPromo($request->user(), $validated['email'], $launchPromoCode, (string) ($validated['order'] ?? ''))) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'promo_code' => __('site.checkout.validation.promo_code_used'),
-                ]);
-        }
-
         try {
             $selectedPlan = $pricingService->resolvePlan(
                 $validated['challenge_type'],
@@ -223,88 +230,108 @@ class CheckoutController extends Controller
             ? null
             : $paymentManager->provider((string) $validated['payment_provider']);
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
-        $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode, $giveawayApplies): Order {
-            $existingOrder = null;
-            $acceptedAt = now()->toIso8601String();
-            /** @var User $user */
-            $user = $request->user();
+        try {
+            $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode, $giveawayApplies, $launchDiscountApplied, $launchPromoRedemptions): Order {
+                $existingOrder = null;
+                $acceptedAt = now()->toIso8601String();
+                /** @var User $user */
+                $user = $request->user();
 
-            if (! empty($validated['order'])) {
-                $existingOrder = Order::query()
-                    ->where('order_number', $validated['order'])
-                    ->where('user_id', $user->id)
-                    ->where('payment_status', '!=', Order::PAYMENT_PAID)
-                    ->first();
+                if (! empty($validated['order'])) {
+                    $existingOrder = Order::query()
+                        ->where('order_number', $validated['order'])
+                        ->where('user_id', $user->id)
+                        ->where('payment_status', '!=', Order::PAYMENT_PAID)
+                        ->first();
+                }
+
+                if (
+                    $launchDiscountApplied
+                    && $launchPromoCode !== null
+                    && $launchPromoRedemptions->customerHasRedeemed($user, $validated['email'], $launchPromoCode, $existingOrder?->id)
+                ) {
+                    throw new InvalidArgumentException('launch_promo_redeemed');
+                }
+
+                $order = $existingOrder instanceof Order
+                    ? $existingOrder
+                    : new Order;
+
+                $order->fill([
+                    'user_id' => $user->id,
+                    'challenge_plan_id' => $challengePlan?->id,
+                    'email' => $validated['email'],
+                    'full_name' => $validated['full_name'],
+                    'street_address' => $validated['street_address'],
+                    'city' => $validated['city'],
+                    'postal_code' => $validated['postal_code'],
+                    'country' => $validated['country'],
+                    'challenge_type' => $validated['challenge_type'],
+                    'account_size' => (int) $validated['account_size'],
+                    'currency' => $validated['currency'],
+                    'payment_provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
+                    'base_price' => $selectedPlan['list_price'],
+                    'discount_percent' => $giveawayApplies ? 100 : $selectedPlan['discount']['percent'],
+                    'discount_amount' => $giveawayApplies ? $selectedPlan['list_price'] : $selectedPlan['discount']['amount'],
+                    'final_price' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
+                    'payment_status' => Order::PAYMENT_PENDING,
+                    'order_status' => Order::STATUS_AWAITING_PAYMENT,
+                    'metadata' => array_merge($order->metadata ?? [], [
+                        'locale' => app()->getLocale(),
+                        'plan_slug' => $selectedPlan['slug'],
+                        'launch_discount_enabled' => $selectedPlan['discount']['enabled'],
+                        'checkout_confirmations' => [
+                            'terms_and_residency' => [
+                                'accepted' => true,
+                                'accepted_at' => $acceptedAt,
+                                'country' => $validated['country'],
+                            ],
+                            'refund_policy' => [
+                                'accepted' => true,
+                                'accepted_at' => $acceptedAt,
+                            ],
+                        ],
+                        'launch_promo' => [
+                            'code' => $launchPromoCode,
+                            'campaign' => $launchPromoCode !== null ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
+                            'applied' => $launchPromoCode !== null,
+                            'percent' => $launchPromoCode !== null ? $selectedPlan['discount']['percent'] : null,
+                            'amount' => $launchPromoCode !== null ? $selectedPlan['discount']['amount'] : null,
+                        ],
+                        'mt5_giveaway_promo' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? [
+                            'id' => $giveawayPromoCode->id,
+                            'code' => $giveawayPromoCode->code,
+                            'mt5_account_pool_entry_id' => $giveawayPromoCode->mt5_account_pool_entry_id,
+                            'mt5_login' => $giveawayPromoCode->mt5_login,
+                            'applied' => true,
+                        ] : null,
+                    ]),
+                ]);
+                $order->save();
+
+                $order->paymentAttempts()->create([
+                    'provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
+                    'amount' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
+                    'currency' => $validated['currency'],
+                    'status' => 'pending',
+                    'payload' => [
+                        'created_via' => 'checkout_form',
+                    ],
+                ]);
+
+                return $order;
+            });
+        } catch (InvalidArgumentException $exception) {
+            if ($exception->getMessage() !== 'launch_promo_redeemed') {
+                throw $exception;
             }
 
-            $order = $existingOrder instanceof Order
-                ? $existingOrder
-                : new Order;
-
-            $order->fill([
-                'user_id' => $user->id,
-                'challenge_plan_id' => $challengePlan?->id,
-                'email' => $validated['email'],
-                'full_name' => $validated['full_name'],
-                'street_address' => $validated['street_address'],
-                'city' => $validated['city'],
-                'postal_code' => $validated['postal_code'],
-                'country' => $validated['country'],
-                'challenge_type' => $validated['challenge_type'],
-                'account_size' => (int) $validated['account_size'],
-                'currency' => $validated['currency'],
-                'payment_provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
-                'base_price' => $selectedPlan['list_price'],
-                'discount_percent' => $giveawayApplies ? 100 : $selectedPlan['discount']['percent'],
-                'discount_amount' => $giveawayApplies ? $selectedPlan['list_price'] : $selectedPlan['discount']['amount'],
-                'final_price' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
-                'payment_status' => Order::PAYMENT_PENDING,
-                'order_status' => Order::STATUS_AWAITING_PAYMENT,
-                'metadata' => array_merge($order->metadata ?? [], [
-                    'locale' => app()->getLocale(),
-                    'plan_slug' => $selectedPlan['slug'],
-                    'launch_discount_enabled' => $selectedPlan['discount']['enabled'],
-                    'checkout_confirmations' => [
-                        'terms_and_residency' => [
-                            'accepted' => true,
-                            'accepted_at' => $acceptedAt,
-                            'country' => $validated['country'],
-                        ],
-                        'refund_policy' => [
-                            'accepted' => true,
-                            'accepted_at' => $acceptedAt,
-                        ],
-                    ],
-                    'launch_promo' => [
-                        'code' => $launchPromoCode,
-                        'campaign' => $launchPromoCode !== null ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
-                        'applied' => $launchPromoCode !== null,
-                        'percent' => $launchPromoCode !== null ? $selectedPlan['discount']['percent'] : null,
-                        'amount' => $launchPromoCode !== null ? $selectedPlan['discount']['amount'] : null,
-                    ],
-                    'mt5_giveaway_promo' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? [
-                        'id' => $giveawayPromoCode->id,
-                        'code' => $giveawayPromoCode->code,
-                        'mt5_account_pool_entry_id' => $giveawayPromoCode->mt5_account_pool_entry_id,
-                        'mt5_login' => $giveawayPromoCode->mt5_login,
-                        'applied' => true,
-                    ] : null,
-                ]),
-            ]);
-            $order->save();
-
-            $order->paymentAttempts()->create([
-                'provider' => $giveawayApplies ? 'promo' : $validated['payment_provider'],
-                'amount' => $giveawayApplies ? 0 : $selectedPlan['discounted_price'],
-                'currency' => $validated['currency'],
-                'status' => 'pending',
-                'payload' => [
-                    'created_via' => 'checkout_form',
-                ],
-            ]);
-
-            return $order;
-        });
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'promo_code' => __('site.checkout.validation.promo_code_used'),
+                ]);
+        }
 
         if ($giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode) {
             try {
@@ -374,7 +401,11 @@ class CheckoutController extends Controller
         return redirect()->away((string) $checkoutSession['checkout_url']);
     }
 
-    public function previewPromo(Request $request, ChallengePricingService $pricingService): JsonResponse
+    public function previewPromo(
+        Request $request,
+        ChallengePricingService $pricingService,
+        LaunchPromoRedemptionService $launchPromoRedemptions,
+    ): JsonResponse
     {
         $validated = $request->validate([
             'challenge_type' => ['required', Rule::in(array_keys(config('wolforix.challenge_models', [])))],
@@ -392,10 +423,25 @@ class CheckoutController extends Controller
             ],
             'currency' => ['required', Rule::in($pricingService->supportedProviderCurrencies())],
             'promo_code' => ['nullable', 'string', 'max:60'],
+            'email' => ['nullable', 'email', 'max:255'],
         ]);
 
         $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
         $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
+        $launchPromoAlreadyRedeemed = false;
+
+        if ($launchPromoCode !== null && $request->user() instanceof User) {
+            $launchPromoAlreadyRedeemed = $launchPromoRedemptions->customerHasRedeemed(
+                $request->user(),
+                (string) ($validated['email'] ?? $request->user()->email),
+                $launchPromoCode,
+            );
+
+            if ($launchPromoAlreadyRedeemed) {
+                $launchPromoCode = null;
+            }
+        }
+
         $giveawayPromoCode = $launchPromoCode === null
             ? $this->resolveGiveawayPromoCode($promoCodeInput)
             : null;
@@ -417,14 +463,21 @@ class CheckoutController extends Controller
             $selectedPlan['discount']['amount'] = $selectedPlan['list_price'];
         }
 
+        $promoPreviewMessage = '';
+
+        if ($promoCodeInput !== '') {
+            $promoPreviewMessage = match (true) {
+                $launchPromoAlreadyRedeemed => __('site.checkout.validation.promo_code_used'),
+                $giveawayApplies => __('site.checkout.giveaway.no_payment_required'),
+                $launchPromoCode !== null => __('site.checkout.promo_code_feedback.success'),
+                default => $giveawayValidation['message'],
+            };
+        }
+
         return response()->json([
             'applied' => $launchPromoCode !== null || $giveawayApplies,
             'promo_code' => $giveawayApplies ? $giveawayPromoCode->code : $launchPromoCode,
-            'message' => $promoCodeInput === ''
-                ? ''
-                : ($launchPromoCode !== null || $giveawayApplies
-                    ? ($giveawayApplies ? __('site.checkout.giveaway.no_payment_required') : __('site.checkout.promo_code_feedback.success'))
-                    : $giveawayValidation['message']),
+            'message' => $promoPreviewMessage,
             'payment_required' => ! $giveawayApplies,
             'checkout_mode' => $giveawayApplies ? 'giveaway' : 'payment',
             'redirect_url' => $giveawayPromoCode instanceof Mt5PromoCode && ! $giveawayApplies && $this->giveawayPlanMismatch($giveawayPromoCode, $validated['challenge_type'], (int) $validated['account_size'])
@@ -560,23 +613,6 @@ class CheckoutController extends Controller
             ->with('poolEntry')
             ->whereRaw("LOWER(REPLACE(REPLACE(code, '-', ''), ' ', '')) = ?", [$normalizedCode])
             ->first();
-    }
-
-    private function customerAlreadyUsedLaunchPromo(User $user, string $email, string $promoCode, string $currentOrderNumber = ''): bool
-    {
-        if (! (bool) config('wolforix.launch_discount.single_use_per_customer', true)) {
-            return false;
-        }
-
-        return Order::query()
-            ->where(function ($query) use ($user, $email): void {
-                $query->where('user_id', $user->id)
-                    ->orWhereRaw('LOWER(email) = ?', [strtolower($email)]);
-            })
-            ->where('metadata->launch_promo->code', $promoCode)
-            ->whereNotIn('payment_status', [Order::PAYMENT_FAILED, Order::PAYMENT_CANCELED])
-            ->when($currentOrderNumber !== '', fn ($query) => $query->where('order_number', '!=', $currentOrderNumber))
-            ->exists();
     }
 
     private function normalizeGiveawayPromoCode(string $promoCode): string
