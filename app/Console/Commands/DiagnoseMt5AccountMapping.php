@@ -485,10 +485,14 @@ class DiagnoseMt5AccountMapping extends Command
             ->values();
         $poolOwner = $poolOwners->count() === 1 ? $poolOwners->first() : null;
         $directOwner = $directAccounts->count() === 1 ? $directAccounts->first() : null;
+        $poolHasSingleIntendedProductionOwner = $poolEntries->count() === 1
+            && $poolOwner instanceof TradingAccount
+            && $this->isIntendedProductionAccount($poolOwner);
         $safeAccount = null;
+        $noMappingConflict = false;
         $manualReviewReasons = [];
 
-        if ($directAccounts->isEmpty()) {
+        if ($directAccounts->isEmpty() && ! $poolHasSingleIntendedProductionOwner) {
             $manualReviewReasons[] = 'no trading account currently stores login '.$login;
         }
 
@@ -518,7 +522,7 @@ class DiagnoseMt5AccountMapping extends Command
 
         if ($directOwner instanceof TradingAccount && $poolOwner instanceof TradingAccount) {
             if ((int) $directOwner->id === (int) $poolOwner->id) {
-                $manualReviewReasons[] = 'direct trading account mapping and pool allocation already point to the same account';
+                $noMappingConflict = $this->isIntendedProductionAccount($poolOwner);
             } elseif ($this->isTemporaryTestAccount($directOwner) && $this->isIntendedProductionAccount($poolOwner)) {
                 $safeAccount = $directOwner;
             } else {
@@ -526,15 +530,25 @@ class DiagnoseMt5AccountMapping extends Command
             }
         }
 
-        $status = $safeAccount instanceof TradingAccount && $manualReviewReasons === []
-            ? 'SAFE ACCOUNT TO INVALIDATE'
-            : 'NOT SAFE / NEED MANUAL REVIEW';
-        $recommendedAction = $safeAccount instanceof TradingAccount && $poolOwner instanceof TradingAccount && $manualReviewReasons === []
-            ? 'Invalidate/remove login '.$login.' from '.$this->reference($safeAccount).' (TradingAccount #'.$safeAccount->id.') only; keep login '.$login.' assigned to '.$this->reference($poolOwner).' (TradingAccount #'.$poolOwner->id.'); do not deactivate MT5 login '.$login.'.'
-            : 'Do not invalidate or deactivate any account for login '.$login.'; manually review the trading_accounts platform mapping, mt5_account_pool_entries allocation, order ownership, and status history before taking production action.';
+        if ($directAccounts->isEmpty() && $poolHasSingleIntendedProductionOwner) {
+            $noMappingConflict = true;
+        }
+
+        if ($safeAccount instanceof TradingAccount && $manualReviewReasons === []) {
+            $status = 'SAFE ACCOUNT TO INVALIDATE';
+            $recommendedAction = 'Invalidate/remove login '.$login.' from '.$this->reference($safeAccount).' (TradingAccount #'.$safeAccount->id.') only; keep login '.$login.' assigned to '.$this->reference($poolOwner).' (TradingAccount #'.$poolOwner->id.'); do not deactivate MT5 login '.$login.'.';
+        } elseif ($noMappingConflict && $manualReviewReasons === [] && $poolOwner instanceof TradingAccount) {
+            $status = 'NO MAPPING CONFLICT';
+            $recommendedAction = 'No production repair action required for login '.$login.'; keep MT5 pool allocation on '.$this->reference($poolOwner).' (TradingAccount #'.$poolOwner->id.') and do not deactivate MT5 login '.$login.'.';
+        } else {
+            $status = 'NOT SAFE / NEED MANUAL REVIEW';
+            $recommendedAction = 'Do not invalidate or deactivate any account for login '.$login.'; manually review the trading_accounts platform mapping, mt5_account_pool_entries allocation, order ownership, and status history before taking production action.';
+        }
 
         $ownerAnswer = $poolOwner instanceof TradingAccount ? $this->reference($poolOwner).' / TradingAccount #'.$poolOwner->id.' (inferred from mt5_account_pool_entries.allocated_trading_account_id)' : 'unknown';
-        $directAnswer = $directOwner instanceof TradingAccount ? $this->reference($directOwner).' / TradingAccount #'.$directOwner->id : 'unknown or duplicated';
+        $directAnswer = $directOwner instanceof TradingAccount
+            ? $this->reference($directOwner).' / TradingAccount #'.$directOwner->id
+            : ($directAccounts->isEmpty() ? 'none' : 'duplicated');
         $temporaryAnswer = $directOwner instanceof TradingAccount ? $this->temporaryTestAnswer($directOwner) : 'unknown';
         $productionAnswer = $poolOwner instanceof TradingAccount ? $this->intendedProductionAnswer($poolOwner) : 'unknown';
 
