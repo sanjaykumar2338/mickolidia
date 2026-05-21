@@ -48,6 +48,9 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
         $this->assertStringContainsString('DRY RUN ONLY', $output);
         $this->assertStringContainsString('scalping_rule_violation', $output);
         $this->assertStringContainsString('broker_history_deleted', $output);
+        $this->assertStringContainsString('validation_path_used', $output);
+        $this->assertStringContainsString('pool allocation ownership match', $output);
+        $this->assertStringContainsString('SAFE TO PROCEED', $output);
         $this->assertSame([], $writes);
 
         $this->assertSame($before, $this->accountSnapshot($account->fresh()));
@@ -154,10 +157,108 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
         $this->assertSame($before, $this->accountSnapshot($account->fresh()));
     }
 
+    public function test_invalidate_mt5_account_review_allows_direct_login_mismatch_when_pool_ownership_is_valid(): void
+    {
+        [$account] = $this->createConfirmedReviewContext([
+            'platform_login' => '5050399203',
+            'platform_account_id' => '5050399203',
+        ]);
+        $before = $this->accountSnapshot($account->fresh());
+
+        $exitCode = Artisan::call('wolforix:invalidate-mt5-account-review', [
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('target_login_fields', $output);
+        $this->assertStringContainsString('5050399203', $output);
+        $this->assertStringContainsString('direct_login_match', $output);
+        $this->assertStringContainsString('pool_allocation_ownership_match', $output);
+        $this->assertStringContainsString('validation_path_used', $output);
+        $this->assertStringContainsString('pool allocation ownership match', $output);
+        $this->assertStringContainsString('SAFE TO PROCEED', $output);
+        $this->assertStringNotContainsString('NOT SAFE', $output);
+        $this->assertSame($before, $this->accountSnapshot($account->fresh()));
+    }
+
+    public function test_invalidate_mt5_account_review_blocks_wrong_pool_allocation(): void
+    {
+        [$account, $poolEntry] = $this->createConfirmedReviewContext([
+            'platform_login' => '5050399203',
+            'platform_account_id' => '5050399203',
+        ]);
+
+        $otherAccount = TradingAccount::unguarded(fn (): TradingAccount => TradingAccount::query()->create([
+            'id' => 63,
+            'user_id' => $account->user_id,
+            'account_reference' => 'WFX-MT5-WRONG-OWNER',
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'status' => 'Active',
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'account_type' => 'challenge',
+            'is_trial' => false,
+            'challenge_type' => 'one_step',
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'phase_reference_balance' => 10000,
+            'balance' => 10000,
+            'equity' => 10000,
+        ]));
+
+        $poolEntry->forceFill([
+            'allocated_trading_account_id' => $otherAccount->id,
+            'allocated_user_id' => $account->user_id,
+            'is_available' => false,
+        ])->save();
+
+        $exitCode = Artisan::call('wolforix:invalidate-mt5-account-review', [
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('NOT SAFE — invalidation blocked', $output);
+        $this->assertStringContainsString('MT5 pool entry is not allocated to target trading account #62', $output);
+        $this->assertStringNotContainsString('SAFE TO PROCEED', $output);
+        $this->assertSame('active', $account->fresh()->account_status);
+    }
+
+    public function test_invalidate_mt5_account_review_blocks_unallocated_pool_entry_without_direct_login_match(): void
+    {
+        [$account, $poolEntry] = $this->createConfirmedReviewContext([
+            'platform_login' => '5050399203',
+            'platform_account_id' => '5050399203',
+        ]);
+
+        $poolEntry->forceFill([
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+        ])->save();
+
+        $exitCode = Artisan::call('wolforix:invalidate-mt5-account-review', [
+            'account_reference' => 'WFX-MT5-00057-8HN7',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('NOT SAFE — invalidation blocked', $output);
+        $this->assertStringContainsString('neither target direct login fields nor MT5 pool allocation prove ownership of login 335374', $output);
+        $this->assertStringContainsString('MT5 pool entry is not allocated to any trading account', $output);
+        $this->assertStringNotContainsString('SAFE TO PROCEED', $output);
+        $this->assertSame('active', $account->fresh()->account_status);
+    }
+
     /**
      * @return array{0: TradingAccount, 1: Mt5AccountPoolEntry}
      */
-    private function createConfirmedReviewContext(): array
+    private function createConfirmedReviewContext(array $accountOverrides = [], array $poolOverrides = []): array
     {
         $user = User::factory()->create([
             'name' => 'Josué Andrés Agüero Franco',
@@ -214,7 +315,7 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
             'started_at' => now()->subDays(2),
         ]);
 
-        $account = TradingAccount::unguarded(fn (): TradingAccount => TradingAccount::query()->create([
+        $account = TradingAccount::unguarded(fn (): TradingAccount => TradingAccount::query()->create(array_merge([
             'id' => 62,
             'user_id' => $user->id,
             'challenge_plan_id' => $plan->id,
@@ -256,9 +357,9 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
                     ],
                 ],
             ],
-        ]));
+        ], $accountOverrides)));
 
-        $poolEntry = Mt5AccountPoolEntry::factory()->create([
+        $poolEntry = Mt5AccountPoolEntry::factory()->create(array_merge([
             'id' => 25,
             'login' => '335374',
             'server' => 'FusionMarkets-Demo',
@@ -274,7 +375,7 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
                 'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
                 'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
             ],
-        ]);
+        ], $poolOverrides));
 
         TradingAccountBalanceSnapshot::query()->create([
             'trading_account_id' => $account->id,

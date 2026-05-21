@@ -234,16 +234,15 @@ class InvalidateMt5AccountReview extends Command
             $blockers[] = 'target account platform_slug is not mt5';
         }
 
-        if ($account->platform_login !== null && (string) $account->platform_login !== self::TARGET_LOGIN) {
-            $blockers[] = 'target account platform_login is not '.self::TARGET_LOGIN;
-        }
-
-        if ($account->platform_account_id !== null && (string) $account->platform_account_id !== self::TARGET_LOGIN) {
-            $blockers[] = 'target account platform_account_id is not '.self::TARGET_LOGIN;
-        }
-
         if ((bool) $account->final_state_locked && (string) $account->failure_reason !== self::FAILURE_REASON) {
             $blockers[] = 'target account is already final_state_locked for a different reason';
+        }
+
+        $directLoginMatch = $this->directLoginMatches($account);
+        $poolOwnershipMatch = $this->poolOwnershipMatches($context);
+
+        if (! $directLoginMatch && ! $poolOwnershipMatch) {
+            $blockers[] = 'neither target direct login fields nor MT5 pool allocation prove ownership of login '.self::TARGET_LOGIN;
         }
 
         $unexpectedDirectAccounts = $directAccounts
@@ -256,14 +255,16 @@ class InvalidateMt5AccountReview extends Command
                 ->implode(', ');
         }
 
-        if ($poolEntries->count() !== 1) {
-            $blockers[] = 'expected exactly one MT5 pool entry for login '.self::TARGET_LOGIN.', found '.$poolEntries->count();
+        if ($poolEntries->count() > 1) {
+            $blockers[] = 'expected at most one MT5 pool entry for login '.self::TARGET_LOGIN.', found '.$poolEntries->count();
         }
 
         $poolEntry = $poolEntries->first();
 
         if ($poolEntry instanceof Mt5AccountPoolEntry) {
-            if ((int) $poolEntry->allocated_trading_account_id !== self::TARGET_ACCOUNT_ID) {
+            if ($poolEntry->allocated_trading_account_id === null) {
+                $blockers[] = 'MT5 pool entry is not allocated to any trading account';
+            } elseif ((int) $poolEntry->allocated_trading_account_id !== self::TARGET_ACCOUNT_ID) {
                 $blockers[] = 'MT5 pool entry is not allocated to target trading account #'.self::TARGET_ACCOUNT_ID;
             }
 
@@ -397,6 +398,9 @@ class InvalidateMt5AccountReview extends Command
             ['target_account', $account instanceof TradingAccount ? '#'.$account->id.' '.$account->account_reference : 'missing'],
             ['target_email', $account instanceof TradingAccount ? (string) ($account->user?->email ?: '-') : '-'],
             ['target_login_fields', $account instanceof TradingAccount ? 'platform_login='.$this->formatValue($account->platform_login).', platform_account_id='.$this->formatValue($account->platform_account_id) : '-'],
+            ['direct_login_match', $this->boolString($account instanceof TradingAccount && $this->directLoginMatches($account))],
+            ['pool_allocation_ownership_match', $this->boolString($this->poolOwnershipMatches($context))],
+            ['validation_path_used', $this->validationPath($context)],
             ['direct_login_accounts', $context['direct_accounts']->map(fn (TradingAccount $directAccount): string => '#'.$directAccount->id.' '.($directAccount->account_reference ?: '-'))->implode(', ') ?: '-'],
             ['pool_entries', $context['pool_entries']->map(fn (Mt5AccountPoolEntry $entry): string => '#'.$entry->id.' allocated_trading_account_id='.$this->formatValue($entry->allocated_trading_account_id))->implode(', ') ?: '-'],
         ]);
@@ -503,6 +507,10 @@ class InvalidateMt5AccountReview extends Command
             ['broker_history_deleted', 'no'],
             ['replacement_account_created', 'no'],
         ]);
+
+        if (! $applied) {
+            $this->info('SAFE TO PROCEED');
+        }
     }
 
     /**
@@ -629,6 +637,58 @@ class InvalidateMt5AccountReview extends Command
             ->except('sync_logs')
             ->map(fn (int $count, string $key): string => $key.'='.$count)
             ->implode(', ');
+    }
+
+    private function directLoginMatches(TradingAccount $account): bool
+    {
+        return (string) $account->platform_login === self::TARGET_LOGIN
+            || (string) $account->platform_account_id === self::TARGET_LOGIN;
+    }
+
+    /**
+     * @param  array{
+     *     account: TradingAccount|null,
+     *     pool_entries: Collection<int, Mt5AccountPoolEntry>,
+     *     direct_accounts: Collection<int, TradingAccount>
+     * }  $context
+     */
+    private function poolOwnershipMatches(array $context): bool
+    {
+        $account = $context['account'];
+        $poolEntries = $context['pool_entries'];
+
+        if (! $account instanceof TradingAccount || $poolEntries->count() !== 1) {
+            return false;
+        }
+
+        $poolEntry = $poolEntries->first();
+
+        return $poolEntry instanceof Mt5AccountPoolEntry
+            && (string) $poolEntry->login === self::TARGET_LOGIN
+            && (int) $poolEntry->allocated_trading_account_id === self::TARGET_ACCOUNT_ID;
+    }
+
+    /**
+     * @param  array{
+     *     account: TradingAccount|null,
+     *     pool_entries: Collection<int, Mt5AccountPoolEntry>,
+     *     direct_accounts: Collection<int, TradingAccount>
+     * }  $context
+     */
+    private function validationPath(array $context): string
+    {
+        $account = $context['account'];
+        $paths = [];
+
+        if ($account instanceof TradingAccount && $this->directLoginMatches($account)) {
+            $paths[] = 'direct login match';
+        }
+
+        if ($this->poolOwnershipMatches($context)) {
+            $paths[] = 'pool allocation ownership match';
+        }
+
+        return $paths === [] ? 'none' : implode(' + ', $paths);
     }
 
     private function phaseLabel(TradingAccount $account): string
