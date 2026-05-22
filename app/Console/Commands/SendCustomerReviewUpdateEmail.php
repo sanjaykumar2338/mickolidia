@@ -16,8 +16,6 @@ class SendCustomerReviewUpdateEmail extends Command
 
     private const ACCOUNT_REFERENCE = 'WFX-MT5-00057-8HN7';
 
-    private const DISCOUNT_CODE = 'WOLF50HQ';
-
     protected $signature = 'wolforix:send-customer-review-update-email
         {email : Customer email address}
         {--dry-run : Preview the email without sending}
@@ -65,7 +63,6 @@ class SendCustomerReviewUpdateEmail extends Command
         $mail = new CustomerReviewUpdateMail(
             customerName: self::CUSTOMER_NAME,
             accountReference: self::ACCOUNT_REFERENCE,
-            discountCode: self::DISCOUNT_CODE,
         );
 
         $this->table(['Field', 'Value'], [
@@ -144,7 +141,6 @@ class SendCustomerReviewUpdateEmail extends Command
             'Clarify that broker-side trading data was not affected.',
             'State that the case remains under internal review for trade-duration/scalping-rule validation.',
             'Acknowledge the frustration caused by technical issues in a calm, non-blaming tone.',
-            'Offer goodwill support discount code '.self::DISCOUNT_CODE.' for 50% if the client decides to continue in the future.',
         ];
     }
 }

@@ -112,10 +112,10 @@ class ChallengePricingService
                 'type' => config('wolforix.launch_discount.type', 'percentage'),
                 'percent' => $priceSnapshot['discount_percent'],
                 'amount' => $priceSnapshot['discount_amount'],
-                'badge' => config('wolforix.launch_discount.badge', '20% OFF - Limited Launch Offer'),
-                'urgency_text' => config('wolforix.launch_discount.urgency_text', 'Launch Discount - Limited Time Only'),
-                'code' => config('wolforix.launch_discount.code'),
-                'campaign' => config('wolforix.launch_discount.campaign', 'launch_discount'),
+                'badge' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.badge', 'Launch Offer') : '',
+                'urgency_text' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.urgency_text', 'Limited-time offer') : '',
+                'code' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.code') : null,
+                'campaign' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
             ],
             'steps' => $definition['steps'],
             'phases' => array_values($definition['phases']),
@@ -190,7 +190,7 @@ class ChallengePricingService
         $promoCode = trim((string) $promoCode);
         $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
 
-        if ($promoCode === '' || $expectedCode === '') {
+        if (! (bool) config('wolforix.launch_discount.enabled', false) || $promoCode === '' || $expectedCode === '') {
             return null;
         }
 

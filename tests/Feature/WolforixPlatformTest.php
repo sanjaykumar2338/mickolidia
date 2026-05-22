@@ -43,12 +43,26 @@ class WolforixPlatformTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const TEST_LAUNCH_PROMO_CODE = 'TESTLAUNCH50';
+
+    private const TEST_LAUNCH_PROMO_CAMPAIGN = 'test_launch_discount';
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Storage::fake('public');
+        config()->set('wolforix.launch_discount', [
+            'enabled' => true,
+            'type' => 'percentage',
+            'percent' => 50,
+            'code' => self::TEST_LAUNCH_PROMO_CODE,
+            'campaign' => self::TEST_LAUNCH_PROMO_CAMPAIGN,
+            'single_use_per_customer' => true,
+            'badge' => '50% OFF - Support Courtesy',
+            'urgency_text' => 'Support goodwill discount for affected clients',
+        ]);
     }
 
     public function test_public_pages_render_successfully(): void
@@ -622,10 +636,10 @@ class WolforixPlatformTest extends TestCase
                 __('site.auth.register.title'),
                 __('site.auth.notice'),
             ])
-            ->assertSee('Continue with Google')
-            ->assertSee('Continue with Facebook')
-            ->assertSee('Continue with Apple')
-            ->assertSee('or continue with');
+            ->assertDontSee('Continue with Google')
+            ->assertDontSee('Continue with Facebook')
+            ->assertDontSee('Continue with Apple')
+            ->assertDontSee('or continue with');
     }
 
     public function test_home_page_contains_the_refined_challenge_selector_and_fixed_disclaimer(): void
@@ -783,6 +797,37 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Get Plan')
             ->assertSee('$25')
             ->assertSee('50% OFF - Support Courtesy');
+    }
+
+    public function test_disabled_launch_offer_hides_popup_and_rejects_legacy_coupon(): void
+    {
+        config()->set('wolforix.launch_discount.enabled', false);
+        config()->set('wolforix.launch_discount.code', 'WOLF50HQ');
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('data-launch-popup', false)
+            ->assertDontSee('WOLF50HQ');
+
+        $this->postJson(route('launch-offer.update'), [
+            'decision' => 'apply',
+            'redirect_to' => route('home').'#plans',
+        ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('promo_code', null);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'promo_code' => 'WOLF50HQ',
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('promo_code', null)
+            ->assertJsonPath('pricing.discount_enabled', false);
     }
 
     public function test_launch_offer_ignore_keeps_regular_pricing_visible(): void
@@ -1051,11 +1096,11 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'one_step',
                 'account_size' => 100000,
                 'currency' => 'USD',
-                'promo_code' => 'WOLF50HQ',
+                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
             ])
             ->assertOk()
             ->assertJsonPath('applied', true)
-            ->assertJsonPath('promo_code', 'WOLF50HQ')
+            ->assertJsonPath('promo_code', self::TEST_LAUNCH_PROMO_CODE)
             ->assertJsonPath('pricing.list_price', '599.00')
             ->assertJsonPath('pricing.discounted_price', '300.00')
             ->assertJsonPath('pricing.discount_enabled', true);
@@ -1073,11 +1118,11 @@ class WolforixPlatformTest extends TestCase
                     'challenge_type' => $challengeType,
                     'account_size' => $accountSize,
                     'currency' => 'USD',
-                    'promo_code' => 'WOLF50HQ',
+                    'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
                 ])
                 ->assertOk()
                 ->assertJsonPath('applied', true)
-                ->assertJsonPath('promo_code', 'WOLF50HQ');
+                ->assertJsonPath('promo_code', self::TEST_LAUNCH_PROMO_CODE);
         }
     }
 
@@ -1099,7 +1144,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
-            'promo_code' => 'WOLF50HQ',
+            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1168,7 +1213,7 @@ class WolforixPlatformTest extends TestCase
             'order_status' => Order::STATUS_COMPLETED,
             'metadata' => [
                 'launch_promo' => [
-                    'code' => 'WOLF50HQ',
+                    'code' => self::TEST_LAUNCH_PROMO_CODE,
                     'applied' => true,
                     'redeemed' => true,
                     'redeemed_at' => now()->subMinute()->toIso8601String(),
@@ -1181,7 +1226,7 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => 'WOLF50HQ',
+                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
             ]))
             ->assertOk()
             ->assertSee('79.00')
@@ -1192,7 +1237,7 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => 'WOLF50HQ',
+                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
                 'email' => 'shared-billing@example.com',
             ])
             ->assertOk()
@@ -1210,7 +1255,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
-            'promo_code' => 'WOLF50HQ',
+            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1228,7 +1273,7 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => 'WOLF50HQ '.$promoCode->code,
+                'promo_code' => self::TEST_LAUNCH_PROMO_CODE.' '.$promoCode->code,
             ])
             ->assertOk()
             ->assertJsonPath('applied', false)
@@ -1252,7 +1297,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'one_step',
             'account_size' => 25000,
             'currency' => 'USD',
-            'promo_code' => 'WOLF50HQ',
+            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1266,11 +1311,11 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('50.00', (string) $order->discount_percent);
         $this->assertSame('99.00', (string) $order->discount_amount);
         $this->assertSame('100.00', (string) $order->final_price);
-        $this->assertSame('WOLF50HQ', data_get($order->metadata, 'launch_promo.code'));
-        $this->assertSame('mt5_goodwill_support', data_get($order->metadata, 'launch_promo.campaign'));
+        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($order->metadata, 'launch_promo.code'));
+        $this->assertSame(self::TEST_LAUNCH_PROMO_CAMPAIGN, data_get($order->metadata, 'launch_promo.campaign'));
         $this->assertSame(50.0, (float) data_get($order->metadata, 'launch_promo.percent'));
-        $this->assertSame('WOLF50HQ', data_get($attempt->payload, 'metadata.coupon_code'));
-        $this->assertSame('mt5_goodwill_support', data_get($attempt->payload, 'metadata.coupon_campaign'));
+        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($attempt->payload, 'metadata.coupon_code'));
+        $this->assertSame(self::TEST_LAUNCH_PROMO_CAMPAIGN, data_get($attempt->payload, 'metadata.coupon_campaign'));
         $this->assertSame('50', data_get($attempt->payload, 'metadata.coupon_percent'));
 
         $this->postJson(route('payments.stripe.webhook'), [
@@ -1293,7 +1338,7 @@ class WolforixPlatformTest extends TestCase
 
         $completedAttempt = $order->fresh()->paymentAttempts()->latest('id')->firstOrFail();
         $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
-        $this->assertSame('WOLF50HQ', data_get($completedAttempt->payload, 'metadata.coupon_code'));
+        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($completedAttempt->payload, 'metadata.coupon_code'));
     }
 
     public function test_checkout_giveaway_promo_preview_returns_zero_payment_state(): void

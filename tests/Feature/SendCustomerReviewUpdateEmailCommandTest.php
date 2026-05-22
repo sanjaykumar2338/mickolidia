@@ -32,7 +32,8 @@ class SendCustomerReviewUpdateEmailCommandTest extends TestCase
         $this->assertStringContainsString('dry-run', $output);
         $this->assertStringContainsString('Email preview', $output);
         $this->assertStringContainsString('DRY RUN ONLY', $output);
-        $this->assertStringContainsString('WOLF50HQ', $output);
+        $this->assertStringNotContainsString('WOLF50HQ', $output);
+        $this->assertStringNotContainsString('50% support discount', $output);
         Mail::assertNothingSent();
         $this->assertSame($before, $this->statusSnapshot($account->fresh()));
     }
@@ -69,7 +70,6 @@ class SendCustomerReviewUpdateEmailCommandTest extends TestCase
         $mail = new CustomerReviewUpdateMail(
             customerName: 'Josué Andrés Agüero Franco',
             accountReference: 'WFX-MT5-00057-8HN7',
-            discountCode: 'WOLF50HQ',
         );
 
         $html = $mail->render();
@@ -82,8 +82,8 @@ class SendCustomerReviewUpdateEmailCommandTest extends TestCase
         $this->assertStringContainsString('MT5 synchronization and mapping issue was identified and corrected', $html);
         $this->assertStringContainsString('broker-side trading data', $html);
         $this->assertStringContainsString('trade-duration rule validation', $html);
-        $this->assertStringContainsString('WOLF50HQ', $html);
-        $this->assertStringContainsString('50% support discount', $html);
+        $this->assertStringNotContainsString('WOLF50HQ', $html);
+        $this->assertStringNotContainsString('50% support discount', $html);
     }
 
     private function createCustomerAccount(): TradingAccount

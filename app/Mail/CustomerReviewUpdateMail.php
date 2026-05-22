@@ -17,7 +17,6 @@ class CustomerReviewUpdateMail extends Mailable
     public function __construct(
         public string $customerName,
         public string $accountReference,
-        public string $discountCode = 'WOLF50HQ',
     ) {
     }
 

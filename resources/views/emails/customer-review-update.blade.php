@@ -22,20 +22,6 @@
         Your case remains under internal review for trade-duration rule validation, including the trade duration and scalping-rule checks. This message is an update on the technical repair and is not a final pass or fail decision.
     </p>
 
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:22px; border-collapse:separate; border-spacing:0;">
-        <tr>
-            <td style="padding:18px 20px; border:1px solid rgba(244,183,74,0.22); border-radius:22px; background:rgba(244,183,74,0.08);">
-                <p style="margin:0; color:#f4b74a; font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase;">Goodwill Support</p>
-                <p style="margin:10px 0 0 0; color:#ffffff; font-size:20px; font-weight:700; line-height:1.3;">
-                    {{ $discountCode }} — 50% support discount
-                </p>
-                <p style="margin:12px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-                    We understand the frustration caused by technical issues. As a goodwill gesture, if you decide to continue with Wolforix in the future, you may use code <strong style="color:#ffffff;">{{ $discountCode }}</strong> for a 50% support discount.
-                </p>
-            </td>
-        </tr>
-    </table>
-
     <p style="margin:22px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
         We appreciate the opportunity to review this carefully and will keep the remaining account review focused on the relevant trade-duration validation.
     </p>

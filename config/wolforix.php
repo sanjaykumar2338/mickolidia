@@ -61,14 +61,14 @@ $supportedLocales = [
 ];
 
 $launchDiscount = [
-    'enabled' => true,
+    'enabled' => filter_var(env('LAUNCH_DISCOUNT_ENABLED', false), FILTER_VALIDATE_BOOL),
     'type' => 'percentage',
-    'percent' => 50,
-    'code' => 'WOLF50HQ',
-    'campaign' => 'mt5_goodwill_support',
+    'percent' => (float) env('LAUNCH_DISCOUNT_PERCENT', 0),
+    'code' => trim((string) env('LAUNCH_PROMO_CODE', '')),
+    'campaign' => env('LAUNCH_DISCOUNT_CAMPAIGN', 'launch_discount'),
     'single_use_per_customer' => true,
-    'badge' => '50% OFF - Support Courtesy',
-    'urgency_text' => 'Support goodwill discount for affected clients',
+    'badge' => env('LAUNCH_DISCOUNT_BADGE', 'Launch Offer'),
+    'urgency_text' => env('LAUNCH_DISCOUNT_URGENCY_TEXT', 'Limited-time offer'),
 ];
 
 $currencies = [

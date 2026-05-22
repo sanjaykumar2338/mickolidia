@@ -10,9 +10,12 @@
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+@php
+    $launchDiscountAvailable = (bool) config('wolforix.launch_discount.enabled') && filled((string) config('wolforix.launch_discount.code'));
+@endphp
 <body
     class="overflow-x-hidden selection:bg-amber-400/30 selection:text-white"
-    data-launch-promo-code="{{ session('launch_offer.applied') ? config('wolforix.launch_discount.code') : '' }}"
+    data-launch-promo-code="{{ session('launch_offer.applied') && $launchDiscountAvailable ? config('wolforix.launch_discount.code') : '' }}"
 >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div class="absolute inset-0 grid-pattern opacity-25"></div>

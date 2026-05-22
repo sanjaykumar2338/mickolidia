@@ -28,10 +28,11 @@
 </head>
 @php
     $hasPostMainSections = ! request()->routeIs('checkout.*', 'login', 'password.*');
+    $launchDiscountAvailable = (bool) config('wolforix.launch_discount.enabled') && filled((string) config('wolforix.launch_discount.code'));
 @endphp
 <body
     class="selection:bg-amber-400/30 selection:text-white"
-    data-launch-promo-code="{{ session('launch_offer.applied') ? config('wolforix.launch_discount.code') : '' }}"
+    data-launch-promo-code="{{ session('launch_offer.applied') && $launchDiscountAvailable ? config('wolforix.launch_discount.code') : '' }}"
 >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div class="absolute inset-0 grid-pattern opacity-40"></div>
@@ -41,7 +42,7 @@
 
     @include('partials.public-nav')
     @include('partials.site-search')
-    @if (request()->routeIs('home') && ! session()->has('launch_offer.decision'))
+    @if (request()->routeIs('home') && $launchDiscountAvailable && ! session()->has('launch_offer.decision'))
         @include('partials.launch-popup')
     @endif
     @include('partials.cookie-consent-banner')

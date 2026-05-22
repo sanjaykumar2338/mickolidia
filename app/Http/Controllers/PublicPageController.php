@@ -82,8 +82,9 @@ class PublicPageController extends Controller
 
         $decision = (string) $validated['decision'];
         $promoCode = trim((string) config('wolforix.launch_discount.code', ''));
+        $launchDiscountAvailable = (bool) config('wolforix.launch_discount.enabled', false) && $promoCode !== '';
 
-        if ($decision === 'apply' && $promoCode !== '') {
+        if ($decision === 'apply' && $launchDiscountAvailable) {
             $request->session()->put('launch_offer', [
                 'decision' => 'apply',
                 'applied' => true,
@@ -102,8 +103,8 @@ class PublicPageController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'decision' => $decision,
-                'applied' => $decision === 'apply' && $promoCode !== '',
-                'promo_code' => $decision === 'apply' && $promoCode !== '' ? $promoCode : null,
+                'applied' => $decision === 'apply' && $launchDiscountAvailable,
+                'promo_code' => $decision === 'apply' && $launchDiscountAvailable ? $promoCode : null,
                 'redirect_to' => $redirectTo,
             ]);
         }
