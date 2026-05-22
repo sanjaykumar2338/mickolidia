@@ -10,8 +10,14 @@ class LaunchPromoRedemptionService
 {
     public function customerHasRedeemed(User $user, string $email, string $promoCode, ?int $ignoreOrderId = null): bool
     {
-        if (! $this->singleUseEnabled()) {
+        if (! $this->singleUseEnabled($promoCode)) {
             return false;
+        }
+
+        if ($this->isPrivateCoupon($promoCode)) {
+            return $this->redeemedOrdersForCode($promoCode)
+                ->when($ignoreOrderId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreOrderId))
+                ->exists();
         }
 
         return $this->redeemedOrdersForCustomer($user, $email, $promoCode)
@@ -23,8 +29,14 @@ class LaunchPromoRedemptionService
     {
         $promoCode = $this->promoCodeForOrder($order);
 
-        if ($promoCode === null || ! $this->singleUseEnabled()) {
+        if ($promoCode === null || ! $this->singleUseEnabled($promoCode)) {
             return false;
+        }
+
+        if ($this->isPrivateCoupon($promoCode)) {
+            return $this->redeemedOrdersForCode($promoCode)
+                ->whereKeyNot($order->id)
+                ->exists();
         }
 
         $user = $order->user()->first();
@@ -62,11 +74,16 @@ class LaunchPromoRedemptionService
 
     private function redeemedOrdersForCustomer(User $user, string $email, string $promoCode): Builder
     {
-        return Order::query()
+        return $this->redeemedOrdersForCode($promoCode)
             ->where(function (Builder $query) use ($user, $email): void {
                 $query->where('user_id', $user->id)
                     ->orWhereRaw('LOWER(email) = ?', [strtolower($email)]);
-            })
+            });
+    }
+
+    private function redeemedOrdersForCode(string $promoCode): Builder
+    {
+        return Order::query()
             ->where('metadata->launch_promo->code', $promoCode)
             ->where(function (Builder $query): void {
                 $query->where('payment_status', Order::PAYMENT_PAID)
@@ -81,8 +98,19 @@ class LaunchPromoRedemptionService
         return $promoCode !== '' ? $promoCode : null;
     }
 
-    private function singleUseEnabled(): bool
+    private function singleUseEnabled(string $promoCode): bool
     {
-        return (bool) config('wolforix.launch_discount.single_use_per_customer', true);
+        if ($this->isPrivateCoupon($promoCode)) {
+            return (bool) config('wolforix.private_coupon.single_use', true);
+        }
+
+        return (bool) config('wolforix.launch_discount.single_use_per_customer', false);
+    }
+
+    private function isPrivateCoupon(string $promoCode): bool
+    {
+        $privateCode = trim((string) config('wolforix.private_coupon.code', ''));
+
+        return $privateCode !== '' && strcasecmp($promoCode, $privateCode) === 0;
     }
 }

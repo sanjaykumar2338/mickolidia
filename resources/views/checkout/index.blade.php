@@ -94,7 +94,7 @@
                     </h2>
 
                     <div class="mt-5 flex flex-wrap items-center gap-3">
-                        <span data-checkout-discount-badge class="{{ $selectedPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">{{ __('site.home.challenge_selector.discount_badge') }}</span>
+                        <span data-checkout-discount-badge class="{{ $selectedPlan['discount']['enabled'] ? '' : 'hidden ' }}gold-pill rounded-full px-4 py-2 text-xs font-semibold">{{ $selectedPlan['discount']['badge'] ?: __('site.home.challenge_selector.discount_badge') }}</span>
                         <span class="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold tracking-[0.24em] text-slate-200">
                             {{ $selectedCurrency }}
                         </span>

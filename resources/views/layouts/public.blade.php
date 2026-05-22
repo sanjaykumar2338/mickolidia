@@ -28,7 +28,8 @@
 </head>
 @php
     $hasPostMainSections = ! request()->routeIs('checkout.*', 'login', 'password.*');
-    $launchDiscountAvailable = (bool) config('wolforix.launch_discount.enabled') && filled((string) config('wolforix.launch_discount.code'));
+    $launchDiscountAvailable = app(\App\Services\Pricing\ChallengePricingService::class)->publicLaunchDiscountAvailable()
+        && filled((string) config('wolforix.launch_discount.code'));
 @endphp
 <body
     class="selection:bg-amber-400/30 selection:text-white"

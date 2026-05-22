@@ -61,14 +61,25 @@ $supportedLocales = [
 ];
 
 $launchDiscount = [
-    'enabled' => filter_var(env('LAUNCH_DISCOUNT_ENABLED', false), FILTER_VALIDATE_BOOL),
+    'enabled' => filter_var(env('LAUNCH_DISCOUNT_ENABLED', true), FILTER_VALIDATE_BOOL),
     'type' => 'percentage',
-    'percent' => (float) env('LAUNCH_DISCOUNT_PERCENT', 0),
-    'code' => trim((string) env('LAUNCH_PROMO_CODE', '')),
+    'percent' => (float) env('LAUNCH_DISCOUNT_PERCENT', 20),
+    'code' => trim((string) env('LAUNCH_PROMO_CODE', 'Wolforix2026')),
     'campaign' => env('LAUNCH_DISCOUNT_CAMPAIGN', 'launch_discount'),
-    'single_use_per_customer' => true,
-    'badge' => env('LAUNCH_DISCOUNT_BADGE', 'Launch Offer'),
-    'urgency_text' => env('LAUNCH_DISCOUNT_URGENCY_TEXT', 'Limited-time offer'),
+    'ends_at' => env('LAUNCH_DISCOUNT_ENDS_AT', '2026-05-31 23:59:59'),
+    'single_use_per_customer' => false,
+    'badge' => env('LAUNCH_DISCOUNT_BADGE', '20% OFF - Launch Access Ending Soon'),
+    'urgency_text' => env('LAUNCH_DISCOUNT_URGENCY_TEXT', 'Launch Discount - Limited Time Only'),
+];
+
+$privateCoupon = [
+    'enabled' => filter_var(env('PRIVATE_PROMO_ENABLED', true), FILTER_VALIDATE_BOOL),
+    'type' => 'percentage',
+    'percent' => (float) env('PRIVATE_PROMO_PERCENT', 50),
+    'code' => trim((string) env('PRIVATE_PROMO_CODE', 'WOLF50HQ')),
+    'campaign' => env('PRIVATE_PROMO_CAMPAIGN', 'private_manual_coupon'),
+    'single_use' => true,
+    'badge' => env('PRIVATE_PROMO_BADGE', 'Code applied'),
 ];
 
 $currencies = [
@@ -402,6 +413,8 @@ return [
     ],
 
     'launch_discount' => $launchDiscount,
+
+    'private_coupon' => $privateCoupon,
 
     'default_currency' => 'USD',
 

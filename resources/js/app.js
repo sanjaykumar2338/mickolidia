@@ -2336,8 +2336,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         appliedCode = normalizePromoCode(payload.promo_code ?? promoCode);
                         input.value = appliedCode;
                         renderFeedback('success', payload.message ?? (payload.payment_required === false ? giveawayMessage : successMessage));
-                        setLaunchPromoCode(appliedCode);
-                        syncLaunchPromoCodeToCheckoutLinks(appliedCode);
+                        if (payload.promo_kind === 'public_launch') {
+                            setLaunchPromoCode(appliedCode);
+                            syncLaunchPromoCodeToCheckoutLinks(appliedCode);
+                        } else {
+                            storage.remove(launchPromoStorageKey);
+                            syncLaunchPromoCodeToCheckoutLinks('');
+                        }
                     } else {
                         appliedCode = '';
                         setPaymentRequired(true);

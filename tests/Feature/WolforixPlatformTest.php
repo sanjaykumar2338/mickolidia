@@ -43,9 +43,13 @@ class WolforixPlatformTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const TEST_LAUNCH_PROMO_CODE = 'TESTLAUNCH50';
+    private const TEST_PUBLIC_LAUNCH_PROMO_CODE = 'Wolforix2026';
 
-    private const TEST_LAUNCH_PROMO_CAMPAIGN = 'test_launch_discount';
+    private const TEST_PUBLIC_LAUNCH_PROMO_CAMPAIGN = 'test_launch_discount';
+
+    private const TEST_PRIVATE_PROMO_CODE = 'WOLF50HQ';
+
+    private const TEST_PRIVATE_PROMO_CAMPAIGN = 'test_private_manual_coupon';
 
     protected function setUp(): void
     {
@@ -56,12 +60,22 @@ class WolforixPlatformTest extends TestCase
         config()->set('wolforix.launch_discount', [
             'enabled' => true,
             'type' => 'percentage',
+            'percent' => 20,
+            'code' => self::TEST_PUBLIC_LAUNCH_PROMO_CODE,
+            'campaign' => self::TEST_PUBLIC_LAUNCH_PROMO_CAMPAIGN,
+            'ends_at' => '2026-05-31 23:59:59',
+            'single_use_per_customer' => false,
+            'badge' => '20% OFF - Launch Access Ending Soon',
+            'urgency_text' => 'Launch Discount - Limited Time Only',
+        ]);
+        config()->set('wolforix.private_coupon', [
+            'enabled' => true,
+            'type' => 'percentage',
             'percent' => 50,
-            'code' => self::TEST_LAUNCH_PROMO_CODE,
-            'campaign' => self::TEST_LAUNCH_PROMO_CAMPAIGN,
-            'single_use_per_customer' => true,
-            'badge' => '50% OFF - Support Courtesy',
-            'urgency_text' => 'Support goodwill discount for affected clients',
+            'code' => self::TEST_PRIVATE_PROMO_CODE,
+            'campaign' => self::TEST_PRIVATE_PROMO_CAMPAIGN,
+            'single_use' => true,
+            'badge' => 'Code applied',
         ]);
     }
 
@@ -795,39 +809,64 @@ class WolforixPlatformTest extends TestCase
         ])->get(route('home'))
             ->assertOk()
             ->assertSee('Get Plan')
-            ->assertSee('$25')
-            ->assertSee('50% OFF - Support Courtesy');
+            ->assertSee('$39')
+            ->assertSee('20% OFF - Launch Access Ending Soon')
+            ->assertDontSee(self::TEST_PRIVATE_PROMO_CODE);
     }
 
-    public function test_disabled_launch_offer_hides_popup_and_rejects_legacy_coupon(): void
+    public function test_private_coupon_is_not_auto_applied_or_publicly_displayed(): void
     {
-        config()->set('wolforix.launch_discount.enabled', false);
-        config()->set('wolforix.launch_discount.code', 'WOLF50HQ');
-
         $this->get(route('home'))
             ->assertOk()
-            ->assertDontSee('data-launch-popup', false)
-            ->assertDontSee('WOLF50HQ');
-
-        $this->postJson(route('launch-offer.update'), [
-            'decision' => 'apply',
-            'redirect_to' => route('home').'#plans',
-        ])
-            ->assertOk()
-            ->assertJsonPath('applied', false)
-            ->assertJsonPath('promo_code', null);
+            ->assertSee('20% OFF - Launch Access Ending Soon')
+            ->assertSee(config('wolforix.launch_discount.code'))
+            ->assertDontSee(self::TEST_PRIVATE_PROMO_CODE)
+            ->assertDontSee('50% OFF - Support Courtesy');
 
         $this->actingAs(User::factory()->create())
-            ->postJson(route('checkout.promo.preview'), [
+            ->withSession([
+                'launch_offer' => [
+                    'decision' => 'apply',
+                    'applied' => true,
+                    'promo_code' => config('wolforix.launch_discount.code'),
+                ],
+            ])->get(route('checkout.show', [
                 'challenge_type' => 'two_step',
                 'account_size' => 50000,
                 'currency' => 'USD',
-                'promo_code' => 'WOLF50HQ',
-            ])
+            ]))
             ->assertOk()
-            ->assertJsonPath('applied', false)
-            ->assertJsonPath('promo_code', null)
-            ->assertJsonPath('pricing.discount_enabled', false);
+            ->assertSee('231.00')
+            ->assertSee('20% OFF - Launch Access Ending Soon')
+            ->assertDontSee(self::TEST_PRIVATE_PROMO_CODE)
+            ->assertDontSee('145.00')
+            ->assertDontSee('50% OFF - Support Courtesy');
+    }
+
+    public function test_public_launch_discount_expires_after_may_31_2026(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-01 00:00:00'));
+
+        try {
+            $this->get(route('home'))
+                ->assertOk()
+                ->assertDontSee('data-launch-popup', false)
+                ->assertDontSee(config('wolforix.launch_discount.code'));
+
+            $this->actingAs(User::factory()->create())
+                ->postJson(route('checkout.promo.preview'), [
+                    'challenge_type' => 'two_step',
+                    'account_size' => 50000,
+                    'currency' => 'USD',
+                    'promo_code' => config('wolforix.launch_discount.code'),
+                ])
+                ->assertOk()
+                ->assertJsonPath('applied', false)
+                ->assertJsonPath('pricing.discount_enabled', false)
+                ->assertJsonPath('pricing.discounted_price', '289.00');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_launch_offer_ignore_keeps_regular_pricing_visible(): void
@@ -1044,6 +1083,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Apply')
             ->assertSee(config('wolforix.launch_discount.code'))
             ->assertSee('Code applied successfully')
+            ->assertSee('213.00')
+            ->assertDontSee(self::TEST_PRIVATE_PROMO_CODE)
             ->assertSee('Regular price')
             ->assertSee('Choose your payment method')
             ->assertSee('Pay with Card')
@@ -1080,14 +1121,15 @@ class WolforixPlatformTest extends TestCase
                 'message' => 'Code applied successfully',
                 'pricing' => [
                     'discount_enabled' => true,
-                    'discounted_price' => '145.00',
+                    'discounted_price' => '231.00',
                     'list_price' => '289.00',
                     'currency' => 'USD',
                 ],
+                'promo_kind' => 'public_launch',
             ]);
     }
 
-    public function test_goodwill_coupon_calculates_fifty_percent_discount_for_funding_checkout(): void
+    public function test_private_coupon_calculates_fifty_percent_discount_for_manual_entry(): void
     {
         $user = User::factory()->create();
 
@@ -1096,17 +1138,18 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'one_step',
                 'account_size' => 100000,
                 'currency' => 'USD',
-                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
             ])
             ->assertOk()
             ->assertJsonPath('applied', true)
-            ->assertJsonPath('promo_code', self::TEST_LAUNCH_PROMO_CODE)
+            ->assertJsonPath('promo_code', self::TEST_PRIVATE_PROMO_CODE)
+            ->assertJsonPath('promo_kind', 'private_coupon')
             ->assertJsonPath('pricing.list_price', '599.00')
             ->assertJsonPath('pricing.discounted_price', '300.00')
             ->assertJsonPath('pricing.discount_enabled', true);
     }
 
-    public function test_goodwill_coupon_is_eligible_for_all_funding_account_types(): void
+    public function test_private_coupon_is_eligible_for_all_funding_account_types(): void
     {
         $user = User::factory()->create();
 
@@ -1118,15 +1161,38 @@ class WolforixPlatformTest extends TestCase
                     'challenge_type' => $challengeType,
                     'account_size' => $accountSize,
                     'currency' => 'USD',
-                    'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+                    'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
                 ])
                 ->assertOk()
                 ->assertJsonPath('applied', true)
-                ->assertJsonPath('promo_code', self::TEST_LAUNCH_PROMO_CODE);
+                ->assertJsonPath('promo_code', self::TEST_PRIVATE_PROMO_CODE);
         }
     }
 
-    public function test_goodwill_coupon_is_single_use_after_successful_payment(): void
+    public function test_private_coupon_replaces_public_launch_discount_when_manually_entered(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->withSession([
+                'launch_offer' => [
+                    'decision' => 'apply',
+                    'applied' => true,
+                    'promo_code' => config('wolforix.launch_discount.code'),
+                ],
+            ])->get(route('checkout.show', [
+                'challenge_type' => 'two_step',
+                'account_size' => 50000,
+                'currency' => 'USD',
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
+            ]))
+            ->assertOk()
+            ->assertSee(self::TEST_PRIVATE_PROMO_CODE)
+            ->assertSee('145.00')
+            ->assertSee('Code applied')
+            ->assertDontSee('231.00')
+            ->assertDontSee('50% OFF - Support Courtesy');
+    }
+
+    public function test_private_coupon_is_single_use_after_successful_payment(): void
     {
         $this->useFakeStripeGateway();
         Mail::fake();
@@ -1144,7 +1210,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
-            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+            'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1183,7 +1249,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(2, Order::query()->where('email', 'single-use@example.com')->count());
     }
 
-    public function test_goodwill_coupon_redeemed_by_same_billing_email_blocks_another_account(): void
+    public function test_private_coupon_redeemed_once_blocks_any_account(): void
     {
         $this->useFakeStripeGateway();
         $paidUser = User::factory()->create([
@@ -1213,7 +1279,7 @@ class WolforixPlatformTest extends TestCase
             'order_status' => Order::STATUS_COMPLETED,
             'metadata' => [
                 'launch_promo' => [
-                    'code' => self::TEST_LAUNCH_PROMO_CODE,
+                    'code' => self::TEST_PRIVATE_PROMO_CODE,
                     'applied' => true,
                     'redeemed' => true,
                     'redeemed_at' => now()->subMinute()->toIso8601String(),
@@ -1226,7 +1292,7 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
             ]))
             ->assertOk()
             ->assertSee('79.00')
@@ -1237,7 +1303,7 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
                 'email' => 'shared-billing@example.com',
             ])
             ->assertOk()
@@ -1247,7 +1313,7 @@ class WolforixPlatformTest extends TestCase
 
         $this->actingAs($otherUser)->post(route('checkout.store'), [
             'full_name' => 'New Coupon Trader',
-            'email' => 'shared-billing@example.com',
+            'email' => 'brand-new-billing@example.com',
             'street_address' => '2 Discount Street',
             'city' => 'Berlin',
             'postal_code' => '10115',
@@ -1255,7 +1321,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'two_step',
             'account_size' => 10000,
             'currency' => 'USD',
-            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+            'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1264,7 +1330,7 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame(0, FakeStripePaymentGateway::$checkoutSessionsCreated);
     }
 
-    public function test_goodwill_coupon_does_not_stack_with_other_promo_codes(): void
+    public function test_private_coupon_does_not_stack_with_other_promo_codes(): void
     {
         $promoCode = $this->createGiveawayPromoCode('WFXGIVE-335499');
 
@@ -1273,14 +1339,14 @@ class WolforixPlatformTest extends TestCase
                 'challenge_type' => 'two_step',
                 'account_size' => 10000,
                 'currency' => 'USD',
-                'promo_code' => self::TEST_LAUNCH_PROMO_CODE.' '.$promoCode->code,
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE.' '.$promoCode->code,
             ])
             ->assertOk()
             ->assertJsonPath('applied', false)
             ->assertJsonPath('payment_required', true);
     }
 
-    public function test_goodwill_coupon_checkout_metadata_and_fluko_gateway_payload_are_correct(): void
+    public function test_private_coupon_checkout_metadata_and_gateway_payload_are_correct(): void
     {
         $this->useFakeStripeGateway();
         $user = User::factory()->create([
@@ -1297,7 +1363,7 @@ class WolforixPlatformTest extends TestCase
             'challenge_type' => 'one_step',
             'account_size' => 25000,
             'currency' => 'USD',
-            'promo_code' => self::TEST_LAUNCH_PROMO_CODE,
+            'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
             'payment_provider' => 'stripe',
             'accept_terms_and_residency' => '1',
             'accept_refund_policy' => '1',
@@ -1311,11 +1377,11 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('50.00', (string) $order->discount_percent);
         $this->assertSame('99.00', (string) $order->discount_amount);
         $this->assertSame('100.00', (string) $order->final_price);
-        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($order->metadata, 'launch_promo.code'));
-        $this->assertSame(self::TEST_LAUNCH_PROMO_CAMPAIGN, data_get($order->metadata, 'launch_promo.campaign'));
+        $this->assertSame(self::TEST_PRIVATE_PROMO_CODE, data_get($order->metadata, 'launch_promo.code'));
+        $this->assertSame(self::TEST_PRIVATE_PROMO_CAMPAIGN, data_get($order->metadata, 'launch_promo.campaign'));
         $this->assertSame(50.0, (float) data_get($order->metadata, 'launch_promo.percent'));
-        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($attempt->payload, 'metadata.coupon_code'));
-        $this->assertSame(self::TEST_LAUNCH_PROMO_CAMPAIGN, data_get($attempt->payload, 'metadata.coupon_campaign'));
+        $this->assertSame(self::TEST_PRIVATE_PROMO_CODE, data_get($attempt->payload, 'metadata.coupon_code'));
+        $this->assertSame(self::TEST_PRIVATE_PROMO_CAMPAIGN, data_get($attempt->payload, 'metadata.coupon_campaign'));
         $this->assertSame('50', data_get($attempt->payload, 'metadata.coupon_percent'));
 
         $this->postJson(route('payments.stripe.webhook'), [
@@ -1338,7 +1404,7 @@ class WolforixPlatformTest extends TestCase
 
         $completedAttempt = $order->fresh()->paymentAttempts()->latest('id')->firstOrFail();
         $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
-        $this->assertSame(self::TEST_LAUNCH_PROMO_CODE, data_get($completedAttempt->payload, 'metadata.coupon_code'));
+        $this->assertSame(self::TEST_PRIVATE_PROMO_CODE, data_get($completedAttempt->payload, 'metadata.coupon_code'));
     }
 
     public function test_checkout_giveaway_promo_preview_returns_zero_payment_state(): void

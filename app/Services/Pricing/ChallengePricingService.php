@@ -2,6 +2,7 @@
 
 namespace App\Services\Pricing;
 
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 use Illuminate\Http\Request;
 
@@ -116,6 +117,7 @@ class ChallengePricingService
                 'urgency_text' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.urgency_text', 'Limited-time offer') : '',
                 'code' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.code') : null,
                 'campaign' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
+                'kind' => $priceSnapshot['discount_enabled'] ? 'public_launch' : null,
             ],
             'steps' => $definition['steps'],
             'phases' => array_values($definition['phases']),
@@ -146,6 +148,26 @@ class ChallengePricingService
         }
 
         throw new InvalidArgumentException("Unsupported plan slug [{$slug}].");
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $promo
+     * @return array<string, mixed>
+     */
+    public function resolvePlanWithPromo(string $challengeType, int $accountSize, ?string $currency = null, ?array $promo = null): array
+    {
+        $plan = $this->resolvePlan(
+            $challengeType,
+            $accountSize,
+            $currency,
+            ($promo['kind'] ?? null) === 'public_launch',
+        );
+
+        if (($promo['kind'] ?? null) !== 'private_coupon') {
+            return $plan;
+        }
+
+        return $this->applyPromoDiscount($plan, $promo);
     }
 
     public function supportedProviderCurrencies(): array
@@ -190,7 +212,7 @@ class ChallengePricingService
         $promoCode = trim((string) $promoCode);
         $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
 
-        if (! (bool) config('wolforix.launch_discount.enabled', false) || $promoCode === '' || $expectedCode === '') {
+        if (! $this->publicLaunchDiscountAvailable() || $promoCode === '' || $expectedCode === '') {
             return null;
         }
 
@@ -199,8 +221,50 @@ class ChallengePricingService
             : null;
     }
 
+    /**
+     * @return array{kind: string, code: string, campaign: string, type: string, percent: float, badge: string}|null
+     */
+    public function promoForCode(?string $promoCode): ?array
+    {
+        if (($publicCode = $this->normalizeLaunchPromoCode($promoCode)) !== null) {
+            return [
+                'kind' => 'public_launch',
+                'code' => $publicCode,
+                'campaign' => (string) config('wolforix.launch_discount.campaign', 'launch_discount'),
+                'type' => (string) config('wolforix.launch_discount.type', 'percentage'),
+                'percent' => (float) config('wolforix.launch_discount.percent', 20),
+                'badge' => (string) config('wolforix.launch_discount.badge', '20% OFF - Launch Access Ending Soon'),
+            ];
+        }
+
+        $promoCode = trim((string) $promoCode);
+        $privateCode = trim((string) config('wolforix.private_coupon.code', ''));
+
+        if (
+            ! (bool) config('wolforix.private_coupon.enabled', false)
+            || $promoCode === ''
+            || $privateCode === ''
+            || strcasecmp($promoCode, $privateCode) !== 0
+        ) {
+            return null;
+        }
+
+        return [
+            'kind' => 'private_coupon',
+            'code' => $privateCode,
+            'campaign' => (string) config('wolforix.private_coupon.campaign', 'private_manual_coupon'),
+            'type' => (string) config('wolforix.private_coupon.type', 'percentage'),
+            'percent' => (float) config('wolforix.private_coupon.percent', 50),
+            'badge' => (string) config('wolforix.private_coupon.badge', 'Code applied'),
+        ];
+    }
+
     public function launchDiscountApplied(?Request $request = null, ?string $promoCode = null): bool
     {
+        if (! $this->publicLaunchDiscountAvailable()) {
+            return false;
+        }
+
         if ($this->normalizeLaunchPromoCode($promoCode) !== null) {
             return true;
         }
@@ -214,6 +278,10 @@ class ChallengePricingService
 
     public function launchPromoCodeForRequest(?Request $request = null, ?string $promoCode = null): ?string
     {
+        if (! $this->publicLaunchDiscountAvailable()) {
+            return null;
+        }
+
         $normalizedPromoCode = $this->normalizeLaunchPromoCode($promoCode);
 
         if ($normalizedPromoCode !== null) {
@@ -227,6 +295,24 @@ class ChallengePricingService
         $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
 
         return $expectedCode !== '' ? $expectedCode : null;
+    }
+
+    public function publicLaunchDiscountAvailable(): bool
+    {
+        if (! (bool) config('wolforix.launch_discount.enabled', false)) {
+            return false;
+        }
+
+        $endsAt = trim((string) config('wolforix.launch_discount.ends_at', ''));
+
+        if ($endsAt === '') {
+            return true;
+        }
+
+        $timezone = config('app.timezone', 'UTC');
+        $expiresAt = CarbonImmutable::parse($endsAt, $timezone)->endOfDay();
+
+        return CarbonImmutable::now($timezone)->lessThanOrEqualTo($expiresAt);
     }
 
     private function normalizeCurrency(?string $currency): string
@@ -254,10 +340,38 @@ class ChallengePricingService
 
     private function activeLaunchDiscount(?bool $launchDiscountEnabled = null): bool
     {
-        if (! (bool) config('wolforix.launch_discount.enabled', false)) {
+        if (! $this->publicLaunchDiscountAvailable()) {
             return false;
         }
 
         return $launchDiscountEnabled ?? false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $plan
+     * @param  array<string, mixed>  $promo
+     * @return array<string, mixed>
+     */
+    private function applyPromoDiscount(array $plan, array $promo): array
+    {
+        $percent = (float) ($promo['percent'] ?? 0);
+        $listPrice = (float) $plan['list_price'];
+        $finalPrice = round($listPrice * ((100 - $percent) / 100), 0);
+
+        $plan['discounted_price'] = $finalPrice;
+        $plan['entry_fee'] = $finalPrice;
+        $plan['discount'] = array_merge($plan['discount'] ?? [], [
+            'enabled' => true,
+            'type' => (string) ($promo['type'] ?? 'percentage'),
+            'percent' => $percent,
+            'amount' => round($listPrice - $finalPrice, 0),
+            'badge' => (string) ($promo['badge'] ?? 'Code applied'),
+            'urgency_text' => '',
+            'code' => (string) ($promo['code'] ?? ''),
+            'campaign' => (string) ($promo['campaign'] ?? 'private_manual_coupon'),
+            'kind' => (string) ($promo['kind'] ?? 'private_coupon'),
+        ]);
+
+        return $plan;
     }
 }

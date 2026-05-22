@@ -65,30 +65,30 @@ class CheckoutController extends Controller
             $launchPromoCodeInput = trim((string) data_get($retryOrder?->metadata, 'launch_promo.code', ''));
         }
 
-        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($launchPromoCodeInput);
-        $giveawayPromoCode = $launchPromoCode === null
+        $launchPromo = $pricingService->promoForCode($launchPromoCodeInput);
+        $giveawayPromoCode = $launchPromo === null
             ? $this->resolveGiveawayPromoCode($launchPromoCodeInput)
             : null;
 
-        if (! $hasOldPromoCodeInput && $launchPromoCode === null && $launchPromoCodeInput === '') {
-            $launchPromoCode = $pricingService->launchPromoCodeForRequest($request);
-            $launchPromoCodeInput = $launchPromoCode ?? '';
+        if (! $hasOldPromoCodeInput && $launchPromo === null && $launchPromoCodeInput === '') {
+            $launchPromoCodeInput = $pricingService->launchPromoCodeForRequest($request) ?? '';
+            $launchPromo = $pricingService->promoForCode($launchPromoCodeInput);
         }
 
         if (
-            $launchPromoCode !== null
+            $launchPromo !== null
             && $launchPromoRedemptions->customerHasRedeemed(
                 $user,
                 (string) ($retryOrder?->email ?: $user->email),
-                $launchPromoCode,
+                $launchPromo['code'],
                 $retryOrder?->id,
             )
         ) {
-            $launchPromoCode = null;
+            $launchPromo = null;
         }
 
-        $launchDiscountApplied = $launchPromoCode !== null;
-        $selectedPlan = $pricingService->resolvePlan($selectedType, $selectedSize, $selectedCurrency, $launchDiscountApplied);
+        $launchPromoCode = $launchPromo['code'] ?? null;
+        $selectedPlan = $pricingService->resolvePlanWithPromo($selectedType, $selectedSize, $selectedCurrency, $launchPromo);
         $giveawayValidation = $giveawayPromoCode instanceof Mt5PromoCode
             ? $this->validateGiveawayPromoCode($giveawayPromoCode, $selectedType, $selectedSize)
             : ['applies' => false, 'message' => ''];
@@ -169,12 +169,12 @@ class CheckoutController extends Controller
         ]);
 
         $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
-        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
-        $giveawayPromoCode = $launchPromoCode === null
+        $launchPromo = $pricingService->promoForCode($promoCodeInput);
+        $giveawayPromoCode = $launchPromo === null
             ? $this->resolveGiveawayPromoCode($promoCodeInput)
             : null;
 
-        if ($promoCodeInput !== '' && $launchPromoCode === null && ! $giveawayPromoCode instanceof Mt5PromoCode) {
+        if ($promoCodeInput !== '' && $launchPromo === null && ! $giveawayPromoCode instanceof Mt5PromoCode) {
             return back()
                 ->withInput()
                 ->withErrors([
@@ -182,14 +182,15 @@ class CheckoutController extends Controller
                 ]);
         }
 
-        $launchDiscountApplied = $launchPromoCode !== null;
+        $launchPromoCode = $launchPromo['code'] ?? null;
+        $launchDiscountApplied = $launchPromo !== null;
 
         try {
-            $selectedPlan = $pricingService->resolvePlan(
+            $selectedPlan = $pricingService->resolvePlanWithPromo(
                 $validated['challenge_type'],
                 (int) $validated['account_size'],
                 $validated['currency'],
-                $launchDiscountApplied,
+                $launchPromo,
             );
         } catch (InvalidArgumentException) {
             return back()
@@ -231,7 +232,7 @@ class CheckoutController extends Controller
             : $paymentManager->provider((string) $validated['payment_provider']);
         $challengePlan = $this->resolveChallengePlanRecord($selectedPlan);
         try {
-            $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromoCode, $giveawayPromoCode, $giveawayApplies, $launchDiscountApplied, $launchPromoRedemptions): Order {
+            $order = DB::transaction(function () use ($validated, $selectedPlan, $request, $challengePlan, $launchPromo, $launchPromoCode, $giveawayPromoCode, $giveawayApplies, $launchDiscountApplied, $launchPromoRedemptions): Order {
                 $existingOrder = null;
                 $acceptedAt = now()->toIso8601String();
                 /** @var User $user */
@@ -293,10 +294,11 @@ class CheckoutController extends Controller
                         ],
                         'launch_promo' => [
                             'code' => $launchPromoCode,
-                            'campaign' => $launchPromoCode !== null ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
+                            'campaign' => $launchPromo['campaign'] ?? null,
                             'applied' => $launchPromoCode !== null,
                             'percent' => $launchPromoCode !== null ? $selectedPlan['discount']['percent'] : null,
                             'amount' => $launchPromoCode !== null ? $selectedPlan['discount']['amount'] : null,
+                            'kind' => $launchPromo['kind'] ?? null,
                         ],
                         'mt5_giveaway_promo' => $giveawayApplies && $giveawayPromoCode instanceof Mt5PromoCode ? [
                             'id' => $giveawayPromoCode->id,
@@ -427,29 +429,29 @@ class CheckoutController extends Controller
         ]);
 
         $promoCodeInput = trim((string) ($validated['promo_code'] ?? ''));
-        $launchPromoCode = $pricingService->normalizeLaunchPromoCode($promoCodeInput);
+        $launchPromo = $pricingService->promoForCode($promoCodeInput);
         $launchPromoAlreadyRedeemed = false;
 
-        if ($launchPromoCode !== null && $request->user() instanceof User) {
+        if ($launchPromo !== null && $request->user() instanceof User) {
             $launchPromoAlreadyRedeemed = $launchPromoRedemptions->customerHasRedeemed(
                 $request->user(),
                 (string) ($validated['email'] ?? $request->user()->email),
-                $launchPromoCode,
+                $launchPromo['code'],
             );
 
             if ($launchPromoAlreadyRedeemed) {
-                $launchPromoCode = null;
+                $launchPromo = null;
             }
         }
 
-        $giveawayPromoCode = $launchPromoCode === null
+        $giveawayPromoCode = $launchPromo === null
             ? $this->resolveGiveawayPromoCode($promoCodeInput)
             : null;
-        $selectedPlan = $pricingService->resolvePlan(
+        $selectedPlan = $pricingService->resolvePlanWithPromo(
             $validated['challenge_type'],
             (int) $validated['account_size'],
             $validated['currency'],
-            $launchPromoCode !== null,
+            $launchPromo,
         );
         $giveawayValidation = $giveawayPromoCode instanceof Mt5PromoCode
             ? $this->validateGiveawayPromoCode($giveawayPromoCode, $validated['challenge_type'], (int) $validated['account_size'])
@@ -469,14 +471,15 @@ class CheckoutController extends Controller
             $promoPreviewMessage = match (true) {
                 $launchPromoAlreadyRedeemed => __('site.checkout.validation.promo_code_used'),
                 $giveawayApplies => __('site.checkout.giveaway.no_payment_required'),
-                $launchPromoCode !== null => __('site.checkout.promo_code_feedback.success'),
+                $launchPromo !== null => __('site.checkout.promo_code_feedback.success'),
                 default => $giveawayValidation['message'],
             };
         }
 
         return response()->json([
-            'applied' => $launchPromoCode !== null || $giveawayApplies,
-            'promo_code' => $giveawayApplies ? $giveawayPromoCode->code : $launchPromoCode,
+            'applied' => $launchPromo !== null || $giveawayApplies,
+            'promo_code' => $giveawayApplies ? $giveawayPromoCode->code : ($launchPromo['code'] ?? null),
+            'promo_kind' => $giveawayApplies ? 'mt5_giveaway' : ($launchPromo['kind'] ?? null),
             'message' => $promoPreviewMessage,
             'payment_required' => ! $giveawayApplies,
             'checkout_mode' => $giveawayApplies ? 'giveaway' : 'payment',

@@ -11,7 +11,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 @php
-    $launchDiscountAvailable = (bool) config('wolforix.launch_discount.enabled') && filled((string) config('wolforix.launch_discount.code'));
+    $launchDiscountAvailable = app(\App\Services\Pricing\ChallengePricingService::class)->publicLaunchDiscountAvailable()
+        && filled((string) config('wolforix.launch_discount.code'));
 @endphp
 <body
     class="overflow-x-hidden selection:bg-amber-400/30 selection:text-white"
