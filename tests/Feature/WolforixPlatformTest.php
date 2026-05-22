@@ -24,6 +24,7 @@ use App\Notifications\WolforixResetPasswordNotification;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\Pricing\ChallengePricingService;
 use App\Support\PublicContentIndex;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -1328,6 +1329,67 @@ class WolforixPlatformTest extends TestCase
         ])->assertSessionHasErrors(['promo_code' => 'This promo code has already been used.']);
 
         $this->assertSame(0, FakeStripePaymentGateway::$checkoutSessionsCreated);
+    }
+
+    public function test_private_coupon_used_check_reads_orders_metadata_not_payments_or_redemption_tables(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'schema-used@example.com',
+        ]);
+
+        Order::query()->create([
+            'user_id' => $user->id,
+            'email' => 'schema-used@example.com',
+            'full_name' => 'Schema Coupon Trader',
+            'street_address' => '1 Schema Street',
+            'city' => 'Berlin',
+            'postal_code' => '10115',
+            'country' => 'DE',
+            'challenge_type' => 'two_step',
+            'account_size' => 10000,
+            'currency' => 'USD',
+            'payment_provider' => 'stripe',
+            'base_price' => 79,
+            'discount_percent' => 50,
+            'discount_amount' => 39,
+            'final_price' => 40,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_COMPLETED,
+            'metadata' => [
+                'launch_promo' => [
+                    'code' => self::TEST_PRIVATE_PROMO_CODE,
+                    'applied' => true,
+                    'redeemed' => true,
+                    'kind' => 'private_coupon',
+                ],
+            ],
+        ]);
+
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $this->actingAs($user)
+            ->postJson(route('checkout.promo.preview'), [
+                'challenge_type' => 'two_step',
+                'account_size' => 10000,
+                'currency' => 'USD',
+                'promo_code' => self::TEST_PRIVATE_PROMO_CODE,
+                'email' => 'schema-used@example.com',
+            ])
+            ->assertOk()
+            ->assertJsonPath('applied', false)
+            ->assertJsonPath('message', 'This promo code has already been used.')
+            ->assertJsonPath('pricing.discounted_price', '79.00');
+
+        $sql = implode("\n", $queries);
+
+        $this->assertStringContainsString('orders', $sql);
+        $this->assertStringNotContainsString('promo_redemptions', $sql);
+        $this->assertStringNotContainsString(' from "payments"', $sql);
+        $this->assertStringNotContainsString(' from `payments`', $sql);
+        $this->assertStringNotContainsString('payment_attempts', $sql);
     }
 
     public function test_private_coupon_does_not_stack_with_other_promo_codes(): void

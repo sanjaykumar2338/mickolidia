@@ -5,12 +5,18 @@ namespace App\Services\Promotions;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class LaunchPromoRedemptionService
 {
     public function customerHasRedeemed(User $user, string $email, string $promoCode, ?int $ignoreOrderId = null): bool
     {
         if (! $this->singleUseEnabled($promoCode)) {
+            return false;
+        }
+
+        if (! $this->canReadOrderRedemptions()) {
             return false;
         }
 
@@ -29,7 +35,7 @@ class LaunchPromoRedemptionService
     {
         $promoCode = $this->promoCodeForOrder($order);
 
-        if ($promoCode === null || ! $this->singleUseEnabled($promoCode)) {
+        if ($promoCode === null || ! $this->singleUseEnabled($promoCode) || ! $this->canReadOrderRedemptions()) {
             return false;
         }
 
@@ -46,6 +52,17 @@ class LaunchPromoRedemptionService
         }
 
         return $this->customerHasRedeemed($user, $order->email, $promoCode, $order->id);
+    }
+
+    public function promoCodeHasRedeemed(string $promoCode, ?int $ignoreOrderId = null): bool
+    {
+        if (! $this->singleUseEnabled($promoCode) || ! $this->canReadOrderRedemptions()) {
+            return false;
+        }
+
+        return $this->redeemedOrdersForCode($promoCode)
+            ->when($ignoreOrderId !== null, fn (Builder $query) => $query->whereKeyNot($ignoreOrderId))
+            ->exists();
     }
 
     public function stampRedeemed(Order $order): void
@@ -84,11 +101,44 @@ class LaunchPromoRedemptionService
     private function redeemedOrdersForCode(string $promoCode): Builder
     {
         return Order::query()
-            ->where('metadata->launch_promo->code', $promoCode)
+            ->whereRaw($this->jsonStringEqualsExpression('metadata', '$.launch_promo.code'), [strtolower($promoCode)])
             ->where(function (Builder $query): void {
                 $query->where('payment_status', Order::PAYMENT_PAID)
-                    ->orWhere('metadata->launch_promo->redeemed', true);
+                    ->orWhereRaw($this->jsonTruthyExpression('metadata', '$.launch_promo.redeemed'));
             });
+    }
+
+    private function canReadOrderRedemptions(): bool
+    {
+        $table = (new Order)->getTable();
+
+        return Schema::hasTable($table)
+            && Schema::hasColumn($table, 'metadata')
+            && Schema::hasColumn($table, 'payment_status');
+    }
+
+    private function jsonStringEqualsExpression(string $column, string $path): string
+    {
+        $wrapped = DB::connection()->getQueryGrammar()->wrap($column);
+
+        return match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => "LOWER(JSON_UNQUOTE(JSON_EXTRACT({$wrapped}, '{$path}'))) = ?",
+            'pgsql' => "LOWER({$wrapped}->'launch_promo'->>'code') = ?",
+            'sqlsrv' => "LOWER(JSON_VALUE({$wrapped}, '{$path}')) = ?",
+            default => "LOWER(CAST(json_extract({$wrapped}, '{$path}') AS TEXT)) = ?",
+        };
+    }
+
+    private function jsonTruthyExpression(string $column, string $path): string
+    {
+        $wrapped = DB::connection()->getQueryGrammar()->wrap($column);
+
+        return match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => "LOWER(JSON_UNQUOTE(JSON_EXTRACT({$wrapped}, '{$path}'))) IN ('true', '1')",
+            'pgsql' => "LOWER({$wrapped}->'launch_promo'->>'redeemed') IN ('true', '1')",
+            'sqlsrv' => "LOWER(JSON_VALUE({$wrapped}, '{$path}')) IN ('true', '1')",
+            default => "LOWER(CAST(json_extract({$wrapped}, '{$path}') AS TEXT)) IN ('true', '1')",
+        };
     }
 
     private function promoCodeForOrder(Order $order): ?string
