@@ -32,10 +32,11 @@ class ChallengeProgressEngine
         $rawCurrentBalance = (float) $challengeMetrics['raw_balance'];
         $previousServerDay = optional($account->server_day)->toDateString();
         $storedHighestEquityToday = $this->storedHighestChallengeEquity($account, $currentEquity, $phaseStartingBalance);
+        $dailyLossReferenceEquity = $this->dailyLossReferenceEquity($account, $currentEquity, $phaseStartingBalance, $serverDay);
 
         $highestEquityToday = $previousServerDay !== $serverDay
-            ? $currentEquity
-            : max($storedHighestEquityToday, $currentEquity);
+            ? max($currentEquity, $dailyLossReferenceEquity)
+            : max($storedHighestEquityToday, $dailyLossReferenceEquity, $currentEquity);
 
         $dailyLossUsed = round(max($highestEquityToday - $currentEquity, 0), 2);
         $currentDrawdownUsage = round(max($phaseStartingBalance - min($currentBalance, $currentEquity), 0), 2);
@@ -497,6 +498,28 @@ class ChallengeProgressEngine
         }
 
         return $stored;
+    }
+
+    private function dailyLossReferenceEquity(TradingAccount $account, float $currentEquity, float $phaseStartingBalance, string $serverDay): float
+    {
+        $previousServerDay = (string) (data_get($account->rule_state, 'server_day') ?: optional($account->server_day)->toDateString());
+        $previousChallengeEquity = $this->number(data_get($account->rule_state, 'challenge_equity'));
+        $baseline = max($phaseStartingBalance, 0.0);
+
+        if ($previousServerDay !== '' && $previousServerDay !== $serverDay && $previousChallengeEquity !== null) {
+            $baseline = max($baseline, $previousChallengeEquity);
+        }
+
+        return max($baseline, $currentEquity);
+    }
+
+    private function number(mixed $value): ?float
+    {
+        if ($value === null || $value === '' || ! is_numeric($value)) {
+            return null;
+        }
+
+        return round((float) $value, 2);
     }
 
     /**

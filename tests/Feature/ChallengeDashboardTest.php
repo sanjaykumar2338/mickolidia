@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -648,6 +649,174 @@ class ChallengeDashboardTest extends TestCase
         $this->assertTrue((bool) $account->final_state_locked);
         $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_max_drawdown_breached.status'));
         Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_mt5_floating_equity_breach_from_screenshot_fails_permanently_on_first_sync(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-335405',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'highest_equity_today' => 0,
+            'rule_state' => [],
+        ]);
+
+        $this->pushMetrics($account, '2026-05-22 10:15:00', 9915.42, 8494.92, [
+            'open_profit' => -1420.50,
+            'profit_loss' => -1420.50,
+            'positions_count' => 2,
+            'trade_count' => 1,
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('failure_reason', 'daily_loss_breached')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('final_state_locked', true)
+            ->assertJsonPath('mt5_deactivation_event', 'fail_daily_loss_breached')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('daily_loss_breached', $account->failure_reason);
+        $this->assertTrue((bool) data_get($account->rule_state, 'daily_drawdown_breached'));
+        $this->assertTrue((bool) data_get($account->rule_state, 'max_drawdown_breached'));
+        $this->assertSame(1505.08, (float) data_get($account->rule_state, 'daily_loss_used'));
+        $this->assertSame(1505.08, (float) data_get($account->rule_state, 'max_drawdown_used'));
+        $this->assertSame(8494.92, (float) data_get($account->failure_context, 'equity_at_breach'));
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+
+        $failedAt = $account->failed_at?->toDateTimeString();
+        $disableRequestedAt = (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at');
+        $lockedBalance = (string) $account->balance;
+        $lockedEquity = (string) $account->equity;
+
+        $this->pushMetrics($account, '2026-05-22 10:30:00', 9785.36, 9785.36, [
+            'open_profit' => 0,
+            'profit_loss' => 0,
+            'positions_count' => 0,
+            'trade_count' => 0,
+            'has_activity' => false,
+            'platform_login' => '335405',
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('failure_reason', 'daily_loss_breached')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('mt5_deactivation_event', 'fail_daily_loss_breached')
+            ->assertJsonPath('ea_action', 'close_all_positions_and_disable_account');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
+        $this->assertSame($disableRequestedAt, (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at'));
+        $this->assertSame($lockedBalance, (string) $account->balance);
+        $this->assertSame($lockedEquity, (string) $account->equity);
+        $this->assertSame(1, (int) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.attempts'));
+        Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_final_state_locked_account_never_reopens_even_if_status_was_inconsistent(): void
+    {
+        $account = $this->createChallengeAccount('one_step', [
+            'status' => 'Active',
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'failure_reason' => 'daily_loss_breached',
+            'failed_at' => Carbon::parse('2026-05-22 10:15:00'),
+            'trading_blocked' => true,
+            'final_state_locked' => true,
+            'balance' => 9500,
+            'equity' => 9500,
+        ]);
+
+        $this->pushMetrics($account, '2026-05-22 10:30:00', 11050, 11050, [
+            'trade_count' => 1,
+            'challenge_status' => 'active',
+        ])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('failure_reason', 'daily_loss_breached')
+            ->assertJsonPath('trading_blocked', true)
+            ->assertJsonPath('final_state_locked', true);
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('failed', $account->account_status);
+        $this->assertSame('Failed', $account->status);
+        $this->assertSame('9500.00', (string) $account->equity);
+        $this->assertTrue((bool) $account->final_state_locked);
+    }
+
+    public function test_breach_invalidation_diagnostic_reports_and_can_fix_unlocked_breached_account(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-DIAG-335405',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'balance' => 9785.36,
+            'equity' => 9785.36,
+            'highest_equity_today' => 0,
+            'rule_state' => [],
+        ]);
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => Carbon::parse('2026-05-22 10:15:00'),
+            'balance' => 9915.42,
+            'equity' => 8494.92,
+            'profit_loss' => -1420.50,
+            'total_profit' => -84.58,
+            'today_profit' => -84.58,
+            'daily_drawdown' => 0,
+            'max_drawdown' => 1505.08,
+            'payload' => [
+                'balance' => 9915.42,
+                'equity' => 8494.92,
+                'open_profit' => -1420.50,
+                'platform_login' => '335405',
+                'platform_environment' => 'FusionMarkets-Demo',
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:diagnose-breach-invalidation', [
+            'account' => '335405',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Breach invalidation diagnosis', $output);
+        $this->assertStringContainsString('account_login', $output);
+        $this->assertStringContainsString('335405', $output);
+        $this->assertStringContainsString('FusionMarkets-Demo', $output);
+        $this->assertStringContainsString('daily_breach', $output);
+        $this->assertStringContainsString('max_total_breach', $output);
+        $this->assertStringContainsString('FAIL: breach evidence exists but the account is not permanently failed/locked.', $output);
+
+        $exitCode = Artisan::call('wolforix:diagnose-breach-invalidation', [
+            'account' => '335405',
+            '--fix' => true,
+            '--confirm' => true,
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Repair applied.', $output);
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('daily_loss_breached', $account->failure_reason);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
     }
 
     public function test_failed_account_reaches_disabled_after_acknowledgement(): void

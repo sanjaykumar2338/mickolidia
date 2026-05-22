@@ -40,9 +40,12 @@ class ChallengeCalculationBreakdown
         $profitTargetProgress = $profitTargetAmount > 0
             ? round(max(min(($realizedProfit / $profitTargetAmount) * 100, 100), 0), 2)
             : 0.0;
-        $highestEquityToday = $this->number(data_get($account->rule_state, 'highest_challenge_equity_today'))
-            ?? $this->number($account->highest_equity_today)
-            ?? $challengeEquity;
+        $highestEquityToday = max(
+            $this->number(data_get($account->rule_state, 'highest_challenge_equity_today')) ?? 0,
+            $this->number($account->highest_equity_today) ?? 0,
+            $challengeStartingBalance,
+            $challengeEquity,
+        );
         $dailyLossUsed = round(max($highestEquityToday - $challengeEquity, 0), 2);
         $currentDrawdownUsage = round(max($challengeStartingBalance - min($challengeBalance, $challengeEquity), 0), 2);
         $maxDrawdownUsed = round(max((float) ($account->max_drawdown_used ?? 0), $currentDrawdownUsage), 2);

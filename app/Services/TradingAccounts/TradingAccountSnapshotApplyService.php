@@ -49,7 +49,9 @@ class TradingAccountSnapshotApplyService
             $previousStatus = $freshAccount->account_status;
             $previousPhaseIndex = (int) $freshAccount->phase_index;
             $finalStateLockedAtStart = (bool) $freshAccount->final_state_locked
-                && in_array((string) $freshAccount->challenge_status, ['passed', 'failed'], true);
+                || in_array((string) $freshAccount->challenge_status, ['passed', 'failed'], true)
+                || in_array((string) $freshAccount->account_status, ['passed', 'failed'], true)
+                || filled((string) $freshAccount->failure_reason);
             $lastSyncedAt = $freshAccount->last_synced_at;
 
             if (
@@ -92,6 +94,7 @@ class TradingAccountSnapshotApplyService
                 }
 
                 $freshAccount->forceFill(array_merge(
+                    $this->lockedFinalStateFill($freshAccount, $snapshotAt),
                     $this->blockedFinalStateSyncFill($freshAccount, $snapshot, $snapshotAt),
                     [
                         'sync_status' => 'success',
@@ -142,7 +145,6 @@ class TradingAccountSnapshotApplyService
             }
 
             $workingCopy->trading_days_completed = $tradingDaysCompleted;
-            $workingCopy->server_day = $serverDay;
 
             Log::info('MT5 snapshot prepared for rule evaluation.', [
                 'trading_account_id' => $freshAccount->id,
@@ -338,6 +340,39 @@ class TradingAccountSnapshotApplyService
         }
 
         return array_filter($fill, static fn ($value) => $value !== null);
+    }
+
+    private function lockedFinalStateFill(TradingAccount $account, Carbon $snapshotAt): array
+    {
+        $hasFailureReason = filled((string) $account->failure_reason);
+        $isPassed = ! $hasFailureReason
+            && (
+                in_array((string) $account->challenge_status, ['passed', 'funded'], true)
+                || in_array((string) $account->account_status, ['passed', 'funded'], true)
+            );
+        $isFailed = ! $isPassed;
+
+        if ($isFailed) {
+            return [
+                'status' => 'Failed',
+                'account_status' => 'failed',
+                'challenge_status' => 'failed',
+                'failure_reason' => filled((string) $account->failure_reason)
+                    ? $account->failure_reason
+                    : 'rule_violation',
+                'failed_at' => $account->failed_at ?? $snapshotAt,
+                'trading_blocked' => true,
+                'final_state_locked' => true,
+            ];
+        }
+
+        return [
+            'status' => $account->status ?: 'Passed',
+            'account_status' => $account->account_status ?: 'passed',
+            'challenge_status' => $account->challenge_status ?: 'passed',
+            'trading_blocked' => true,
+            'final_state_locked' => true,
+        ];
     }
 
     /**
