@@ -10,6 +10,7 @@ use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
 use App\Mail\TrustpilotReviewRequestMail;
 use App\Models\ChallengePlan;
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Models\User;
@@ -218,6 +219,83 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame(1, (int) $account->trading_days_completed);
         $this->assertSame(25080.00, (float) $account->balance);
         $this->assertSame(25110.00, (float) $account->equity);
+    }
+
+    public function test_metrics_endpoint_accepts_unique_mt5_login_identifier_fallback(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-00062-NSTY',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'waiting_for_first_sync',
+            'sync_status' => 'pending',
+            'balance' => 10000,
+            'equity' => 10000,
+            'highest_equity_today' => 10000,
+            'meta' => [
+                'mt5_sync' => [
+                    'identifier' => '335405',
+                    'status' => 'waiting_for_first_sync',
+                ],
+            ],
+        ]);
+
+        $this->withHeaders([
+            'Authorization' => 'Bearer '.data_get($account->fresh()->meta, 'mt5_connector.secret_token'),
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => '335405',
+        ]), [
+            'balance' => 10025,
+            'equity' => 10010,
+            'open_profit' => -15,
+            'positions_count' => 1,
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'server_time' => '2026.05.22 11:00:00',
+            'sync_trigger' => 'timer',
+        ])
+            ->assertOk()
+            ->assertJsonPath('status', 'ok')
+            ->assertJsonPath('account_id', $account->id)
+            ->assertJsonPath('account_reference', 'WFX-MT5-00062-NSTY');
+
+        $account->refresh();
+
+        $this->assertSame('success', $account->sync_status);
+        $this->assertSame('mt5_ea', $account->sync_source);
+        $this->assertSame('10025.00', (string) $account->balance);
+        $this->assertSame('10010.00', (string) $account->equity);
+        $this->assertSame('335405', data_get($account->meta, 'mt5_sync.platform_login'));
+        $this->assertDatabaseHas('trading_account_balance_snapshots', [
+            'trading_account_id' => $account->id,
+            'balance' => 10025,
+            'equity' => 10010,
+        ]);
+    }
+
+    public function test_metrics_endpoint_logs_unknown_identifier_rejection_for_sync_diagnosis(): void
+    {
+        $this->withHeaders([
+            'Authorization' => 'Bearer dead-token',
+            'Accept' => 'application/json',
+        ])->postJson(route('api.integrations.mt5.metrics', [
+            'accountIdentifier' => '335405',
+        ]), [
+            'balance' => 10000,
+            'equity' => 10000,
+            'platform_login' => '335405',
+            'server_time' => '2026.05.22 11:00:00',
+        ])->assertStatus(422);
+
+        $latestLog = TradingAccountSyncLog::query()->latest('id')->firstOrFail();
+
+        $this->assertNull($latestLog->trading_account_id);
+        $this->assertSame('rejected', $latestLog->status);
+        $this->assertSame('account_identifier_not_found', $latestLog->error_message);
+        $this->assertSame('335405', data_get($latestLog->payload, 'platform_login'));
     }
 
     public function test_metrics_endpoint_accepts_mt5_dotted_server_time_format(): void
@@ -816,6 +894,113 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('daily_loss_breached', $account->failure_reason);
         $this->assertTrue((bool) $account->trading_blocked);
         $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+    }
+
+    public function test_breach_invalidation_diagnostic_explains_missing_mt5_sync_data(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-00062-NSTY',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'pending_credential_repair',
+            'sync_status' => 'pending',
+            'balance' => 10000,
+            'equity' => 10000,
+            'meta' => [
+                'mt5_credential_repair' => [
+                    'status' => 'pending',
+                    'reason' => 'mapping_repair_not_confirmed',
+                ],
+                'mt5_sync' => [
+                    'identifier' => '335405',
+                    'status' => 'pending_credential_repair',
+                    'account_reference' => 'WFX-MT5-00062-NSTY',
+                ],
+            ],
+        ]);
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '335405',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => $account->id,
+            'allocated_user_id' => $account->user_id,
+            'allocated_at' => now()->subDay(),
+            'is_available' => false,
+        ]);
+
+        $exitCode = Artisan::call('wolforix:diagnose-breach-invalidation', [
+            'account' => '335405',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('MT5 sync ingestion diagnosis', $output);
+        $this->assertStringContainsString('credential_repair.status', $output);
+        $this->assertStringContainsString('NO_STORED_SNAPSHOT: credential repair is pending', $output);
+        $this->assertStringContainsString('UNKNOWN: no stored MT5 snapshot/trade evidence exists.', $output);
+    }
+
+    public function test_breach_invalidation_diagnostic_can_apply_manual_screenshot_evidence_when_sync_is_missing(): void
+    {
+        $account = $this->createChallengeAccount('two_step', [
+            'account_reference' => 'WFX-MT5-EVIDENCE-335405',
+            'platform_login' => '335405',
+            'platform_account_id' => '335405',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'status' => 'Active',
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'balance' => 10000,
+            'equity' => 10000,
+            'highest_equity_today' => 0,
+            'rule_state' => [],
+        ]);
+
+        $options = [
+            'account' => '335405',
+            '--evidence-balance' => '9915.42',
+            '--evidence-equity' => '8494.92',
+            '--evidence-floating-pnl' => '-1420.50',
+            '--evidence-at' => '2026-05-22 10:15:00',
+            '--evidence-server' => 'FusionMarkets-Demo',
+        ];
+
+        $exitCode = Artisan::call('wolforix:diagnose-breach-invalidation', $options);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('manual_evidence', $output);
+        $this->assertStringContainsString('daily_loss_breached', $output);
+        $this->assertStringContainsString('FAIL: breach evidence exists but the account is not permanently failed/locked.', $output);
+
+        $account->refresh();
+
+        $this->assertSame('active', $account->challenge_status);
+        $this->assertSame(0, $account->balanceSnapshots()->count());
+
+        $exitCode = Artisan::call('wolforix:diagnose-breach-invalidation', array_merge($options, [
+            '--fix' => true,
+            '--confirm' => true,
+        ]));
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Repair applied.', $output);
+
+        $account->refresh();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('daily_loss_breached', $account->failure_reason);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('8494.92', (string) $account->equity);
+        $this->assertSame('-1420.50', (string) $account->profit_loss);
+        $this->assertSame('manual_screenshot_evidence', data_get($snapshot->payload, 'source'));
+        $this->assertSame('manual_evidence_applied', data_get($account->meta, 'mt5_sync.status'));
         $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
     }
 

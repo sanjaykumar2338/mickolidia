@@ -613,19 +613,78 @@ class TradingAccountMetricsController extends Controller
             ->where('account_reference', $accountIdentifier)
             ->first();
 
-        if (! $account instanceof TradingAccount) {
-            Log::warning('MT5 metrics account reference was not found.', [
+        if ($account instanceof TradingAccount) {
+            return $account;
+        }
+
+        $loginMatches = TradingAccount::query()
+            ->where(function ($query) use ($accountIdentifier): void {
+                $query->where('platform_login', $accountIdentifier)
+                    ->orWhere('platform_account_id', $accountIdentifier);
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        if ($loginMatches->count() === 1) {
+            /** @var TradingAccount $matchedAccount */
+            $matchedAccount = $loginMatches->first();
+
+            Log::warning('MT5 metrics account resolved by unique platform login fallback.', [
                 'account_identifier' => $accountIdentifier,
+                'account_reference' => $matchedAccount->account_reference,
+                'trading_account_id' => $matchedAccount->id,
+                'platform_login' => $matchedAccount->platform_login,
+                'platform_account_id' => $matchedAccount->platform_account_id,
+                'ip' => $request->ip(),
+            ]);
+
+            return $matchedAccount;
+        }
+
+        if ($loginMatches->count() > 1) {
+            Log::warning('MT5 metrics platform login identifier is ambiguous.', [
+                'account_identifier' => $accountIdentifier,
+                'matching_trading_account_ids' => $loginMatches->pluck('id')->all(),
                 'ip' => $request->ip(),
                 'payload_keys' => array_keys($request->all()),
             ]);
 
+            TradingAccountSyncLog::query()->create([
+                'trading_account_id' => null,
+                'platform' => 'mt5',
+                'status' => 'rejected',
+                'message' => 'MT5 metrics account identifier is ambiguous.',
+                'error_message' => 'ambiguous_account_identifier',
+                'started_at' => now(),
+                'completed_at' => now(),
+                'payload' => $this->sanitizePayload($request->all()),
+            ]);
+
             throw ValidationException::withMessages([
-                'account' => 'Trading account not found for the provided identifier.',
+                'account' => 'Multiple trading accounts matched the provided MT5 identifier.',
             ]);
         }
 
-        return $account;
+        Log::warning('MT5 metrics account reference was not found.', [
+            'account_identifier' => $accountIdentifier,
+            'ip' => $request->ip(),
+            'payload_keys' => array_keys($request->all()),
+        ]);
+
+        TradingAccountSyncLog::query()->create([
+            'trading_account_id' => null,
+            'platform' => 'mt5',
+            'status' => 'rejected',
+            'message' => 'MT5 metrics account identifier was not found.',
+            'error_message' => 'account_identifier_not_found',
+            'started_at' => now(),
+            'completed_at' => now(),
+            'payload' => $this->sanitizePayload($request->all()),
+        ]);
+
+        throw ValidationException::withMessages([
+            'account' => 'Trading account not found for the provided identifier.',
+        ]);
     }
 
     /**

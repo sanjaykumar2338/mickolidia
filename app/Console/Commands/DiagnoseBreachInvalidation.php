@@ -2,20 +2,29 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountBalanceSnapshot;
+use App\Models\TradingAccountSyncLog;
 use App\Services\Mt5\Mt5AccountDeactivationService;
 use App\Support\ChallengeCalculationBreakdown;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DiagnoseBreachInvalidation extends Command
 {
     protected $signature = 'wolforix:diagnose-breach-invalidation
         {account : Account reference, MT5 login, platform account id, or trading_accounts.id}
         {--fix : Show the repair action that would mark a breached active account failed}
-        {--confirm : Apply the repair action. Requires --fix.}';
+        {--confirm : Apply the repair action. Requires --fix.}
+        {--evidence-balance= : Manual screenshot/evidence balance at the breach moment}
+        {--evidence-equity= : Manual screenshot/evidence equity at the breach moment}
+        {--evidence-floating-pnl= : Manual screenshot/evidence floating PnL at the breach moment}
+        {--evidence-at= : Manual screenshot/evidence timestamp. Defaults to now}
+        {--evidence-server= : Manual screenshot/evidence broker server}';
 
     protected $description = 'Diagnose whether a challenge account breached daily or max loss and remained recoverable.';
 
@@ -40,29 +49,44 @@ class DiagnoseBreachInvalidation extends Command
             return self::FAILURE;
         }
 
+        try {
+            $manualEvidenceSnapshot = $this->manualEvidenceSnapshot($account);
+        } catch (\InvalidArgumentException $exception) {
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
+
         $latestSnapshot = $account->balanceSnapshots()
             ->orderByDesc('snapshot_at')
             ->orderByDesc('id')
             ->first();
         $latestCalculation = $calculationBreakdown->forAccount($account, $latestSnapshot);
         $firstBreach = $this->firstBreach($account, $calculationBreakdown);
-        $diagnosticCalculation = $firstBreach['calculation'] ?? $latestCalculation;
+        $manualEvidenceCalculation = $manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot
+            ? $calculationBreakdown->forAccount($account, $manualEvidenceSnapshot)
+            : null;
+        $diagnosticCalculation = $firstBreach['calculation'] ?? $manualEvidenceCalculation ?? $latestCalculation;
+        $calculationSource = $firstBreach['calculation'] !== null
+            ? 'stored_breach_snapshot'
+            : ($manualEvidenceCalculation !== null ? 'manual_evidence' : 'latest_stored_state');
         $breachTimestamp = $firstBreach['snapshot'] instanceof TradingAccountBalanceSnapshot
             ? $firstBreach['snapshot']->snapshot_at
-            : ($latestSnapshot?->snapshot_at ?? $account->last_evaluated_at ?? $account->last_synced_at);
+            : ($manualEvidenceSnapshot?->snapshot_at ?? $latestSnapshot?->snapshot_at ?? $account->last_evaluated_at ?? $account->last_synced_at);
 
         $this->printAccountState($account, $latestSnapshot);
-        $this->printBreachCalculation($diagnosticCalculation, $breachTimestamp);
+        $this->printSyncIngestionDiagnosis($account, $latestSnapshot);
+        $this->printBreachCalculation($diagnosticCalculation, $breachTimestamp, $calculationSource);
         $this->printStatePersistence($account);
         $this->printMt5DisableState($account);
-        $this->printDecision($account, $diagnosticCalculation);
+        $this->printDecision($account, $diagnosticCalculation, $latestSnapshot, $manualEvidenceSnapshot);
 
         if (! $fix) {
             return self::SUCCESS;
         }
 
         if (! (bool) ($diagnosticCalculation['breach'] ?? false)) {
-            $this->warn('Repair skipped: no daily/max loss breach is visible in the stored calculation evidence.');
+            $this->warn('Repair skipped: no daily/max loss breach is visible from stored snapshots or manual evidence.');
 
             return self::FAILURE;
         }
@@ -85,6 +109,7 @@ class DiagnoseBreachInvalidation extends Command
             ['will_set_trading_blocked', 'yes'],
             ['will_set_final_state_locked', 'yes'],
             ['will_request_mt5_disable_event', $eventKey],
+            ['will_store_manual_evidence_snapshot', $manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot ? 'yes' : 'no'],
         ]);
 
         if (! $confirm) {
@@ -93,7 +118,7 @@ class DiagnoseBreachInvalidation extends Command
             return self::SUCCESS;
         }
 
-        $updatedAccount = DB::transaction(function () use ($account, $diagnosticCalculation, $reason, $breachTimestamp): TradingAccount {
+        $updatedAccount = DB::transaction(function () use ($account, $diagnosticCalculation, $reason, $breachTimestamp, $manualEvidenceSnapshot): TradingAccount {
             /** @var TradingAccount $lockedAccount */
             $lockedAccount = TradingAccount::query()
                 ->with('challengePurchase')
@@ -103,8 +128,18 @@ class DiagnoseBreachInvalidation extends Command
             $previousStatus = $lockedAccount->account_status;
             $previousPhaseIndex = (int) $lockedAccount->phase_index;
             $failedAt = $this->carbonValue($breachTimestamp) ?? now();
+            $manualEvidenceFill = $manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot
+                ? [
+                    'balance' => (float) $manualEvidenceSnapshot->balance,
+                    'equity' => (float) $manualEvidenceSnapshot->equity,
+                    'profit_loss' => (float) $manualEvidenceSnapshot->profit_loss,
+                    'synced_at' => $failedAt,
+                    'last_evaluated_at' => $failedAt,
+                    'server_day' => $failedAt->toDateString(),
+                ]
+                : [];
 
-            $lockedAccount->forceFill([
+            $lockedAccount->forceFill(array_merge($manualEvidenceFill, [
                 'status' => 'Failed',
                 'account_status' => 'failed',
                 'challenge_status' => 'failed',
@@ -118,7 +153,12 @@ class DiagnoseBreachInvalidation extends Command
                 'max_drawdown' => (float) ($diagnosticCalculation['max_drawdown_used'] ?? $lockedAccount->max_drawdown),
                 'max_drawdown_used' => (float) ($diagnosticCalculation['max_drawdown_used'] ?? $lockedAccount->max_drawdown_used),
                 'rule_state' => $this->ruleState($lockedAccount, $diagnosticCalculation, $reason, $failedAt),
-            ])->save();
+                'meta' => $this->repairMeta($lockedAccount, $diagnosticCalculation, $manualEvidenceSnapshot, $failedAt),
+            ]))->save();
+
+            if ($manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot) {
+                $this->storeManualEvidenceSnapshot($lockedAccount, $manualEvidenceSnapshot, $diagnosticCalculation);
+            }
 
             if ($previousStatus !== 'failed') {
                 $lockedAccount->statusHistories()->create([
@@ -212,6 +252,184 @@ class DiagnoseBreachInvalidation extends Command
         ];
     }
 
+    /**
+     * @return Collection<int, Mt5AccountPoolEntry>
+     */
+    private function poolEntriesForAccount(TradingAccount $account): Collection
+    {
+        if (! Schema::hasTable('mt5_account_pool_entries')) {
+            return collect();
+        }
+
+        $loginValues = collect([
+            $account->platform_login,
+            $account->platform_account_id,
+            data_get($account->meta, 'mt5_sync.identifier'),
+        ])
+            ->filter(fn (mixed $value): bool => filled((string) $value))
+            ->map(fn (mixed $value): string => (string) $value)
+            ->unique()
+            ->values();
+
+        return Mt5AccountPoolEntry::query()
+            ->where(function ($query) use ($account, $loginValues): void {
+                if ($loginValues->isNotEmpty()) {
+                    $query->whereIn('login', $loginValues->all());
+                }
+
+                $query->orWhere('allocated_trading_account_id', $account->id);
+            })
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, TradingAccount>
+     */
+    private function accountsUsingLogin(TradingAccount $account): Collection
+    {
+        $loginValues = collect([
+            $account->platform_login,
+            $account->platform_account_id,
+            data_get($account->meta, 'mt5_sync.identifier'),
+        ])
+            ->filter(fn (mixed $value): bool => filled((string) $value))
+            ->map(fn (mixed $value): string => (string) $value)
+            ->unique()
+            ->values();
+
+        if ($loginValues->isEmpty()) {
+            return collect();
+        }
+
+        return TradingAccount::query()
+            ->where(function ($query) use ($loginValues): void {
+                $query->whereIn('platform_login', $loginValues->all())
+                    ->orWhereIn('platform_account_id', $loginValues->all());
+            })
+            ->orderBy('id')
+            ->get();
+    }
+
+    private function latestAccountSyncLog(TradingAccount $account): ?TradingAccountSyncLog
+    {
+        if (! Schema::hasTable('trading_account_sync_logs')) {
+            return null;
+        }
+
+        return TradingAccountSyncLog::query()
+            ->where('trading_account_id', $account->id)
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    private function latestPayloadSyncLog(TradingAccount $account): ?TradingAccountSyncLog
+    {
+        if (! Schema::hasTable('trading_account_sync_logs')) {
+            return null;
+        }
+
+        $needles = collect([
+            $account->account_reference,
+            $account->platform_login,
+            $account->platform_account_id,
+            data_get($account->meta, 'mt5_sync.identifier'),
+        ])
+            ->filter(fn (mixed $value): bool => filled((string) $value))
+            ->map(fn (mixed $value): string => (string) $value)
+            ->unique()
+            ->values();
+
+        if ($needles->isEmpty()) {
+            return null;
+        }
+
+        return TradingAccountSyncLog::query()
+            ->where(function ($query) use ($account, $needles): void {
+                $query->where('trading_account_id', $account->id);
+
+                foreach ($needles as $needle) {
+                    $query->orWhere('payload', 'like', '%'.$needle.'%');
+                }
+            })
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * @param  Collection<int, Mt5AccountPoolEntry>  $poolEntries
+     * @param  Collection<int, TradingAccount>  $accountsUsingLogin
+     */
+    private function missingSyncReason(
+        TradingAccount $account,
+        ?TradingAccountBalanceSnapshot $latestSnapshot,
+        ?TradingAccountSyncLog $latestAccountLog,
+        ?TradingAccountSyncLog $latestPayloadLog,
+        Collection $poolEntries,
+        Collection $accountsUsingLogin,
+    ): string {
+        if ($latestSnapshot instanceof TradingAccountBalanceSnapshot) {
+            return 'snapshot_present';
+        }
+
+        $credentialRepairStatus = (string) data_get($account->meta, 'mt5_credential_repair.status', '');
+
+        if ($credentialRepairStatus !== '' && ! in_array($credentialRepairStatus, ['complete', 'completed', 'resolved'], true)) {
+            return 'NO_STORED_SNAPSHOT: credential repair is '.$credentialRepairStatus.'; reinstall/regenerate the MT5 connector for this account after mapping is correct.';
+        }
+
+        $otherAccountsUsingLogin = $accountsUsingLogin
+            ->reject(fn (TradingAccount $candidate): bool => (int) $candidate->id === (int) $account->id);
+
+        if ($otherAccountsUsingLogin->isNotEmpty()) {
+            return 'NO_STORED_SNAPSHOT: platform login is shared by another trading_account; endpoint fallback would be ambiguous.';
+        }
+
+        $poolMismatch = $poolEntries->first(fn (Mt5AccountPoolEntry $entry): bool => $entry->allocated_trading_account_id !== null
+            && (int) $entry->allocated_trading_account_id !== (int) $account->id);
+
+        if ($poolMismatch instanceof Mt5AccountPoolEntry) {
+            return 'NO_STORED_SNAPSHOT: MT5 pool entry is allocated to trading_account #'.$poolMismatch->allocated_trading_account_id.'.';
+        }
+
+        $relevantLog = $latestAccountLog ?? $latestPayloadLog;
+
+        if ($relevantLog instanceof TradingAccountSyncLog) {
+            if ($relevantLog->status === 'rejected') {
+                return 'NO_STORED_SNAPSHOT: latest MT5 payload was rejected: '.($relevantLog->error_message ?: $relevantLog->message ?: 'unknown rejection').'.';
+            }
+
+            if ($relevantLog->status === 'error') {
+                return 'NO_STORED_SNAPSHOT: latest MT5 sync errored: '.($relevantLog->error_message ?: $relevantLog->message ?: 'unknown error').'.';
+            }
+
+            if ($relevantLog->status === 'ignored') {
+                return 'NO_STORED_SNAPSHOT: latest MT5 payload was ignored, likely stale timestamp.';
+            }
+        }
+
+        if ((string) $account->sync_error !== '') {
+            return 'NO_STORED_SNAPSHOT: account sync_error is '.$account->sync_error.'.';
+        }
+
+        return 'NO_STORED_SNAPSHOT: no accepted MT5 metrics payload is stored for this account/login; verify EA is installed, endpoint identifier, and secret token.';
+    }
+
+    private function syncLogSummary(?TradingAccountSyncLog $log): string
+    {
+        if (! $log instanceof TradingAccountSyncLog) {
+            return '-';
+        }
+
+        return sprintf(
+            '#%d %s %s %s',
+            $log->id,
+            $log->status ?: '-',
+            $this->formatDate($log->completed_at ?? $log->started_at ?? $log->created_at),
+            $log->error_message ?: $log->message ?: '-',
+        );
+    }
+
     private function printAccountState(TradingAccount $account, ?TradingAccountBalanceSnapshot $latestSnapshot): void
     {
         $this->info('Account state');
@@ -229,16 +447,51 @@ class DiagnoseBreachInvalidation extends Command
         ]);
     }
 
+    private function printSyncIngestionDiagnosis(TradingAccount $account, ?TradingAccountBalanceSnapshot $latestSnapshot): void
+    {
+        $login = (string) ($account->platform_login ?: $account->platform_account_id ?: '');
+        $poolEntries = $this->poolEntriesForAccount($account);
+        $accountsUsingLogin = $this->accountsUsingLogin($account);
+        $latestAccountLog = $this->latestAccountSyncLog($account);
+        $latestPayloadLog = $this->latestPayloadSyncLog($account);
+
+        $this->newLine();
+        $this->info('MT5 sync ingestion diagnosis');
+        $this->table(['Field', 'Value'], [
+            ['expected_endpoint_primary', '/api/integrations/mt5/accounts/'.$account->account_reference.'/metrics'],
+            ['accepted_identifier_fallback', 'unique platform_login/platform_account_id with account token'],
+            ['connector_secret_present', $this->yesNo(filled((string) data_get($account->meta, 'mt5_connector.secret_token')))],
+            ['platform_login', $login !== '' ? $login : '-'],
+            ['platform_account_id', (string) ($account->platform_account_id ?: '-')],
+            ['pool_entry_ids', $poolEntries->isEmpty() ? '-' : $poolEntries->pluck('id')->implode(', ')],
+            ['pool_allocated_account_ids', $poolEntries->isEmpty() ? '-' : $poolEntries->pluck('allocated_trading_account_id')->filter()->implode(', ')],
+            ['accounts_using_login', $accountsUsingLogin->isEmpty() ? '-' : $accountsUsingLogin->map(fn (TradingAccount $item): string => '#'.$item->id.' '.$item->account_reference)->implode(', ')],
+            ['credential_repair.status', (string) data_get($account->meta, 'mt5_credential_repair.status', '-')],
+            ['mt5_sync.status', (string) data_get($account->meta, 'mt5_sync.status', '-')],
+            ['mt5_sync.last_rejected_reason', (string) data_get($account->meta, 'mt5_sync.last_rejected_reason', '-')],
+            ['mt5_sync.last_ignored_reason', (string) data_get($account->meta, 'mt5_sync.last_ignored_reason', '-')],
+            ['sync_status', (string) ($account->sync_status ?: '-')],
+            ['sync_error', (string) ($account->sync_error ?: '-')],
+            ['last_synced_at', $this->formatDate($account->last_synced_at)],
+            ['snapshots_count', (string) $account->balanceSnapshots()->count()],
+            ['latest_snapshot_at', $this->formatDate($latestSnapshot?->snapshot_at)],
+            ['latest_account_sync_log', $this->syncLogSummary($latestAccountLog)],
+            ['latest_payload_log_for_login_or_reference', $this->syncLogSummary($latestPayloadLog)],
+            ['missing_sync_reason', $this->missingSyncReason($account, $latestSnapshot, $latestAccountLog, $latestPayloadLog, $poolEntries, $accountsUsingLogin)],
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $calculation
      */
-    private function printBreachCalculation(array $calculation, mixed $breachTimestamp): void
+    private function printBreachCalculation(array $calculation, mixed $breachTimestamp, string $calculationSource): void
     {
         $startingBalance = max((float) ($calculation['challenge_starting_balance'] ?? 0), 0.01);
 
         $this->newLine();
         $this->info('Breach calculation');
         $this->table(['Field', 'Value'], [
+            ['calculation_source', $calculationSource],
             ['challenge_balance', $this->money($calculation['challenge_balance'] ?? null)],
             ['challenge_equity', $this->money($calculation['challenge_equity'] ?? null)],
             ['floating_pnl', $this->money($calculation['floating_pnl'] ?? null)],
@@ -286,12 +539,23 @@ class DiagnoseBreachInvalidation extends Command
     /**
      * @param  array<string, mixed>  $calculation
      */
-    private function printDecision(TradingAccount $account, array $calculation): void
+    private function printDecision(
+        TradingAccount $account,
+        array $calculation,
+        ?TradingAccountBalanceSnapshot $latestSnapshot,
+        ?TradingAccountBalanceSnapshot $manualEvidenceSnapshot,
+    ): void
     {
         $this->newLine();
         $this->info('Diagnostic decision');
 
         if (! (bool) ($calculation['breach'] ?? false)) {
+            if (! $latestSnapshot instanceof TradingAccountBalanceSnapshot && ! $manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot) {
+                $this->warn('UNKNOWN: no stored MT5 snapshot/trade evidence exists. Do not treat stale DB balance/equity as proof that the account is valid.');
+
+                return;
+            }
+
             $this->warn('No daily/max total loss breach is visible from current stored evidence.');
 
             return;
@@ -353,6 +617,152 @@ class DiagnoseBreachInvalidation extends Command
                 'daily_drawdown_limit_amount' => $calculation['daily_loss_limit'] ?? null,
                 'max_drawdown_limit_amount' => $calculation['max_drawdown_limit'] ?? null,
             ]),
+        ]);
+    }
+
+    private function manualEvidenceSnapshot(TradingAccount $account): ?TradingAccountBalanceSnapshot
+    {
+        $provided = collect([
+            'evidence-balance' => $this->option('evidence-balance'),
+            'evidence-equity' => $this->option('evidence-equity'),
+            'evidence-floating-pnl' => $this->option('evidence-floating-pnl'),
+            'evidence-at' => $this->option('evidence-at'),
+            'evidence-server' => $this->option('evidence-server'),
+        ])->filter(fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if ($provided->isEmpty()) {
+            return null;
+        }
+
+        $balance = $this->requiredNumericOption('evidence-balance');
+        $equity = $this->requiredNumericOption('evidence-equity');
+        $floatingPnl = $this->numericOption('evidence-floating-pnl') ?? round($equity - $balance, 2);
+        $snapshotAt = $this->carbonValue($this->option('evidence-at')) ?? now();
+        $server = (string) ($this->option('evidence-server') ?: $account->platform_environment ?: data_get($account->meta, 'mt5_sync.server', ''));
+
+        return new TradingAccountBalanceSnapshot([
+            'trading_account_id' => $account->id,
+            'snapshot_at' => $snapshotAt,
+            'balance' => $balance,
+            'equity' => $equity,
+            'profit_loss' => $floatingPnl,
+            'total_profit' => round($balance - (float) ($account->phase_reference_balance ?: $account->starting_balance ?: $account->account_size ?: $balance), 2),
+            'today_profit' => 0,
+            'daily_drawdown' => 0,
+            'max_drawdown' => 0,
+            'drawdown_percent' => 0,
+            'payload' => [
+                'source' => 'manual_screenshot_evidence',
+                'manual_evidence' => true,
+                'balance' => $balance,
+                'equity' => $equity,
+                'open_profit' => $floatingPnl,
+                'profit_loss' => $floatingPnl,
+                'platform_login' => $account->platform_login ?: $account->platform_account_id,
+                'platform_account_id' => $account->platform_account_id ?: $account->platform_login,
+                'platform_environment' => $server !== '' ? $server : null,
+                'timestamp' => $snapshotAt->toDateTimeString(),
+                'server_day' => $snapshotAt->toDateString(),
+                'note' => 'Manual breach evidence supplied to wolforix:diagnose-breach-invalidation.',
+            ],
+        ]);
+    }
+
+    private function requiredNumericOption(string $name): float
+    {
+        $value = $this->option($name);
+
+        if ($value === null || $value === '' || ! is_numeric($value)) {
+            throw new \InvalidArgumentException('--'.$name.' is required and must be numeric when any manual evidence option is used.');
+        }
+
+        return round((float) $value, 2);
+    }
+
+    private function numericOption(string $name): ?float
+    {
+        $value = $this->option($name);
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_numeric($value)) {
+            throw new \InvalidArgumentException('--'.$name.' must be numeric.');
+        }
+
+        return round((float) $value, 2);
+    }
+
+    /**
+     * @param  array<string, mixed>  $calculation
+     * @return array<string, mixed>
+     */
+    private function repairMeta(
+        TradingAccount $account,
+        array $calculation,
+        ?TradingAccountBalanceSnapshot $manualEvidenceSnapshot,
+        Carbon $failedAt,
+    ): array {
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $meta['breach_invalidation_repair'] = array_filter([
+            'applied_at' => now()->toIso8601String(),
+            'failed_at' => $failedAt->toIso8601String(),
+            'source' => $manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot ? 'manual_screenshot_evidence' : 'stored_snapshot',
+            'breach_reason' => $calculation['breach_reason'] ?? null,
+            'daily_loss_used' => $calculation['daily_loss_used'] ?? null,
+            'max_drawdown_used' => $calculation['max_drawdown_used'] ?? null,
+            'manual_evidence_snapshot_at' => $manualEvidenceSnapshot?->snapshot_at?->toIso8601String(),
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+        if ($manualEvidenceSnapshot instanceof TradingAccountBalanceSnapshot) {
+            $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
+            $syncMeta['status'] = 'manual_evidence_applied';
+            $syncMeta['last_manual_evidence_at'] = now()->toIso8601String();
+            $syncMeta['last_manual_evidence_snapshot_at'] = $manualEvidenceSnapshot->snapshot_at?->toIso8601String();
+            $syncMeta['last_payload_summary'] = [
+                'balance' => (float) $manualEvidenceSnapshot->balance,
+                'equity' => (float) $manualEvidenceSnapshot->equity,
+                'open_profit' => (float) $manualEvidenceSnapshot->profit_loss,
+                'timestamp' => $manualEvidenceSnapshot->snapshot_at?->toDateTimeString(),
+                'source' => 'manual_screenshot_evidence',
+            ];
+            $meta['mt5_sync'] = $syncMeta;
+        }
+
+        return $meta;
+    }
+
+    /**
+     * @param  array<string, mixed>  $calculation
+     */
+    private function storeManualEvidenceSnapshot(
+        TradingAccount $account,
+        TradingAccountBalanceSnapshot $manualEvidenceSnapshot,
+        array $calculation,
+    ): void {
+        $payload = is_array($manualEvidenceSnapshot->payload) ? $manualEvidenceSnapshot->payload : [];
+        $payload['calculation'] = [
+            'daily_loss_used' => $calculation['daily_loss_used'] ?? null,
+            'daily_loss_limit' => $calculation['daily_loss_limit'] ?? null,
+            'max_drawdown_used' => $calculation['max_drawdown_used'] ?? null,
+            'max_drawdown_limit' => $calculation['max_drawdown_limit'] ?? null,
+            'breach_reason' => $calculation['breach_reason'] ?? null,
+        ];
+
+        $account->balanceSnapshots()->create([
+            'snapshot_at' => $manualEvidenceSnapshot->snapshot_at ?? now(),
+            'balance' => $manualEvidenceSnapshot->balance,
+            'equity' => $manualEvidenceSnapshot->equity,
+            'profit_loss' => $manualEvidenceSnapshot->profit_loss,
+            'total_profit' => $manualEvidenceSnapshot->total_profit,
+            'today_profit' => $manualEvidenceSnapshot->today_profit,
+            'daily_drawdown' => $calculation['daily_loss_used'] ?? 0,
+            'max_drawdown' => $calculation['max_drawdown_used'] ?? 0,
+            'drawdown_percent' => $account->starting_balance > 0
+                ? round(((float) ($calculation['max_drawdown_used'] ?? 0) / (float) $account->starting_balance) * 100, 2)
+                : 0,
+            'payload' => $payload,
         ]);
     }
 
