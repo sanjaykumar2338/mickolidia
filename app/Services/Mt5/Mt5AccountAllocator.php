@@ -12,7 +12,10 @@ use RuntimeException;
 
 class Mt5AccountAllocator
 {
-    public function allocate(TradingAccount $account): ?Mt5AccountPoolEntry
+    /**
+     * @param  array{source_pool?: string, source_file?: string, broker?: string, platform?: string}  $criteria
+     */
+    public function allocate(TradingAccount $account, array $criteria = []): ?Mt5AccountPoolEntry
     {
         $existingAllocation = Mt5AccountPoolEntry::query()
             ->where('allocated_trading_account_id', $account->id)
@@ -33,11 +36,16 @@ class Mt5AccountAllocator
             return null;
         }
 
+        $sourcePool = (string) ($criteria['source_pool'] ?? Mt5AccountPoolEntry::SOURCE_POOL_CLIENT);
+        $sourceFile = $this->sourceFile((string) ($criteria['source_file'] ?? $this->activeSourceFile()));
+        $broker = (string) ($criteria['broker'] ?? config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS));
+        $platform = (string) ($criteria['platform'] ?? config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5));
+
         $entries = Mt5AccountPoolEntry::query()
-            ->where('source_pool', Mt5AccountPoolEntry::SOURCE_POOL_CLIENT)
-            ->where('source_file', basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo30.04.ods')))
-            ->where('meta->broker', (string) config('wolforix.mt5_account_pool.active_broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS))
-            ->where('meta->platform', (string) config('wolforix.mt5_account_pool.active_platform', Mt5AccountPoolEntry::PLATFORM_MT5))
+            ->where('source_pool', $sourcePool)
+            ->where('source_file', $sourceFile)
+            ->where('meta->broker', $broker)
+            ->where('meta->platform', $platform)
             ->where('is_available', true)
             ->where('is_promo', false)
             ->whereNull('allocated_at')
@@ -253,5 +261,18 @@ class Mt5AccountAllocator
             || filled(Arr::get($credentials, 'trading_password'))
             || filled(Arr::get($credentials, 'investor_password'))
             || filled(Arr::get($credentials, 'readonly_password'));
+    }
+
+    private function activeSourceFile(): string
+    {
+        return (string) config(
+            'wolforix.mt5_account_pool.active_source_file',
+            basename((string) config('wolforix.mt5_account_pool.fusionmarkets.source', 'public/Account List FusionMarkets-Demo30.04.ods')),
+        );
+    }
+
+    private function sourceFile(string $sourceFile): string
+    {
+        return basename($sourceFile) ?: $sourceFile;
     }
 }

@@ -112,6 +112,34 @@ return [
         'retry_after_seconds' => (int) env('MT5_DEACTIVATION_RETRY_AFTER_SECONDS', 300),
     ],
 
+    'metaapi' => [
+        'enabled' => filter_var(env('METAAPI_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'token' => env('METAAPI_TOKEN'),
+        'provisioning_base_url' => env('METAAPI_PROVISIONING_BASE_URL', 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai'),
+        'client_base_url' => env('METAAPI_CLIENT_BASE_URL', 'https://mt-client-api-v1.new-york.agiliumtrade.ai'),
+        'timeout' => (int) env('METAAPI_TIMEOUT', 30),
+        'profile_id' => env('METAAPI_PROVISIONING_PROFILE_ID', 'default'),
+        'demo' => [
+            'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),
+            'account_type' => env('METAAPI_DEMO_ACCOUNT_TYPE'),
+            'balance' => (float) env('METAAPI_DEMO_BALANCE', 10000),
+            'leverage' => (int) env('METAAPI_DEMO_LEVERAGE', 100),
+            'email' => env('METAAPI_DEMO_EMAIL'),
+            'name' => env('METAAPI_DEMO_NAME', 'Wolforix Phase 1A'),
+            'phone' => env('METAAPI_DEMO_PHONE'),
+            'keywords' => array_values(array_filter(array_map('trim', explode(',', (string) env('METAAPI_DEMO_KEYWORDS', 'MetaQuotes'))))),
+            'accepted_retries' => (int) env('METAAPI_DEMO_ACCEPTED_RETRIES', 3),
+            'accepted_retry_delay_seconds' => (int) env('METAAPI_DEMO_ACCEPTED_RETRY_DELAY_SECONDS', 30),
+        ],
+        'validation' => [
+            'polls' => (int) env('METAAPI_VALIDATION_POLLS', 2),
+            'poll_delay_seconds' => (int) env('METAAPI_VALIDATION_POLL_DELAY_SECONDS', 15),
+            'history_days' => (int) env('METAAPI_VALIDATION_HISTORY_DAYS', 7),
+            'throttle_delay_ms' => (int) env('METAAPI_VALIDATION_THROTTLE_DELAY_MS', 1500),
+            'max_without_force' => (int) env('METAAPI_VALIDATION_MAX_WITHOUT_FORCE', 2),
+        ],
+    ],
+
     'ctrader' => [
         'broker_name' => env('CTRADER_BROKER_NAME', 'IC Markets'),
         'auth_url' => env('CTRADER_AUTH_URL', 'https://id.ctrader.com/my/settings/openapi/grantingaccess/'),

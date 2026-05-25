@@ -297,10 +297,17 @@ return [
         'default_pool' => env('WOLFORIX_MT5_DEFAULT_POOL', 'client_pool'),
         'active_broker' => env('WOLFORIX_MT5_ACTIVE_BROKER', 'FusionMarkets'),
         'active_platform' => env('WOLFORIX_MT5_ACTIVE_PLATFORM', 'MT5'),
+        'active_source_file' => env('WOLFORIX_MT5_ACTIVE_SOURCE_FILE', basename((string) env('WOLFORIX_MT5_FUSIONMARKETS_SOURCE', 'public/Account List FusionMarkets-Demo30.04.ods'))),
         'fusionmarkets' => [
             'source' => env('WOLFORIX_MT5_FUSIONMARKETS_SOURCE', 'public/Account List FusionMarkets-Demo30.04.ods'),
             'broker' => env('WOLFORIX_MT5_FUSIONMARKETS_BROKER', 'FusionMarkets'),
             'server' => env('WOLFORIX_MT5_FUSIONMARKETS_SERVER', 'FusionMarkets-Demo'),
+            'platform' => 'MT5',
+        ],
+        'metaquotes' => [
+            'source' => env('WOLFORIX_MT5_METAQUOTES_SOURCE', 'metaapi-demo-validation'),
+            'broker' => env('WOLFORIX_MT5_METAQUOTES_BROKER', 'MetaQuotes'),
+            'server' => env('WOLFORIX_MT5_METAQUOTES_SERVER', 'MetaQuotes-Demo'),
             'platform' => 'MT5',
         ],
     ],
