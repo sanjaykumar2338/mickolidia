@@ -14,6 +14,8 @@ class Mt5ConnectorStatus
 
     public const STALE = 'stale';
 
+    public const DISCONNECTED = 'disconnected';
+
     public const NOT_CONNECTED = 'not_connected';
 
     /**
@@ -52,9 +54,11 @@ class Mt5ConnectorStatus
                 ? self::CONNECTED
                 : self::STALE;
         } elseif ($lastMetricUpdateAt instanceof Carbon) {
-            $status = $this->isRecent($lastMetricUpdateAt)
+            $status = $this->isRecent($lastMetricUpdateAt, $account)
                 ? self::CONNECTED
                 : self::STALE;
+        } elseif ($this->isExplicitlyDisconnected($account)) {
+            $status = self::DISCONNECTED;
         } elseif ($this->isConnecting($account)) {
             $status = self::CONNECTING;
         } else {
@@ -73,7 +77,7 @@ class Mt5ConnectorStatus
             'last_metric_update_at' => $lastMetricUpdateAt,
             'last_heartbeat_at' => $lastHeartbeatAt,
             'last_activity_at' => $lastActivityAt,
-            'timeout_seconds' => $this->timeoutSeconds(),
+            'timeout_seconds' => $this->timeoutSeconds($account),
             'heartbeat_timeout_seconds' => $this->heartbeatTimeoutSeconds(),
         ];
     }
@@ -88,8 +92,10 @@ class Mt5ConnectorStatus
 
         if (! $timestamp instanceof Carbon) {
             return [
-                'label' => $status['status'] === self::CONNECTING ? $status['label'] : __('Awaiting first sync'),
-                'hint' => __('No MT5 snapshot has been received yet.'),
+                'label' => in_array($status['status'], [self::CONNECTING, self::DISCONNECTED], true) ? $status['label'] : __('Awaiting first sync'),
+                'hint' => $status['status'] === self::DISCONNECTED
+                    ? ($status['message'] ?? __('No MT5 snapshot has been received yet.'))
+                    : __('No MT5 snapshot has been received yet.'),
                 'tone' => $status['tone'],
             ];
         }
@@ -139,6 +145,7 @@ class Mt5ConnectorStatus
         return match ($status) {
             self::CONNECTED => __('site.trial.connector.statuses.connected'),
             self::CONNECTING => __('site.trial.connector.statuses.connecting'),
+            self::DISCONNECTED => __('Disconnected'),
             self::STALE => __('site.trial.connector.statuses.stale'),
             default => __('site.trial.connector.statuses.not_connected'),
         };
@@ -149,6 +156,7 @@ class Mt5ConnectorStatus
         return match ($status) {
             self::CONNECTED => 'border-emerald-400/20 bg-emerald-500/12 text-emerald-100',
             self::CONNECTING => 'border-amber-400/20 bg-amber-500/12 text-amber-100',
+            self::DISCONNECTED => 'border-rose-400/20 bg-rose-500/12 text-rose-100',
             self::STALE => 'border-rose-400/20 bg-rose-500/12 text-rose-100',
             default => 'border-rose-400/20 bg-rose-500/12 text-rose-100',
         };
@@ -159,6 +167,7 @@ class Mt5ConnectorStatus
         return match ($status) {
             self::CONNECTED => 'emerald',
             self::CONNECTING => 'amber',
+            self::DISCONNECTED => 'rose',
             self::STALE => 'rose',
             default => 'slate',
         };
@@ -166,13 +175,17 @@ class Mt5ConnectorStatus
 
     public function message(string $status): ?string
     {
-        return $status === self::STALE
+        return in_array($status, [self::STALE, self::DISCONNECTED], true)
             ? __('site.trial.connector.offline_message')
             : null;
     }
 
-    public function timeoutSeconds(): int
+    public function timeoutSeconds(?TradingAccount $account = null): int
     {
+        if ($account instanceof TradingAccount && $this->isMetaApiAccount($account)) {
+            return max((int) config('services.metaapi.sync.stale_minutes', 10) * 60, 1);
+        }
+
         return max((int) config('trading.platforms.mt5.freshness.stale_seconds', 300), 1);
     }
 
@@ -212,11 +225,25 @@ class Mt5ConnectorStatus
             || ($account->last_sync_started_at !== null && $account->last_sync_completed_at === null);
     }
 
-    private function isRecent(Carbon $timestamp): bool
+    private function isExplicitlyDisconnected(TradingAccount $account): bool
+    {
+        return in_array((string) data_get($account->meta, 'mt5_sync.status'), ['disconnected', 'error'], true)
+            || (string) $account->platform_status === 'disconnected';
+    }
+
+    private function isMetaApiAccount(TradingAccount $account): bool
+    {
+        return (string) $account->sync_source === 'metaapi'
+            || filled(data_get($account->meta, 'metaapi_account_id'))
+            || filled(data_get($account->meta, 'mt5_sync.metaapi_account_id'))
+            || filled(data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'));
+    }
+
+    private function isRecent(Carbon $timestamp, ?TradingAccount $account = null): bool
     {
         $ageSeconds = $this->ageSeconds($timestamp);
 
-        return $ageSeconds >= 0 && $ageSeconds <= $this->timeoutSeconds();
+        return $ageSeconds >= 0 && $ageSeconds <= $this->timeoutSeconds($account);
     }
 
     private function isRecentHeartbeat(Carbon $timestamp): bool

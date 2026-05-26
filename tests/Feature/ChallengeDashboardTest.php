@@ -14,8 +14,11 @@ use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Models\User;
+use App\Services\MetaApi\MetaApiLiveSyncService;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
+use App\Support\Mt5ConnectorStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
@@ -510,6 +513,317 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('2026-04-08 10:00:00', $account->last_synced_at?->toDateTimeString());
         $this->assertSame('stale_timestamp', data_get($account->meta, 'mt5_sync.last_ignored_reason'));
         $this->assertSame('ignored', TradingAccountSyncLog::query()->latest('id')->value('status'));
+    }
+
+    public function test_metaapi_metrics_sync_updates_dashboard_metrics_and_trade_rows(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 09:00:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340134');
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10080.25,
+                'equity' => 10125.50,
+                'margin' => 320.10,
+                'freeMargin' => 9805.40,
+                'leverage' => 100,
+                'login' => '340134',
+            ], [
+                [
+                    'id' => 'P-340134-1',
+                    'symbol' => 'XAUUSD',
+                    'type' => 'POSITION_TYPE_BUY',
+                    'openTime' => '2026-05-26T08:40:00.000Z',
+                    'openPrice' => 2340.55,
+                    'volume' => 0.5,
+                    'profit' => 45.25,
+                    'commission' => 0,
+                    'swap' => 0,
+                ],
+            ], [
+                [
+                    'id' => 'D-340134-1',
+                    'symbol' => 'EURUSD',
+                    'type' => 'DEAL_TYPE_BUY',
+                    'time' => '2026-05-26T08:20:00.000Z',
+                    'profit' => 80.25,
+                    'commission' => -2,
+                    'swap' => 0,
+                    'volume' => 0.2,
+                ],
+            ]);
+
+            $result = app(MetaApiLiveSyncService::class)->syncByLogin('340134');
+
+            $this->assertSame('success', $result['status']);
+            $this->assertSame('CONNECTED', $result['validation_state']);
+            $this->assertTrue($result['account_information_readable']);
+            $this->assertTrue($result['positions_readable']);
+            $this->assertTrue($result['history_readable']);
+
+            $account->refresh();
+
+            $this->assertSame('metaapi', $account->sync_source);
+            $this->assertSame('success', $account->sync_status);
+            $this->assertSame('connected', $account->platform_status);
+            $this->assertSame('10080.25', (string) $account->balance);
+            $this->assertSame('10125.50', (string) $account->equity);
+            $this->assertSame('45.25', (string) $account->profit_loss);
+            $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+            $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+            $this->assertSame(1, data_get($account->meta, 'mt5_sync.last_payload_summary.positions_count'));
+            $this->assertSame(1, data_get($account->meta, 'mt5_sync.last_payload_summary.trade_history_rows'));
+
+            $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+            $this->assertSame($metaApiAccountId, data_get($snapshot->payload, 'metaapi_account_id'));
+            $this->assertSame(320.10, data_get($snapshot->payload, 'margin'));
+            $this->assertSame(9805.40, data_get($snapshot->payload, 'free_margin'));
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Challenge Balance')
+                ->assertSee('$10,080.25')
+                ->assertSee('Challenge Equity')
+                ->assertSee('$10,125.50')
+                ->assertSee('Floating P&amp;L', false)
+                ->assertSee('$45.25')
+                ->assertSee('XAUUSD')
+                ->assertSee('EURUSD')
+                ->assertSee('MetaApi');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_daily_drawdown_breach_from_equity_locks_account_and_notifies(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 09:10:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340135');
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '11111111-1111-4111-8111-111111111111');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10000,
+                'equity' => 9500,
+                'login' => '340135',
+            ], [
+                [
+                    'id' => 'P-LOSS-1',
+                    'symbol' => 'XAUUSD',
+                    'profit' => -500,
+                    'volume' => 1,
+                ],
+            ]);
+
+            $result = app(MetaApiLiveSyncService::class)->syncByLogin('340135');
+
+            $this->assertSame('success', $result['status']);
+
+            $account->refresh();
+
+            $this->assertSame('failed', $account->challenge_status);
+            $this->assertSame('daily_loss_breached', $account->failure_reason);
+            $this->assertTrue((bool) $account->trading_blocked);
+            $this->assertTrue((bool) $account->final_state_locked);
+            $this->assertSame('disable_pending_ack', $account->platform_status);
+            $this->assertSame('metaapi', $account->sync_source);
+            $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+            $this->assertDatabaseHas('trading_account_status_histories', [
+                'trading_account_id' => $account->id,
+                'previous_status' => 'pending_activation',
+                'new_status' => 'failed',
+                'source' => 'metaapi',
+            ]);
+            $this->assertDatabaseHas('trading_account_sync_logs', [
+                'trading_account_id' => $account->id,
+                'platform' => 'metaapi',
+                'status' => 'success',
+            ]);
+            Mail::assertSent(ChallengeFailedMail::class, 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_max_drawdown_breach_from_balance_locks_account(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340136');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '22222222-2222-4222-8222-222222222222');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 9150,
+            'equity' => 9700,
+            'login' => '340136',
+        ], [
+            [
+                'id' => 'P-MAX-1',
+                'symbol' => 'US30',
+                'profit' => 550,
+                'volume' => 1,
+            ],
+        ]);
+
+        app(MetaApiLiveSyncService::class)->syncByLogin('340136');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('max_drawdown_breached', $account->failure_reason);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_max_drawdown_breached.status'));
+        Mail::assertSent(ChallengeFailedMail::class, 1);
+    }
+
+    public function test_metaapi_breach_failed_locked_account_remains_failed_after_recovery(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 09:20:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340137');
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '33333333-3333-4333-8333-333333333333');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10000,
+                'equity' => 9500,
+                'login' => '340137',
+            ], [
+                [
+                    'id' => 'P-LOCK-LOSS',
+                    'symbol' => 'XAUUSD',
+                    'profit' => -500,
+                    'volume' => 1,
+                ],
+            ]);
+
+            app(MetaApiLiveSyncService::class)->syncByLogin('340137');
+
+            $account->refresh();
+            $failedAt = $account->failed_at?->toDateTimeString();
+            $lockedBalance = (string) $account->balance;
+            $lockedEquity = (string) $account->equity;
+
+            Carbon::setTestNow(Carbon::parse('2026-05-26 09:25:00'));
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10500,
+                'equity' => 10500,
+                'login' => '340137',
+            ]);
+
+            app(MetaApiLiveSyncService::class)->syncByLogin('340137');
+
+            $account->refresh();
+
+            $this->assertSame('failed', $account->challenge_status);
+            $this->assertSame('daily_loss_breached', $account->failure_reason);
+            $this->assertSame($failedAt, $account->failed_at?->toDateTimeString());
+            $this->assertSame($lockedBalance, (string) $account->balance);
+            $this->assertSame($lockedEquity, (string) $account->equity);
+            $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
+            $this->assertSame(2, $account->syncLogs()->where('platform', 'metaapi')->count());
+            Mail::assertSent(ChallengeFailedMail::class, 1);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_stale_disconnected_account_shows_warning(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 09:30:00'));
+
+        try {
+            config()->set('services.metaapi.sync.stale_minutes', 10);
+
+            $account = $this->createMetaApiChallengeAccount('340138', [
+                'sync_source' => 'metaapi',
+                'last_synced_at' => Carbon::parse('2026-05-26 09:00:00'),
+                'meta' => [
+                    'mt5_sync' => [
+                        'status' => 'connected',
+                        'metaapi_account_id' => '44444444-4444-4444-8444-444444444444',
+                        'last_successful_metric_update_at' => '2026-05-26T09:00:00+00:00',
+                    ],
+                ],
+            ]);
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '44444444-4444-4444-8444-444444444444');
+
+            Http::fake([
+                "https://metaapi-provisioning.test/users/current/accounts/{$metaApiAccountId}" => Http::response([
+                    '_id' => $metaApiAccountId,
+                    'login' => '340138',
+                    'server' => 'FusionMarkets-Demo',
+                    'state' => 'DEPLOYED',
+                    'connectionStatus' => 'DISCONNECTED',
+                    'region' => 'london',
+                ]),
+                "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/account-information*" => Http::response([
+                    'message' => 'Terminal state is not connected.',
+                ], 504),
+                "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/positions*" => Http::response([
+                    'message' => 'Terminal state is not connected.',
+                ], 504),
+            ]);
+
+            $result = app(MetaApiLiveSyncService::class)->syncByLogin('340138');
+
+            $this->assertSame('error', $result['status']);
+
+            $account->refresh();
+            $status = app(Mt5ConnectorStatus::class)->forAccount($account);
+
+            $this->assertSame('error', $account->sync_status);
+            $this->assertSame('disconnected', $account->platform_status);
+            $this->assertSame('stale', $status['status']);
+            $this->assertTrue($status['is_stale']);
+            $this->assertStringContainsString('MetaApi cloud terminal', $status['message']);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Disconnected/Stale')
+                ->assertSee('MetaApi cloud terminal');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_metrics_history_timeout_does_not_fail_full_sync(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340139');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '55555555-5555-4555-8555-555555555555');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10020,
+            'equity' => 10010,
+            'login' => '340139',
+        ], [
+            [
+                'id' => 'P-HISTORY-TIMEOUT',
+                'symbol' => 'GBPUSD',
+                'profit' => -10,
+                'volume' => 0.2,
+            ],
+        ], historyThrows: true);
+
+        $result = app(MetaApiLiveSyncService::class)->syncByLogin('340139');
+
+        $account->refresh();
+
+        $this->assertSame('partial', $result['status']);
+        $this->assertSame('PARTIAL_CONNECTED', $result['validation_state']);
+        $this->assertTrue($result['account_information_readable']);
+        $this->assertTrue($result['positions_readable']);
+        $this->assertFalse($result['history_readable']);
+        $this->assertSame('success', $account->sync_status);
+        $this->assertSame('metaapi', $account->sync_source);
+        $this->assertSame('10020.00', (string) $account->balance);
+        $this->assertSame('10010.00', (string) $account->equity);
+        $this->assertSame('partial', TradingAccountSyncLog::query()->latest('id')->value('status'));
+        $this->assertSame('degraded', data_get($account->balanceSnapshots()->latest('id')->firstOrFail()->payload, 'history_status'));
     }
 
     public function test_one_step_target_does_not_pass_before_minimum_trading_days(): void
@@ -2485,6 +2799,103 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('No breach')
                 ->assertDontSee('$99,415.87');
         }
+    }
+
+    private function createMetaApiChallengeAccount(string $login, array $overrides = []): TradingAccount
+    {
+        return $this->createChallengeAccount('one_step', array_merge([
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => $login,
+            'platform_account_id' => $login,
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'waiting_for_first_sync',
+            'sync_status' => 'pending',
+        ], $overrides));
+    }
+
+    private function attachMetaApiPoolEntry(TradingAccount $account, string $metaApiAccountId): string
+    {
+        $entry = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => (string) $account->platform_login,
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => (int) $account->account_size,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'source_status' => 'assigned',
+                'source_file' => 'metaapi-phase1b-test',
+                'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_INTERNAL,
+                'meta' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                    'source' => 'metaapi_phase1b_test',
+                ],
+            ]);
+
+        $meta = is_array($account->meta) ? $account->meta : [];
+        data_set($meta, 'metaapi_account_id', $metaApiAccountId);
+        data_set($meta, 'mt5_pool_entry.id', $entry->id);
+        data_set($meta, 'mt5_pool_entry.metaapi_account_id', $metaApiAccountId);
+        data_set($meta, 'mt5_sync.metaapi_account_id', $metaApiAccountId);
+
+        $account->forceFill(['meta' => $meta])->save();
+
+        return $metaApiAccountId;
+    }
+
+    /**
+     * @param  array<string, mixed>  $accountInformation
+     * @param  list<array<string, mixed>>  $positions
+     * @param  list<array<string, mixed>>  $deals
+     * @param  list<array<string, mixed>>  $orders
+     * @param  array<string, mixed>  $account
+     */
+    private function fakeMetaApiSync(
+        string $metaApiAccountId,
+        array $accountInformation,
+        array $positions = [],
+        array $deals = [],
+        array $orders = [],
+        array $account = [],
+        bool $historyThrows = false,
+    ): void {
+        $this->enableMetaApiForTests();
+
+        $login = (string) ($accountInformation['login'] ?? $account['login'] ?? '340000');
+        $historyOrdersResponse = $historyThrows
+            ? fn () => throw new ConnectionException('cURL error 28: SSL connection timeout')
+            : Http::response($orders);
+        $historyDealsResponse = $historyThrows
+            ? fn () => throw new ConnectionException('cURL error 28: SSL connection timeout')
+            : Http::response($deals);
+
+        Http::fake([
+            "https://metaapi-provisioning.test/users/current/accounts/{$metaApiAccountId}" => Http::response(array_merge([
+                '_id' => $metaApiAccountId,
+                'login' => $login,
+                'server' => 'FusionMarkets-Demo',
+                'state' => 'DEPLOYED',
+                'connectionStatus' => 'CONNECTED',
+                'region' => 'london',
+            ], $account)),
+            "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/account-information*" => Http::response($accountInformation),
+            "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/positions*" => Http::response($positions),
+            "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/history-orders/time/*" => $historyOrdersResponse,
+            "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/history-deals/time/*" => $historyDealsResponse,
+        ]);
+    }
+
+    private function enableMetaApiForTests(): void
+    {
+        config()->set('services.metaapi.enabled', true);
+        config()->set('services.metaapi.token', 'test-token');
+        config()->set('services.metaapi.provisioning_base_url', 'https://metaapi-provisioning.test');
+        config()->set('services.metaapi.client_base_url', 'https://metaapi-client.test');
+        config()->set('services.metaapi.history.days', 7);
+        config()->set('services.metaapi.history.limit', 50);
+        config()->set('services.metaapi.history.timeout', 1);
+        config()->set('services.metaapi.sync.stale_minutes', 10);
     }
 
     /**

@@ -2807,6 +2807,7 @@ class DashboardController extends Controller
     {
         return match ($source) {
             'mt5_ea' => 'MT5 EA',
+            'metaapi' => 'MetaApi',
             'ctrader_api' => __('Legacy platform API'),
             'platform_sync' => __('Platform Sync'),
             default => $this->humanizeStatus($source),

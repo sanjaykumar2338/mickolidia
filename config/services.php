@@ -126,6 +126,10 @@ return [
             'limit' => (int) env('METAAPI_HISTORY_LIMIT', 50),
             'timeout' => (int) env('METAAPI_HISTORY_TIMEOUT', env('METAAPI_TIMEOUT', 30)),
         ],
+        'sync' => [
+            'limit' => (int) env('METAAPI_SYNC_LIMIT', 10),
+            'stale_minutes' => (int) env('METAAPI_SYNC_STALE_MINUTES', 10),
+        ],
         'demo' => [
             'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),
             'account_type' => env('METAAPI_DEMO_ACCOUNT_TYPE'),

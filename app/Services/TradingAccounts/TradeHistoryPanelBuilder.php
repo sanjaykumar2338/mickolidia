@@ -1235,6 +1235,7 @@ class TradeHistoryPanelBuilder
     {
         return match ($source) {
             'mt5_ea' => 'MT5 EA',
+            'metaapi' => 'MetaApi',
             'ctrader_api' => 'cTrader API',
             'platform_sync' => __('Platform Sync'),
             'snapshot_payload' => __('Snapshot payload'),
