@@ -26,6 +26,8 @@ class ValidateMetaQuotesDemo extends Command
         {--keyword=* : Broker search keyword; defaults to METAAPI_DEMO_KEYWORDS}
         {--store-pool : Store validated credentials in mt5_account_pool_entries}
         {--assign-account= : Assign one available MetaQuotes pool entry to this trading_accounts.id}
+        {--metaapi-account-id= : Existing MetaApi account _id from dashboard; skips account create/import}
+        {--debug-metaapi : Print sanitized MetaApi request/response bodies and include them in diagnostic JSON}
         {--pool=client_pool : Pool tag for stored entries}
         {--source-file= : Source file marker for stored entries}
         {--polls= : Terminal-state polls to run}
@@ -57,6 +59,8 @@ class ValidateMetaQuotesDemo extends Command
                 'keyword' => (array) $this->option('keyword'),
                 'store_pool' => (bool) $this->option('store-pool'),
                 'assign_account' => $this->option('assign-account'),
+                'metaapi_account_id' => $this->option('metaapi-account-id'),
+                'debug_metaapi' => (bool) $this->option('debug-metaapi'),
                 'pool' => $this->option('pool'),
                 'source_file' => $this->option('source-file'),
                 'polls' => $this->option('polls'),
@@ -114,6 +118,15 @@ class ValidateMetaQuotesDemo extends Command
                     ->values()
                     ->all(),
             );
+        }
+
+        if ((bool) data_get($report, 'config.debug_metaapi', false)) {
+            $this->newLine();
+            $this->info('Sanitized MetaApi debug responses');
+
+            foreach ((array) data_get($report, 'debug_metaapi.responses', []) as $response) {
+                $this->line(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '[debug response unavailable]');
+            }
         }
 
         if ((string) data_get($report, 'mode') === 'dry-run') {

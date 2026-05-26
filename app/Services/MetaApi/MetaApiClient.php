@@ -52,6 +52,32 @@ class MetaApiClient
     /**
      * @return array<string, mixed>
      */
+    public function readAccount(string $accountId): array
+    {
+        return $this->getProvisioning(
+            path: '/users/current/accounts/'.rawurlencode($accountId),
+            query: [],
+            action: 'read_account',
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function readAccounts(?string $query = null): array
+    {
+        return $this->getProvisioning(
+            path: '/users/current/accounts',
+            query: array_filter([
+                'query' => filled($query) ? $query : null,
+            ], static fn (mixed $value): bool => $value !== null && $value !== ''),
+            action: 'read_accounts',
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function deployAccount(string $accountId): array
     {
         return $this->postProvisioning(
@@ -132,6 +158,17 @@ class MetaApiClient
      * @param  array<string, mixed>  $query
      * @return array<string, mixed>
      */
+    private function getProvisioning(string $path, array $query, string $action): array
+    {
+        $response = $this->request()->get($this->url($this->provisioningBaseUrl(), $path), $query);
+
+        return $this->result($response, $action);
+    }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>
+     */
     private function getClient(string $path, array $query, string $action): array
     {
         $response = $this->request()->get($this->url($this->clientBaseUrl(), $path), $query);
@@ -177,6 +214,7 @@ class MetaApiClient
             'ok' => $response->successful(),
             'status' => $response->status(),
             'payload' => $payload,
+            'body' => $response->body(),
             'retry_after' => $this->retryAfter($response, $payload),
             'error' => $response->successful() ? null : $this->errorMessage($response, $payload),
         ];

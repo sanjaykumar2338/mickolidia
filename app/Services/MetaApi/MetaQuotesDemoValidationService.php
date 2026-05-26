@@ -13,6 +13,11 @@ use RuntimeException;
 
 class MetaQuotesDemoValidationService
 {
+    /**
+     * @var list<array<string, mixed>>
+     */
+    private array $debugResponses = [];
+
     public function __construct(
         private readonly MetaApiClient $metaApi,
         private readonly Mt5AccountAllocator $allocator,
@@ -24,6 +29,7 @@ class MetaQuotesDemoValidationService
      */
     public function run(array $options): array
     {
+        $this->debugResponses = [];
         $startedAt = now();
         $live = (bool) ($options['live'] ?? false);
         $count = max(1, (int) ($options['count'] ?? 1));
@@ -54,6 +60,17 @@ class MetaQuotesDemoValidationService
                 'platform' => $platform,
                 'source_file' => $sourceFile,
                 'pool' => $pool,
+                'debug_metaapi' => (bool) ($options['debug_metaapi'] ?? false),
+            ],
+            'verified_endpoints' => [
+                'create_account' => 'POST /users/current/accounts',
+                'read_accounts' => 'GET /users/current/accounts?query={login}',
+                'read_account' => 'GET /users/current/accounts/{accountId}',
+                'deploy_account' => 'POST /users/current/accounts/{accountId}/deploy',
+                'read_account_information' => 'GET /users/current/accounts/{accountId}/account-information',
+                'read_positions' => 'GET /users/current/accounts/{accountId}/positions',
+                'read_history_orders' => 'GET /users/current/accounts/{accountId}/history-orders/time/{startTime}/{endTime}',
+                'read_history_deals' => 'GET /users/current/accounts/{accountId}/history-deals/time/{startTime}/{endTime}',
             ],
             'architecture_validation' => $this->architectureValidation($sourceFile, $broker, $platform, $pool),
             'scalability_assumptions' => $this->scalabilityAssumptions((int) ($options['polls'] ?? config('services.metaapi.validation.polls', 2))),
@@ -82,6 +99,12 @@ class MetaQuotesDemoValidationService
                 'Credentials are not written to diagnostic reports; passwords are only stored in encrypted model casts when --store-pool is used.',
             ],
         ];
+
+        if ((bool) ($options['debug_metaapi'] ?? false)) {
+            $report['debug_metaapi'] = [
+                'responses' => [],
+            ];
+        }
 
         if (! $live) {
             return $this->finish($report);
@@ -167,7 +190,7 @@ class MetaQuotesDemoValidationService
                 'name' => $required['name'],
                 'accountType' => $required['account_type'],
                 'phone' => $required['phone'],
-                'keywords' => $this->keywords($options),
+                'keywords' => $this->keywords($options, $server),
             ];
 
             $transactionId = $this->metaApi->transactionId();
@@ -278,6 +301,8 @@ class MetaQuotesDemoValidationService
             'investor_password_present' => filled($credential['investor_password'] ?? null),
             'metaapi_account_id' => null,
             'create_account' => null,
+            'read_existing_accounts' => null,
+            'read_account' => null,
             'deploy' => null,
             'polls' => [],
         ];
@@ -286,28 +311,43 @@ class MetaQuotesDemoValidationService
             $accountReport['pool_entry'] = $this->storePoolEntry($credential, $sourceFile, $broker, $platform, $pool, $batch);
         }
 
-        $createResult = $this->metaApi->createAccount([
-            'login' => (string) $credential['login'],
-            'password' => (string) $credential['password'],
-            'name' => 'Wolforix Phase 1A '.$credential['login'],
-            'server' => (string) $credential['server'],
-            'platform' => 'mt5',
-            'magic' => 20260525,
-            'keywords' => $this->keywords($options),
-        ], $this->metaApi->transactionId());
+        $metaApiAccountId = $this->manualMetaApiAccountId($options);
 
-        $accountReport['create_account'] = $this->summarizeResponse($createResult);
-        $metaApiAccountId = (string) data_get($createResult, 'payload.id', '');
+        if ($metaApiAccountId !== null) {
+            $accountReport['create_account'] = [
+                'status' => 'skipped_manual_metaapi_account_id',
+                'ok' => null,
+                'reason' => 'Using --metaapi-account-id; create/import was not called.',
+            ];
+        } else {
+            $createResult = $this->createAccountWithRetries($credential, $options);
+            $this->recordDebugResponse($options, 'create_account.final', $createResult, $credential);
+            $accountReport['create_account'] = $this->summarizeResponse($createResult);
+            $accountReport['create_account']['reason'] = $this->createFailureReason($createResult);
+            $metaApiAccountId = $this->extractCreatedAccountId($createResult);
 
-        if ($metaApiAccountId === '') {
+            if ($metaApiAccountId === null) {
+                $existingLookup = $this->findExistingMetaApiAccount($credential, $options);
+                $accountReport['read_existing_accounts'] = $existingLookup['summary'];
+                $metaApiAccountId = $existingLookup['metaapi_account_id'];
+            }
+        }
+
+        if ($metaApiAccountId === null) {
             return $accountReport;
         }
 
         $accountReport['metaapi_account_id'] = $metaApiAccountId;
         $this->stampMetaApiAccountId($credential, $sourceFile, $metaApiAccountId);
 
+        $readAccountResult = $this->metaApi->readAccount($metaApiAccountId);
+        $this->recordDebugResponse($options, 'read_account.before_deploy', $readAccountResult, $credential);
+        $accountReport['read_account'] = $this->summarizeProvisioningAccount($readAccountResult);
+
         $deployResult = $this->metaApi->deployAccount($metaApiAccountId);
+        $this->recordDebugResponse($options, 'deploy_account', $deployResult, $credential);
         $accountReport['deploy'] = $this->summarizeResponse($deployResult);
+        $accountReport['deploy']['reason'] = $this->deployFailureReason($deployResult, $metaApiAccountId);
 
         $polls = max(1, (int) ($options['polls'] ?? config('services.metaapi.validation.polls', 2)));
 
@@ -315,6 +355,8 @@ class MetaQuotesDemoValidationService
             $accountReport['polls'][] = $this->pollTerminalState(
                 accountId: $metaApiAccountId,
                 poll: $poll,
+                options: $options,
+                credential: $credential,
                 historyDays: max(1, (int) ($options['history_days'] ?? config('services.metaapi.validation.history_days', 7))),
             );
 
@@ -334,20 +376,260 @@ class MetaQuotesDemoValidationService
     }
 
     /**
+     * @param  array<string, mixed>  $credential
+     * @param  array<string, mixed>  $options
      * @return array<string, mixed>
      */
-    private function pollTerminalState(string $accountId, int $poll, int $historyDays): array
+    private function createAccountWithRetries(array $credential, array $options): array
+    {
+        $transactionId = $this->metaApi->transactionId();
+        $payload = array_filter([
+            'login' => (string) $credential['login'],
+            'password' => (string) $credential['password'],
+            'name' => 'Wolforix Phase 1A '.$credential['login'],
+            'server' => (string) $credential['server'],
+            'platform' => 'mt5',
+            'magic' => 20260525,
+            'type' => config('services.metaapi.account_type'),
+            'provisioningProfileId' => $this->provisioningProfileIdForCreate(),
+            'keywords' => $this->keywords($options, (string) $credential['server']),
+        ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
+        $maxAttempts = max(1, 1 + (int) config('services.metaapi.demo.accepted_retries', 3));
+        $lastResult = [];
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $result = $this->metaApi->createAccount($payload, $transactionId);
+            $lastResult = $result;
+            $this->recordDebugResponse($options, 'create_account.attempt_'.$attempt, $result, $credential, $payload);
+
+            if ((int) $result['status'] !== 202) {
+                return $result;
+            }
+
+            $this->sleep((int) config('services.metaapi.demo.accepted_retry_delay_seconds', 30));
+        }
+
+        return $lastResult;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function extractCreatedAccountId(array $response): ?string
+    {
+        $status = (int) ($response['status'] ?? 0);
+
+        if (! in_array($status, [201, 202], true)) {
+            return null;
+        }
+
+        $id = (string) (data_get($response, 'payload.id') ?: data_get($response, 'payload._id') ?: '');
+
+        return $this->looksLikeMetaApiAccountId($id) ? $id : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $credential
+     * @param  array<string, mixed>  $options
+     * @return array{metaapi_account_id: string|null, summary: array<string, mixed>}
+     */
+    private function findExistingMetaApiAccount(array $credential, array $options): array
+    {
+        $lookup = $this->metaApi->readAccounts((string) $credential['login']);
+        $this->recordDebugResponse($options, 'read_accounts.by_login', $lookup, $credential);
+        $payload = $this->accountsPayload($lookup);
+        $matches = collect($payload)
+            ->filter(fn (array $account): bool => (string) ($account['login'] ?? '') === (string) $credential['login'])
+            ->values();
+        $exactServer = $matches
+            ->filter(fn (array $account): bool => $this->serverMatches((string) ($account['server'] ?? ''), (string) $credential['server']))
+            ->values();
+        $selected = $exactServer->first();
+        $selectionReason = 'no_existing_account_match';
+
+        if (! is_array($selected) && $matches->count() === 1) {
+            $selected = $matches->first();
+            $selectionReason = 'single_login_match_server_mismatch';
+        } elseif (is_array($selected)) {
+            $selectionReason = 'exact_login_server_match';
+        } elseif ($matches->count() > 1) {
+            $selectionReason = 'multiple_login_matches_manual_metaapi_account_id_required';
+        }
+
+        $accountId = is_array($selected) ? (string) ($selected['_id'] ?? $selected['id'] ?? '') : '';
+
+        return [
+            'metaapi_account_id' => $this->looksLikeMetaApiAccountId($accountId) ? $accountId : null,
+            'summary' => [
+                'status' => $lookup['status'] ?? null,
+                'ok' => $lookup['ok'] ?? null,
+                'reason' => $selectionReason,
+                'matches' => $matches->count(),
+                'exact_server_matches' => $exactServer->count(),
+                'selected_metaapi_account_id' => $this->looksLikeMetaApiAccountId($accountId) ? $accountId : null,
+                'selected_login' => is_array($selected) ? ($selected['login'] ?? null) : null,
+                'selected_server' => is_array($selected) ? ($selected['server'] ?? null) : null,
+                'selected_state' => is_array($selected) ? ($selected['state'] ?? null) : null,
+                'selected_connection_status' => is_array($selected) ? ($selected['connectionStatus'] ?? null) : null,
+                'error' => $lookup['error'] ?? null,
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return list<array<string, mixed>>
+     */
+    private function accountsPayload(array $response): array
+    {
+        $payload = $response['payload'] ?? [];
+
+        if (is_array($payload) && array_is_list($payload)) {
+            return array_values(array_filter($payload, 'is_array'));
+        }
+
+        if (is_array(data_get($payload, 'items')) && array_is_list((array) data_get($payload, 'items'))) {
+            return array_values(array_filter((array) data_get($payload, 'items'), 'is_array'));
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function summarizeProvisioningAccount(array $response): array
+    {
+        return array_merge($this->summarizeResponse($response), [
+            '_id' => data_get($response, 'payload._id'),
+            'login' => data_get($response, 'payload.login'),
+            'server' => data_get($response, 'payload.server'),
+            'state' => data_get($response, 'payload.state'),
+            'connection_status' => data_get($response, 'payload.connectionStatus'),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function createFailureReason(array $response): ?string
+    {
+        $status = (int) ($response['status'] ?? 0);
+
+        if (in_array($status, [201, 202], true) && $this->extractCreatedAccountId($response) !== null) {
+            return 'created_or_processing_with_confirmed_account_id';
+        }
+
+        if ($status === 400) {
+            return 'validation_error_not_a_confirmed_account_id';
+        }
+
+        if ($status === 404) {
+            return 'provisioning_profile_or_create_resource_not_found';
+        }
+
+        return ($response['ok'] ?? false) ? null : 'metaapi_create_failed';
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function deployFailureReason(array $response, string $metaApiAccountId): ?string
+    {
+        if ((bool) ($response['ok'] ?? false) || (int) ($response['status'] ?? 0) === 204) {
+            return 'deploy_accepted_or_already_deployed';
+        }
+
+        if ((int) ($response['status'] ?? 0) === 404) {
+            return "metaapi_account_id_not_found_or_wrong_region: {$metaApiAccountId}";
+        }
+
+        return 'metaapi_deploy_failed';
+    }
+
+    private function manualMetaApiAccountId(array $options): ?string
+    {
+        $accountId = trim((string) ($options['metaapi_account_id'] ?? ''));
+
+        if ($accountId === '') {
+            return null;
+        }
+
+        if (! $this->looksLikeMetaApiAccountId($accountId)) {
+            throw new RuntimeException('--metaapi-account-id must be the MetaApi account _id from the dashboard, not the MT5 login or an error id.');
+        }
+
+        return $accountId;
+    }
+
+    private function provisioningProfileIdForCreate(): ?string
+    {
+        $profileId = trim((string) config('services.metaapi.profile_id', ''));
+
+        return $profileId !== '' && $profileId !== 'default' ? $profileId : null;
+    }
+
+    private function looksLikeMetaApiAccountId(string $id): bool
+    {
+        return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+    }
+
+    private function serverMatches(string $metaApiServer, string $requestedServer): bool
+    {
+        if ($metaApiServer === $requestedServer) {
+            return true;
+        }
+
+        return $this->normalizedServer($metaApiServer) === $this->normalizedServer($requestedServer);
+    }
+
+    private function normalizedServer(string $server): string
+    {
+        return Str::lower((string) preg_replace('/[^a-z0-9]+/i', '', $server));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $credential
+     * @return array<string, mixed>
+     */
+    private function pollTerminalState(string $accountId, int $poll, array $options, array $credential, int $historyDays): array
     {
         $end = now()->utc();
         $start = $end->copy()->subDays($historyDays);
+        $provisioningAccount = $this->metaApi->readAccount($accountId);
         $accountInformation = $this->metaApi->readAccountInformation($accountId, $poll === 1);
         $positions = $this->metaApi->readPositions($accountId);
         $historyOrders = $this->metaApi->readHistoryOrdersByTimeRange($accountId, $start, $end, 100);
         $historyDeals = $this->metaApi->readDealsByTimeRange($accountId, $start, $end, 100);
 
+        foreach ([
+            'read_account.poll_'.$poll => $provisioningAccount,
+            'read_account_information.poll_'.$poll => $accountInformation,
+            'read_positions.poll_'.$poll => $positions,
+            'read_history_orders.poll_'.$poll => $historyOrders,
+            'read_history_deals.poll_'.$poll => $historyDeals,
+        ] as $label => $response) {
+            $this->recordDebugResponse($options, $label, $response, $credential);
+        }
+
         return [
             'poll' => $poll,
             'polled_at' => now()->toIso8601String(),
+            'provisioning_account' => [
+                'status' => $provisioningAccount['status'],
+                'ok' => $provisioningAccount['ok'],
+                '_id' => data_get($provisioningAccount, 'payload._id'),
+                'login' => data_get($provisioningAccount, 'payload.login'),
+                'server' => data_get($provisioningAccount, 'payload.server'),
+                'state' => data_get($provisioningAccount, 'payload.state'),
+                'connection_status' => data_get($provisioningAccount, 'payload.connectionStatus'),
+                'error' => $provisioningAccount['error'],
+            ],
             'account_information' => [
                 'status' => $accountInformation['status'],
                 'ok' => $accountInformation['ok'],
@@ -595,6 +877,11 @@ class MetaQuotesDemoValidationService
     private function finish(array $report): array
     {
         $report['completed_at'] = now()->toIso8601String();
+
+        if ((bool) data_get($report, 'config.debug_metaapi', false)) {
+            $report['debug_metaapi']['responses'] = $this->debugResponses;
+        }
+
         $path = 'diagnostics/metaquotes-demo-validation-'.now()->format('Ymd-His').'-'.Str::lower(Str::random(6)).'.json';
 
         Storage::disk('local')->put($path, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -656,17 +943,112 @@ class MetaQuotesDemoValidationService
 
     /**
      * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $response
+     * @param  array<string, mixed>  $credential
+     * @param  array<string, mixed>|null  $requestPayload
+     */
+    private function recordDebugResponse(array $options, string $label, array $response, array $credential, ?array $requestPayload = null): void
+    {
+        if (! (bool) ($options['debug_metaapi'] ?? false)) {
+            return;
+        }
+
+        $debug = [
+            'label' => $label,
+            'action' => $response['action'] ?? null,
+            'status' => $response['status'] ?? null,
+            'ok' => $response['ok'] ?? null,
+            'retry_after' => $response['retry_after'] ?? null,
+            'error' => $this->sanitizeForDebug($response['error'] ?? null, $credential),
+            'request_payload' => $requestPayload !== null ? $this->sanitizeForDebug($requestPayload, $credential) : null,
+            'response_payload' => $this->sanitizeForDebug($response['payload'] ?? null, $credential),
+            'response_body' => $this->sanitizeForDebug($response['body'] ?? null, $credential),
+        ];
+
+        Log::info('MetaApi validation debug response.', $debug);
+        $this->debugResponses[] = $debug;
+    }
+
+    /**
+     * @param  array<string, mixed>  $credential
+     */
+    private function sanitizeForDebug(mixed $value, array $credential): mixed
+    {
+        $secrets = array_values(array_filter([
+            (string) config('services.metaapi.token', ''),
+            (string) ($credential['password'] ?? ''),
+            (string) ($credential['investor_password'] ?? ''),
+        ], static fn (string $secret): bool => $secret !== ''));
+
+        if (is_array($value)) {
+            $sanitized = [];
+
+            foreach ($value as $key => $item) {
+                if (is_string($key) && preg_match('/token|password|secret|authorization|auth/i', $key)) {
+                    $sanitized[$key] = '[redacted]';
+
+                    continue;
+                }
+
+                $sanitized[$key] = $this->sanitizeForDebug($item, $credential);
+            }
+
+            return $sanitized;
+        }
+
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        foreach ($secrets as $secret) {
+            $value = str_replace($secret, '[redacted]', $value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
      * @return list<string>
      */
-    private function keywords(array $options): array
+    private function keywords(array $options, ?string $server = null): array
     {
         $keywords = array_values(array_filter((array) ($options['keyword'] ?? []), fn ($value): bool => trim((string) $value) !== ''));
 
         if ($keywords === []) {
-            $keywords = (array) config('services.metaapi.demo.keywords', ['MetaQuotes']);
+            $keywords = $this->serverKeywords($server);
+        }
+
+        if ($keywords === []) {
+            $keywords = (array) config('services.metaapi.demo.keywords', []);
         }
 
         return array_values(array_unique(array_map(fn ($value): string => trim((string) $value), $keywords)));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function serverKeywords(?string $server): array
+    {
+        $server = trim((string) $server);
+
+        if ($server === '') {
+            return [];
+        }
+
+        $withoutDemo = trim((string) preg_replace('/\b(demo|live|real)\b/i', '', $server));
+        $parts = array_values(array_filter(array_map('trim', preg_split('/[-–—]+/', $withoutDemo) ?: [])));
+        $keywords = [];
+
+        if ($parts !== []) {
+            $keywords[] = $parts[0];
+            $keywords[] = end($parts);
+        }
+
+        $keywords[] = str_replace(' ', '', $server);
+
+        return array_values(array_unique(array_filter($keywords)));
     }
 
     private function stringOption(array $options, string $key, string $default): string

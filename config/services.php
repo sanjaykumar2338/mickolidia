@@ -119,6 +119,7 @@ return [
         'client_base_url' => env('METAAPI_CLIENT_BASE_URL', 'https://mt-client-api-v1.new-york.agiliumtrade.ai'),
         'timeout' => (int) env('METAAPI_TIMEOUT', 30),
         'profile_id' => env('METAAPI_PROVISIONING_PROFILE_ID', 'default'),
+        'account_type' => env('METAAPI_ACCOUNT_TYPE'),
         'demo' => [
             'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),
             'account_type' => env('METAAPI_DEMO_ACCOUNT_TYPE'),
