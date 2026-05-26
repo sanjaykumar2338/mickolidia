@@ -7,6 +7,8 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Mt5\Mt5AccountAllocator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -373,6 +375,167 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertStringNotContainsString('investor-secret', json_encode($report));
     }
 
+    public function test_validation_repairs_corrupted_pool_entry_from_live_credentials(): void
+    {
+        $accountId = '7ed465cc-2315-4311-b4a1-4cc90f66e332';
+        $entry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340134',
+            'password' => 'old-main',
+            'investor_password' => 'old-investor',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'metaapi-demo-validation',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'meta' => [
+                'broker' => 'MetaQuotes',
+                'platform' => 'MT5',
+            ],
+        ]);
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $entry->id)
+            ->update([
+                'password' => $this->wrongKeyEncryptedPayload(),
+                'investor_password' => $this->wrongKeyEncryptedPayload(),
+            ]);
+
+        Http::fake([
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}" => Http::response([
+                '_id' => $accountId,
+                'login' => '340134',
+                'server' => 'FusionMarkets-Demo',
+                'state' => 'DEPLOYED',
+                'connectionStatus' => 'CONNECTED',
+            ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
+                'balance' => 10000,
+                'equity' => 10020,
+                'login' => 340134,
+            ], 200),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/positions*" => Http::response([], 200),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-orders/time/*" => Http::response([], 200),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-deals/time/*" => Http::response([], 200),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--login' => ['340134'],
+            '--password' => ['main-secret'],
+            '--investor-password' => ['investor-secret'],
+            '--server' => 'FusionMarkets-Demo',
+            '--metaapi-account-id' => $accountId,
+            '--store-pool' => true,
+            '--polls' => 1,
+            '--debug-metaapi' => true,
+        ])->assertSuccessful();
+
+        $entry->refresh();
+
+        $this->assertSame('main-secret', $entry->password);
+        $this->assertSame('investor-secret', $entry->investor_password);
+        $this->assertSame($accountId, data_get($entry->meta, 'metaapi_account_id'));
+        $this->assertSame('invalid_encrypted_payload_repaired_from_live_metaapi_validation', data_get($entry->meta, 'metaapi_pool_repair_reason'));
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('repaired_encrypted_credentials', data_get($report, 'accounts.0.pool_entry.status'));
+        $this->assertSame('decryptable_present', data_get($report, 'accounts.0.pool_entry.credential_integrity.password.state'));
+        $this->assertSame('decryptable_present', data_get($report, 'accounts.0.pool_entry.credential_integrity.investor_password.state'));
+        $this->assertStringNotContainsString('main-secret', json_encode($report));
+        $this->assertStringNotContainsString('investor-secret', json_encode($report));
+    }
+
+    public function test_history_timeout_degrades_to_partial_connected_without_blocking_validation(): void
+    {
+        $accountId = 'ed749805-4cad-4622-a0bc-3b1c8dd241d2';
+
+        Http::fake([
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}" => Http::response([
+                '_id' => $accountId,
+                'login' => '335400',
+                'server' => 'FusionMarkets-Demo',
+                'state' => 'DEPLOYED',
+                'connectionStatus' => 'CONNECTED',
+            ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
+                'balance' => 10000,
+                'equity' => 10005,
+                'login' => 335400,
+            ], 200),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/positions*" => Http::response([], 200),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-orders/time/*" => fn () => throw new ConnectionException('cURL error 28: SSL connection timeout'),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-deals/time/*" => fn () => throw new ConnectionException('cURL error 28: SSL connection timeout'),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--login' => ['335400'],
+            '--password' => ['main-secret'],
+            '--investor-password' => ['investor-secret'],
+            '--server' => 'FusionMarkets-Demo',
+            '--metaapi-account-id' => $accountId,
+            '--polls' => 1,
+            '--history-days' => 7,
+            '--history-limit' => 25,
+            '--debug-metaapi' => true,
+        ])->assertSuccessful();
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('PARTIAL_CONNECTED', data_get($report, 'stability.validation_state'));
+        $this->assertSame('passed', data_get($report, 'stability.account_information'));
+        $this->assertSame('passed', data_get($report, 'stability.positions'));
+        $this->assertSame('degraded_non_blocking', data_get($report, 'stability.trade_history'));
+        $this->assertCount(3, data_get($report, 'accounts.0.polls.0.history_orders.attempts'));
+        $this->assertCount(3, data_get($report, 'accounts.0.polls.0.history_deals.attempts'));
+    }
+
+    public function test_diagnose_metaapi_pool_repairs_corrupted_credentials(): void
+    {
+        $entry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340134',
+            'password' => 'old-main',
+            'investor_password' => 'old-investor',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+        ]);
+
+        DB::table('mt5_account_pool_entries')
+            ->where('id', $entry->id)
+            ->update([
+                'password' => $this->wrongKeyEncryptedPayload(),
+                'investor_password' => $this->wrongKeyEncryptedPayload(),
+            ]);
+
+        $this->artisan('wolforix:diagnose-metaapi-pool', [
+            'login' => '340134',
+            '--server' => 'FusionMarkets-Demo',
+        ])
+            ->expectsOutputToContain('MetaApi MT5 pool credential diagnosis')
+            ->expectsOutputToContain('decrypt_failed')
+            ->assertFailed();
+
+        $this->artisan('wolforix:diagnose-metaapi-pool', [
+            'login' => '340134',
+            '--server' => 'FusionMarkets-Demo',
+            '--repair' => true,
+            '--password' => 'fixed-main',
+            '--investor-password' => 'fixed-investor',
+        ])
+            ->expectsOutputToContain('MetaApi MT5 pool credential diagnosis')
+            ->assertSuccessful();
+
+        $entry->refresh();
+
+        $this->assertSame('fixed-main', $entry->password);
+        $this->assertSame('fixed-investor', $entry->investor_password);
+        $this->assertSame('wolforix_diagnose_metaapi_pool_manual_reencrypt', data_get($entry->meta, 'metaapi_pool_repair_reason'));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -385,5 +548,15 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertNotNull($path);
 
         return json_decode(Storage::disk('local')->get($path), true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    private function wrongKeyEncryptedPayload(): string
+    {
+        return base64_encode((string) json_encode([
+            'iv' => base64_encode(random_bytes(16)),
+            'value' => base64_encode('encrypted-with-another-key'),
+            'mac' => str_repeat('0', 64),
+            'tag' => '',
+        ]));
     }
 }

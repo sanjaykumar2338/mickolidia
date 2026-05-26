@@ -118,8 +118,14 @@ return [
         'provisioning_base_url' => env('METAAPI_PROVISIONING_BASE_URL', 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai'),
         'client_base_url' => env('METAAPI_CLIENT_BASE_URL', 'https://mt-client-api-v1.new-york.agiliumtrade.ai'),
         'timeout' => (int) env('METAAPI_TIMEOUT', 30),
+        'connect_timeout' => (int) env('METAAPI_CONNECT_TIMEOUT', 10),
         'profile_id' => env('METAAPI_PROVISIONING_PROFILE_ID', 'default'),
         'account_type' => env('METAAPI_ACCOUNT_TYPE'),
+        'history' => [
+            'days' => (int) env('METAAPI_HISTORY_DAYS', env('METAAPI_VALIDATION_HISTORY_DAYS', 7)),
+            'limit' => (int) env('METAAPI_HISTORY_LIMIT', 50),
+            'timeout' => (int) env('METAAPI_HISTORY_TIMEOUT', env('METAAPI_TIMEOUT', 30)),
+        ],
         'demo' => [
             'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),
             'account_type' => env('METAAPI_DEMO_ACCOUNT_TYPE'),
@@ -135,7 +141,7 @@ return [
         'validation' => [
             'polls' => (int) env('METAAPI_VALIDATION_POLLS', 2),
             'poll_delay_seconds' => (int) env('METAAPI_VALIDATION_POLL_DELAY_SECONDS', 15),
-            'history_days' => (int) env('METAAPI_VALIDATION_HISTORY_DAYS', 7),
+            'history_days' => (int) env('METAAPI_HISTORY_DAYS', env('METAAPI_VALIDATION_HISTORY_DAYS', 7)),
             'throttle_delay_ms' => (int) env('METAAPI_VALIDATION_THROTTLE_DELAY_MS', 1500),
             'max_without_force' => (int) env('METAAPI_VALIDATION_MAX_WITHOUT_FORCE', 2),
         ],

@@ -5,6 +5,9 @@ namespace App\Services\MetaApi;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Services\Mt5\Mt5AccountAllocator;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -60,6 +63,8 @@ class MetaQuotesDemoValidationService
                 'platform' => $platform,
                 'source_file' => $sourceFile,
                 'pool' => $pool,
+                'history_days' => max(1, (int) ($options['history_days'] ?? config('services.metaapi.history.days', 7))),
+                'history_limit' => max(1, (int) ($options['history_limit'] ?? config('services.metaapi.history.limit', 50))),
                 'debug_metaapi' => (bool) ($options['debug_metaapi'] ?? false),
             ],
             'verified_endpoints' => [
@@ -378,7 +383,8 @@ class MetaQuotesDemoValidationService
                 poll: $poll,
                 options: $options,
                 credential: $effectiveCredential,
-                historyDays: max(1, (int) ($options['history_days'] ?? config('services.metaapi.validation.history_days', 7))),
+                historyDays: max(1, (int) ($options['history_days'] ?? config('services.metaapi.history.days', config('services.metaapi.validation.history_days', 7)))),
+                historyLimit: max(1, (int) ($options['history_limit'] ?? config('services.metaapi.history.limit', 50))),
             );
 
             if ($poll < $polls) {
@@ -794,24 +800,21 @@ class MetaQuotesDemoValidationService
      * @param  array<string, mixed>  $credential
      * @return array<string, mixed>
      */
-    private function pollTerminalState(string $accountId, int $poll, array $options, array $credential, int $historyDays): array
+    private function pollTerminalState(string $accountId, int $poll, array $options, array $credential, int $historyDays, int $historyLimit): array
     {
         $end = now()->utc();
-        $start = $end->copy()->subDays($historyDays);
         $provisioningAccount = $this->metaApi->readAccount($accountId);
         $accountReplicas = $this->metaApi->readAccountReplicas($accountId);
         $accountInformation = $this->metaApi->readAccountInformation($accountId, $poll === 1);
         $positions = $this->metaApi->readPositions($accountId);
-        $historyOrders = $this->metaApi->readHistoryOrdersByTimeRange($accountId, $start, $end, 100);
-        $historyDeals = $this->metaApi->readDealsByTimeRange($accountId, $start, $end, 100);
+        $historyOrders = $this->readHistoryWithFallbacks('orders', $accountId, $end, $historyDays, $historyLimit, $poll, $options, $credential);
+        $historyDeals = $this->readHistoryWithFallbacks('deals', $accountId, $end, $historyDays, $historyLimit, $poll, $options, $credential);
 
         foreach ([
             'read_account.poll_'.$poll => $provisioningAccount,
             'read_account_replicas.poll_'.$poll => $accountReplicas,
             'read_account_information.poll_'.$poll => $accountInformation,
             'read_positions.poll_'.$poll => $positions,
-            'read_history_orders.poll_'.$poll => $historyOrders,
-            'read_history_deals.poll_'.$poll => $historyDeals,
         ] as $label => $response) {
             $this->recordDebugResponse($options, $label, $response, $credential);
         }
@@ -853,15 +856,96 @@ class MetaQuotesDemoValidationService
                 'status' => $historyOrders['status'],
                 'ok' => $historyOrders['ok'],
                 'count' => is_array($historyOrders['payload']) ? count($historyOrders['payload']) : null,
+                'degraded' => (bool) ($historyOrders['degraded'] ?? false),
+                'attempts' => $historyOrders['attempts'] ?? [],
                 'error' => $historyOrders['error'],
             ],
             'history_deals' => [
                 'status' => $historyDeals['status'],
                 'ok' => $historyDeals['ok'],
                 'count' => is_array($historyDeals['payload']) ? count($historyDeals['payload']) : null,
+                'degraded' => (bool) ($historyDeals['degraded'] ?? false),
+                'attempts' => $historyDeals['attempts'] ?? [],
                 'error' => $historyDeals['error'],
             ],
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $credential
+     * @return array<string, mixed>
+     */
+    private function readHistoryWithFallbacks(string $type, string $accountId, Carbon $end, int $historyDays, int $historyLimit, int $poll, array $options, array $credential): array
+    {
+        $ranges = $this->historyRanges($end, $historyDays);
+        $attempts = [];
+        $lastResponse = null;
+
+        foreach ($ranges as $index => $range) {
+            $response = $type === 'orders'
+                ? $this->metaApi->readHistoryOrdersByTimeRange($accountId, $range['start'], $end, $historyLimit)
+                : $this->metaApi->readDealsByTimeRange($accountId, $range['start'], $end, $historyLimit);
+
+            $response['history_range'] = $range['label'];
+            $response['degraded'] = $index > 0;
+            $lastResponse = $response;
+
+            $this->recordDebugResponse($options, 'read_history_'.$type.'.poll_'.$poll.'.attempt_'.($index + 1), $response, $credential);
+
+            $attempts[] = [
+                'range' => $range['label'],
+                'status' => $response['status'] ?? null,
+                'ok' => $response['ok'] ?? null,
+                'error' => $response['error'] ?? null,
+            ];
+
+            if ((bool) ($response['ok'] ?? false)) {
+                $response['attempts'] = $attempts;
+
+                return $response;
+            }
+        }
+
+        $lastResponse ??= [
+            'action' => 'read_history_'.$type,
+            'ok' => false,
+            'status' => 0,
+            'payload' => [],
+            'body' => '',
+            'retry_after' => null,
+            'error' => 'No history attempts were executed.',
+        ];
+        $lastResponse['attempts'] = $attempts;
+        $lastResponse['degraded'] = true;
+
+        return $lastResponse;
+    }
+
+    /**
+     * @return list<array{label: string, start: Carbon}>
+     */
+    private function historyRanges(Carbon $end, int $historyDays): array
+    {
+        $ranges = [
+            [
+                'label' => $historyDays.'d',
+                'start' => $end->copy()->subDays($historyDays),
+            ],
+            [
+                'label' => '1d',
+                'start' => $end->copy()->subDay(),
+            ],
+            [
+                'label' => '6h',
+                'start' => $end->copy()->subHours(6),
+            ],
+        ];
+
+        return collect($ranges)
+            ->unique(fn (array $range): string => $range['start']->toIso8601String())
+            ->values()
+            ->all();
     }
 
     /**
@@ -875,12 +959,16 @@ class MetaQuotesDemoValidationService
             ->where('login', (string) $credential['login'])
             ->where('server', (string) $credential['server'])
             ->first();
+        $credentialIntegrity = $entry instanceof Mt5AccountPoolEntry
+            ? $this->poolCredentialIntegrity($entry)
+            : null;
 
         if ($entry instanceof Mt5AccountPoolEntry && ($entry->allocated_at !== null || $entry->allocated_trading_account_id !== null)) {
             return [
                 'id' => $entry->id,
                 'login' => $entry->login,
                 'status' => 'existing_allocated_not_overwritten',
+                'credential_integrity' => $credentialIntegrity,
             ];
         }
 
@@ -908,12 +996,27 @@ class MetaQuotesDemoValidationService
         ];
 
         if ($entry instanceof Mt5AccountPoolEntry) {
-            $entry->forceFill($attributes)->save();
-            $status = 'updated';
+            if ($this->poolCredentialIntegrityFailed($credentialIntegrity)) {
+                $this->logPoolCredentialFailure($entry, $credentialIntegrity, 'repairing_from_live_metaapi_validation');
+                $entry = $this->repairPoolEntryWithRawEncryption($entry, $attributes, 'invalid_encrypted_payload_repaired_from_live_metaapi_validation');
+                $status = 'repaired_encrypted_credentials';
+            } else {
+                try {
+                    $entry->forceFill($attributes)->save();
+                    $status = 'updated';
+                } catch (DecryptException) {
+                    $credentialIntegrity = $this->poolCredentialIntegrity($entry);
+                    $this->logPoolCredentialFailure($entry, $credentialIntegrity, 'fallback_repair_after_eloquent_save_decrypt_failure');
+                    $entry = $this->repairPoolEntryWithRawEncryption($entry, $attributes, 'eloquent_save_decrypt_failure_repaired_from_live_metaapi_validation');
+                    $status = 'repaired_after_decrypt_failure';
+                }
+            }
         } else {
             $entry = Mt5AccountPoolEntry::query()->create($attributes);
             $status = 'created';
         }
+
+        $credentialIntegrityAfter = $this->poolCredentialIntegrity($entry);
 
         return [
             'id' => $entry->id,
@@ -921,7 +1024,145 @@ class MetaQuotesDemoValidationService
             'server' => $entry->server,
             'account_size' => (int) $entry->account_size,
             'status' => $status,
+            'credential_integrity' => $credentialIntegrityAfter,
         ];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function poolCredentialIntegrity(Mt5AccountPoolEntry $entry): array
+    {
+        return [
+            'password' => $this->poolCredentialColumnIntegrity($entry, 'password'),
+            'investor_password' => $this->poolCredentialColumnIntegrity($entry, 'investor_password'),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function poolCredentialColumnIntegrity(Mt5AccountPoolEntry $entry, string $column): array
+    {
+        $rawValue = $entry->getRawOriginal($column);
+        $rawPresent = filled($rawValue);
+
+        try {
+            $value = $entry->{$column};
+
+            return [
+                'model' => Mt5AccountPoolEntry::class,
+                'table' => $entry->getTable(),
+                'column' => $column,
+                'state' => filled($value) ? 'decryptable_present' : ($rawPresent ? 'decryptable_empty' : 'missing'),
+                'raw_present' => $rawPresent,
+                'encrypted_payload_shape' => $rawPresent ? $this->looksLikeEncryptedCastPayload((string) $rawValue) : false,
+            ];
+        } catch (DecryptException $exception) {
+            return [
+                'model' => Mt5AccountPoolEntry::class,
+                'table' => $entry->getTable(),
+                'column' => $column,
+                'state' => $rawPresent ? 'decrypt_failed' : 'missing',
+                'raw_present' => $rawPresent,
+                'encrypted_payload_shape' => $rawPresent ? $this->looksLikeEncryptedCastPayload((string) $rawValue) : false,
+                'exception' => $exception::class,
+                'reason' => 'laravel_encrypted_cast_decrypt_failed',
+            ];
+        }
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>|null  $integrity
+     */
+    private function poolCredentialIntegrityFailed(?array $integrity): bool
+    {
+        if ($integrity === null) {
+            return false;
+        }
+
+        return collect($integrity)
+            ->contains(fn (array $column): bool => ($column['state'] ?? null) === 'decrypt_failed');
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>|null  $integrity
+     */
+    private function logPoolCredentialFailure(Mt5AccountPoolEntry $entry, ?array $integrity, string $action): void
+    {
+        Log::warning('MetaApi validation found an unreadable encrypted MT5 pool credential column.', [
+            'action' => $action,
+            'model' => Mt5AccountPoolEntry::class,
+            'table' => $entry->getTable(),
+            'mt5_account_pool_entry_id' => $entry->id,
+            'login' => $entry->login,
+            'server' => $entry->server,
+            'source_file' => $entry->source_file,
+            'source_pool' => $entry->source_pool,
+            'columns' => collect($integrity ?? [])
+                ->filter(fn (array $column): bool => ($column['state'] ?? null) === 'decrypt_failed')
+                ->map(fn (array $column): array => [
+                    'column' => $column['column'] ?? null,
+                    'state' => $column['state'] ?? null,
+                    'reason' => $column['reason'] ?? null,
+                    'exception' => $column['exception'] ?? null,
+                ])
+                ->values()
+                ->all(),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function repairPoolEntryWithRawEncryption(Mt5AccountPoolEntry $entry, array $attributes, string $reason): Mt5AccountPoolEntry
+    {
+        $meta = is_array($attributes['meta'] ?? null) ? $attributes['meta'] : [];
+        $meta['metaapi_pool_repaired_at'] = now()->toIso8601String();
+        $meta['metaapi_pool_repair_reason'] = $reason;
+
+        DB::table($entry->getTable())
+            ->where('id', $entry->id)
+            ->update([
+                'login' => $attributes['login'],
+                'password' => Crypt::encryptString((string) $attributes['password']),
+                'investor_password' => filled($attributes['investor_password'] ?? null)
+                    ? Crypt::encryptString((string) $attributes['investor_password'])
+                    : null,
+                'server' => $attributes['server'],
+                'account_size' => $attributes['account_size'],
+                'currency_code' => $attributes['currency_code'],
+                'source_status' => $attributes['source_status'],
+                'source_file' => $attributes['source_file'],
+                'source_batch' => $attributes['source_batch'],
+                'source_pool' => $attributes['source_pool'],
+                'source_created_at' => $attributes['source_created_at'],
+                'is_promo' => $attributes['is_promo'],
+                'is_available' => $attributes['is_available'],
+                'meta' => json_encode($meta, JSON_UNESCAPED_SLASHES),
+                'updated_at' => now(),
+            ]);
+
+        /** @var Mt5AccountPoolEntry $repaired */
+        $repaired = Mt5AccountPoolEntry::query()->findOrFail($entry->id);
+
+        return $repaired;
+    }
+
+    private function looksLikeEncryptedCastPayload(string $value): bool
+    {
+        $decoded = base64_decode($value, true);
+
+        if ($decoded === false) {
+            return false;
+        }
+
+        $payload = json_decode($decoded, true);
+
+        return is_array($payload)
+            && array_key_exists('iv', $payload)
+            && array_key_exists('value', $payload)
+            && array_key_exists('mac', $payload);
     }
 
     private function stampMetaApiAccountId(array $credential, string $sourceFile, string $metaApiAccountId): void
@@ -1006,15 +1247,24 @@ class MetaQuotesDemoValidationService
             && data_get($poll, 'account_information.equity') !== null);
         $positionsPassed = $polls->every(fn (array $poll): bool => (bool) data_get($poll, 'positions.ok'));
         $historyPassed = $polls->every(fn (array $poll): bool => (bool) data_get($poll, 'history_orders.ok') && (bool) data_get($poll, 'history_deals.ok'));
+        $corePassed = $accountInfoPassed && $positionsPassed;
+        $validationState = match (true) {
+            $corePassed && $historyPassed => 'CONNECTED',
+            $corePassed => 'PARTIAL_CONNECTED',
+            default => 'BLOCKED',
+        };
 
         return [
+            'validation_state' => $validationState,
             'account_information' => $accountInfoPassed ? 'passed' : 'failed_or_partial',
             'positions' => $positionsPassed ? 'passed' : 'failed_or_partial',
-            'trade_history' => $historyPassed ? 'passed' : 'failed_or_partial',
+            'trade_history' => $historyPassed ? 'passed' : ($corePassed ? 'degraded_non_blocking' : 'failed_or_partial'),
             'reconnect_recovery' => $polls->count() > count($accounts) ? 'basic_multi_poll_passed' : 'single_poll_only',
-            'summary' => $accountInfoPassed && $positionsPassed && $historyPassed
-                ? 'MetaApi REST sync returned balance/equity, positions, and history for all polls.'
-                : 'One or more MetaApi terminal-state checks failed or returned incomplete data.',
+            'summary' => match ($validationState) {
+                'CONNECTED' => 'MetaApi REST sync returned balance/equity, positions, and history for all polls.',
+                'PARTIAL_CONNECTED' => 'MetaApi account info and positions are readable; history/orders are degraded and non-blocking for Phase 1A.',
+                default => 'One or more required MetaApi terminal-state checks failed or returned incomplete data.',
+            },
         ];
     }
 

@@ -3,11 +3,13 @@
 namespace App\Services\MetaApi;
 
 use DateTimeInterface;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 class MetaApiClient
 {
@@ -132,6 +134,7 @@ class MetaApiClient
             path: '/users/current/accounts/'.rawurlencode($accountId).'/history-orders/time/'.$this->time($start).'/'.$this->time($end),
             query: ['limit' => max(1, min($limit, 1000))],
             action: 'read_history_orders',
+            timeout: $this->historyTimeout(),
         );
     }
 
@@ -144,6 +147,7 @@ class MetaApiClient
             path: '/users/current/accounts/'.rawurlencode($accountId).'/history-deals/time/'.$this->time($start).'/'.$this->time($end),
             query: ['limit' => max(1, min($limit, 1000))],
             action: 'read_history_deals',
+            timeout: $this->historyTimeout(),
         );
     }
 
@@ -159,11 +163,15 @@ class MetaApiClient
             $request = $request->withHeaders(['transaction-id' => $transactionId]);
         }
 
-        $response = $payload === []
-            ? $request->post($this->url($this->provisioningBaseUrl(), $path))
-            : $request->post($this->url($this->provisioningBaseUrl(), $path), $payload);
+        try {
+            $response = $payload === []
+                ? $request->post($this->url($this->provisioningBaseUrl(), $path))
+                : $request->post($this->url($this->provisioningBaseUrl(), $path), $payload);
 
-        return $this->result($response, $action);
+            return $this->result($response, $action);
+        } catch (Throwable $exception) {
+            return $this->exceptionResult($exception, $action);
+        }
     }
 
     /**
@@ -172,23 +180,31 @@ class MetaApiClient
      */
     private function getProvisioning(string $path, array $query, string $action): array
     {
-        $response = $this->request()->get($this->url($this->provisioningBaseUrl(), $path), $query);
+        try {
+            $response = $this->request()->get($this->url($this->provisioningBaseUrl(), $path), $query);
 
-        return $this->result($response, $action);
+            return $this->result($response, $action);
+        } catch (Throwable $exception) {
+            return $this->exceptionResult($exception, $action);
+        }
     }
 
     /**
      * @param  array<string, mixed>  $query
      * @return array<string, mixed>
      */
-    private function getClient(string $path, array $query, string $action): array
+    private function getClient(string $path, array $query, string $action, ?int $timeout = null): array
     {
-        $response = $this->request()->get($this->url($this->clientBaseUrl(), $path), $query);
+        try {
+            $response = $this->request($timeout)->get($this->url($this->clientBaseUrl(), $path), $query);
 
-        return $this->result($response, $action);
+            return $this->result($response, $action);
+        } catch (Throwable $exception) {
+            return $this->exceptionResult($exception, $action);
+        }
     }
 
-    private function request(): PendingRequest
+    private function request(?int $timeout = null): PendingRequest
     {
         $token = $this->token();
 
@@ -200,7 +216,8 @@ class MetaApiClient
             throw new RuntimeException('METAAPI_TOKEN is not configured.');
         }
 
-        return Http::timeout($this->timeout())
+        return Http::timeout($timeout ?? $this->timeout())
+            ->connectTimeout($this->connectTimeout())
             ->acceptJson()
             ->asJson()
             ->withHeaders([
@@ -229,6 +246,27 @@ class MetaApiClient
             'body' => $response->body(),
             'retry_after' => $this->retryAfter($response, $payload),
             'error' => $response->successful() ? null : $this->errorMessage($response, $payload),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function exceptionResult(Throwable $exception, string $action): array
+    {
+        return [
+            'action' => $action,
+            'ok' => false,
+            'status' => 0,
+            'payload' => [
+                'exception' => $exception::class,
+                'message' => $exception instanceof ConnectionException
+                    ? 'MetaApi request connection/timeout failure.'
+                    : 'MetaApi request failed before an HTTP response was received.',
+            ],
+            'body' => '',
+            'retry_after' => null,
+            'error' => $exception->getMessage(),
         ];
     }
 
@@ -272,6 +310,16 @@ class MetaApiClient
     private function timeout(): int
     {
         return max(1, (int) config('services.metaapi.timeout', 30));
+    }
+
+    private function connectTimeout(): int
+    {
+        return max(1, (int) config('services.metaapi.connect_timeout', 10));
+    }
+
+    private function historyTimeout(): int
+    {
+        return max(1, (int) config('services.metaapi.history.timeout', $this->timeout()));
     }
 
     private function url(string $baseUrl, string $path): string

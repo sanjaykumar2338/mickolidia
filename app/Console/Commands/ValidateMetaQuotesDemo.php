@@ -33,6 +33,7 @@ class ValidateMetaQuotesDemo extends Command
         {--polls= : Terminal-state polls to run}
         {--poll-delay= : Seconds between terminal-state polls}
         {--history-days= : Days of order/deal history to validate}
+        {--history-limit= : Max history orders/deals to request per MetaApi call}
         {--force-many : Allow more than the configured safe validation count}';
 
     protected $description = 'Validate Phase 1A MetaQuotes demo creation, MetaApi registration/sync, and MT5 pool assignment assumptions.';
@@ -66,6 +67,7 @@ class ValidateMetaQuotesDemo extends Command
                 'polls' => $this->option('polls'),
                 'poll_delay' => $this->option('poll-delay'),
                 'history_days' => $this->option('history-days'),
+                'history_limit' => $this->option('history-limit'),
                 'force_many' => (bool) $this->option('force-many'),
             ]);
         } catch (RuntimeException $exception) {
