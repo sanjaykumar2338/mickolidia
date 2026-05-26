@@ -64,6 +64,18 @@ class MetaApiClient
     /**
      * @return array<string, mixed>
      */
+    public function readAccountReplicas(string $accountId): array
+    {
+        return $this->getProvisioning(
+            path: '/users/current/accounts/'.rawurlencode($accountId).'/replicas',
+            query: [],
+            action: 'read_account_replicas',
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function readAccounts(?string $query = null): array
     {
         return $this->getProvisioning(

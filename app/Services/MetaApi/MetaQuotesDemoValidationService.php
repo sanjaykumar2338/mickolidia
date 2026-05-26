@@ -66,6 +66,7 @@ class MetaQuotesDemoValidationService
                 'create_account' => 'POST /users/current/accounts',
                 'read_accounts' => 'GET /users/current/accounts?query={login}',
                 'read_account' => 'GET /users/current/accounts/{accountId}',
+                'read_account_replicas' => 'GET /users/current/accounts/{accountId}/replicas',
                 'deploy_account' => 'POST /users/current/accounts/{accountId}/deploy',
                 'read_account_information' => 'GET /users/current/accounts/{accountId}/account-information',
                 'read_positions' => 'GET /users/current/accounts/{accountId}/positions',
@@ -297,19 +298,21 @@ class MetaQuotesDemoValidationService
         $accountReport = [
             'login' => (string) $credential['login'],
             'server' => (string) $credential['server'],
+            'server_requested' => (string) $credential['server'],
+            'server_metaapi' => null,
+            'identity_warnings' => [],
+            'connection_diagnostics' => null,
             'password_present' => filled($credential['password'] ?? null),
             'investor_password_present' => filled($credential['investor_password'] ?? null),
             'metaapi_account_id' => null,
             'create_account' => null,
             'read_existing_accounts' => null,
             'read_account' => null,
+            'read_account_replicas' => null,
             'deploy' => null,
+            'pool_entry' => null,
             'polls' => [],
         ];
-
-        if ((bool) ($options['store_pool'] ?? false)) {
-            $accountReport['pool_entry'] = $this->storePoolEntry($credential, $sourceFile, $broker, $platform, $pool, $batch);
-        }
 
         $metaApiAccountId = $this->manualMetaApiAccountId($options);
 
@@ -334,18 +337,36 @@ class MetaQuotesDemoValidationService
         }
 
         if ($metaApiAccountId === null) {
+            if ((bool) ($options['store_pool'] ?? false)) {
+                $accountReport['pool_entry'] = $this->storePoolEntry($credential, $sourceFile, $broker, $platform, $pool, $batch);
+            }
+
             return $accountReport;
         }
 
         $accountReport['metaapi_account_id'] = $metaApiAccountId;
-        $this->stampMetaApiAccountId($credential, $sourceFile, $metaApiAccountId);
 
         $readAccountResult = $this->metaApi->readAccount($metaApiAccountId);
         $this->recordDebugResponse($options, 'read_account.before_deploy', $readAccountResult, $credential);
+        $replicasResult = $this->metaApi->readAccountReplicas($metaApiAccountId);
+        $this->recordDebugResponse($options, 'read_account_replicas.before_deploy', $replicasResult, $credential);
         $accountReport['read_account'] = $this->summarizeProvisioningAccount($readAccountResult);
+        $accountReport['read_account_replicas'] = $this->summarizeReplicaDiagnostics($replicasResult);
+        $accountReport['server_metaapi'] = data_get($readAccountResult, 'payload.server');
+        $accountReport['identity_warnings'] = $this->identityWarnings($credential, $readAccountResult);
+        $accountReport['connection_diagnostics'] = $this->connectionDiagnostics($readAccountResult, $replicasResult);
+
+        $effectiveCredential = $this->credentialWithMetaApiServer($credential, $readAccountResult);
+        $accountReport['server'] = (string) $effectiveCredential['server'];
+
+        if ((bool) ($options['store_pool'] ?? false)) {
+            $accountReport['pool_entry'] = $this->storePoolEntry($effectiveCredential, $sourceFile, $broker, $platform, $pool, $batch);
+        }
+
+        $this->stampMetaApiAccountId($effectiveCredential, $sourceFile, $metaApiAccountId);
 
         $deployResult = $this->metaApi->deployAccount($metaApiAccountId);
-        $this->recordDebugResponse($options, 'deploy_account', $deployResult, $credential);
+        $this->recordDebugResponse($options, 'deploy_account', $deployResult, $effectiveCredential);
         $accountReport['deploy'] = $this->summarizeResponse($deployResult);
         $accountReport['deploy']['reason'] = $this->deployFailureReason($deployResult, $metaApiAccountId);
 
@@ -356,7 +377,7 @@ class MetaQuotesDemoValidationService
                 accountId: $metaApiAccountId,
                 poll: $poll,
                 options: $options,
-                credential: $credential,
+                credential: $effectiveCredential,
                 historyDays: max(1, (int) ($options['history_days'] ?? config('services.metaapi.validation.history_days', 7))),
             );
 
@@ -507,7 +528,186 @@ class MetaQuotesDemoValidationService
             'server' => data_get($response, 'payload.server'),
             'state' => data_get($response, 'payload.state'),
             'connection_status' => data_get($response, 'payload.connectionStatus'),
+            'region' => data_get($response, 'payload.region'),
+            'connections' => data_get($response, 'payload.connections', []),
+            'replicas' => $this->replicaSummary((array) data_get($response, 'payload.replicas', [])),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function summarizeReplicaDiagnostics(array $response): array
+    {
+        $replicas = $this->replicasPayload($response);
+
+        return [
+            'status' => $response['status'] ?? null,
+            'ok' => $response['ok'] ?? null,
+            'count' => count($replicas),
+            'replicas' => $this->replicaSummary($replicas),
+            'error' => $response['error'] ?? null,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $credential
+     * @param  array<string, mixed>  $response
+     * @return list<string>
+     */
+    private function identityWarnings(array $credential, array $response): array
+    {
+        $warnings = [];
+        $metaApiLogin = (string) data_get($response, 'payload.login', '');
+        $requestedLogin = (string) ($credential['login'] ?? '');
+        $metaApiServer = (string) data_get($response, 'payload.server', '');
+        $requestedServer = (string) ($credential['server'] ?? '');
+
+        if ($metaApiLogin !== '' && $requestedLogin !== '' && $metaApiLogin !== $requestedLogin) {
+            $warnings[] = "login_mismatch: requested {$requestedLogin}, MetaApi returned {$metaApiLogin}";
+        }
+
+        if ($metaApiServer !== '' && $requestedServer !== '' && $metaApiServer !== $requestedServer) {
+            $warnings[] = $this->serverMatches($metaApiServer, $requestedServer)
+                ? "server_alias_mismatch: requested {$requestedServer}, MetaApi canonical server is {$metaApiServer}"
+                : "server_mismatch: requested {$requestedServer}, MetaApi returned {$metaApiServer}";
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function connectionDiagnostics(array $response, ?array $replicasResponse = null): array
+    {
+        $state = (string) data_get($response, 'payload.state', '');
+        $connectionStatus = (string) data_get($response, 'payload.connectionStatus', '');
+        $connections = (array) data_get($response, 'payload.connections', []);
+        $accountReplicas = (array) data_get($response, 'payload.replicas', []);
+        $replicas = $replicasResponse !== null ? $this->replicasPayload($replicasResponse) : [];
+        $replicas = $replicas !== [] ? $replicas : $accountReplicas;
+
+        return [
+            'state' => $state !== '' ? $state : null,
+            'connection_status' => $connectionStatus !== '' ? $connectionStatus : null,
+            'region' => data_get($response, 'payload.region'),
+            'connections' => $connections,
+            'replicas' => $this->replicaSummary($replicas),
+            'replica_lookup' => $replicasResponse !== null ? [
+                'status' => $replicasResponse['status'] ?? null,
+                'ok' => $replicasResponse['ok'] ?? null,
+                'error' => $replicasResponse['error'] ?? null,
+            ] : null,
+            'probable_cause' => $this->disconnectedProbableCause($state, $connectionStatus, $connections, $replicas),
+            'next_actions' => $this->disconnectedNextActions($state, $connectionStatus),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return list<array<string, mixed>>
+     */
+    private function replicasPayload(array $response): array
+    {
+        $payload = $response['payload'] ?? [];
+
+        if (is_array($payload) && array_is_list($payload)) {
+            return array_values(array_filter($payload, 'is_array'));
+        }
+
+        if (is_array(data_get($payload, 'items')) && array_is_list((array) data_get($payload, 'items'))) {
+            return array_values(array_filter((array) data_get($payload, 'items'), 'is_array'));
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $replicas
+     * @return list<array<string, mixed>>
+     */
+    private function replicaSummary(array $replicas): array
+    {
+        return collect($replicas)
+            ->filter(fn (mixed $replica): bool => is_array($replica))
+            ->map(fn (array $replica): array => [
+                '_id' => $replica['_id'] ?? $replica['id'] ?? null,
+                'region' => $replica['region'] ?? null,
+                'state' => $replica['state'] ?? null,
+                'connection_status' => $replica['connectionStatus'] ?? null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $connections
+     * @param  array<int|string, mixed>  $replicas
+     */
+    private function disconnectedProbableCause(string $state, string $connectionStatus, array $connections, array $replicas): string
+    {
+        if ($state !== 'DEPLOYED') {
+            return 'MetaApi account is not fully deployed yet; deploy/redeploy may still be required.';
+        }
+
+        if ($connectionStatus === 'CONNECTED') {
+            return 'MetaApi account is connected.';
+        }
+
+        if ($connectionStatus === 'DISCONNECTED_FROM_BROKER') {
+            return 'MetaApi terminal is running but broker connection failed. Most likely causes: wrong MT5 password, account disabled/read-only restriction, broker server mismatch, or broker-side session/security restriction.';
+        }
+
+        if ($connectionStatus === 'DISCONNECTED' && $connections === [] && $replicas === []) {
+            return 'MetaApi has deployed the cloud terminal but has not established an active MetaApi connection yet. Common causes: terminal still starting, wrong password, broker rejects login, server alias mismatch, or region/server settings need a provisioning profile.';
+        }
+
+        if ($connectionStatus === 'DISCONNECTED' && $replicas !== []) {
+            return 'MetaApi has deployed the cloud terminal but the primary account or replica still reports DISCONNECTED. Common causes: broker authentication failure, wrong MT5 main password, account disabled at broker, server mismatch, or region/provisioning settings.';
+        }
+
+        return 'MetaApi reports the account is deployed but not connected. Inspect debug response payload, connectionStatus, replica statuses, and broker authentication/server details.';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function disconnectedNextActions(string $state, string $connectionStatus): array
+    {
+        if ($connectionStatus === 'CONNECTED') {
+            return [];
+        }
+
+        $actions = [
+            'Use the exact MetaApi server value in validation and pool storage, for these accounts: FusionMarkets-Demo.',
+            'Confirm the MT5 main password logs into this exact server in a terminal; investor password alone may not be enough for full trading features.',
+            'If the account remains disconnected after deployment, redeploy from MetaApi dashboard and inspect broker authentication errors there.',
+        ];
+
+        if ($state === 'DEPLOYED') {
+            $actions[] = 'Wait/poll longer only if deployment just happened; otherwise treat persistent DISCONNECTED as a broker auth/server/provisioning issue.';
+        }
+
+        return $actions;
+    }
+
+    /**
+     * @param  array<string, mixed>  $credential
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function credentialWithMetaApiServer(array $credential, array $response): array
+    {
+        $server = trim((string) data_get($response, 'payload.server', ''));
+
+        if ($server !== '') {
+            $credential['server'] = $server;
+        }
+
+        return $credential;
     }
 
     /**
@@ -590,9 +790,6 @@ class MetaQuotesDemoValidationService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param  array<string, mixed>  $options
      * @param  array<string, mixed>  $credential
      * @return array<string, mixed>
@@ -602,6 +799,7 @@ class MetaQuotesDemoValidationService
         $end = now()->utc();
         $start = $end->copy()->subDays($historyDays);
         $provisioningAccount = $this->metaApi->readAccount($accountId);
+        $accountReplicas = $this->metaApi->readAccountReplicas($accountId);
         $accountInformation = $this->metaApi->readAccountInformation($accountId, $poll === 1);
         $positions = $this->metaApi->readPositions($accountId);
         $historyOrders = $this->metaApi->readHistoryOrdersByTimeRange($accountId, $start, $end, 100);
@@ -609,6 +807,7 @@ class MetaQuotesDemoValidationService
 
         foreach ([
             'read_account.poll_'.$poll => $provisioningAccount,
+            'read_account_replicas.poll_'.$poll => $accountReplicas,
             'read_account_information.poll_'.$poll => $accountInformation,
             'read_positions.poll_'.$poll => $positions,
             'read_history_orders.poll_'.$poll => $historyOrders,
@@ -628,8 +827,13 @@ class MetaQuotesDemoValidationService
                 'server' => data_get($provisioningAccount, 'payload.server'),
                 'state' => data_get($provisioningAccount, 'payload.state'),
                 'connection_status' => data_get($provisioningAccount, 'payload.connectionStatus'),
+                'region' => data_get($provisioningAccount, 'payload.region'),
+                'connections' => data_get($provisioningAccount, 'payload.connections', []),
+                'replicas' => $this->replicaSummary((array) data_get($provisioningAccount, 'payload.replicas', [])),
+                'diagnostics' => $this->connectionDiagnostics($provisioningAccount, $accountReplicas),
                 'error' => $provisioningAccount['error'],
             ],
+            'account_replicas' => $this->summarizeReplicaDiagnostics($accountReplicas),
             'account_information' => [
                 'status' => $accountInformation['status'],
                 'ok' => $accountInformation['ok'],

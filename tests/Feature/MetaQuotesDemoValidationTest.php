@@ -54,6 +54,7 @@ class MetaQuotesDemoValidationTest extends TestCase
                 'state' => 'DEPLOYED',
                 'connectionStatus' => 'CONNECTED',
             ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
             "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
             "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
                 'broker' => 'MetaQuotes',
@@ -217,6 +218,7 @@ class MetaQuotesDemoValidationTest extends TestCase
                 'state' => 'DEPLOYED',
                 'connectionStatus' => 'CONNECTED',
             ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
             "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
             "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
                 'balance' => 10000,
@@ -264,6 +266,7 @@ class MetaQuotesDemoValidationTest extends TestCase
                 'state' => 'DEPLOYED',
                 'connectionStatus' => 'CONNECTED',
             ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
             "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
             "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
                 'balance' => 10000,
@@ -292,6 +295,82 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('skipped_manual_metaapi_account_id', data_get($report, 'accounts.0.create_account.status'));
         $this->assertSame($accountId, data_get($report, 'accounts.0.metaapi_account_id'));
         $this->assertSame('CONNECTED', data_get($report, 'accounts.0.polls.0.provisioning_account.connection_status'));
+    }
+
+    public function test_disconnected_manual_account_reports_diagnostics_and_uses_metaapi_server(): void
+    {
+        $accountId = '7ed465cc-2315-4311-b4a1-4cc90f66e332';
+
+        Http::fake([
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}" => Http::response([
+                '_id' => $accountId,
+                'login' => '340134',
+                'server' => 'FusionMarkets-Demo',
+                'state' => 'DEPLOYED',
+                'connectionStatus' => 'DISCONNECTED',
+                'region' => 'london',
+                'connections' => [],
+            ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([
+                [
+                    '_id' => 'primary-'.$accountId,
+                    'region' => 'london',
+                    'state' => 'DEPLOYED',
+                    'connectionStatus' => 'DISCONNECTED',
+                ],
+            ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response('', 204),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/account-information*" => Http::response([
+                'message' => 'Terminal state is not synchronized yet',
+            ], 503),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/positions*" => Http::response([
+                'message' => 'Terminal state is not synchronized yet',
+            ], 503),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-orders/time/*" => Http::response([
+                'message' => 'Terminal state is not synchronized yet',
+            ], 503),
+            "https://metaapi-client.test/users/current/accounts/{$accountId}/history-deals/time/*" => Http::response([
+                'message' => 'Terminal state is not synchronized yet',
+            ], 503),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--login' => ['340134'],
+            '--password' => ['main-secret'],
+            '--investor-password' => ['investor-secret'],
+            '--server' => 'Fusion Markets Pty - FusionMarkets Demo',
+            '--metaapi-account-id' => $accountId,
+            '--store-pool' => true,
+            '--polls' => 1,
+            '--debug-metaapi' => true,
+        ])->assertSuccessful();
+
+        $entry = Mt5AccountPoolEntry::query()
+            ->where('login', '340134')
+            ->where('server', 'FusionMarkets-Demo')
+            ->firstOrFail();
+
+        $this->assertSame('main-secret', $entry->password);
+        $this->assertSame('investor-secret', $entry->investor_password);
+        $this->assertSame($accountId, data_get($entry->meta, 'metaapi_account_id'));
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('Fusion Markets Pty - FusionMarkets Demo', data_get($report, 'accounts.0.server_requested'));
+        $this->assertSame('FusionMarkets-Demo', data_get($report, 'accounts.0.server_metaapi'));
+        $this->assertSame('FusionMarkets-Demo', data_get($report, 'accounts.0.server'));
+        $this->assertContains(
+            'server_mismatch: requested Fusion Markets Pty - FusionMarkets Demo, MetaApi returned FusionMarkets-Demo',
+            data_get($report, 'accounts.0.identity_warnings'),
+        );
+        $this->assertSame('DISCONNECTED', data_get($report, 'accounts.0.connection_diagnostics.connection_status'));
+        $this->assertStringContainsString('primary account or replica still reports DISCONNECTED', data_get($report, 'accounts.0.connection_diagnostics.probable_cause'));
+        $this->assertSame(1, data_get($report, 'accounts.0.read_account_replicas.count'));
+        $this->assertSame(1, data_get($report, 'accounts.0.polls.0.account_replicas.count'));
+        $this->assertSame('london', data_get($report, 'accounts.0.polls.0.provisioning_account.region'));
+        $this->assertStringNotContainsString('main-secret', json_encode($report));
+        $this->assertStringNotContainsString('investor-secret', json_encode($report));
     }
 
     /**
