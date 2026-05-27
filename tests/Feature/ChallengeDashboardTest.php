@@ -693,6 +693,137 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
     }
 
+    public function test_metaapi_repair_merges_duplicate_canonical_pool_row_without_unique_violation(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340147', [
+            'platform_environment' => 'Fusion Markets Pty - FusionMarkets Demo',
+        ]);
+        $metaApiAccountId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+        $source = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340147',
+                'password' => 'source-secret',
+                'investor_password' => 'source-investor',
+                'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'source_status' => 'assigned',
+                'meta' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                    'legacy_server_row' => true,
+                ],
+            ]);
+        $canonical = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340147',
+            'password' => 'canonical-secret',
+            'investor_password' => 'canonical-investor',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'canonical_server_row' => true,
+            ],
+        ]);
+        $account->forceFill([
+            'meta' => array_merge((array) $account->meta, [
+                'mt5_pool_entry' => [
+                    'id' => $source->id,
+                ],
+            ]),
+        ])->save();
+
+        $exitCode = Artisan::call('wolforix:repair-metaapi-account', [
+            'login' => '340147',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('merge_duplicate_canonical_pool_entry', $output);
+        $this->assertDatabaseMissing('mt5_account_pool_entries', [
+            'id' => $source->id,
+        ]);
+
+        $canonical->refresh();
+        $account->refresh();
+
+        $this->assertSame($account->id, $canonical->allocated_trading_account_id);
+        $this->assertSame($account->user_id, $canonical->allocated_user_id);
+        $this->assertSame('FusionMarkets-Demo', $canonical->server);
+        $this->assertSame('source-secret', $canonical->password);
+        $this->assertSame('source-investor', $canonical->investor_password);
+        $this->assertSame($metaApiAccountId, data_get($canonical->meta, 'metaapi_account_id'));
+        $this->assertTrue((bool) data_get($canonical->meta, 'legacy_server_row'));
+        $this->assertTrue((bool) data_get($canonical->meta, 'canonical_server_row'));
+        $this->assertSame($source->id, data_get($canonical->meta, 'canonical_pool_merge.0.merged_from_pool_entry_id'));
+        $this->assertSame($canonical->id, data_get($account->meta, 'mt5_pool_entry.id'));
+    }
+
+    public function test_metaapi_repair_skips_canonical_normalization_when_duplicate_is_allocated_elsewhere(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340148', [
+            'platform_environment' => 'Fusion Markets Pty - FusionMarkets Demo',
+        ]);
+        $otherAccount = $account->replicate();
+        $otherAccount->forceFill([
+            'account_reference' => 'ACC-ONE-DUP-CANON',
+            'platform_login' => '340149',
+            'platform_account_id' => '340149',
+        ])->save();
+        $metaApiAccountId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+        $source = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340148',
+                'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'source_status' => 'assigned',
+                'meta' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                ],
+            ]);
+        $canonical = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340148',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $otherAccount->id,
+                'allocated_user_id' => $otherAccount->user_id,
+                'source_status' => 'assigned',
+                'meta' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                ],
+            ]);
+
+        $exitCode = Artisan::call('wolforix:repair-metaapi-account', [
+            'login' => '340148',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('normalize_pool_server_skipped_duplicate_allocated_elsewhere', $output);
+        $this->assertDatabaseHas('mt5_account_pool_entries', [
+            'id' => $source->id,
+            'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+            'allocated_trading_account_id' => $account->id,
+        ]);
+        $this->assertDatabaseHas('mt5_account_pool_entries', [
+            'id' => $canonical->id,
+            'server' => 'FusionMarkets-Demo',
+            'allocated_trading_account_id' => $otherAccount->id,
+        ]);
+    }
+
     public function test_metaapi_repair_command_reports_admin_action_when_no_trading_account_exists(): void
     {
         Mt5AccountPoolEntry::factory()->create([

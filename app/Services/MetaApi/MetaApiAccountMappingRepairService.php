@@ -29,8 +29,14 @@ class MetaApiAccountMappingRepairService
             return $this->blocked($login, ['login_missing'], ['Provide a non-empty MT5 login or account reference.']);
         }
 
-        $poolEntry = $this->poolEntryForLogin($login);
-        $resolution = $this->resolveTradingAccountForLogin($login, $poolEntry, (bool) ($options['assign'] ?? false));
+        $resolution = $this->resolveTradingAccountForLogin($login, null, (bool) ($options['assign'] ?? false));
+        $poolEntry = $resolution['account'] instanceof TradingAccount
+            ? ($this->poolEntryForAccount($resolution['account']) ?? $this->poolEntryForLogin($login))
+            : $this->poolEntryForLogin($login);
+
+        if (! $resolution['account'] instanceof TradingAccount || $poolEntry?->allocated_trading_account_id !== null) {
+            $resolution = $this->resolveTradingAccountForLogin($login, $poolEntry, (bool) ($options['assign'] ?? false));
+        }
 
         return $this->repair($login, $poolEntry, $resolution['account'], $options + [
             'dry_run' => $dryRun,
@@ -182,6 +188,13 @@ class MetaApiAccountMappingRepairService
                 ?: $poolEntry?->server
                 ?: $tradingAccount?->platform_environment
         );
+        $canonicalDuplicate = $this->canonicalDuplicateFor($poolEntry, $canonicalServer);
+        $canonicalDuplicateMerge = $this->canonicalDuplicateMergePlan($poolEntry, $canonicalDuplicate, $tradingAccount);
+
+        if ($canonicalDuplicate instanceof Mt5AccountPoolEntry && ! (bool) $canonicalDuplicateMerge['mergeable']) {
+            $warnings[] = 'normalize_pool_server_skipped_duplicate_'.$canonicalDuplicateMerge['reason'];
+            $recommendations[] = 'Canonical pool row already exists and could not be safely merged. Sync can continue, but inspect duplicate pool rows before deleting either row.';
+        }
 
         if ($poolEntry instanceof Mt5AccountPoolEntry && $tradingAccount instanceof TradingAccount && $poolAllocatedId === null) {
             $changes[] = 'assign_pool_to_trading_account';
@@ -199,8 +212,17 @@ class MetaApiAccountMappingRepairService
             $changes[] = 'persist_trading_account_login';
         }
 
-        if ($poolEntry instanceof Mt5AccountPoolEntry && $canonicalServer !== null && $poolEntry->server !== $canonicalServer) {
+        if (
+            $poolEntry instanceof Mt5AccountPoolEntry
+            && $canonicalServer !== null
+            && $poolEntry->server !== $canonicalServer
+            && (! $canonicalDuplicate instanceof Mt5AccountPoolEntry || (bool) $canonicalDuplicateMerge['mergeable'])
+        ) {
             $changes[] = 'normalize_pool_server';
+
+            if ($canonicalDuplicate instanceof Mt5AccountPoolEntry) {
+                $changes[] = 'merge_duplicate_canonical_pool_entry';
+            }
         }
 
         if ($tradingAccount instanceof TradingAccount && $canonicalServer !== null && $tradingAccount->platform_environment !== $canonicalServer) {
@@ -215,6 +237,7 @@ class MetaApiAccountMappingRepairService
             'dry_run' => $dryRun,
             'assign' => $assign,
             'pool_entry' => $this->poolEntrySummary($poolEntry),
+            'canonical_pool_duplicate' => $this->poolEntrySummary($canonicalDuplicate),
             'trading_account' => $this->tradingAccountSummary($tradingAccount),
             'trading_account_resolution' => [
                 'status' => (string) ($tradingAccountResolution['status'] ?? 'unknown'),
@@ -265,8 +288,16 @@ class MetaApiAccountMappingRepairService
                     $poolMeta['metaapi_registered_at'] = $poolMeta['metaapi_registered_at'] ?? now()->toIso8601String();
                 }
 
-                if ($canonicalServer !== null) {
-                    $lockedPoolEntry->server = $canonicalServer;
+                if ($canonicalServer !== null && $lockedPoolEntry->server !== $canonicalServer) {
+                    $lockedPoolEntry = $this->normalizePoolServerSafely(
+                        poolEntry: $lockedPoolEntry,
+                        tradingAccount: $lockedTradingAccount,
+                        canonicalServer: $canonicalServer,
+                        metaApiAccountId: $metaApiAccountId,
+                        poolMeta: $poolMeta,
+                    );
+
+                    $poolMeta = is_array($lockedPoolEntry->meta) ? $lockedPoolEntry->meta : [];
                 }
 
                 $poolMeta['metaapi_mapping_repaired_at'] = now()->toIso8601String();
@@ -287,7 +318,9 @@ class MetaApiAccountMappingRepairService
                 }
 
                 if ($lockedPoolEntry instanceof Mt5AccountPoolEntry) {
-                    data_set($accountMeta, 'mt5_pool_entry.id', data_get($accountMeta, 'mt5_pool_entry.id') ?: $lockedPoolEntry->id);
+                    data_set($accountMeta, 'mt5_pool_entry.id', $lockedPoolEntry->id);
+                    data_set($accountMeta, 'mt5_pool_entry.login', $login);
+                    data_set($accountMeta, 'mt5_pool_entry.server', $lockedPoolEntry->server);
                 }
 
                 data_set($accountMeta, 'mt5_sync.mapping_repaired_at', now()->toIso8601String());
@@ -309,7 +342,6 @@ class MetaApiAccountMappingRepairService
 
                 data_set($accountMeta, 'mt5_sync.identifier', data_get($accountMeta, 'mt5_sync.identifier') ?: $login);
                 data_set($accountMeta, 'mt5_sync.account_reference', data_get($accountMeta, 'mt5_sync.account_reference') ?: $lockedTradingAccount->account_reference);
-                data_set($accountMeta, 'mt5_pool_entry.login', data_get($accountMeta, 'mt5_pool_entry.login') ?: $login);
 
                 if ($canonicalServer !== null) {
                     $fill['platform_environment'] = $canonicalServer;
@@ -321,8 +353,8 @@ class MetaApiAccountMappingRepairService
             }
 
             Log::info('MetaApi account mapping repaired.', [
-                'login' => $login,
-                'pool_entry_id' => $lockedPoolEntry?->id,
+            'login' => $login,
+            'pool_entry_id' => $lockedPoolEntry?->id,
                 'trading_account_id' => $lockedTradingAccount?->id,
                 'changes' => $result['changes'],
             ]);
@@ -330,8 +362,13 @@ class MetaApiAccountMappingRepairService
             return $result;
         });
 
-        $written['pool_entry'] = $this->poolEntrySummary($poolEntry instanceof Mt5AccountPoolEntry ? $poolEntry->fresh() : null);
-        $written['trading_account'] = $this->tradingAccountSummary($tradingAccount instanceof TradingAccount ? $tradingAccount->fresh() : null);
+        $freshTradingAccount = $tradingAccount instanceof TradingAccount ? $tradingAccount->fresh() : null;
+        $written['trading_account'] = $this->tradingAccountSummary($freshTradingAccount);
+        $written['pool_entry'] = $this->poolEntrySummary(
+            $freshTradingAccount instanceof TradingAccount
+                ? $this->poolEntryForAccount($freshTradingAccount)
+                : ($poolEntry instanceof Mt5AccountPoolEntry ? $poolEntry->fresh() : null)
+        );
 
         return $written;
     }
@@ -390,11 +427,24 @@ class MetaApiAccountMappingRepairService
             }
         }
 
+        $allocatedEntry = Mt5AccountPoolEntry::query()
+            ->where('allocated_trading_account_id', $account->id)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->first();
+
+        if ($allocatedEntry instanceof Mt5AccountPoolEntry) {
+            return $allocatedEntry;
+        }
+
+        $login = (string) ($account->platform_login ?: $account->platform_account_id);
+
+        if ($login === '') {
+            return null;
+        }
+
         return Mt5AccountPoolEntry::query()
-            ->where(function ($query) use ($account): void {
-                $query->where('allocated_trading_account_id', $account->id)
-                    ->orWhere('login', (string) ($account->platform_login ?: $account->platform_account_id));
-            })
+            ->where('login', $login)
             ->latest('allocated_at')
             ->latest('id')
             ->first();
@@ -621,6 +671,183 @@ class MetaApiAccountMappingRepairService
         }
 
         return $server;
+    }
+
+    private function canonicalDuplicateFor(?Mt5AccountPoolEntry $poolEntry, ?string $canonicalServer): ?Mt5AccountPoolEntry
+    {
+        if (! $poolEntry instanceof Mt5AccountPoolEntry || $canonicalServer === null || $poolEntry->server === $canonicalServer) {
+            return null;
+        }
+
+        return Mt5AccountPoolEntry::query()
+            ->where('login', $poolEntry->login)
+            ->where('server', $canonicalServer)
+            ->whereKeyNot($poolEntry->id)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * @return array{mergeable: bool, reason: string}
+     */
+    private function canonicalDuplicateMergePlan(
+        ?Mt5AccountPoolEntry $source,
+        ?Mt5AccountPoolEntry $target,
+        ?TradingAccount $tradingAccount,
+    ): array {
+        if (! $source instanceof Mt5AccountPoolEntry || ! $target instanceof Mt5AccountPoolEntry) {
+            return ['mergeable' => false, 'reason' => 'not_found'];
+        }
+
+        $expectedAccountId = $tradingAccount?->id
+            ?? $source->allocated_trading_account_id
+            ?? $target->allocated_trading_account_id;
+
+        foreach ([$source, $target] as $entry) {
+            if (
+                $entry->allocated_trading_account_id !== null
+                && $expectedAccountId !== null
+                && (int) $entry->allocated_trading_account_id !== (int) $expectedAccountId
+            ) {
+                return ['mergeable' => false, 'reason' => 'allocated_elsewhere'];
+            }
+        }
+
+        $sourceMetaApiId = (string) data_get($source->meta, 'metaapi_account_id');
+        $targetMetaApiId = (string) data_get($target->meta, 'metaapi_account_id');
+
+        if (
+            $this->looksLikeMetaApiAccountId($sourceMetaApiId)
+            && $this->looksLikeMetaApiAccountId($targetMetaApiId)
+            && $sourceMetaApiId !== $targetMetaApiId
+        ) {
+            return ['mergeable' => false, 'reason' => 'metaapi_account_id_mismatch'];
+        }
+
+        return ['mergeable' => true, 'reason' => 'safe'];
+    }
+
+    private function normalizePoolServerSafely(
+        Mt5AccountPoolEntry $poolEntry,
+        TradingAccount $tradingAccount,
+        string $canonicalServer,
+        ?string $metaApiAccountId,
+        array $poolMeta,
+    ): Mt5AccountPoolEntry {
+        $duplicate = Mt5AccountPoolEntry::query()
+            ->lockForUpdate()
+            ->where('login', $poolEntry->login)
+            ->where('server', $canonicalServer)
+            ->whereKeyNot($poolEntry->id)
+            ->first();
+
+        if (! $duplicate instanceof Mt5AccountPoolEntry) {
+            $poolEntry->server = $canonicalServer;
+
+            return $poolEntry;
+        }
+
+        $plan = $this->canonicalDuplicateMergePlan($poolEntry, $duplicate, $tradingAccount);
+
+        if (! (bool) $plan['mergeable']) {
+            Log::warning('MetaApi pool server normalization skipped because canonical duplicate could not be merged.', [
+                'login' => $poolEntry->login,
+                'source_pool_entry_id' => $poolEntry->id,
+                'canonical_pool_entry_id' => $duplicate->id,
+                'reason' => $plan['reason'],
+            ]);
+
+            return $poolEntry;
+        }
+
+        return $this->mergeCanonicalPoolDuplicate(
+            source: $poolEntry,
+            target: $duplicate,
+            tradingAccount: $tradingAccount,
+            canonicalServer: $canonicalServer,
+            metaApiAccountId: $metaApiAccountId,
+            sourceMeta: $poolMeta,
+        );
+    }
+
+    private function mergeCanonicalPoolDuplicate(
+        Mt5AccountPoolEntry $source,
+        Mt5AccountPoolEntry $target,
+        TradingAccount $tradingAccount,
+        string $canonicalServer,
+        ?string $metaApiAccountId,
+        array $sourceMeta,
+    ): Mt5AccountPoolEntry {
+        $targetMeta = is_array($target->meta) ? $target->meta : [];
+        $mergedMeta = array_replace_recursive($targetMeta, $sourceMeta);
+        $mergedMeta['canonical_pool_merge'] = array_merge((array) data_get($mergedMeta, 'canonical_pool_merge', []), [[
+            'merged_from_pool_entry_id' => $source->id,
+            'merged_from_server' => $source->server,
+            'merged_into_pool_entry_id' => $target->id,
+            'merged_into_server' => $canonicalServer,
+            'merged_at' => now()->toIso8601String(),
+            'allocated_trading_account_id' => $source->allocated_trading_account_id,
+            'source_status' => $source->source_status,
+            'source_file' => $source->source_file,
+            'source_batch' => $source->source_batch,
+        ]]);
+
+        if ($this->looksLikeMetaApiAccountId((string) $metaApiAccountId)) {
+            $mergedMeta['metaapi_account_id'] = $metaApiAccountId;
+        }
+
+        $sourceCredentials = $this->rawCredentialUpdates($source);
+
+        $target->forceFill([
+            'allocated_trading_account_id' => $source->allocated_trading_account_id ?: $target->allocated_trading_account_id ?: $tradingAccount->id,
+            'allocated_user_id' => $source->allocated_user_id ?: $target->allocated_user_id ?: $tradingAccount->user_id,
+            'allocated_at' => $source->allocated_at ?: $target->allocated_at ?: now(),
+            'is_available' => false,
+            'source_status' => 'assigned',
+            'account_size' => $source->account_size ?: $target->account_size,
+            'currency_code' => $source->currency_code ?: $target->currency_code,
+            'meta' => $mergedMeta,
+        ])->save();
+
+        if ($sourceCredentials !== []) {
+            DB::table($target->getTable())
+                ->where('id', $target->id)
+                ->update($sourceCredentials);
+        }
+
+        $source->delete();
+
+        Log::info('MetaApi duplicate canonical pool row merged.', [
+            'login' => $target->login,
+            'source_pool_entry_id' => $source->id,
+            'canonical_pool_entry_id' => $target->id,
+            'trading_account_id' => $tradingAccount->id,
+        ]);
+
+        return $target->fresh() ?? $target;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function rawCredentialUpdates(Mt5AccountPoolEntry $entry): array
+    {
+        $updates = [];
+
+        foreach (['password', 'investor_password'] as $column) {
+            if (! array_key_exists($column, $entry->getAttributes())) {
+                continue;
+            }
+
+            $rawValue = $entry->getRawOriginal($column);
+
+            if (filled($rawValue)) {
+                $updates[$column] = (string) $rawValue;
+            }
+        }
+
+        return $updates;
     }
 
     /**
