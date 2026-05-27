@@ -33,6 +33,7 @@ class DiagnoseMetaApiSync extends Command
         $poolEntry = (array) ($diagnostic['pool_entry'] ?? []);
         $syncLog = (array) ($diagnostic['latest_sync_log'] ?? []);
         $snapshot = (array) ($diagnostic['latest_snapshot'] ?? []);
+        $mapping = (array) data_get($diagnostic, 'mapping_diagnostics.mapping', []);
 
         $this->table(['Field', 'Value'], [
             ['Login', $login],
@@ -55,7 +56,14 @@ class DiagnoseMetaApiSync extends Command
             ['Latest snapshot', (string) ($snapshot['id'] ?? '-')],
             ['Snapshot balance', (string) ($snapshot['balance'] ?? '-')],
             ['Snapshot equity', (string) ($snapshot['equity'] ?? '-')],
+            ['Mapping mismatch', ! empty($mapping['mapping_mismatch']) ? 'yes' : 'no'],
+            ['Missing assignment', ! empty($mapping['missing_assignment']) ? 'yes' : 'no'],
+            ['Missing MetaApi id', ! empty($mapping['missing_metaapi_id']) ? 'yes' : 'no'],
         ]);
+
+        $this->printList('Repair recommendation', (array) data_get($diagnostic, 'mapping_diagnostics.recommendations', []));
+        $this->printList('Mapping warnings', (array) data_get($diagnostic, 'mapping_diagnostics.warnings', []));
+        $this->printList('Mapping errors', (array) data_get($diagnostic, 'mapping_diagnostics.errors', []));
 
         if ((bool) $this->option('json')) {
             $this->newLine();
@@ -63,5 +71,22 @@ class DiagnoseMetaApiSync extends Command
         }
 
         return $account !== [] ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * @param  array<int, mixed>  $items
+     */
+    private function printList(string $label, array $items): void
+    {
+        if ($items === []) {
+            return;
+        }
+
+        $this->newLine();
+        $this->info($label);
+
+        foreach ($items as $item) {
+            $this->line('- '.(string) $item);
+        }
     }
 }

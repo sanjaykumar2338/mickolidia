@@ -598,6 +598,142 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_metaapi_repair_command_assigns_pool_entry_and_persists_uuid_without_overwriting(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340140', [
+            'platform_environment' => 'Fusion Markets Pty - FusionMarkets Demo',
+        ]);
+        $metaApiAccountId = '66666666-6666-4666-8666-666666666666';
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340140',
+            'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => $metaApiAccountId,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:repair-metaapi-account', [
+            'login' => '340140',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('MetaApi account mapping repair', $output);
+        $this->assertStringContainsString('assign_pool_to_trading_account', $output);
+        $this->assertStringContainsString('normalize_pool_server', $output);
+
+        $entry = Mt5AccountPoolEntry::query()->where('login', '340140')->firstOrFail();
+        $account->refresh();
+
+        $this->assertSame($account->id, $entry->allocated_trading_account_id);
+        $this->assertSame($account->user_id, $entry->allocated_user_id);
+        $this->assertFalse((bool) $entry->is_available);
+        $this->assertSame('assigned', $entry->source_status);
+        $this->assertSame('FusionMarkets-Demo', $entry->server);
+        $this->assertSame('FusionMarkets-Demo', $account->platform_environment);
+        $this->assertSame($metaApiAccountId, data_get($entry->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+        $this->assertSame($entry->id, data_get($account->meta, 'mt5_pool_entry.id'));
+    }
+
+    public function test_metaapi_sync_auto_heals_pool_uuid_into_trading_account_before_sync(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340141');
+        $metaApiAccountId = '77777777-7777-4777-8777-777777777777';
+        $account->forceFill([
+            'meta' => array_merge((array) $account->meta, [
+                'metaapi_account_id' => 'legacy-local-id',
+                'mt5_sync' => [
+                    'metaapi_account_id' => 'legacy-local-id',
+                ],
+            ]),
+        ])->save();
+
+        Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340141',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'meta' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                ],
+            ]);
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10012,
+            'equity' => 10022,
+            'login' => '340141',
+        ]);
+
+        $result = app(MetaApiLiveSyncService::class)->syncByLogin('340141');
+
+        $account->refresh();
+
+        $this->assertSame('success', $result['status']);
+        $this->assertSame('CONNECTED', $result['validation_state']);
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+        $this->assertSame('10012.00', (string) $account->balance);
+        $this->assertSame('10022.00', (string) $account->equity);
+        $this->assertDatabaseMissing('trading_account_sync_logs', [
+            'trading_account_id' => $account->id,
+            'error_message' => 'metaapi_account_id_missing',
+        ]);
+    }
+
+    public function test_metaapi_sync_auto_heals_missing_uuid_from_metaapi_lookup(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('335400');
+        $metaApiAccountId = 'ed749805-4cad-4622-a0bc-3b1c8dd241d2';
+
+        Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '335400',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'meta' => [
+                    'source' => 'missing_metaapi_id_test',
+                ],
+            ]);
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10033,
+            'equity' => 10044,
+            'login' => '335400',
+        ], includeAccountsLookup: true);
+
+        $result = app(MetaApiLiveSyncService::class)->syncByLogin('335400');
+
+        $entry = Mt5AccountPoolEntry::query()->where('login', '335400')->firstOrFail();
+        $account->refresh();
+
+        $this->assertSame('success', $result['status']);
+        $this->assertSame($metaApiAccountId, $result['metaapi_account_id']);
+        $this->assertSame($metaApiAccountId, data_get($entry->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+        $this->assertSame('10033.00', (string) $account->balance);
+        $this->assertSame('10044.00', (string) $account->equity);
+        $this->assertDatabaseMissing('trading_account_sync_logs', [
+            'trading_account_id' => $account->id,
+            'error_message' => 'metaapi_account_id_missing',
+        ]);
+    }
+
     public function test_metaapi_daily_drawdown_breach_from_equity_locks_account_and_notifies(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-05-26 09:10:00'));
@@ -2859,6 +2995,7 @@ class ChallengeDashboardTest extends TestCase
         array $orders = [],
         array $account = [],
         bool $historyThrows = false,
+        bool $includeAccountsLookup = false,
     ): void {
         $this->enableMetaApiForTests();
 
@@ -2870,7 +3007,7 @@ class ChallengeDashboardTest extends TestCase
             ? fn () => throw new ConnectionException('cURL error 28: SSL connection timeout')
             : Http::response($deals);
 
-        Http::fake([
+        $fakes = [
             "https://metaapi-provisioning.test/users/current/accounts/{$metaApiAccountId}" => Http::response(array_merge([
                 '_id' => $metaApiAccountId,
                 'login' => $login,
@@ -2883,7 +3020,22 @@ class ChallengeDashboardTest extends TestCase
             "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/positions*" => Http::response($positions),
             "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/history-orders/time/*" => $historyOrdersResponse,
             "https://metaapi-client.test/users/current/accounts/{$metaApiAccountId}/history-deals/time/*" => $historyDealsResponse,
-        ]);
+        ];
+
+        if ($includeAccountsLookup) {
+            $fakes["https://metaapi-provisioning.test/users/current/accounts?query={$login}"] = Http::response([
+                array_merge([
+                    '_id' => $metaApiAccountId,
+                    'login' => $login,
+                    'server' => 'FusionMarkets-Demo',
+                    'state' => 'DEPLOYED',
+                    'connectionStatus' => 'CONNECTED',
+                    'region' => 'london',
+                ], $account),
+            ]);
+        }
+
+        Http::fake($fakes);
     }
 
     private function enableMetaApiForTests(): void

@@ -16,6 +16,7 @@ class MetaApiLiveSyncService
     public function __construct(
         private readonly MetaApiClient $metaApi,
         private readonly TradingAccountSnapshotApplyService $snapshotApplyService,
+        private readonly MetaApiAccountMappingRepairService $mappingRepairService,
     ) {
     }
 
@@ -25,10 +26,16 @@ class MetaApiLiveSyncService
      */
     public function syncByLogin(string $login, array $options = []): array
     {
+        $repair = $this->mappingRepairService->repairByLogin($login, [
+            'metaapi_account_id' => $this->manualMetaApiAccountId($options),
+            'allow_api_lookup' => true,
+        ]);
         $account = $this->findTradingAccountByLogin($login);
 
         if (! $account instanceof TradingAccount) {
-            throw new RuntimeException("No assigned MT5 trading account was found for login {$login}.");
+            $recommendation = implode(' ', (array) ($repair['recommendations'] ?? []));
+
+            throw new RuntimeException(trim("No assigned MT5 trading account was found for login {$login}. {$recommendation}"));
         }
 
         return $this->syncAccount($account, $options);
@@ -43,12 +50,19 @@ class MetaApiLiveSyncService
         $startedAt = now();
         $account = $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account;
         $login = (string) ($account->platform_login ?: $account->platform_account_id ?: $account->account_reference);
+        $repair = $this->mappingRepairService->repairAccount($account, [
+            'metaapi_account_id' => $this->manualMetaApiAccountId($options),
+            'allow_api_lookup' => true,
+        ]);
+        $account = $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account;
         $metaApiAccountId = $this->manualMetaApiAccountId($options)
+            ?? ($this->looksLikeMetaApiAccountId((string) ($repair['metaapi_account_id'] ?? null)) ? (string) $repair['metaapi_account_id'] : null)
             ?? $this->metaApiAccountIdFor($account);
 
         $log = $this->createSyncLog($account, $startedAt, [
             'login' => $login,
             'metaapi_account_id' => $metaApiAccountId,
+            'mapping_repair' => $repair,
         ]);
 
         $this->markSyncStarted($account, $startedAt);
@@ -64,6 +78,7 @@ class MetaApiLiveSyncService
                 metaApi: [
                     'login' => $login,
                     'metaapi_account_id' => $metaApiAccountId,
+                    'mapping_repair' => $repair,
                 ],
             );
         }
@@ -196,7 +211,8 @@ class MetaApiLiveSyncService
             ->orderBy('id')
             ->limit($limit * 5)
             ->get()
-            ->filter(fn (TradingAccount $account): bool => $this->looksLikeMetaApiAccountId((string) $this->metaApiAccountIdFor($account)))
+            ->filter(fn (TradingAccount $account): bool => $this->looksLikeMetaApiAccountId((string) $this->metaApiAccountIdFor($account))
+                || $this->poolEntryForAccount($account) instanceof Mt5AccountPoolEntry)
             ->take($limit)
             ->values();
 
@@ -231,6 +247,10 @@ class MetaApiLiveSyncService
      */
     public function diagnoseByLogin(string $login): array
     {
+        $mappingDiagnostic = $this->mappingRepairService->repairByLogin($login, [
+            'dry_run' => true,
+            'allow_api_lookup' => true,
+        ]);
         $account = $this->findTradingAccountByLogin($login);
         $poolEntry = $this->poolEntryForLogin($login, $account);
         $syncLog = $account?->syncLogs()->latest('id')->first();
@@ -279,6 +299,7 @@ class MetaApiLiveSyncService
                 'equity' => $snapshot->equity,
                 'profit_loss' => $snapshot->profit_loss,
             ] : null,
+            'mapping_diagnostics' => $mappingDiagnostic,
         ];
     }
 
