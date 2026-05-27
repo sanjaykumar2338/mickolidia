@@ -9,6 +9,7 @@ class TestTelegramWebhook extends Command
 {
     protected $signature = 'wolforix:test-telegram-webhook
         {--send : Send a test payload when Telegram is configured and enabled}
+        {--dry-run : Validate provider readiness without sending}
         {--json : Print JSON output}';
 
     protected $description = 'Check Phase 2 Telegram webhook readiness without exposing bot secrets.';
@@ -20,17 +21,21 @@ class TestTelegramWebhook extends Command
         $chatId = (string) config('services.metaapi.events.telegram_chat_id', '');
         $configured = filled($token) && filled($chatId);
         $send = (bool) $this->option('send');
+        $dryRun = (bool) $this->option('dry-run') || ! $send;
         $result = [
             'provider' => 'telegram',
             'prepared' => true,
             'enabled' => $enabled,
             'configured' => $configured,
+            'dry_run' => $dryRun,
             'sent' => false,
-            'status' => 'not_sent',
-            'message' => 'Telegram provider is prepared. Use --send only after enabling/configuring it.',
+            'status' => $dryRun ? 'dry_run' : 'not_sent',
+            'message' => $dryRun
+                ? 'Telegram provider readiness validated without sending.'
+                : 'Telegram provider is prepared. Use --send only after enabling/configuring it.',
         ];
 
-        if ($send && $enabled && $configured) {
+        if ($send && ! $dryRun && $enabled && $configured) {
             $response = Http::timeout(10)->post("https://api.telegram.org/bot{$token}/sendMessage", [
                 'chat_id' => $chatId,
                 'text' => 'Wolforix Phase 2 Telegram readiness test. No account secrets are included.',
@@ -49,6 +54,7 @@ class TestTelegramWebhook extends Command
             ['Prepared', ! empty($result['prepared']) ? 'yes' : 'no'],
             ['Enabled', ! empty($result['enabled']) ? 'yes' : 'no'],
             ['Configured', ! empty($result['configured']) ? 'yes' : 'no'],
+            ['Dry run', ! empty($result['dry_run']) ? 'yes' : 'no'],
             ['Sent', ! empty($result['sent']) ? 'yes' : 'no'],
             ['Status', (string) $result['status']],
             ['Message', (string) $result['message']],

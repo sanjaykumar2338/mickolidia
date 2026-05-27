@@ -1879,7 +1879,7 @@ class DashboardController extends Controller
     private function metaApiOnboarding(TradingAccount $account): array
     {
         $state = (string) data_get($account->meta, 'metaapi_onboarding.state', $this->defaultOnboardingState($account));
-        $ready = (bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade', in_array($state, ['ready_to_trade', 'active'], true));
+        $ready = $this->onboardingReadyToTrade($account, $state);
         $tone = match ($state) {
             'ready_to_trade', 'active' => 'emerald',
             'breached', 'disabled' => 'rose',
@@ -1894,6 +1894,45 @@ class DashboardController extends Controller
             'message' => $this->metaApiOnboardingMessage($state, $ready),
             'ready_to_trade' => $ready,
         ];
+    }
+
+    private function onboardingReadyToTrade(TradingAccount $account, string $state): bool
+    {
+        if (! in_array($state, ['ready_to_trade', 'active'], true)) {
+            return false;
+        }
+
+        if ($account->challenge_status === 'failed'
+            || filled((string) $account->failure_reason)
+            || (bool) $account->final_state_locked
+            || (bool) $account->trading_blocked
+        ) {
+            return false;
+        }
+
+        if (in_array((string) $account->platform_status, ['stale', 'disconnected', 'disabled', 'disable_requested', 'disable_pending_ack', 'disable_failed'], true)) {
+            return false;
+        }
+
+        if ((string) $account->sync_status === 'error') {
+            return false;
+        }
+
+        $syncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health');
+        $coreHealth = (string) data_get($account->meta, 'metaapi_lifecycle.core_sync_health', $syncHealth);
+
+        if (in_array($syncHealth, ['stale', 'disconnected'], true) || in_array($coreHealth, ['stale', 'disconnected'], true)) {
+            return false;
+        }
+
+        $lastSync = $account->last_synced_at
+            ?? data_get($account->meta, 'mt5_sync.last_successful_metric_update_at')
+            ?? data_get($account->meta, 'mt5_sync.last_synced_at');
+
+        return ((string) data_get($account->meta, 'metaapi_lifecycle.state') === 'connected' || (string) $account->platform_status === 'connected')
+            && $lastSync !== null
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
     }
 
     private function defaultLifecycleState(TradingAccount $account): string

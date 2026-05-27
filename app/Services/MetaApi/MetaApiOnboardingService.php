@@ -170,13 +170,21 @@ class MetaApiOnboardingService
         }
 
         $retry = (array) data_get($onboarding, 'retry', []);
+        $state = (string) ($onboarding['state'] ?? $this->inferState($account, $poolEntry));
+        $readyToTrade = $this->readyToTrade($account, $state, $lastSync);
+        $storedReadyToTrade = (bool) data_get($onboarding, 'ready_to_trade', false);
+
+        if ($state === self::STATE_READY_TO_TRADE && $readyToTrade !== $storedReadyToTrade) {
+            $warnings[] = 'ready_to_trade_flag_inconsistent';
+            $recommendations[] = 'Readiness is being derived from lifecycle state and readable sync data; the next successful sync will refresh the stored flag.';
+        }
 
         return [
             'trading_account_id' => $account->id,
             'login' => (string) ($account->platform_login ?: $account->platform_account_id ?: $account->account_reference),
             'account_reference' => $account->account_reference,
-            'onboarding_state' => (string) ($onboarding['state'] ?? $this->inferState($account, $poolEntry)),
-            'onboarding_state_label' => str((string) ($onboarding['state'] ?? $this->inferState($account, $poolEntry)))->replace('_', ' ')->title()->toString(),
+            'onboarding_state' => $state,
+            'onboarding_state_label' => str($state)->replace('_', ' ')->title()->toString(),
             'assignment_status' => [
                 'assigned' => $poolEntry instanceof Mt5AccountPoolEntry,
                 'pool_entry_id' => $poolEntry?->id,
@@ -186,7 +194,8 @@ class MetaApiOnboardingService
             'sync_readiness' => [
                 'metaapi_account_id' => $this->metaApiAccountId($account, $poolEntry),
                 'last_sync_at' => optional($lastSync)->toIso8601String(),
-                'ready_to_trade' => (bool) data_get($onboarding, 'ready_to_trade', false),
+                'ready_to_trade' => $readyToTrade,
+                'stored_ready_to_trade' => $storedReadyToTrade,
                 'first_sync_received_at' => data_get($onboarding, 'first_sync_received_at'),
             ],
             'lifecycle_readiness' => [
@@ -295,6 +304,48 @@ class MetaApiOnboardingService
         }
 
         return self::STATE_PURCHASED;
+    }
+
+    private function readyToTrade(TradingAccount $account, string $state, ?Carbon $lastSync = null): bool
+    {
+        if (! in_array($state, [self::STATE_READY_TO_TRADE, self::STATE_ACTIVE], true)) {
+            return false;
+        }
+
+        if ($this->isFinalStateLocked($account)) {
+            return false;
+        }
+
+        if (in_array((string) $account->platform_status, ['stale', 'disconnected', 'disabled', 'disable_requested', 'disable_pending_ack', 'disable_failed'], true)) {
+            return false;
+        }
+
+        if ((string) $account->sync_status === 'error') {
+            return false;
+        }
+
+        $lifecycleState = (string) data_get($account->meta, 'metaapi_lifecycle.state');
+        $syncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health');
+        $coreHealth = (string) data_get($account->meta, 'metaapi_lifecycle.core_sync_health', $syncHealth);
+
+        if (in_array($syncHealth, ['stale', 'disconnected'], true) || in_array($coreHealth, ['stale', 'disconnected'], true)) {
+            return false;
+        }
+
+        $syncConnected = $lifecycleState === 'connected' || (string) $account->platform_status === 'connected';
+        $healthReadable = in_array($syncHealth, ['connected', 'recovered', 'degraded'], true)
+            || in_array($coreHealth, ['connected', 'degraded'], true)
+            || $syncHealth === '';
+
+        $lastSync ??= $this->dateValue($account->last_synced_at)
+            ?? $this->dateValue(data_get($account->meta, 'mt5_sync.last_successful_metric_update_at'))
+            ?? $this->dateValue(data_get($account->meta, 'mt5_sync.last_synced_at'));
+
+        return $syncConnected
+            && $healthReadable
+            && $lastSync instanceof Carbon
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
     }
 
     private function finalState(TradingAccount $account): string

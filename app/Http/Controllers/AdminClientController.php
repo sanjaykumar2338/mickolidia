@@ -890,7 +890,7 @@ class AdminClientController extends Controller
             'breached' => $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count(),
             'sync_issues' => $accounts->filter(fn (TradingAccount $account): bool => $account->sync_status === 'error' || filled((string) $account->sync_error))->count(),
             'onboarding_queue' => $accounts->filter(fn (TradingAccount $account): bool => in_array((string) data_get($account->meta, 'metaapi_onboarding.state'), ['purchased', 'account_assigned', 'waiting_metaapi_connection', 'first_sync_received'], true))->count(),
-            'ready_to_trade' => $accounts->filter(fn (TradingAccount $account): bool => (bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade', false))->count(),
+            'ready_to_trade' => $accounts->filter(fn (TradingAccount $account): bool => $this->metaApiReadyToTrade($account))->count(),
             'onboarding_failures' => $accounts->filter(fn (TradingAccount $account): bool => data_get($account->meta, 'metaapi_onboarding.retry.last_error') !== null)->count(),
             'pool_available' => Mt5AccountPoolEntry::query()
                 ->where('is_available', true)
@@ -901,6 +901,47 @@ class AdminClientController extends Controller
                 ->whereNull('allocated_trading_account_id')
                 ->count(),
         ];
+    }
+
+    private function metaApiReadyToTrade(TradingAccount $account): bool
+    {
+        $state = (string) data_get($account->meta, 'metaapi_onboarding.state');
+
+        if (! in_array($state, ['ready_to_trade', 'active'], true)) {
+            return false;
+        }
+
+        if ($account->challenge_status === 'failed'
+            || filled((string) $account->failure_reason)
+            || (bool) $account->final_state_locked
+            || (bool) $account->trading_blocked
+        ) {
+            return false;
+        }
+
+        if (in_array((string) $account->platform_status, ['stale', 'disconnected', 'disabled', 'disable_requested', 'disable_pending_ack', 'disable_failed'], true)) {
+            return false;
+        }
+
+        if ((string) $account->sync_status === 'error') {
+            return false;
+        }
+
+        $syncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health');
+        $coreHealth = (string) data_get($account->meta, 'metaapi_lifecycle.core_sync_health', $syncHealth);
+
+        if (in_array($syncHealth, ['stale', 'disconnected'], true) || in_array($coreHealth, ['stale', 'disconnected'], true)) {
+            return false;
+        }
+
+        $lastSync = $account->last_synced_at
+            ?? data_get($account->meta, 'mt5_sync.last_successful_metric_update_at')
+            ?? data_get($account->meta, 'mt5_sync.last_synced_at');
+
+        return ((string) data_get($account->meta, 'metaapi_lifecycle.state') === 'connected' || (string) $account->platform_status === 'connected')
+            && $lastSync !== null
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
     }
 
     private function clientTableRow(User $user): array

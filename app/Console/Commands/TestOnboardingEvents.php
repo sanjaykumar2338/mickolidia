@@ -11,6 +11,7 @@ class TestOnboardingEvents extends Command
 {
     protected $signature = 'wolforix:test-onboarding-events
         {login : MT5 login/account reference to test}
+        {--dry-run : Show event readiness without writing test records}
         {--json : Print JSON output}';
 
     protected $description = 'Record safe Phase 2 onboarding event hook test records for future provider integrations.';
@@ -38,24 +39,29 @@ class TestOnboardingEvents extends Command
             'onboarding_completed',
         ];
 
-        foreach ($eventTypes as $eventType) {
-            $account = $onboardingService->recordEvent($account, 'test_'.$eventType, [
-                'message' => "Provider hook test prepared for {$eventType}.",
-                'login' => $login,
-                'external_delivery' => 'not_sent_by_test_command',
-            ], 'test_'.$eventType);
+        if (! (bool) $this->option('dry-run')) {
+            foreach ($eventTypes as $eventType) {
+                $account = $onboardingService->recordEvent($account, 'test_'.$eventType, [
+                    'message' => "Provider hook test prepared for {$eventType}.",
+                    'login' => $login,
+                    'external_delivery' => 'not_sent_by_test_command',
+                ], 'test_'.$eventType);
+            }
         }
 
         $diagnostic = $onboardingService->diagnose($account);
 
         $this->info('Phase 2 onboarding event hook test');
-        $this->line('No external Discord, Telegram, email, or CRM webhook was sent by this test command.');
+        $this->line((bool) $this->option('dry-run')
+            ? 'Dry run only. No event records or external provider calls were written.'
+            : 'No external Discord, Telegram, email, or CRM webhook was sent by this test command.');
         $this->line('Prepared providers: email, discord, telegram, crm_webhook.');
 
         if ((bool) $this->option('json')) {
             $this->newLine();
             $this->line(json_encode([
                 'login' => $login,
+                'dry_run' => (bool) $this->option('dry-run'),
                 'event_types' => $eventTypes,
                 'diagnostic' => $diagnostic,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '[diagnostic unavailable]');

@@ -797,6 +797,122 @@ class ChallengeDashboardTest extends TestCase
         $this->assertContains('test_onboarding_completed', $events);
     }
 
+    public function test_phase_2b_ready_to_trade_is_derived_from_connected_readable_lifecycle(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-27 10:00:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340164', [
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'platform_status' => 'connected',
+                'sync_status' => 'success',
+                'sync_source' => 'metaapi',
+                'last_synced_at' => now(),
+                'balance' => 10050,
+                'equity' => 10075,
+            ]);
+            $this->attachMetaApiPoolEntry($account, 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+            $meta = is_array($account->fresh()->meta) ? $account->fresh()->meta : [];
+            data_set($meta, 'metaapi_onboarding.state', 'ready_to_trade');
+            data_set($meta, 'metaapi_onboarding.ready_to_trade', false);
+            data_set($meta, 'metaapi_lifecycle.state', 'connected');
+            data_set($meta, 'metaapi_lifecycle.sync_health', 'connected');
+            data_set($meta, 'metaapi_lifecycle.core_sync_health', 'connected');
+            data_set($meta, 'mt5_sync.status', 'connected');
+            data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->toIso8601String());
+            $account->forceFill(['meta' => $meta])->save();
+
+            $diagnostic = app(\App\Services\MetaApi\MetaApiOnboardingService::class)->diagnose($account);
+
+            $this->assertTrue(data_get($diagnostic, 'sync_readiness.ready_to_trade'));
+            $this->assertFalse(data_get($diagnostic, 'sync_readiness.stored_ready_to_trade'));
+            $this->assertContains('ready_to_trade_flag_inconsistent', $diagnostic['warnings']);
+
+            $this->assertSame(0, Artisan::call('wolforix:diagnose-onboarding', [
+                'login' => '340164',
+                '--json' => true,
+            ]));
+            $this->assertStringContainsString('"ready_to_trade": true', Artisan::output());
+
+            $this->assertSame(0, Artisan::call('wolforix:diagnose-lifecycle-readiness', [
+                'login' => '340164',
+                '--json' => true,
+            ]));
+            $this->assertStringContainsString('"ready_to_trade": true', Artisan::output());
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard.accounts'))
+                ->assertOk()
+                ->assertSee('Ready To Trade')
+                ->assertSee('Ready to trade')
+                ->assertSee('Yes');
+
+            data_set($meta, 'metaapi_lifecycle.sync_health', 'stale');
+            data_set($meta, 'metaapi_lifecycle.core_sync_health', 'stale');
+            $account->forceFill([
+                'platform_status' => 'connected',
+                'meta' => $meta,
+            ])->save();
+
+            $staleDiagnostic = app(\App\Services\MetaApi\MetaApiOnboardingService::class)->diagnose($account);
+
+            $this->assertFalse(data_get($staleDiagnostic, 'sync_readiness.ready_to_trade'));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_phase_2b_webhook_dry_runs_and_final_lifecycle_readiness_commands_are_safe(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340165');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'efefefef-efef-4fef-8fef-efefefefefef');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10020,
+            'equity' => 10030,
+            'login' => '340165',
+        ]);
+
+        app(MetaApiLiveSyncService::class)->syncByLogin('340165');
+        $account->refresh();
+
+        Http::fake();
+
+        $this->assertSame(0, Artisan::call('wolforix:test-discord-webhook', [
+            '--dry-run' => true,
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('"status": "dry_run"', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-telegram-webhook', [
+            '--dry-run' => true,
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('"status": "dry_run"', Artisan::output());
+        Http::assertNothingSent();
+
+        $eventsBefore = collect((array) data_get($account->fresh()->meta, 'metaapi_events', []))->count();
+        $this->assertSame(0, Artisan::call('wolforix:test-onboarding-events', [
+            'login' => '340165',
+            '--dry-run' => true,
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('"dry_run": true', Artisan::output());
+        $eventsAfter = collect((array) data_get($account->fresh()->meta, 'metaapi_events', []))->count();
+        $this->assertSame($eventsBefore, $eventsAfter);
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-broker-abstraction', [
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('Broker abstraction readiness', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:phase1-readiness-report', [
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('onboarding', Artisan::output());
+    }
+
     public function test_metaapi_repair_command_assigns_pool_entry_and_persists_uuid_without_overwriting(): void
     {
         $account = $this->createMetaApiChallengeAccount('340140', [
