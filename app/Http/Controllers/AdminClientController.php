@@ -908,14 +908,11 @@ class AdminClientController extends Controller
      */
     private function metaApiSummary(): array
     {
-        $accounts = TradingAccount::query()
-            ->where(function ($query): void {
-                $query->where('sync_source', 'metaapi')
-                    ->orWhereNotNull('meta->metaapi_account_id')
-                    ->orWhereNotNull('meta->mt5_sync->metaapi_account_id')
-                    ->orWhereNotNull('meta->mt5_pool_entry->metaapi_account_id');
-            })
-            ->get();
+        $accounts = collect(self::PHASE1_VALIDATED_METAAPI_LOGINS)
+            ->map(fn (string $login): ?TradingAccount => $this->accountForLogin($login))
+            ->filter(fn (?TradingAccount $account): bool => $account instanceof TradingAccount)
+            ->unique('id')
+            ->values();
         $validatedAccountRows = collect(self::PHASE1_VALIDATED_METAAPI_LOGINS)
             ->map(fn (string $login): array => $this->validatedMetaApiAccountRow($login))
             ->all();

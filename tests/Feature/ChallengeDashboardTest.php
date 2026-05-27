@@ -882,6 +882,9 @@ class ChallengeDashboardTest extends TestCase
                 'sync_status' => 'pending',
             ]);
             $this->markMetaApiDashboardReady($secondAccount, 'ed749805-4cad-4622-a0bc-3b1c8dd241d2');
+            $this->createOutOfScopeMetaApiProblemAccount('335436', 5000);
+            $this->createOutOfScopeMetaApiProblemAccount('52841770', 25000);
+            $this->createOutOfScopeMetaApiProblemAccount('52841775', 50000);
 
             $this->actingAs($account->user)
                 ->get(route('dashboard'))
@@ -911,7 +914,7 @@ class ChallengeDashboardTest extends TestCase
                 ->assertDontSee('7ed465cc-2315-4311-b4a1-4cc90f66e332')
                 ->assertDontSee('metaapi-token-secret');
 
-            $this->withSession([
+            $adminIndexResponse = $this->withSession([
                 'admin.authenticated' => true,
                 'admin.username' => 'admin',
             ])->get(route('admin.clients.index'))
@@ -922,6 +925,14 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('MetaApi')
                 ->assertSee('Phase 1 visibility scope only')
                 ->assertDontSee('metaapi-token-secret');
+            $metaApiSummary = $adminIndexResponse->viewData('metaApiSummary');
+
+            $this->assertSame(2, $metaApiSummary['total']);
+            $this->assertSame(2, $metaApiSummary['connected']);
+            $this->assertSame(0, $metaApiSummary['disconnected']);
+            $this->assertSame(0, $metaApiSummary['sync_issues']);
+            $this->assertSame(0, $metaApiSummary['onboarding_queue']);
+            $this->assertSame(2, $metaApiSummary['ready_to_trade']);
 
             $this->withSession([
                 'admin.authenticated' => true,
@@ -968,6 +979,36 @@ class ChallengeDashboardTest extends TestCase
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    private function createOutOfScopeMetaApiProblemAccount(string $login, int $accountSize): TradingAccount
+    {
+        return $this->createChallengeAccount('one_step', [
+            'account_size' => $accountSize,
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => $login,
+            'platform_account_id' => $login,
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'disconnected',
+            'sync_status' => 'error',
+            'sync_source' => 'metaapi',
+            'sync_error' => 'metaapi_account_id_missing',
+            'meta' => [
+                'metaapi_onboarding' => [
+                    'state' => 'waiting_metaapi_connection',
+                ],
+                'metaapi_lifecycle' => [
+                    'state' => 'disconnected',
+                    'sync_health' => 'disconnected',
+                ],
+                'mt5_sync' => [
+                    'identifier' => $login,
+                    'status' => 'error',
+                    'last_error' => 'metaapi_account_id_missing',
+                ],
+            ],
+        ]);
     }
 
     public function test_dashboard_visibility_shows_stale_metaapi_warning_without_exposing_secrets(): void
