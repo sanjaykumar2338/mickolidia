@@ -76,6 +76,14 @@
                     <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Ready to trade') }}</dt>
                     <dd class="mt-3 text-lg font-semibold text-white">{{ ! empty($primaryAccount['ready_to_trade']) ? __('Yes') : __('No') }}</dd>
                 </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Open positions') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['positions_count'] ?? 0 }}</dd>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Phase 1 ready') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ ! empty($primaryAccount['phase_1_ready']) ? __('Yes') : __('No') }}</dd>
+                </div>
             </dl>
 
             @if (! empty($primaryAccount['sync_error']))
@@ -247,6 +255,14 @@
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Ready to trade') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ ! empty($account['ready_to_trade']) ? __('Yes') : __('No') }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Open positions') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['positions_count'] ?? 0 }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Phase 1 ready') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ ! empty($account['phase_1_ready']) ? __('Yes') : __('No') }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Trading days') }}</p>

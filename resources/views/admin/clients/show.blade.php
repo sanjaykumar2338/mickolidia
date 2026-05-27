@@ -488,6 +488,12 @@
                         <span><strong class="text-white">Account status:</strong> {{ $providerReferences['account_status'] }}</span>
                         <span><strong class="text-white">Connector status:</strong> {{ $providerReferences['connector_status'] }}</span>
                         <span><strong class="text-white">Stored connector flag:</strong> {{ $providerReferences['stored_connector_status'] }}</span>
+                        <span><strong class="text-white">Lifecycle state:</strong> {{ $providerReferences['lifecycle_state'] }}</span>
+                        <span><strong class="text-white">Sync health:</strong> {{ $providerReferences['sync_health'] }}</span>
+                        <span><strong class="text-white">Onboarding:</strong> {{ $providerReferences['onboarding_state'] }}</span>
+                        <span><strong class="text-white">Ready to trade:</strong> {{ $providerReferences['ready_to_trade'] }}</span>
+                        <span><strong class="text-white">Phase 1 ready:</strong> {{ $providerReferences['phase_1_ready'] }}</span>
+                        <span><strong class="text-white">Phase 2 ready:</strong> {{ $providerReferences['phase_2_ready'] }}</span>
                         @if (! empty($providerReferences['connector_status_message']))
                             <span class="text-rose-100 sm:col-span-2"><strong class="text-white">Connector notice:</strong> {{ $providerReferences['connector_status_message'] }}</span>
                         @endif

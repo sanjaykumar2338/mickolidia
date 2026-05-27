@@ -49,6 +49,11 @@
             'Closed trades' => $account['closed_trades_count'],
             'Lifecycle state' => $account['lifecycle_state'],
             'Sync health' => $account['sync_health'],
+            'Onboarding' => $account['onboarding_state'],
+            'Ready to trade' => $account['ready_to_trade'],
+            'Phase 1 ready' => $account['phase_1_ready'],
+            'Phase 2 ready' => $account['phase_2_ready'],
+            'Dashboard source' => $account['sync_source'],
         ] as $label => $value)
             <div class="surface-panel rounded-[1.4rem] p-5">
                 <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ $label }}</dt>

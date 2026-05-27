@@ -34,6 +34,43 @@
                 </div>
             @endforeach
         </div>
+
+        @if (! empty($metaApiSummary['validated_account_rows'] ?? []))
+            <section class="mt-6 surface-panel rounded-[1.6rem] p-5">
+                <div class="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">Validated MetaApi accounts</p>
+                        <h2 class="mt-2 text-xl font-semibold text-white">{{ implode(', ', $metaApiSummary['validated_accounts'] ?? []) }}</h2>
+                    </div>
+                    <p class="text-sm text-slate-400">Phase 1 visibility scope only</p>
+                </div>
+                <div class="mt-5 overflow-x-auto">
+                    <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
+                        <thead class="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            <tr>
+                                @foreach (['Login', 'Reference', 'Source', 'Connection', 'Lifecycle', 'Onboarding', 'Ready', 'Last sync'] as $heading)
+                                    <th class="px-3 py-2 font-semibold">{{ $heading }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/6">
+                            @foreach ($metaApiSummary['validated_account_rows'] as $row)
+                                <tr>
+                                    <td class="px-3 py-3 font-semibold text-white">{{ $row['login'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['reference'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['source'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['connection'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['lifecycle'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['onboarding'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['ready_to_trade'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['last_sync'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
     @endif
 
     <div class="mt-10 surface-panel overflow-hidden rounded-[2rem]">

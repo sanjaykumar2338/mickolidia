@@ -864,6 +864,147 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_dashboard_visibility_finalization_shows_metaapi_status_for_trader_admin_and_command(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-27 12:00:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340134');
+            $this->markMetaApiDashboardReady($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332');
+
+            $secondAccount = $this->createChallengeAccount('two_step', [
+                'platform' => 'MT5',
+                'platform_slug' => 'mt5',
+                'platform_login' => '335400',
+                'platform_account_id' => '335400',
+                'platform_environment' => 'FusionMarkets-Demo',
+                'platform_status' => 'waiting_for_first_sync',
+                'sync_status' => 'pending',
+            ]);
+            $this->markMetaApiDashboardReady($secondAccount, 'ed749805-4cad-4622-a0bc-3b1c8dd241d2');
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard'))
+                ->assertOk()
+                ->assertSee('Dashboard source')
+                ->assertSee('MetaApi')
+                ->assertSee('Challenge Balance')
+                ->assertSee('$10,000.00')
+                ->assertSee('Challenge Equity')
+                ->assertSee('Connected')
+                ->assertSee('Ready to trade')
+                ->assertSee('Phase 1 ready')
+                ->assertSee('Yes')
+                ->assertSee('Open positions')
+                ->assertDontSee('7ed465cc-2315-4311-b4a1-4cc90f66e332')
+                ->assertDontSee('metaapi-token-secret');
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard.accounts'))
+                ->assertOk()
+                ->assertSee('Data source')
+                ->assertSee('MetaApi')
+                ->assertSee('Sync health')
+                ->assertSee('Connected')
+                ->assertSee('Ready To Trade')
+                ->assertSee('Phase 1 ready')
+                ->assertDontSee('7ed465cc-2315-4311-b4a1-4cc90f66e332')
+                ->assertDontSee('metaapi-token-secret');
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->get(route('admin.clients.index'))
+                ->assertOk()
+                ->assertSee('Validated MetaApi accounts')
+                ->assertSee('340134')
+                ->assertSee('335400')
+                ->assertSee('MetaApi')
+                ->assertSee('Phase 1 visibility scope only')
+                ->assertDontSee('metaapi-token-secret');
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->get(route('admin.clients.show', ['user' => $account->user, 'account' => $account->id]))
+                ->assertOk()
+                ->assertSee('Sync Source')
+                ->assertSee('MetaApi')
+                ->assertSee('Lifecycle state')
+                ->assertSee('Sync health')
+                ->assertSee('Onboarding')
+                ->assertSee('Ready to trade')
+                ->assertSee('Latest log')
+                ->assertSee('Success')
+                ->assertDontSee('metaapi-token-secret');
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->get(route('admin.clients.metrics', ['user' => $account->user, 'account' => $account->id]))
+                ->assertOk()
+                ->assertSee('Dashboard source')
+                ->assertSee('MetaApi')
+                ->assertSee('Ready to trade')
+                ->assertSee('Phase 1 ready')
+                ->assertSee('Open positions')
+                ->assertDontSee('metaapi-token-secret');
+
+            $this->assertSame(0, Artisan::call('wolforix:dashboard-visibility-check', [
+                '--json' => true,
+            ]));
+            $output = Artisan::output();
+
+            $this->assertStringContainsString('Dashboard visibility check', $output);
+            $this->assertStringContainsString('validated accounts checked: 2', $output);
+            $this->assertStringContainsString('trader dashboard data readiness: ready', $output);
+            $this->assertStringContainsString('admin dashboard data readiness: ready', $output);
+            $this->assertStringContainsString('340134', $output);
+            $this->assertStringContainsString('335400', $output);
+            $this->assertStringContainsString('"sync_source": "MetaApi"', $output);
+            $this->assertStringNotContainsString('7ed465cc-2315-4311-b4a1-4cc90f66e332', $output);
+            $this->assertStringNotContainsString('ed749805-4cad-4622-a0bc-3b1c8dd241d2', $output);
+            $this->assertStringNotContainsString('metaapi-token-secret', $output);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_dashboard_visibility_shows_stale_metaapi_warning_without_exposing_secrets(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340166', [
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'platform_status' => 'connected',
+            'sync_status' => 'success',
+            'sync_source' => 'metaapi',
+            'last_synced_at' => now()->subHour(),
+            'balance' => 10000,
+            'equity' => 10000,
+        ]);
+        $this->attachMetaApiPoolEntry($account, 'abababab-abab-4bab-8bab-abababababab');
+
+        $meta = is_array($account->fresh()->meta) ? $account->fresh()->meta : [];
+        data_set($meta, 'metaapi.token', 'metaapi-token-secret');
+        data_set($meta, 'metaapi_lifecycle.state', 'stale');
+        data_set($meta, 'metaapi_lifecycle.sync_health', 'stale');
+        data_set($meta, 'metaapi_lifecycle.core_sync_health', 'stale');
+        data_set($meta, 'metaapi_onboarding.state', 'ready_to_trade');
+        data_set($meta, 'mt5_sync.status', 'stale');
+        data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->subHour()->toIso8601String());
+        $account->forceFill(['meta' => $meta])->save();
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('Sync attention needed')
+            ->assertSee('MetaApi sync is stale')
+            ->assertSee('Ready to trade')
+            ->assertSee('No')
+            ->assertDontSee('metaapi-token-secret')
+            ->assertDontSee('abababab-abab-4bab-8bab-abababababab');
+    }
+
     public function test_phase_2b_webhook_dry_runs_and_final_lifecycle_readiness_commands_are_safe(): void
     {
         $account = $this->createMetaApiChallengeAccount('340165');
@@ -3949,6 +4090,61 @@ class ChallengeDashboardTest extends TestCase
         $account->forceFill(['meta' => $meta])->save();
 
         return $metaApiAccountId;
+    }
+
+    private function markMetaApiDashboardReady(TradingAccount $account, string $metaApiAccountId): TradingAccount
+    {
+        $this->attachMetaApiPoolEntry($account, $metaApiAccountId);
+
+        $meta = is_array($account->fresh()->meta) ? $account->fresh()->meta : [];
+        data_set($meta, 'metaapi.token', 'metaapi-token-secret');
+        data_set($meta, 'metaapi_lifecycle.state', 'connected');
+        data_set($meta, 'metaapi_lifecycle.sync_health', 'connected');
+        data_set($meta, 'metaapi_lifecycle.core_sync_health', 'connected');
+        data_set($meta, 'metaapi_onboarding.state', 'ready_to_trade');
+        data_set($meta, 'metaapi_onboarding.ready_to_trade', true);
+        data_set($meta, 'mt5_sync.status', 'connected');
+        data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->toIso8601String());
+        data_set($meta, 'mt5_sync.last_payload_summary.positions_count', 0);
+        data_set($meta, 'mt5_sync.last_payload_summary.trade_history_rows', 0);
+        data_set($meta, 'mt5_sync.last_payload_summary.balance', 10000);
+        data_set($meta, 'mt5_sync.last_payload_summary.equity', 10000);
+
+        $account->forceFill([
+            'account_status' => 'active',
+            'challenge_status' => 'active',
+            'platform_status' => 'connected',
+            'sync_status' => 'success',
+            'sync_source' => 'metaapi',
+            'last_synced_at' => now(),
+            'last_sync_completed_at' => now(),
+            'last_evaluated_at' => now(),
+            'activated_at' => now(),
+            'balance' => 10000,
+            'equity' => 10000,
+            'profit_loss' => 0,
+            'total_profit' => 0,
+            'today_profit' => 0,
+            'sync_error' => null,
+            'meta' => $meta,
+        ])->save();
+
+        TradingAccountSyncLog::query()->create([
+            'trading_account_id' => $account->id,
+            'platform' => 'metaapi',
+            'status' => 'success',
+            'message' => 'MetaApi dashboard visibility test sync completed.',
+            'started_at' => now()->subSecond(),
+            'completed_at' => now(),
+            'payload' => [
+                'source' => 'metaapi_dashboard_visibility_test',
+                'balance' => 10000,
+                'equity' => 10000,
+                'positions_count' => 0,
+            ],
+        ]);
+
+        return $account->refresh();
     }
 
     /**

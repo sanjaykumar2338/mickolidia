@@ -296,6 +296,8 @@ class DashboardController extends Controller
         $challengeStartingBalance = (float) $challengeMetrics['challenge_starting_balance'];
         $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
         $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
+        $openPositionsCount = $this->openPositionsCount($account);
+        $closedTradesCount = $this->closedTradesCount($account);
 
         return [
             'id' => $account->id,
@@ -333,6 +335,8 @@ class DashboardController extends Controller
             'onboarding_tone' => $onboarding['tone'],
             'onboarding_message' => $onboarding['message'],
             'ready_to_trade' => $onboarding['ready_to_trade'],
+            'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
+            'phase_2_ready' => $onboarding['ready_to_trade'],
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
@@ -344,6 +348,8 @@ class DashboardController extends Controller
             'equity' => $this->formatMoney($challengeEquity),
             'floating_pnl' => $this->formatMoney((float) $account->profit_loss),
             'floating_pnl_tone' => $this->metricTone((float) $account->profit_loss),
+            'positions_count' => $openPositionsCount,
+            'closed_trades_count' => $closedTradesCount,
             'total_profit' => $this->formatMoney($phaseProfit),
             'phase_profit' => $this->formatMoney($phaseProfit),
             'today_profit' => $this->formatMoney((float) $account->today_profit),
@@ -367,6 +373,7 @@ class DashboardController extends Controller
             'first_payout_eligible_at' => $this->formatDateTime($fundedTiming['first_payout_eligible_at']),
             'sync_error' => $account->sync_error,
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
+            'dashboard_source_label' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'breach_status' => $this->breachStatusLabel($account),
             'trading_blocked' => (bool) $account->trading_blocked,
@@ -397,6 +404,7 @@ class DashboardController extends Controller
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
         $onboarding = $this->metaApiOnboarding($account);
+        $openPositionsCount = $this->openPositionsCount($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -415,6 +423,7 @@ class DashboardController extends Controller
             'challenge_phase' => $this->phaseLabel($account),
             'challenge_status' => $this->humanizeStatus((string) ($account->challenge_status ?: $account->account_status ?: 'active')),
             'sync_status' => $this->humanizeStatus((string) ($account->sync_status ?: 'pending')),
+            'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'connector_status' => $connectorStatus['label'],
             'connector_status_key' => $connectorStatus['status'],
             'connector_status_message' => $connectorStatus['message'],
@@ -430,6 +439,9 @@ class DashboardController extends Controller
             'onboarding_tone' => $onboarding['tone'],
             'onboarding_message' => $onboarding['message'],
             'ready_to_trade' => $onboarding['ready_to_trade'],
+            'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
+            'phase_2_ready' => $onboarding['ready_to_trade'],
+            'positions_count' => $openPositionsCount,
             'sync_freshness' => $syncFreshness,
             'badges' => $this->dashboardBadges($account),
             'state_notice' => $this->stateNotice($account),
@@ -481,6 +493,12 @@ class DashboardController extends Controller
                     'value' => $this->formatMoney((float) $account->profit_loss),
                     'hint' => __('Open positions'),
                     'tone' => $this->metricTone((float) $account->profit_loss),
+                ],
+                [
+                    'label' => __('Open positions'),
+                    'value' => (string) $openPositionsCount,
+                    'hint' => __('Latest MetaApi position count'),
+                    'tone' => $openPositionsCount > 0 ? 'sky' : 'slate',
                 ],
                 [
                     'label' => __('Realized P/L'),
@@ -1435,6 +1453,8 @@ class DashboardController extends Controller
         $phaseProfit = (float) $challengeMetrics['realized_profit'];
         $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
         $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
+        $openPositionsCount = $this->openPositionsCount($account);
+        $closedTradesCount = $this->closedTradesCount($account);
 
         return [
             'id' => $account->id,
@@ -1493,8 +1513,13 @@ class DashboardController extends Controller
             'onboarding_tone' => $onboarding['tone'],
             'onboarding_message' => $onboarding['message'],
             'ready_to_trade' => $onboarding['ready_to_trade'],
+            'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
+            'phase_2_ready' => $onboarding['ready_to_trade'],
+            'positions_count' => $openPositionsCount,
+            'closed_trades_count' => $closedTradesCount,
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
+            'dashboard_source_label' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
             'breach_status' => $this->breachStatusLabel($account),
             'trading_blocked' => (bool) $account->trading_blocked,
@@ -1933,6 +1958,36 @@ class DashboardController extends Controller
             && $lastSync !== null
             && is_numeric($account->balance)
             && is_numeric($account->equity);
+    }
+
+    /**
+     * @param  array<string, mixed>  $lifecycle
+     */
+    private function phaseOneReady(TradingAccount $account, array $lifecycle): bool
+    {
+        if ($account->challenge_status === 'failed'
+            || filled((string) $account->failure_reason)
+            || (bool) $account->final_state_locked
+        ) {
+            return false;
+        }
+
+        return (string) $account->sync_source === 'metaapi'
+            && (string) ($lifecycle['state'] ?? '') === 'connected'
+            && in_array((string) ($lifecycle['health'] ?? ''), ['connected', 'recovered', 'degraded'], true)
+            && $account->last_synced_at !== null
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
+    }
+
+    private function openPositionsCount(TradingAccount $account): int
+    {
+        return max(0, (int) data_get($account->meta, 'mt5_sync.last_payload_summary.positions_count', 0));
+    }
+
+    private function closedTradesCount(TradingAccount $account): int
+    {
+        return max(0, (int) data_get($account->meta, 'mt5_sync.last_payload_summary.trade_history_rows', data_get($account->meta, 'mt5_sync.last_payload_summary.closed_positions_count', 0)));
     }
 
     private function defaultLifecycleState(TradingAccount $account): string

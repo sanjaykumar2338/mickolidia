@@ -194,6 +194,10 @@
                         <dd class="font-semibold text-white">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? ($hero['connector_status'] ?? $hero['sync_status']) : $hero['sync_status'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Dashboard source') }}</dt>
+                        <dd class="font-semibold text-white">{{ $hero['sync_source'] ?? __('Not available') }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
                         <dt class="text-slate-400">{{ __('Lifecycle') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['lifecycle_state'] ?? __('Waiting') }}</dd>
                     </div>
@@ -208,6 +212,14 @@
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
                         <dt class="text-slate-400">{{ __('Ready to trade') }}</dt>
                         <dd class="font-semibold text-white">{{ ! empty($hero['ready_to_trade']) ? __('Yes') : __('No') }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Open positions') }}</dt>
+                        <dd class="font-semibold text-white">{{ $hero['positions_count'] ?? 0 }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Phase 1 ready') }}</dt>
+                        <dd class="font-semibold text-white">{{ ! empty($hero['phase_1_ready']) ? __('Yes') : __('No') }}</dd>
                     </div>
                 </dl>
             </article>

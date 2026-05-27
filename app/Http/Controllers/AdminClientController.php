@@ -25,6 +25,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AdminClientController extends Controller
 {
+    private const PHASE1_VALIDATED_METAAPI_LOGINS = [
+        '340134',
+        '335400',
+    ];
+
     public function __construct(
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
         private readonly CountryEligibility $countryEligibility,
@@ -84,6 +89,17 @@ class AdminClientController extends Controller
             ? $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot)
             : [];
         $accountMetrics = $this->formatSelectedAccountMetrics($calculation, $selectedAccount);
+        $selectedLifecycleState = $selectedAccount instanceof TradingAccount
+            ? (string) data_get($selectedAccount->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync')
+            : 'N/A';
+        $selectedSyncHealth = $selectedAccount instanceof TradingAccount
+            ? (string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected')
+            : 'N/A';
+        $selectedOnboardingState = $selectedAccount instanceof TradingAccount
+            ? (string) data_get($selectedAccount->meta, 'metaapi_onboarding.state', 'pending')
+            : 'N/A';
+        $selectedReadyToTrade = $selectedAccount instanceof TradingAccount && $this->metaApiReadyToTrade($selectedAccount);
+        $selectedPhaseOneReady = $selectedAccount instanceof TradingAccount && $this->metaApiPhaseOneReady($selectedAccount);
 
         return view('admin.clients.show', [
             'client' => [
@@ -160,6 +176,16 @@ class AdminClientController extends Controller
                         : 'Not synced',
                 ],
                 [
+                    'label' => 'Dashboard Source',
+                    'value' => $selectedAccount?->sync_source
+                        ? $this->sourceLabel((string) $selectedAccount->sync_source)
+                        : 'N/A',
+                ],
+                [
+                    'label' => 'Ready To Trade',
+                    'value' => $selectedReadyToTrade ? 'Yes' : 'No',
+                ],
+                [
                     'label' => 'cTrader Auth',
                     'value' => $user->ctraderConnection?->last_authorized_at !== null ? 'Connected' : 'Pending',
                 ],
@@ -197,7 +223,7 @@ class AdminClientController extends Controller
                 'stored_connector_status' => $mt5SyncMeta['status'] ?? 'N/A',
                 'last_synced_at' => $this->formatDateTime($connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
                 'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
-                'sync_source' => $selectedAccount?->sync_source ? $this->humanizeStatus((string) $selectedAccount->sync_source) : 'N/A',
+                'sync_source' => $selectedAccount?->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',
                 'breach_reason' => $selectedAccount?->failure_reason ? $this->humanizeStatus((string) $selectedAccount->failure_reason) : 'None',
                 'breach_detected_at' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
@@ -242,12 +268,12 @@ class AdminClientController extends Controller
                 'latest_sync_log_completed_at' => $this->formatDateTime($latestSyncLog?->completed_at),
                 'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
                 'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
-                'lifecycle_state' => $selectedAccount instanceof TradingAccount
-                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync'))
-                    : 'N/A',
-                'sync_health' => $selectedAccount instanceof TradingAccount
-                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected'))
-                    : 'N/A',
+                'lifecycle_state' => $selectedLifecycleState !== 'N/A' ? $this->humanizeStatus($selectedLifecycleState) : 'N/A',
+                'sync_health' => $selectedSyncHealth !== 'N/A' ? $this->humanizeStatus($selectedSyncHealth) : 'N/A',
+                'onboarding_state' => $selectedOnboardingState !== 'N/A' ? $this->humanizeStatus($selectedOnboardingState) : 'N/A',
+                'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
+                'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
             ],
         ]);
     }
@@ -283,6 +309,8 @@ class AdminClientController extends Controller
         $calculation = $selectedAccount instanceof TradingAccount
             ? $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot)
             : [];
+        $selectedReadyToTrade = $selectedAccount instanceof TradingAccount && $this->metaApiReadyToTrade($selectedAccount);
+        $selectedPhaseOneReady = $selectedAccount instanceof TradingAccount && $this->metaApiPhaseOneReady($selectedAccount);
         $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
         $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
         $filters = $this->adminTradeFilters($request);
@@ -321,6 +349,13 @@ class AdminClientController extends Controller
                 'sync_health' => $selectedAccount instanceof TradingAccount
                     ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected'))
                     : 'N/A',
+                'onboarding_state' => $selectedAccount instanceof TradingAccount
+                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_onboarding.state', 'pending'))
+                    : 'N/A',
+                'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
+                'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'sync_source' => $selectedAccount?->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
                 'connector_download_url' => $selectedAccount instanceof TradingAccount && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
                     : null,
@@ -869,7 +904,7 @@ class AdminClientController extends Controller
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, mixed>
      */
     private function metaApiSummary(): array
     {
@@ -881,6 +916,9 @@ class AdminClientController extends Controller
                     ->orWhereNotNull('meta->mt5_pool_entry->metaapi_account_id');
             })
             ->get();
+        $validatedAccountRows = collect(self::PHASE1_VALIDATED_METAAPI_LOGINS)
+            ->map(fn (string $login): array => $this->validatedMetaApiAccountRow($login))
+            ->all();
 
         return [
             'total' => $accounts->count(),
@@ -900,7 +938,69 @@ class AdminClientController extends Controller
                 ->whereNotNull('meta->metaapi_account_id')
                 ->whereNull('allocated_trading_account_id')
                 ->count(),
+            'validated_accounts' => self::PHASE1_VALIDATED_METAAPI_LOGINS,
+            'validated_account_rows' => $validatedAccountRows,
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function validatedMetaApiAccountRow(string $login): array
+    {
+        $account = $this->accountForLogin($login);
+
+        if (! $account instanceof TradingAccount) {
+            return [
+                'login' => $login,
+                'reference' => 'Missing trading account',
+                'source' => 'MetaApi',
+                'connection' => 'Missing',
+                'lifecycle' => 'Missing',
+                'onboarding' => 'Missing',
+                'ready_to_trade' => 'No',
+                'last_sync' => 'N/A',
+            ];
+        }
+
+        $connector = $this->mt5ConnectorStatus->forAccount($account);
+
+        return [
+            'login' => $login,
+            'reference' => (string) ($account->account_reference ?? 'N/A'),
+            'source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'N/A',
+            'connection' => $connector['label'],
+            'lifecycle' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync')),
+            'onboarding' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_onboarding.state', 'pending')),
+            'ready_to_trade' => $this->metaApiReadyToTrade($account) ? 'Yes' : 'No',
+            'last_sync' => $this->formatDateTime($connector['last_sync_at'] ?? $account->last_synced_at),
+        ];
+    }
+
+    private function accountForLogin(string $login): ?TradingAccount
+    {
+        $account = TradingAccount::query()
+            ->where(function ($query) use ($login): void {
+                $query->where('platform_login', $login)
+                    ->orWhere('platform_account_id', $login)
+                    ->orWhere('account_reference', $login)
+                    ->orWhere('account_reference', 'like', '%'.$login.'%')
+                    ->orWhere('meta->mt5_sync->identifier', $login)
+                    ->orWhere('meta->mt5_pool_entry->login', $login);
+            })
+            ->latest('id')
+            ->first();
+
+        if ($account instanceof TradingAccount) {
+            return $account;
+        }
+
+        return Mt5AccountPoolEntry::query()
+            ->where('login', $login)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->first()
+            ?->allocatedTradingAccount;
     }
 
     private function metaApiReadyToTrade(TradingAccount $account): bool
@@ -942,6 +1042,38 @@ class AdminClientController extends Controller
             && $lastSync !== null
             && is_numeric($account->balance)
             && is_numeric($account->equity);
+    }
+
+    private function metaApiPhaseOneReady(TradingAccount $account): bool
+    {
+        if ((string) $account->sync_source !== 'metaapi'
+            || $account->challenge_status === 'failed'
+            || filled((string) $account->failure_reason)
+            || (bool) $account->final_state_locked
+        ) {
+            return false;
+        }
+
+        $state = (string) data_get($account->meta, 'metaapi_lifecycle.state');
+        $syncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health');
+        $coreHealth = (string) data_get($account->meta, 'metaapi_lifecycle.core_sync_health', $syncHealth);
+
+        return $state === 'connected'
+            && in_array($syncHealth, ['connected', 'recovered', 'degraded'], true)
+            && in_array($coreHealth, ['connected', 'recovered', 'degraded'], true)
+            && $account->last_synced_at !== null
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
+    }
+
+    private function sourceLabel(string $source): string
+    {
+        return match (strtolower($source)) {
+            'metaapi' => 'MetaApi',
+            'mt5_ea' => 'MT5 EA',
+            'admin_activation' => 'Admin activation',
+            default => $this->humanizeStatus($source),
+        };
     }
 
     private function clientTableRow(User $user): array
