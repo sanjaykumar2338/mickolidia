@@ -48,6 +48,7 @@ class AdminClientController extends Controller
 
         return view('admin.clients.index', [
             'clients' => $clients,
+            'metaApiSummary' => $this->metaApiSummary(),
         ]);
     }
 
@@ -240,6 +241,12 @@ class AdminClientController extends Controller
                 'latest_sync_log_completed_at' => $this->formatDateTime($latestSyncLog?->completed_at),
                 'authorized_accounts_count' => is_array($user->ctraderConnection?->authorized_accounts) ? count($user->ctraderConnection->authorized_accounts) : 0,
                 'last_authorized_at' => $this->formatDateTime($user->ctraderConnection?->last_authorized_at),
+                'lifecycle_state' => $selectedAccount instanceof TradingAccount
+                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync'))
+                    : 'N/A',
+                'sync_health' => $selectedAccount instanceof TradingAccount
+                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected'))
+                    : 'N/A',
             ],
         ]);
     }
@@ -307,6 +314,12 @@ class AdminClientController extends Controller
                 'connector_status' => $connectorStatus['label'],
                 'connector_badge' => $connectorStatus['badge'],
                 'connector_is_stale' => (bool) $connectorStatus['is_stale'],
+                'lifecycle_state' => $selectedAccount instanceof TradingAccount
+                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync'))
+                    : 'N/A',
+                'sync_health' => $selectedAccount instanceof TradingAccount
+                    ? $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected'))
+                    : 'N/A',
                 'connector_download_url' => $selectedAccount instanceof TradingAccount && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
                     : null,
@@ -827,7 +840,7 @@ class AdminClientController extends Controller
         $page = max((int) $request->query('page', 1), 1);
         $items = collect($rows)->forPage($page, $perPage)->values();
 
-        return (new LengthAwarePaginator(
+        return new LengthAwarePaginator(
             $items,
             count($rows),
             $perPage,
@@ -836,7 +849,7 @@ class AdminClientController extends Controller
                 'path' => $request->url(),
                 'query' => $request->query(),
             ],
-        ));
+        );
     }
 
     private function parseFilterDate(string $value, bool $endOfDay): ?Carbon
@@ -852,6 +865,30 @@ class AdminClientController extends Controller
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function metaApiSummary(): array
+    {
+        $accounts = TradingAccount::query()
+            ->where(function ($query): void {
+                $query->where('sync_source', 'metaapi')
+                    ->orWhereNotNull('meta->metaapi_account_id')
+                    ->orWhereNotNull('meta->mt5_sync->metaapi_account_id')
+                    ->orWhereNotNull('meta->mt5_pool_entry->metaapi_account_id');
+            })
+            ->get();
+
+        return [
+            'total' => $accounts->count(),
+            'connected' => $accounts->filter(fn (TradingAccount $account): bool => $this->mt5ConnectorStatus->status($account) === Mt5ConnectorStatus::CONNECTED)->count(),
+            'disconnected' => $accounts->filter(fn (TradingAccount $account): bool => $this->mt5ConnectorStatus->status($account) === Mt5ConnectorStatus::DISCONNECTED)->count(),
+            'stale' => $accounts->filter(fn (TradingAccount $account): bool => $this->mt5ConnectorStatus->status($account) === Mt5ConnectorStatus::STALE)->count(),
+            'breached' => $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count(),
+            'sync_issues' => $accounts->filter(fn (TradingAccount $account): bool => $account->sync_status === 'error' || filled((string) $account->sync_error))->count(),
+        ];
     }
 
     private function clientTableRow(User $user): array
@@ -1082,7 +1119,7 @@ class AdminClientController extends Controller
 
         if (is_string($value) && $value !== '') {
             try {
-                return \Illuminate\Support\Carbon::parse($value)->format('Y-m-d H:i');
+                return Carbon::parse($value)->format('Y-m-d H:i');
             } catch (\Throwable) {
                 return $value;
             }

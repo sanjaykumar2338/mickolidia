@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Middleware\AdminBasicAuth;
-use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\EnsureTrialSession;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt((string) config('wolforix.review_requests.trustpilot.reminder_schedule_time', '10:00'))
             ->when(fn (): bool => (bool) config('wolforix.review_requests.trustpilot.enabled', true)
                 && (bool) config('wolforix.review_requests.trustpilot.reminder_enabled', true));
+
+        $schedule->command('wolforix:sync-metaapi-accounts --limit='.(int) config('services.metaapi.sync.limit', 10))
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->when(fn (): bool => (bool) config('services.metaapi.enabled', false));
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [

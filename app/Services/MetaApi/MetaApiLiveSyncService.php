@@ -17,8 +17,8 @@ class MetaApiLiveSyncService
         private readonly MetaApiClient $metaApi,
         private readonly TradingAccountSnapshotApplyService $snapshotApplyService,
         private readonly MetaApiAccountMappingRepairService $mappingRepairService,
-    ) {
-    }
+        private readonly MetaApiAccountLifecycleService $lifecycleService,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $options
@@ -83,7 +83,10 @@ class MetaApiLiveSyncService
             );
         }
 
-        $accountRead = $this->metaApi->readAccount((string) $metaApiAccountId);
+        $accountRead = $this->metaApiRequest(
+            fn (): array => $this->metaApi->readAccount((string) $metaApiAccountId),
+            'read_account',
+        );
         $accountPayload = (array) ($accountRead['payload'] ?? []);
         $connectionStatus = strtoupper((string) (data_get($accountPayload, 'connectionStatus') ?: 'UNKNOWN'));
         $state = strtoupper((string) (data_get($accountPayload, 'state') ?: 'UNKNOWN'));
@@ -100,8 +103,14 @@ class MetaApiLiveSyncService
             );
         }
 
-        $accountInformation = $this->metaApi->readAccountInformation((string) $metaApiAccountId, true);
-        $positions = $this->metaApi->readPositions((string) $metaApiAccountId, true);
+        $accountInformation = $this->metaApiRequest(
+            fn (): array => $this->metaApi->readAccountInformation((string) $metaApiAccountId, true),
+            'read_account_information',
+        );
+        $positions = $this->metaApiRequest(
+            fn (): array => $this->metaApi->readPositions((string) $metaApiAccountId, true),
+            'read_positions',
+        );
 
         $accountInfoPayload = (array) ($accountInformation['payload'] ?? []);
         $positionRows = $this->rowsFromResult($positions);
@@ -159,19 +168,7 @@ class MetaApiLiveSyncService
                 'history' => $history['summary'],
             ]);
 
-        Log::info('MetaApi live account sync completed.', [
-            'trading_account_id' => $updatedAccount->id,
-            'account_reference' => $updatedAccount->account_reference,
-            'login' => $updatedAccount->platform_login,
-            'metaapi_account_id' => $metaApiAccountId,
-            'status' => $resultStatus,
-            'validation_state' => $validationState,
-            'connection_status' => $connectionStatus,
-            'state' => $state,
-            'history_ok' => $history['ok'],
-        ]);
-
-        return [
+        $syncResult = [
             'status' => $resultStatus,
             'validation_state' => $validationState,
             'trading_account_id' => $updatedAccount->id,
@@ -189,6 +186,29 @@ class MetaApiLiveSyncService
             'sync_log_id' => $log->id,
             'phase_1b_ready' => true,
         ];
+
+        $updatedAccount = $this->lifecycleService->recordSyncResult($updatedAccount, $syncResult);
+        $lifecycle = $this->lifecycleService->diagnose($updatedAccount);
+
+        Log::info('MetaApi live account sync completed.', [
+            'trading_account_id' => $updatedAccount->id,
+            'account_reference' => $updatedAccount->account_reference,
+            'login' => $updatedAccount->platform_login,
+            'metaapi_account_id' => $metaApiAccountId,
+            'status' => $resultStatus,
+            'validation_state' => $validationState,
+            'connection_status' => $connectionStatus,
+            'state' => $state,
+            'history_ok' => $history['ok'],
+            'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
+            'sync_health' => $lifecycle['sync_health'] ?? null,
+        ]);
+
+        return array_merge($syncResult, [
+            'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
+            'sync_health' => $lifecycle['sync_health'] ?? null,
+            'recovery' => $lifecycle['recovery'] ?? [],
+        ]);
     }
 
     /**
@@ -256,6 +276,7 @@ class MetaApiLiveSyncService
         $poolEntry = $this->poolEntryForLogin($login, $account);
         $syncLog = $account?->syncLogs()->latest('id')->first();
         $snapshot = $account?->balanceSnapshots()->latest('snapshot_at')->latest('id')->first();
+        $lifecycle = $account instanceof TradingAccount ? $this->lifecycleService->diagnose($account) : null;
 
         return [
             'login' => $login,
@@ -301,6 +322,7 @@ class MetaApiLiveSyncService
                 'profit_loss' => $snapshot->profit_loss,
             ] : null,
             'mapping_diagnostics' => $mappingDiagnostic,
+            'lifecycle' => $lifecycle,
         ];
     }
 
@@ -516,8 +538,16 @@ class MetaApiLiveSyncService
             $end = now();
             $start = $end->copy()->subDays($rangeDays);
             $result = $type === 'orders'
-                ? $this->metaApi->readHistoryOrdersByTimeRange($accountId, $start, $end, $limit)
-                : $this->metaApi->readDealsByTimeRange($accountId, $start, $end, $limit);
+                ? $this->metaApiRequest(
+                    fn (): array => $this->metaApi->readHistoryOrdersByTimeRange($accountId, $start, $end, $limit),
+                    'read_history_orders',
+                    true,
+                )
+                : $this->metaApiRequest(
+                    fn (): array => $this->metaApi->readDealsByTimeRange($accountId, $start, $end, $limit),
+                    'read_history_deals',
+                    true,
+                );
 
             if ((bool) ($result['ok'] ?? false)) {
                 return [
@@ -629,9 +659,19 @@ class MetaApiLiveSyncService
             'metaapi' => $metaApi,
         ]);
 
+        $account = $this->lifecycleService->recordSyncFailure(
+            $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account,
+            $error,
+            [
+                'connection_status' => $metaApi['connection_status'] ?? null,
+                'deploy_status' => $metaApi['state'] ?? null,
+            ],
+        );
+        $lifecycle = $this->lifecycleService->diagnose($account);
+
         return [
             'status' => 'error',
-            'validation_state' => strtoupper($syncMeta['status']),
+            'validation_state' => strtoupper((string) ($lifecycle['sync_health'] ?? $syncMeta['status'])),
             'trading_account_id' => $account->id,
             'login' => $account->platform_login,
             'metaapi_account_id' => $metaApi['metaapi_account_id'] ?? null,
@@ -643,7 +683,53 @@ class MetaApiLiveSyncService
             'error' => $error,
             'sync_log_id' => $log->id,
             'phase_1b_ready' => false,
+            'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
+            'sync_health' => $lifecycle['sync_health'] ?? null,
+            'recovery' => $lifecycle['recovery'] ?? [],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function metaApiRequest(callable $callback, string $action, bool $history = false): array
+    {
+        $maxRetries = max((int) config('services.metaapi.sync.retries', 1), 0);
+        $delayMs = max((int) config('services.metaapi.sync.retry_delay_ms', 500), 0);
+        $attempts = $history ? 1 : $maxRetries + 1;
+        $result = [
+            'action' => $action,
+            'ok' => false,
+            'status' => 0,
+            'payload' => [],
+            'error' => 'metaapi_request_not_attempted',
+        ];
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $result = $callback();
+            $result['attempt'] = $attempt;
+            $result['max_attempts'] = $attempts;
+
+            if ((bool) ($result['ok'] ?? false) || ! $this->shouldRetryMetaApiResult($result)) {
+                return $result;
+            }
+
+            if ($attempt < $attempts && $delayMs > 0) {
+                usleep($delayMs * 1000);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    private function shouldRetryMetaApiResult(array $result): bool
+    {
+        $status = (int) ($result['status'] ?? 0);
+
+        return $status === 0 || $status === 408 || $status === 409 || $status === 425 || $status === 429 || $status >= 500;
     }
 
     /**

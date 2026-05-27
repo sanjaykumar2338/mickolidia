@@ -193,6 +193,14 @@
                         <dt class="text-slate-400">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? __('Connector status') : __('Sync status') }}</dt>
                         <dd class="font-semibold text-white">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? ($hero['connector_status'] ?? $hero['sync_status']) : $hero['sync_status'] }}</dd>
                     </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Lifecycle') }}</dt>
+                        <dd class="font-semibold text-white">{{ $hero['lifecycle_state'] ?? __('Waiting') }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Sync health') }}</dt>
+                        <dd class="font-semibold text-white">{{ $hero['sync_health'] ?? __('Pending') }}</dd>
+                    </div>
                 </dl>
             </article>
         </div>

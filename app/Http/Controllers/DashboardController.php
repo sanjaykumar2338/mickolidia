@@ -109,7 +109,7 @@ class DashboardController extends Controller
 
         return redirect()
             ->route($redirectRoute)
-            ->with('status', __("Wolfi voice updated to :voice.", ['voice' => $voiceName]));
+            ->with('status', __('Wolfi voice updated to :voice.', ['voice' => $voiceName]));
     }
 
     public function previewWolfiVoice(
@@ -284,6 +284,7 @@ class DashboardController extends Controller
         $plan = $this->planDefinitionForAccount($account);
         $fundedTiming = $this->fundedTiming($account, $plan);
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $lifecycle = $this->metaApiLifecycle($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -320,6 +321,12 @@ class DashboardController extends Controller
             'connector_status_key' => $connectorStatus['status'],
             'connector_status_message' => $connectorStatus['message'],
             'connector_status_tone' => $connectorStatus['tone'],
+            'lifecycle_state' => $lifecycle['state_label'],
+            'lifecycle_state_key' => $lifecycle['state'],
+            'lifecycle_tone' => $lifecycle['tone'],
+            'sync_health' => $lifecycle['health_label'],
+            'sync_health_key' => $lifecycle['health'],
+            'sync_health_hint' => $lifecycle['message'],
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
@@ -382,6 +389,7 @@ class DashboardController extends Controller
         $targetAmount = $this->profitTargetAmount($account, $challengeMetrics);
         $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $lifecycle = $this->metaApiLifecycle($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -404,6 +412,12 @@ class DashboardController extends Controller
             'connector_status_key' => $connectorStatus['status'],
             'connector_status_message' => $connectorStatus['message'],
             'connector_status_tone' => $connectorStatus['tone'],
+            'lifecycle_state' => $lifecycle['state_label'],
+            'lifecycle_state_key' => $lifecycle['state'],
+            'lifecycle_tone' => $lifecycle['tone'],
+            'sync_health' => $lifecycle['health_label'],
+            'sync_health_key' => $lifecycle['health'],
+            'sync_health_hint' => $lifecycle['message'],
             'sync_freshness' => $syncFreshness,
             'badges' => $this->dashboardBadges($account),
             'state_notice' => $this->stateNotice($account),
@@ -491,6 +505,12 @@ class DashboardController extends Controller
             ['label' => strtoupper((string) ($account->platform ?: 'N/A')), 'tone' => 'sky'],
             ['label' => $this->humanizeStatus((string) ($account->platform_environment ?: 'pending')), 'tone' => 'slate'],
         ];
+
+        if ($account->platform_slug === 'mt5') {
+            $lifecycle = $this->metaApiLifecycle($account);
+            $badges[] = ['label' => $lifecycle['state_label'], 'tone' => $lifecycle['tone']];
+            $badges[] = ['label' => $lifecycle['health_label'], 'tone' => $lifecycle['tone']];
+        }
 
         return collect($badges)
             ->unique('label')
@@ -1352,6 +1372,7 @@ class DashboardController extends Controller
         if ($account->platform_slug === 'mt5') {
             $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
             $syncFreshness = $this->mt5ConnectorStatus->freshnessForAccount($account);
+            $lifecycle = $this->metaApiLifecycle($account);
 
             return [
                 'title' => $connectorStatus['status'] === Mt5ConnectorStatus::STALE
@@ -1361,6 +1382,8 @@ class DashboardController extends Controller
                     ?? __('Challenge balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
                 'meta' => [
                     __('Connector status: :value', ['value' => $connectorStatus['label']]),
+                    __('Lifecycle: :value', ['value' => $lifecycle['state_label']]),
+                    __('Sync health: :value', ['value' => $lifecycle['health_label']]),
                     __('Sync freshness: :value', ['value' => $syncFreshness['label']]),
                     __('Last sync: :value', ['value' => $this->formatDateTime($connectorStatus['last_sync_at'])]),
                     __('Data source: :value', ['value' => $this->sourceLabel((string) ($account->sync_source ?: 'mt5_ea'))]),
@@ -1385,6 +1408,7 @@ class DashboardController extends Controller
     private function accountCardPayload(TradingAccount $account): array
     {
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
+        $lifecycle = $this->metaApiLifecycle($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -1440,6 +1464,12 @@ class DashboardController extends Controller
             'connector_status_key' => $connectorStatus['status'],
             'connector_status_message' => $connectorStatus['message'],
             'connector_status_tone' => $connectorStatus['tone'],
+            'lifecycle_state' => $lifecycle['state_label'],
+            'lifecycle_state_key' => $lifecycle['state'],
+            'lifecycle_tone' => $lifecycle['tone'],
+            'sync_health' => $lifecycle['health_label'],
+            'sync_health_key' => $lifecycle['health'],
+            'sync_health_hint' => $lifecycle['message'],
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
@@ -1772,7 +1802,93 @@ class DashboardController extends Controller
             ];
         }
 
+        if ($account->platform_slug === 'mt5') {
+            $lifecycle = $this->metaApiLifecycle($account);
+
+            if (in_array($lifecycle['state'], ['stale', 'disconnected'], true)) {
+                return [
+                    'tone' => $lifecycle['tone'],
+                    'title' => __('Sync attention needed'),
+                    'message' => $lifecycle['message'],
+                ];
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * @return array{state:string,state_label:string,health:string,health_label:string,tone:string,message:string}
+     */
+    private function metaApiLifecycle(TradingAccount $account): array
+    {
+        $state = (string) data_get($account->meta, 'metaapi_lifecycle.state', $this->defaultLifecycleState($account));
+        $health = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health', $this->defaultSyncHealth($account));
+        $tone = match ($health) {
+            'connected', 'recovered' => 'emerald',
+            'degraded', 'stale' => 'amber',
+            'disconnected' => 'rose',
+            default => $this->statusTone($state),
+        };
+
+        return [
+            'state' => $state,
+            'state_label' => $this->humanizeStatus($state),
+            'health' => $health,
+            'health_label' => $this->humanizeStatus($health),
+            'tone' => $tone,
+            'message' => $this->metaApiLifecycleMessage($state, $health),
+        ];
+    }
+
+    private function defaultLifecycleState(TradingAccount $account): string
+    {
+        if ($account->challenge_status === 'failed' || filled((string) $account->failure_reason)) {
+            return 'breached';
+        }
+
+        if ((bool) $account->trading_blocked || in_array((string) $account->platform_status, ['disabled', 'disable_pending_ack', 'disable_requested', 'disable_failed'], true)) {
+            return 'disabled';
+        }
+
+        if ((string) $account->platform_status === 'disconnected' || (string) $account->sync_status === 'error') {
+            return 'disconnected';
+        }
+
+        if ($account->last_synced_at !== null || (string) $account->platform_status === 'connected') {
+            return 'connected';
+        }
+
+        return (string) $account->account_status === 'pending_activation'
+            ? 'pending_activation'
+            : 'waiting_for_first_sync';
+    }
+
+    private function defaultSyncHealth(TradingAccount $account): string
+    {
+        $status = $this->mt5ConnectorStatus->status($account);
+
+        return match ($status) {
+            Mt5ConnectorStatus::CONNECTED => 'connected',
+            Mt5ConnectorStatus::STALE => 'stale',
+            Mt5ConnectorStatus::DISCONNECTED => 'disconnected',
+            default => (string) $account->sync_status === 'error' ? 'disconnected' : 'degraded',
+        };
+    }
+
+    private function metaApiLifecycleMessage(string $state, string $health): string
+    {
+        return match (true) {
+            $state === 'pending_activation' => __('Account is assigned and waiting for activation.'),
+            $state === 'waiting_for_first_sync' => __('Account is ready and waiting for its first successful MetaApi sync.'),
+            $state === 'breached' => __('A challenge rule was violated and this account is locked in its final state.'),
+            $state === 'disabled' => __('This account is in a final locked or disabled state.'),
+            $health === 'recovered' => __('MetaApi sync recovered after a stale or disconnected state.'),
+            $health === 'degraded' => __('Balance, equity, and positions are readable; history is temporarily degraded.'),
+            $health === 'stale' => __('MetaApi sync is stale. A successful refresh will update the dashboard automatically.'),
+            $health === 'disconnected' => __('MetaApi sync is disconnected. The system will keep retrying and preserve the latest trusted metrics.'),
+            default => __('MetaApi sync is connected and live account metrics are readable.'),
+        };
     }
 
     private function safePercentage(float $value, float $maximum): float
@@ -2557,7 +2673,7 @@ class DashboardController extends Controller
             if (is_string($value) && $value !== '') {
                 return Carbon::parse($value);
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
 
@@ -2822,5 +2938,4 @@ class DashboardController extends Controller
 
         return __('Not synced yet');
     }
-
 }

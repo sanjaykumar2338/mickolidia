@@ -34,6 +34,7 @@ class DiagnoseMetaApiSync extends Command
         $syncLog = (array) ($diagnostic['latest_sync_log'] ?? []);
         $snapshot = (array) ($diagnostic['latest_snapshot'] ?? []);
         $mapping = (array) data_get($diagnostic, 'mapping_diagnostics.mapping', []);
+        $lifecycle = (array) ($diagnostic['lifecycle'] ?? []);
 
         $this->table(['Field', 'Value'], [
             ['Login', $login],
@@ -56,6 +57,9 @@ class DiagnoseMetaApiSync extends Command
             ['Latest snapshot', (string) ($snapshot['id'] ?? '-')],
             ['Snapshot balance', (string) ($snapshot['balance'] ?? '-')],
             ['Snapshot equity', (string) ($snapshot['equity'] ?? '-')],
+            ['Lifecycle state', (string) ($lifecycle['lifecycle_state'] ?? '-')],
+            ['Sync health', (string) ($lifecycle['sync_health'] ?? '-')],
+            ['Recovery count', (string) data_get($lifecycle, 'recovery.recovery_count', '-')],
             ['Mapping mismatch', ! empty($mapping['mapping_mismatch']) ? 'yes' : 'no'],
             ['Missing assignment', ! empty($mapping['missing_assignment']) ? 'yes' : 'no'],
             ['Missing MetaApi id', ! empty($mapping['missing_metaapi_id']) ? 'yes' : 'no'],

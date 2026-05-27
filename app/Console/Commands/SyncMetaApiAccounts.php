@@ -45,13 +45,15 @@ class SyncMetaApiAccounts extends Command
                 (string) ($row['status'] ?? '-'),
                 (string) ($row['validation_state'] ?? '-'),
                 (string) ($row['connection_status'] ?? '-'),
+                (string) ($row['lifecycle_state'] ?? '-'),
+                (string) ($row['sync_health'] ?? '-'),
                 ! empty($row['history_readable']) ? 'yes' : 'no',
             ])
             ->all();
 
         if ($rows !== []) {
             $this->newLine();
-            $this->table(['Login', 'MetaApi account', 'Status', 'State', 'Connection', 'History'], $rows);
+            $this->table(['Login', 'MetaApi account', 'Status', 'State', 'Connection', 'Lifecycle', 'Health', 'History'], $rows);
         }
 
         if ((bool) $this->option('debug')) {

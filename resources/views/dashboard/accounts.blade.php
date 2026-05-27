@@ -58,6 +58,15 @@
                     <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Data source') }}</dt>
                     <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_source'] ?? __('MT5') }}</dd>
                 </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Lifecycle') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['lifecycle_state'] ?? __('Waiting') }}</dd>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Sync health') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['sync_health'] ?? __('Pending') }}</dd>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">{{ $primaryAccount['sync_health_hint'] ?? __('MetaApi sync health appears after the first live update.') }}</p>
+                </div>
             </dl>
 
             @if (! empty($primaryAccount['sync_error']))
@@ -213,6 +222,14 @@
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Challenge phase') }}</p>
                                 <p class="{{ $metricValueClasses }}">{{ $account['challenge_phase'] }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Lifecycle') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['lifecycle_state'] }}</p>
+                            </div>
+                            <div class="{{ $metricCardClasses }}">
+                                <p class="{{ $metricLabelClasses }}">{{ __('Sync health') }}</p>
+                                <p class="{{ $metricValueClasses }}">{{ $account['sync_health'] }}</p>
                             </div>
                             <div class="{{ $metricCardClasses }}">
                                 <p class="{{ $metricLabelClasses }}">{{ __('Trading days') }}</p>

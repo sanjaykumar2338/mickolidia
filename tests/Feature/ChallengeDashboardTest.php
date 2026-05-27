@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Mail\ChallengeFailedMail;
-use App\Mail\ChallengePhasePassSupportNotificationMail;
 use App\Mail\ChallengePassedMail;
+use App\Mail\ChallengePhasePassSupportNotificationMail;
 use App\Mail\ConsistencyAlertMail;
 use App\Mail\PhaseOnePassedMail;
 use App\Mail\PhaseTwoAccountDetailsMail;
@@ -16,6 +16,7 @@ use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use App\Services\MetaApi\MetaApiLiveSyncService;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
+use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\Mt5ConnectorStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -593,6 +594,53 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('XAUUSD')
                 ->assertSee('EURUSD')
                 ->assertSee('MetaApi');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_first_sync_activates_lifecycle_and_records_events(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 10:00:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('340150');
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'abababab-abab-4bab-8bab-abababababab');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10005,
+                'equity' => 10015,
+                'login' => '340150',
+            ], [
+                [
+                    'id' => 'P-LIFE-1',
+                    'symbol' => 'EURUSD',
+                    'profit' => 10,
+                    'volume' => 0.1,
+                ],
+            ]);
+
+            $result = app(MetaApiLiveSyncService::class)->syncByLogin('340150');
+
+            $account->refresh();
+
+            $this->assertSame('success', $result['status']);
+            $this->assertSame('connected', data_get($account->meta, 'metaapi_lifecycle.state'));
+            $this->assertSame('connected', data_get($account->meta, 'metaapi_lifecycle.sync_health'));
+            $this->assertSame('active', $account->account_status);
+            $this->assertSame('active', $account->challenge_status);
+            $this->assertNotNull($account->activated_at);
+
+            $events = collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all();
+            $this->assertContains('account_activated', $events);
+            $this->assertContains('account_connected', $events);
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard.accounts'))
+                ->assertOk()
+                ->assertSee('Lifecycle')
+                ->assertSee('Sync health')
+                ->assertSee('Connected');
         } finally {
             Carbon::setTestNow();
         }
@@ -1331,6 +1379,132 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('10010.00', (string) $account->equity);
         $this->assertSame('partial', TradingAccountSyncLog::query()->latest('id')->value('status'));
         $this->assertSame('degraded', data_get($account->balanceSnapshots()->latest('id')->firstOrFail()->payload, 'history_status'));
+        $this->assertSame('degraded', data_get($account->fresh()->meta, 'metaapi_lifecycle.sync_health'));
+        $this->assertContains('sync_failure', collect((array) data_get($account->fresh()->meta, 'metaapi_events', []))->pluck('type')->all());
+    }
+
+    public function test_metaapi_disconnect_then_reconnect_records_recovery_lifecycle(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-26 10:20:00'));
+
+        try {
+            config()->set('services.metaapi.sync.retry_delay_ms', 0);
+            $account = $this->createMetaApiChallengeAccount('340151', [
+                'sync_source' => 'metaapi',
+                'platform_status' => 'disconnected',
+                'sync_status' => 'error',
+                'last_synced_at' => Carbon::parse('2026-05-26 09:40:00'),
+                'meta' => [
+                    'metaapi_lifecycle' => [
+                        'state' => 'disconnected',
+                        'sync_health' => 'disconnected',
+                        'last_disconnected_at' => '2026-05-26T09:45:00+00:00',
+                    ],
+                    'mt5_sync' => [
+                        'status' => 'disconnected',
+                        'last_successful_metric_update_at' => '2026-05-26T09:40:00+00:00',
+                    ],
+                ],
+            ]);
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc');
+
+            Carbon::setTestNow(Carbon::parse('2026-05-26 10:25:00'));
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10011,
+                'equity' => 10021,
+                'login' => '340151',
+            ]);
+
+            $recovered = app(MetaApiLiveSyncService::class)->syncByLogin('340151');
+            $this->assertSame('success', $recovered['status']);
+
+            $account->refresh();
+            $this->assertSame('connected', data_get($account->meta, 'metaapi_lifecycle.state'));
+            $this->assertSame('recovered', data_get($account->meta, 'metaapi_lifecycle.sync_health'));
+            $this->assertSame(1, data_get($account->meta, 'metaapi_lifecycle.recovery_count'));
+
+            $events = collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all();
+            $this->assertContains('account_recovered', $events);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_metaapi_breach_notification_content_is_supportive_and_commands_record_events(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340152');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10000,
+            'equity' => 9490,
+            'login' => '340152',
+        ], [
+            [
+                'id' => 'P-NOTIFY-1',
+                'symbol' => 'XAUUSD',
+                'profit' => -510,
+                'volume' => 1,
+            ],
+        ]);
+
+        app(MetaApiLiveSyncService::class)->syncByLogin('340152');
+        $account->refresh();
+
+        Mail::assertSent(ChallengeFailedMail::class, function (ChallengeFailedMail $mail): bool {
+            $rendered = $mail->render();
+
+            return str_contains($rendered, 'challenge cannot continue in its current phase')
+                && str_contains($rendered, 'future participation')
+                && str_contains($rendered, 'useful feedback rather than a setback');
+        });
+
+        $this->assertSame('breached', data_get($account->meta, 'metaapi_lifecycle.state'));
+        $this->assertContains('challenge_breached', collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all());
+
+        $exitCode = Artisan::call('wolforix:test-breach-notification', [
+            'login' => '340152',
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('No external email', Artisan::output());
+
+        $account->refresh();
+        $this->assertContains('breach_notification_tested', collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all());
+    }
+
+    public function test_metaapi_lifecycle_diagnostics_and_event_test_commands_report_state(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340153');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'dededede-dede-4ede-8ede-dededededede');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10001,
+            'equity' => 10002,
+            'login' => '340153',
+        ]);
+
+        app(MetaApiLiveSyncService::class)->syncByLogin('340153');
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-account-lifecycle', [
+            'login' => '340153',
+        ]));
+        $this->assertStringContainsString('Lifecycle state', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-sync-health', [
+            'login' => '340153',
+        ]));
+        $this->assertStringContainsString('Sync health', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-metaapi-events', [
+            'login' => '340153',
+        ]));
+        $this->assertStringContainsString('MetaApi event hook test', Artisan::output());
+
+        $account->refresh();
+        $events = collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all();
+        $this->assertContains('test_account_connected', $events);
+        $this->assertContains('test_sync_failure', $events);
     }
 
     public function test_one_step_target_does_not_pass_before_minimum_trading_days(): void
@@ -2094,7 +2268,7 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame('disable_pending_ack', $account->platform_status);
         $this->assertSame('connected', data_get($account->meta, 'mt5_sync.status'));
 
-        $tradesPanel = app(\App\Services\TradingAccounts\TradeHistoryPanelBuilder::class)->build($account);
+        $tradesPanel = app(TradeHistoryPanelBuilder::class)->build($account);
 
         $this->assertTrue($tradesPanel['is_available']);
         $this->assertSame(1, $tradesPanel['summary']['closed']);
@@ -3419,6 +3593,12 @@ class ChallengeDashboardTest extends TestCase
         config()->set('services.metaapi.history.limit', 50);
         config()->set('services.metaapi.history.timeout', 1);
         config()->set('services.metaapi.sync.stale_minutes', 10);
+        config()->set('services.metaapi.sync.retries', 1);
+        config()->set('services.metaapi.sync.retry_delay_ms', 0);
+        config()->set('services.metaapi.events.email_enabled', true);
+        config()->set('services.metaapi.events.discord_enabled', false);
+        config()->set('services.metaapi.events.telegram_enabled', false);
+        config()->set('services.metaapi.events.crm_webhook_enabled', false);
     }
 
     /**

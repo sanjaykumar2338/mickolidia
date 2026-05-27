@@ -129,6 +129,15 @@ return [
         'sync' => [
             'limit' => (int) env('METAAPI_SYNC_LIMIT', 10),
             'stale_minutes' => (int) env('METAAPI_SYNC_STALE_MINUTES', 10),
+            'retries' => (int) env('METAAPI_SYNC_RETRIES', 1),
+            'retry_delay_ms' => (int) env('METAAPI_SYNC_RETRY_DELAY_MS', 500),
+            'recovery_window_minutes' => (int) env('METAAPI_SYNC_RECOVERY_WINDOW_MINUTES', 60),
+        ],
+        'events' => [
+            'email_enabled' => filter_var(env('METAAPI_EVENTS_EMAIL_ENABLED', true), FILTER_VALIDATE_BOOL),
+            'discord_enabled' => filter_var(env('METAAPI_EVENTS_DISCORD_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'telegram_enabled' => filter_var(env('METAAPI_EVENTS_TELEGRAM_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'crm_webhook_enabled' => filter_var(env('METAAPI_EVENTS_CRM_WEBHOOK_ENABLED', false), FILTER_VALIDATE_BOOL),
         ],
         'demo' => [
             'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),

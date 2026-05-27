@@ -47,6 +47,8 @@
             'Trading days' => $account['trading_days'],
             'Open positions' => $account['open_positions_count'],
             'Closed trades' => $account['closed_trades_count'],
+            'Lifecycle state' => $account['lifecycle_state'],
+            'Sync health' => $account['sync_health'],
         ] as $label => $value)
             <div class="surface-panel rounded-[1.4rem] p-5">
                 <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ $label }}</dt>

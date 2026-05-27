@@ -59,6 +59,8 @@ class SyncMetaApiAccount extends Command
             ['Balance', array_key_exists('balance', $result) ? (string) $result['balance'] : '-'],
             ['Equity', array_key_exists('equity', $result) ? (string) $result['equity'] : '-'],
             ['Sync log', (string) ($result['sync_log_id'] ?? '-')],
+            ['Lifecycle state', (string) ($result['lifecycle_state'] ?? '-')],
+            ['Sync health', (string) ($result['sync_health'] ?? '-')],
             ['Phase 1B ready', ! empty($result['phase_1b_ready']) ? 'yes' : 'no'],
         ]);
 
