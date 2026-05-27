@@ -41,6 +41,7 @@ class Phase1ReadinessReport extends Command
         ]);
 
         $this->printList('Warnings', $report['warnings']);
+        $this->printList('Information', $report['information']);
         $this->printList('Recommendations', $report['recommendations']);
 
         if ((bool) $this->option('json')) {
@@ -57,14 +58,16 @@ class Phase1ReadinessReport extends Command
      */
     private function report($accounts, Mt5SyncAnomalyInspector $anomalyInspector): array
     {
-        $readyCount = $accounts->filter(fn (TradingAccount $account): bool => $this->readyToTrade($account))->count();
-        $queueCount = $accounts->filter(fn (TradingAccount $account): bool => in_array((string) data_get($account->meta, 'metaapi_onboarding.state'), [
+        $validationLogins = $anomalyInspector->phase1ValidatedLogins();
+        $validationAccounts = $accounts->filter(fn (TradingAccount $account): bool => $this->loginIn($account, $validationLogins));
+        $readyCount = $validationAccounts->filter(fn (TradingAccount $account): bool => $this->readyToTrade($account))->count();
+        $queueCount = $validationAccounts->filter(fn (TradingAccount $account): bool => in_array((string) data_get($account->meta, 'metaapi_onboarding.state'), [
             'purchased',
             'account_assigned',
             'waiting_metaapi_connection',
             'first_sync_received',
         ], true))->count();
-        $inconsistentCount = $accounts->filter(function (TradingAccount $account): bool {
+        $inconsistentCount = $validationAccounts->filter(function (TradingAccount $account): bool {
             $state = (string) data_get($account->meta, 'metaapi_onboarding.state');
 
             return $state === 'ready_to_trade' && ! $this->readyToTrade($account);
@@ -78,9 +81,12 @@ class Phase1ReadinessReport extends Command
         $metaApiIssueCount = (int) $syncSummary['metaapi_issues'];
         $legacyIgnoredCount = (int) $syncSummary['legacy_ignored_for_metaapi_signoff'];
         $historicalNotOnboardedCount = (int) $syncSummary['historical_metaapi_not_onboarded'];
+        $scopeExcludedCount = (int) $syncSummary['excluded_by_phase1_scope'];
         $activeMetaApiValidationCount = (int) $syncSummary['active_metaapi_validation_accounts'];
-        $breachedCount = $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count();
-        $recoveredCount = $accounts->filter(fn (TradingAccount $account): bool => (int) data_get($account->meta, 'metaapi_lifecycle.recovery_count', 0) > 0)->count();
+        $validatedAccounts = (array) $syncSummary['validated_accounts'];
+        $validatedAccountsLabel = '['.implode(',', $validatedAccounts).']';
+        $breachedCount = $validationAccounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count();
+        $recoveredCount = $validationAccounts->filter(fn (TradingAccount $account): bool => (int) data_get($account->meta, 'metaapi_lifecycle.recovery_count', 0) > 0)->count();
         $poolAvailable = Mt5AccountPoolEntry::query()
             ->where('is_available', true)
             ->whereNull('allocated_trading_account_id')
@@ -91,6 +97,7 @@ class Phase1ReadinessReport extends Command
             ->count();
         $webhooks = $this->webhookReadiness();
         $warnings = [];
+        $information = [];
 
         if ($inconsistentCount > 0) {
             $warnings[] = "{$inconsistentCount} account(s) have ready_to_trade state but are not currently readable/connected.";
@@ -101,11 +108,15 @@ class Phase1ReadinessReport extends Command
         }
 
         if ($historicalNotOnboardedCount > 0) {
-            $warnings[] = "{$historicalNotOnboardedCount} historical MetaApi records not onboarded into MetaApi.";
+            $information[] = "{$historicalNotOnboardedCount} historical MetaApi records not onboarded into MetaApi.";
+        }
+
+        if ($scopeExcludedCount > 0) {
+            $information[] = "{$scopeExcludedCount} account(s) are excluded by Phase 1 scope and do not affect readiness.";
         }
 
         if ($legacyIgnoredCount > 0) {
-            $warnings[] = "{$legacyIgnoredCount} legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff.";
+            $information[] = "{$legacyIgnoredCount} legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff.";
         }
 
         if ($poolAvailable === 0) {
@@ -122,16 +133,16 @@ class Phase1ReadinessReport extends Command
                 'inconsistent' => $inconsistentCount,
             ],
             'sync' => [
-                'status' => $metaApiIssueCount === 0
-                    ? ($historicalNotOnboardedCount > 0 || $legacyIgnoredCount > 0 ? 'ready_with_warnings' : 'ready')
-                    : 'needs_attention',
-                'summary' => "active_metaapi_validation_accounts={$activeMetaApiValidationCount}, historical_metaapi_not_onboarded={$historicalNotOnboardedCount}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}, metaapi_errors={$syncSummary['metaapi_errors']}, legacy_ignored={$legacyIgnoredCount}",
+                'status' => $metaApiIssueCount === 0 ? 'ready' : 'needs_attention',
+                'summary' => "validated_accounts={$validatedAccountsLabel}, active_metaapi_validation_accounts={$activeMetaApiValidationCount}, historical_metaapi_not_onboarded={$historicalNotOnboardedCount}, excluded_by_phase1_scope={$scopeExcludedCount}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}, metaapi_errors={$syncSummary['metaapi_errors']}",
                 'connected' => $connectedCount,
                 'stale' => $staleCount,
                 'disconnected' => $disconnectedCount,
                 'errors' => $syncIssueCount,
+                'validated_accounts' => $validatedAccounts,
                 'active_metaapi_validation_accounts' => $activeMetaApiValidationCount,
                 'historical_metaapi_not_onboarded' => $historicalNotOnboardedCount,
+                'excluded_by_phase1_scope' => $scopeExcludedCount,
                 'metaapi_connected' => (int) $syncSummary['metaapi_connected'],
                 'metaapi_stale' => (int) $syncSummary['metaapi_stale'],
                 'metaapi_disconnected' => (int) $syncSummary['metaapi_disconnected'],
@@ -171,6 +182,7 @@ class Phase1ReadinessReport extends Command
                 'summary' => 'broker migration groundwork is documented through wolforix:diagnose-broker-abstraction',
             ],
             'warnings' => $warnings,
+            'information' => $information,
             'recommendations' => [
                 'Run wolforix:diagnose-onboarding {login} for any account not showing ready_to_trade.',
                 'Run wolforix:diagnose-sync-health {login} for stale/disconnected accounts.',
@@ -178,6 +190,23 @@ class Phase1ReadinessReport extends Command
                 'Keep EA fallback until MetaApi live coverage is proven across the production pool.',
             ],
         ];
+    }
+
+    /**
+     * @param  array<int, string>  $logins
+     */
+    private function loginIn(TradingAccount $account, array $logins): bool
+    {
+        $candidates = array_filter([
+            (string) $account->platform_login,
+            (string) $account->platform_account_id,
+            (string) $account->account_reference,
+            (string) data_get($account->meta, 'mt5_sync.identifier'),
+            (string) data_get($account->meta, 'mt5_pool_entry.login'),
+        ]);
+
+        return collect($candidates)
+            ->contains(fn (string $candidate): bool => in_array($candidate, $logins, true));
     }
 
     private function readyToTrade(TradingAccount $account): bool

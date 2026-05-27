@@ -919,7 +919,7 @@ class ChallengeDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-05-27 11:00:00'));
 
         try {
-            $metaApiAccount = $this->createMetaApiChallengeAccount('340166', [
+            $metaApiAccount = $this->createMetaApiChallengeAccount('340134', [
                 'account_status' => 'active',
                 'challenge_status' => 'active',
                 'platform_status' => 'connected',
@@ -975,6 +975,27 @@ class ChallengeDashboardTest extends TestCase
                     ],
                 ],
             ]);
+            $excludedAccount = $this->createChallengeAccount('one_step', [
+                'account_reference' => 'WFX-MT5-EXCLUDED-METAAPI',
+                'account_size' => 100000,
+                'platform_login' => '335436',
+                'platform_account_id' => '335436',
+                'platform_environment' => 'FusionMarkets-Demo',
+                'platform_status' => 'connected',
+                'sync_status' => 'error',
+                'sync_source' => 'metaapi',
+                'sync_error' => 'metaapi_account_id_missing',
+                'sync_error_at' => now()->subHour(),
+                'meta' => [
+                    'metaapi_onboarding' => [
+                        'state' => 'waiting_metaapi_connection',
+                    ],
+                    'mt5_sync' => [
+                        'status' => 'pending',
+                        'last_error' => 'metaapi_account_id_missing',
+                    ],
+                ],
+            ]);
 
             $this->assertSame(0, Artisan::call('wolforix:diagnose-sync-anomalies', [
                 '--json' => true,
@@ -982,23 +1003,31 @@ class ChallengeDashboardTest extends TestCase
             $output = Artisan::output();
 
             $this->assertStringContainsString('legacy_ea_no_recent_heartbeat_or_metric_sync', $output);
+            $this->assertStringContainsString('excluded_by_phase1_scope', $output);
             $this->assertStringContainsString('historical_not_onboarded_metaapi_account', $output);
+            $this->assertStringContainsString('explicitly_excluded_login', $output);
             $this->assertStringContainsString('"metaapi_stale": 0', $output);
+            $this->assertStringContainsString('"validated_accounts": [', $output);
+            $this->assertStringContainsString('"340134"', $output);
+            $this->assertStringContainsString('"335400"', $output);
             $this->assertStringContainsString('"active_metaapi_validation_accounts": 1', $output);
             $this->assertStringContainsString('"historical_metaapi_not_onboarded": 1', $output);
+            $this->assertStringContainsString('"excluded_by_phase1_scope": 2', $output);
             $this->assertStringContainsString('"metaapi_issues": 0', $output);
             $this->assertStringContainsString('"legacy_ignored_for_metaapi_signoff": 1', $output);
-            $this->assertStringNotContainsString((string) $metaApiAccount->platform_login.'",', $output);
             $this->assertStringContainsString((string) $legacyAccount->platform_login, $output);
             $this->assertStringContainsString((string) $historicalAccount->platform_login, $output);
+            $this->assertStringContainsString((string) $excludedAccount->platform_login, $output);
 
             $this->assertSame(0, Artisan::call('wolforix:phase1-readiness-report', [
                 '--json' => true,
             ]));
             $readiness = Artisan::output();
 
-            $this->assertStringContainsString('ready_with_warnings', $readiness);
+            $this->assertStringContainsString('"status": "ready"', $readiness);
+            $this->assertStringContainsString('validated_accounts=[340134,335400]', $readiness);
             $this->assertStringContainsString('1 historical MetaApi records not onboarded into MetaApi', $readiness);
+            $this->assertStringContainsString('2 account(s) are excluded by Phase 1 scope and do not affect readiness.', $readiness);
             $this->assertStringContainsString('legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff', $readiness);
             $this->assertStringContainsString('"metaapi_issues": 0', $readiness);
         } finally {
@@ -1008,7 +1037,7 @@ class ChallengeDashboardTest extends TestCase
 
     public function test_final_mvp_closeout_onboarded_metaapi_missing_uuid_still_blocks_readiness(): void
     {
-        $account = $this->createMetaApiChallengeAccount('340167', [
+        $account = $this->createMetaApiChallengeAccount('340134', [
             'sync_source' => 'metaapi',
             'sync_status' => 'error',
             'sync_error' => 'metaapi_account_id_missing',

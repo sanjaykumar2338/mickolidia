@@ -10,9 +10,28 @@ use Illuminate\Support\Collection;
 
 class Mt5SyncAnomalyInspector
 {
+    private const PHASE1_VALIDATED_LOGINS = [
+        '340134',
+        '335400',
+    ];
+
+    private const PHASE1_EXCLUDED_LOGINS = [
+        '335436',
+        '52841770',
+        '52841775',
+    ];
+
     public function __construct(
         private readonly Mt5ConnectorStatus $connectorStatus,
     ) {}
+
+    /**
+     * @return array<int, string>
+     */
+    public function phase1ValidatedLogins(): array
+    {
+        return self::PHASE1_VALIDATED_LOGINS;
+    }
 
     /**
      * @return Collection<int, TradingAccount>
@@ -47,16 +66,20 @@ class Mt5SyncAnomalyInspector
             ->filter(fn (array $row): bool => (bool) $row['active_metaapi_validation_account'])
             ->count();
         $legacyIssues = $anomalies
-            ->filter(fn (array $row): bool => ! (bool) $row['is_metaapi'])
+            ->filter(fn (array $row): bool => ! (bool) $row['is_metaapi'] && ! (bool) $row['excluded_by_phase1_scope'])
             ->count();
         $historicalNotOnboarded = $rows
             ->filter(fn (array $row): bool => (bool) $row['historical_metaapi_not_onboarded'])
+            ->count();
+        $scopeExcluded = $rows
+            ->filter(fn (array $row): bool => (bool) $row['excluded_by_phase1_scope'])
             ->count();
 
         return [
             'generated_at' => now()->toIso8601String(),
             'summary' => [
                 'total_accounts' => $rows->count(),
+                'validated_accounts' => self::PHASE1_VALIDATED_LOGINS,
                 'connected' => $rows->where('connector_status', Mt5ConnectorStatus::CONNECTED)->count(),
                 'stale' => $rows->where('connector_status', Mt5ConnectorStatus::STALE)->count(),
                 'disconnected' => $rows->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
@@ -64,6 +87,7 @@ class Mt5SyncAnomalyInspector
                 'metaapi_accounts' => $rows->where('is_metaapi', true)->count(),
                 'active_metaapi_validation_accounts' => $rows->where('active_metaapi_validation_account', true)->count(),
                 'historical_metaapi_not_onboarded' => $historicalNotOnboarded,
+                'excluded_by_phase1_scope' => $scopeExcluded,
                 'metaapi_connected' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::CONNECTED)->count(),
                 'metaapi_stale' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::STALE)->count(),
                 'metaapi_disconnected' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
@@ -74,11 +98,10 @@ class Mt5SyncAnomalyInspector
                 'legacy_errors' => $rows->where('is_metaapi', false)->where('has_error', true)->count(),
                 'metaapi_issues' => $metaApiIssues,
                 'historical_metaapi_warnings' => $historicalNotOnboarded,
+                'phase1_scope_exclusions' => $scopeExcluded,
                 'legacy_ignored_for_metaapi_signoff' => $legacyIssues,
             ],
-            'status' => $metaApiIssues === 0
-                ? ($historicalNotOnboarded > 0 || $legacyIssues > 0 ? 'ready_with_warnings' : 'ready')
-                : 'needs_attention',
+            'status' => $metaApiIssues === 0 ? 'ready' : 'needs_attention',
             'anomalies' => $anomalies
                 ->take(max(1, $limit))
                 ->values()
@@ -100,8 +123,10 @@ class Mt5SyncAnomalyInspector
         $hasError = $account->sync_status === 'error'
             || filled((string) $account->sync_error)
             || $latestLog?->status === 'error';
-        $historicalNotOnboarded = $this->isHistoricalNotOnboardedMetaApiAccount($account, $latestLog, $isMetaApi, $hasMetaApiAccountId);
-        $activeMetaApiValidationAccount = $isMetaApi && ! $historicalNotOnboarded;
+        $phase1ScopeReason = $this->phase1ScopeReason($account, $latestLog, $isMetaApi, $hasMetaApiAccountId);
+        $excludedByPhase1Scope = $phase1ScopeReason !== null;
+        $historicalNotOnboarded = $phase1ScopeReason === 'historical_not_onboarded_metaapi_account';
+        $activeMetaApiValidationAccount = $this->isPhase1ValidatedLogin($account);
         $isAnomaly = $hasError || in_array($status, [Mt5ConnectorStatus::STALE, Mt5ConnectorStatus::DISCONNECTED], true);
         $lastSyncAt = $connector['last_activity_at'] ?? $connector['last_sync_at'] ?? $account->last_synced_at;
 
@@ -113,6 +138,10 @@ class Mt5SyncAnomalyInspector
             'is_metaapi' => $isMetaApi,
             'active_metaapi_validation_account' => $activeMetaApiValidationAccount,
             'historical_metaapi_not_onboarded' => $historicalNotOnboarded,
+            'excluded_by_phase1_scope' => $excludedByPhase1Scope,
+            'phase1_scope' => $activeMetaApiValidationAccount ? 'validated' : ($excludedByPhase1Scope ? 'excluded' : 'unscoped'),
+            'phase1_scope_reason' => $phase1ScopeReason,
+            'validated_accounts' => self::PHASE1_VALIDATED_LOGINS,
             'has_metaapi_account_id' => $hasMetaApiAccountId,
             'connector_status' => $status,
             'platform_status' => (string) $account->platform_status,
@@ -128,9 +157,9 @@ class Mt5SyncAnomalyInspector
             'latest_sync_log_status' => $latestLog?->status,
             'latest_sync_log_error' => $this->shortError((string) ($latestLog?->error_message ?: '')),
             'is_anomaly' => $isAnomaly,
-            'ignored_for_metaapi_signoff' => $isAnomaly && ! $isMetaApi,
-            'reason' => $this->reason($account, $connector, $latestLog, $isMetaApi, $hasError, $historicalNotOnboarded),
-            'recommended_fix' => $this->recommendedFix($account, $status, $isMetaApi, $hasError, $historicalNotOnboarded),
+            'ignored_for_metaapi_signoff' => $isAnomaly && ($excludedByPhase1Scope || ! $isMetaApi),
+            'reason' => $this->reason($account, $connector, $latestLog, $isMetaApi, $hasError, $excludedByPhase1Scope),
+            'recommended_fix' => $this->recommendedFix($account, $status, $isMetaApi, $hasError, $excludedByPhase1Scope, $phase1ScopeReason),
         ];
     }
 
@@ -148,10 +177,10 @@ class Mt5SyncAnomalyInspector
     /**
      * @param  array<string, mixed>  $connector
      */
-    private function reason(TradingAccount $account, array $connector, ?TradingAccountSyncLog $latestLog, bool $isMetaApi, bool $hasError, bool $historicalNotOnboarded): string
+    private function reason(TradingAccount $account, array $connector, ?TradingAccountSyncLog $latestLog, bool $isMetaApi, bool $hasError, bool $excludedByPhase1Scope): string
     {
-        if ($historicalNotOnboarded) {
-            return 'historical_not_onboarded_metaapi_account';
+        if ($excludedByPhase1Scope) {
+            return 'excluded_by_phase1_scope';
         }
 
         if ($hasError) {
@@ -183,12 +212,17 @@ class Mt5SyncAnomalyInspector
         return 'no_sync_anomaly_detected';
     }
 
-    private function recommendedFix(TradingAccount $account, string $status, bool $isMetaApi, bool $hasError, bool $historicalNotOnboarded): string
+    private function recommendedFix(TradingAccount $account, string $status, bool $isMetaApi, bool $hasError, bool $excludedByPhase1Scope, ?string $phase1ScopeReason): string
     {
         $login = (string) ($account->platform_login ?: $account->platform_account_id ?: $account->account_reference);
 
-        if ($historicalNotOnboarded) {
-            return 'Historical MetaApi-shaped record with no MetaApi UUID. Leave as a Phase 1 warning unless this account must be re-onboarded.';
+        if ($excludedByPhase1Scope) {
+            return match ($phase1ScopeReason) {
+                'historical_not_onboarded_metaapi_account' => 'Historical MetaApi-shaped record with no MetaApi UUID. Informational only for Phase 1.',
+                'icmarkets_demo_account' => 'ICMarkets demo account is outside Phase 1 MetaApi validation scope.',
+                'explicitly_excluded_login' => 'This login was explicitly excluded from Phase 1 MetaApi validation scope.',
+                default => 'Account is outside Phase 1 MetaApi validation scope.',
+            };
         }
 
         if (! $isMetaApi) {
@@ -206,17 +240,33 @@ class Mt5SyncAnomalyInspector
         return 'No action required.';
     }
 
-    private function isHistoricalNotOnboardedMetaApiAccount(
+    private function phase1ScopeReason(
         TradingAccount $account,
         ?TradingAccountSyncLog $latestLog,
         bool $isMetaApi,
         bool $hasMetaApiAccountId,
-    ): bool {
-        if (! $isMetaApi || $hasMetaApiAccountId || $this->hasMetaApiOnboardingIntent($account)) {
-            return false;
+    ): ?string {
+        if ($this->isPhase1ValidatedLogin($account)) {
+            return null;
         }
 
-        return $this->hasMissingMetaApiIdError($account, $latestLog);
+        if ($this->loginIn($account, self::PHASE1_EXCLUDED_LOGINS)) {
+            return 'explicitly_excluded_login';
+        }
+
+        if ($this->isIcMarketsAccount($account)) {
+            return 'icmarkets_demo_account';
+        }
+
+        if ($isMetaApi && ! $hasMetaApiAccountId && ! $this->hasMetaApiOnboardingIntent($account) && $this->hasMissingMetaApiIdError($account, $latestLog)) {
+            return 'historical_not_onboarded_metaapi_account';
+        }
+
+        if ($isMetaApi) {
+            return 'not_in_phase1_validated_accounts';
+        }
+
+        return null;
     }
 
     private function hasMissingMetaApiIdError(TradingAccount $account, ?TradingAccountSyncLog $latestLog): bool
@@ -267,6 +317,41 @@ class Mt5SyncAnomalyInspector
     private function looksLikeMetaApiAccountId(string $id): bool
     {
         return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', trim($id)) === 1;
+    }
+
+    private function isPhase1ValidatedLogin(TradingAccount $account): bool
+    {
+        return $this->loginIn($account, self::PHASE1_VALIDATED_LOGINS);
+    }
+
+    /**
+     * @param  array<int, string>  $logins
+     */
+    private function loginIn(TradingAccount $account, array $logins): bool
+    {
+        $candidates = array_filter([
+            (string) $account->platform_login,
+            (string) $account->platform_account_id,
+            (string) $account->account_reference,
+            (string) data_get($account->meta, 'mt5_sync.identifier'),
+            (string) data_get($account->meta, 'mt5_pool_entry.login'),
+        ]);
+
+        return collect($candidates)
+            ->contains(fn (string $candidate): bool => in_array($candidate, $logins, true));
+    }
+
+    private function isIcMarketsAccount(TradingAccount $account): bool
+    {
+        $values = [
+            $account->platform_environment,
+            data_get($account->meta, 'mt5_pool_entry.server'),
+            data_get($account->meta, 'mt5_sync.server'),
+            data_get($account->meta, 'mt5_sync.platform_environment'),
+        ];
+
+        return collect($values)
+            ->contains(fn (mixed $value): bool => str_contains(strtolower((string) $value), 'icmarkets'));
     }
 
     private function shortError(string $error): string
