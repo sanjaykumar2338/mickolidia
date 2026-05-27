@@ -248,6 +248,7 @@ class MetaApiLiveSyncService
     public function diagnoseByLogin(string $login): array
     {
         $mappingDiagnostic = $this->mappingRepairService->repairByLogin($login, [
+            'assign' => true,
             'dry_run' => true,
             'allow_api_lookup' => true,
         ]);

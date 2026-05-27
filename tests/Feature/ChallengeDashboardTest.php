@@ -644,6 +644,143 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($entry->id, data_get($account->meta, 'mt5_pool_entry.id'));
     }
 
+    public function test_metaapi_repair_command_assigns_unallocated_pool_entry_with_assign_option(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340134', [
+            'platform_login' => null,
+            'platform_account_id' => null,
+            'meta' => [
+                'mt5_sync' => [
+                    'identifier' => '340134',
+                ],
+            ],
+        ]);
+        $metaApiAccountId = '7ed465cc-2315-4311-b4a1-4cc90f66e332';
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340134',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => $metaApiAccountId,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:repair-metaapi-account', [
+            'login' => '340134',
+            '--assign' => true,
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Assign mode', $output);
+        $this->assertStringContainsString('login_metadata', $output);
+        $this->assertStringContainsString('assign_pool_to_trading_account', $output);
+
+        $entry = Mt5AccountPoolEntry::query()->where('login', '340134')->firstOrFail();
+        $account->refresh();
+
+        $this->assertSame($account->id, $entry->allocated_trading_account_id);
+        $this->assertSame($account->user_id, $entry->allocated_user_id);
+        $this->assertSame('340134', $account->platform_login);
+        $this->assertSame('340134', $account->platform_account_id);
+        $this->assertSame('340134', data_get($account->meta, 'mt5_sync.identifier'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+    }
+
+    public function test_metaapi_repair_command_reports_admin_action_when_no_trading_account_exists(): void
+    {
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340142',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => '88888888-8888-4888-8888-888888888888',
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:repair-metaapi-account', [
+            'login' => '340142',
+            '--assign' => true,
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('trading_account_missing', $output);
+        $this->assertStringContainsString('Admin action required', $output);
+        $this->assertStringContainsString('php artisan wolforix:repair-metaapi-account 340142 --assign', $output);
+    }
+
+    public function test_list_unassigned_metaapi_accounts_shows_only_unassigned_metaapi_pool_rows(): void
+    {
+        $candidateAccount = $this->createMetaApiChallengeAccount('340134', [
+            'platform_login' => null,
+            'platform_account_id' => null,
+            'meta' => [
+                'mt5_sync' => [
+                    'identifier' => '340134',
+                ],
+            ],
+        ]);
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340134',
+            'server' => 'FusionMarkets-Demo',
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => '7ed465cc-2315-4311-b4a1-4cc90f66e332',
+            ],
+        ]);
+
+        Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '335400',
+                'server' => 'FusionMarkets-Demo',
+                'allocated_trading_account_id' => $candidateAccount->id,
+                'allocated_user_id' => $candidateAccount->user_id,
+                'meta' => [
+                    'metaapi_account_id' => 'ed749805-4cad-4622-a0bc-3b1c8dd241d2',
+                ],
+            ]);
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340143',
+            'server' => 'FusionMarkets-Demo',
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'source' => 'no-metaapi-id',
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:list-unassigned-metaapi-accounts');
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('340134', $output);
+        $this->assertStringNotContainsString('335400', $output);
+        $this->assertStringNotContainsString('340143', $output);
+        $this->assertStringContainsString('wolforix:repair-metaapi-account 340134 --assign', $output);
+    }
+
     public function test_metaapi_sync_auto_heals_pool_uuid_into_trading_account_before_sync(): void
     {
         $account = $this->createMetaApiChallengeAccount('340141');

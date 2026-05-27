@@ -10,6 +10,7 @@ class RepairMetaApiAccount extends Command
     protected $signature = 'wolforix:repair-metaapi-account
         {login : MT5 login/account reference to repair}
         {--metaapi-account-id= : Optional MetaApi UUID to persist if local records do not have one}
+        {--assign : Assign an unallocated pool row to exactly one safely matched trading account}
         {--dry-run : Show repair plan without writing}
         {--no-api-lookup : Do not query MetaApi for a missing account UUID}';
 
@@ -27,6 +28,7 @@ class RepairMetaApiAccount extends Command
 
         $result = $repairService->repairByLogin($login, [
             'metaapi_account_id' => $this->option('metaapi-account-id'),
+            'assign' => (bool) $this->option('assign'),
             'dry_run' => (bool) $this->option('dry-run'),
             'allow_api_lookup' => ! (bool) $this->option('no-api-lookup'),
         ]);
@@ -37,15 +39,18 @@ class RepairMetaApiAccount extends Command
 
         $poolEntry = (array) ($result['pool_entry'] ?? []);
         $tradingAccount = (array) ($result['trading_account'] ?? []);
+        $resolution = (array) ($result['trading_account_resolution'] ?? []);
         $mapping = (array) ($result['mapping'] ?? []);
 
         $this->table(['Field', 'Value'], [
             ['Login', (string) ($result['login'] ?? $login)],
             ['Status', (string) ($result['status'] ?? '-')],
+            ['Assign mode', ! empty($result['assign']) ? 'yes' : 'no'],
             ['Pool entry', (string) ($poolEntry['id'] ?? '-')],
             ['Pool allocated account', (string) ($poolEntry['allocated_trading_account_id'] ?? '-')],
             ['Trading account', (string) ($tradingAccount['id'] ?? '-')],
             ['Account reference', (string) ($tradingAccount['account_reference'] ?? '-')],
+            ['Trading account match', trim((string) (($resolution['status'] ?? '-').' / '.($resolution['source'] ?? '-')))],
             ['MetaApi account', (string) ($result['metaapi_account_id'] ?? '-')],
             ['Canonical server', (string) ($result['canonical_server'] ?? '-')],
             ['Mapping mismatch', ! empty($mapping['mapping_mismatch']) ? 'yes' : 'no'],
@@ -55,6 +60,7 @@ class RepairMetaApiAccount extends Command
         ]);
 
         $this->printList('Changes', (array) ($result['changes'] ?? []));
+        $this->printCandidates((array) ($resolution['candidates'] ?? []));
         $this->printList('Warnings', (array) ($result['warnings'] ?? []));
         $this->printList('Errors', (array) ($result['errors'] ?? []));
         $this->printList('Repair recommendation', (array) ($result['recommendations'] ?? []));
@@ -79,5 +85,30 @@ class RepairMetaApiAccount extends Command
         foreach ($items as $item) {
             $this->line('- '.(string) $item);
         }
+    }
+
+    /**
+     * @param  array<int, mixed>  $candidates
+     */
+    private function printCandidates(array $candidates): void
+    {
+        if ($candidates === []) {
+            return;
+        }
+
+        $this->newLine();
+        $this->info('Trading account candidates');
+        $this->table(
+            ['id', 'account_reference', 'platform_login', 'platform_account_id', 'server', 'account_status', 'challenge_status'],
+            collect($candidates)->map(fn (mixed $candidate): array => [
+                (string) data_get($candidate, 'id', '-'),
+                (string) data_get($candidate, 'account_reference', '-'),
+                (string) (data_get($candidate, 'platform_login') ?: '-'),
+                (string) (data_get($candidate, 'platform_account_id') ?: '-'),
+                (string) (data_get($candidate, 'platform_environment') ?: '-'),
+                (string) (data_get($candidate, 'account_status') ?: '-'),
+                (string) (data_get($candidate, 'challenge_status') ?: '-'),
+            ])->all(),
+        );
     }
 }
