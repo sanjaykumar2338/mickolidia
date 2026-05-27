@@ -30,6 +30,8 @@ class DiagnoseSyncAnomalies extends Command
             ['Stale', (string) $summary['stale']],
             ['Disconnected', (string) $summary['disconnected']],
             ['Errors', (string) $summary['errors']],
+            ['Active MetaApi validation accounts', (string) $summary['active_metaapi_validation_accounts']],
+            ['Historical MetaApi not onboarded', (string) $summary['historical_metaapi_not_onboarded']],
             ['MetaApi issues', (string) $summary['metaapi_issues']],
             ['Legacy EA ignored for MetaApi signoff', (string) $summary['legacy_ignored_for_metaapi_signoff']],
         ]);

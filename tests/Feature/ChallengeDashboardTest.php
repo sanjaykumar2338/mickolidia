@@ -956,6 +956,25 @@ class ChallengeDashboardTest extends TestCase
                     ],
                 ],
             ]);
+            $historicalAccount = $this->createChallengeAccount('one_step', [
+                'account_reference' => 'WFX-MT5-HISTORICAL-METAAPI',
+                'account_size' => 50000,
+                'platform_login' => '990167',
+                'platform_account_id' => '990167',
+                'platform_status' => 'connected',
+                'sync_status' => 'error',
+                'sync_source' => null,
+                'sync_error' => 'metaapi_account_id_missing',
+                'sync_error_at' => now()->subHour(),
+                'last_synced_at' => null,
+                'last_sync_completed_at' => now()->subHour(),
+                'meta' => [
+                    'mt5_sync' => [
+                        'status' => 'pending',
+                        'last_error' => 'metaapi_account_id_missing',
+                    ],
+                ],
+            ]);
 
             $this->assertSame(0, Artisan::call('wolforix:diagnose-sync-anomalies', [
                 '--json' => true,
@@ -963,21 +982,65 @@ class ChallengeDashboardTest extends TestCase
             $output = Artisan::output();
 
             $this->assertStringContainsString('legacy_ea_no_recent_heartbeat_or_metric_sync', $output);
+            $this->assertStringContainsString('historical_not_onboarded_metaapi_account', $output);
             $this->assertStringContainsString('"metaapi_stale": 0', $output);
+            $this->assertStringContainsString('"active_metaapi_validation_accounts": 1', $output);
+            $this->assertStringContainsString('"historical_metaapi_not_onboarded": 1', $output);
+            $this->assertStringContainsString('"metaapi_issues": 0', $output);
             $this->assertStringContainsString('"legacy_ignored_for_metaapi_signoff": 1', $output);
             $this->assertStringNotContainsString((string) $metaApiAccount->platform_login.'",', $output);
             $this->assertStringContainsString((string) $legacyAccount->platform_login, $output);
+            $this->assertStringContainsString((string) $historicalAccount->platform_login, $output);
 
             $this->assertSame(0, Artisan::call('wolforix:phase1-readiness-report', [
                 '--json' => true,
             ]));
             $readiness = Artisan::output();
 
+            $this->assertStringContainsString('ready_with_warnings', $readiness);
+            $this->assertStringContainsString('1 historical MetaApi records not onboarded into MetaApi', $readiness);
             $this->assertStringContainsString('legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff', $readiness);
             $this->assertStringContainsString('"metaapi_issues": 0', $readiness);
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_final_mvp_closeout_onboarded_metaapi_missing_uuid_still_blocks_readiness(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340167', [
+            'sync_source' => 'metaapi',
+            'sync_status' => 'error',
+            'sync_error' => 'metaapi_account_id_missing',
+            'meta' => [
+                'metaapi_onboarding' => [
+                    'state' => 'waiting_metaapi_connection',
+                ],
+                'mt5_sync' => [
+                    'status' => 'pending',
+                    'last_error' => 'metaapi_account_id_missing',
+                ],
+            ],
+        ]);
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-sync-anomalies', [
+            '--json' => true,
+        ]));
+        $output = Artisan::output();
+
+        $this->assertStringContainsString('"active_metaapi_validation_accounts": 1', $output);
+        $this->assertStringContainsString('"historical_metaapi_not_onboarded": 0', $output);
+        $this->assertStringContainsString('"metaapi_issues": 1', $output);
+        $this->assertStringContainsString('sync_error: metaapi_account_id_missing', $output);
+        $this->assertStringContainsString((string) $account->platform_login, $output);
+
+        $this->assertSame(0, Artisan::call('wolforix:phase1-readiness-report', [
+            '--json' => true,
+        ]));
+        $readiness = Artisan::output();
+
+        $this->assertStringContainsString('needs_attention', $readiness);
+        $this->assertStringContainsString('"metaapi_issues": 1', $readiness);
     }
 
     public function test_metaapi_repair_command_assigns_pool_entry_and_persists_uuid_without_overwriting(): void

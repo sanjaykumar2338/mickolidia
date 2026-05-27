@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use Illuminate\Support\Carbon;
@@ -43,10 +44,13 @@ class Mt5SyncAnomalyInspector
             ->values();
 
         $metaApiIssues = $anomalies
-            ->filter(fn (array $row): bool => (bool) $row['is_metaapi'])
+            ->filter(fn (array $row): bool => (bool) $row['active_metaapi_validation_account'])
             ->count();
         $legacyIssues = $anomalies
             ->filter(fn (array $row): bool => ! (bool) $row['is_metaapi'])
+            ->count();
+        $historicalNotOnboarded = $rows
+            ->filter(fn (array $row): bool => (bool) $row['historical_metaapi_not_onboarded'])
             ->count();
 
         return [
@@ -58,18 +62,23 @@ class Mt5SyncAnomalyInspector
                 'disconnected' => $rows->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
                 'errors' => $rows->where('has_error', true)->count(),
                 'metaapi_accounts' => $rows->where('is_metaapi', true)->count(),
-                'metaapi_connected' => $rows->where('is_metaapi', true)->where('connector_status', Mt5ConnectorStatus::CONNECTED)->count(),
-                'metaapi_stale' => $rows->where('is_metaapi', true)->where('connector_status', Mt5ConnectorStatus::STALE)->count(),
-                'metaapi_disconnected' => $rows->where('is_metaapi', true)->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
-                'metaapi_errors' => $rows->where('is_metaapi', true)->where('has_error', true)->count(),
+                'active_metaapi_validation_accounts' => $rows->where('active_metaapi_validation_account', true)->count(),
+                'historical_metaapi_not_onboarded' => $historicalNotOnboarded,
+                'metaapi_connected' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::CONNECTED)->count(),
+                'metaapi_stale' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::STALE)->count(),
+                'metaapi_disconnected' => $rows->where('active_metaapi_validation_account', true)->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
+                'metaapi_errors' => $rows->where('active_metaapi_validation_account', true)->where('has_error', true)->count(),
                 'legacy_accounts' => $rows->where('is_metaapi', false)->count(),
                 'legacy_stale' => $rows->where('is_metaapi', false)->where('connector_status', Mt5ConnectorStatus::STALE)->count(),
                 'legacy_disconnected' => $rows->where('is_metaapi', false)->where('connector_status', Mt5ConnectorStatus::DISCONNECTED)->count(),
                 'legacy_errors' => $rows->where('is_metaapi', false)->where('has_error', true)->count(),
                 'metaapi_issues' => $metaApiIssues,
+                'historical_metaapi_warnings' => $historicalNotOnboarded,
                 'legacy_ignored_for_metaapi_signoff' => $legacyIssues,
             ],
-            'status' => $metaApiIssues === 0 ? 'ready' : 'needs_attention',
+            'status' => $metaApiIssues === 0
+                ? ($historicalNotOnboarded > 0 || $legacyIssues > 0 ? 'ready_with_warnings' : 'ready')
+                : 'needs_attention',
             'anomalies' => $anomalies
                 ->take(max(1, $limit))
                 ->values()
@@ -85,10 +94,14 @@ class Mt5SyncAnomalyInspector
         $connector = $this->connectorStatus->forAccount($account);
         $status = (string) $connector['status'];
         $latestLog = $account->syncLogs()->latest('id')->first();
-        $isMetaApi = $this->connectorStatus->isMetaApiAccount($account);
+        $hasMetaApiAccountId = $this->hasMetaApiAccountId($account);
+        $missingMetaApiId = $this->hasMissingMetaApiIdError($account, $latestLog);
+        $isMetaApi = $this->connectorStatus->isMetaApiAccount($account) || $hasMetaApiAccountId || $missingMetaApiId;
         $hasError = $account->sync_status === 'error'
             || filled((string) $account->sync_error)
             || $latestLog?->status === 'error';
+        $historicalNotOnboarded = $this->isHistoricalNotOnboardedMetaApiAccount($account, $latestLog, $isMetaApi, $hasMetaApiAccountId);
+        $activeMetaApiValidationAccount = $isMetaApi && ! $historicalNotOnboarded;
         $isAnomaly = $hasError || in_array($status, [Mt5ConnectorStatus::STALE, Mt5ConnectorStatus::DISCONNECTED], true);
         $lastSyncAt = $connector['last_activity_at'] ?? $connector['last_sync_at'] ?? $account->last_synced_at;
 
@@ -98,6 +111,9 @@ class Mt5SyncAnomalyInspector
             'account_reference' => $account->account_reference,
             'source' => $this->source($account, $isMetaApi),
             'is_metaapi' => $isMetaApi,
+            'active_metaapi_validation_account' => $activeMetaApiValidationAccount,
+            'historical_metaapi_not_onboarded' => $historicalNotOnboarded,
+            'has_metaapi_account_id' => $hasMetaApiAccountId,
             'connector_status' => $status,
             'platform_status' => (string) $account->platform_status,
             'sync_status' => (string) $account->sync_status,
@@ -113,8 +129,8 @@ class Mt5SyncAnomalyInspector
             'latest_sync_log_error' => $this->shortError((string) ($latestLog?->error_message ?: '')),
             'is_anomaly' => $isAnomaly,
             'ignored_for_metaapi_signoff' => $isAnomaly && ! $isMetaApi,
-            'reason' => $this->reason($account, $connector, $latestLog, $isMetaApi, $hasError),
-            'recommended_fix' => $this->recommendedFix($account, $status, $isMetaApi, $hasError),
+            'reason' => $this->reason($account, $connector, $latestLog, $isMetaApi, $hasError, $historicalNotOnboarded),
+            'recommended_fix' => $this->recommendedFix($account, $status, $isMetaApi, $hasError, $historicalNotOnboarded),
         ];
     }
 
@@ -132,8 +148,12 @@ class Mt5SyncAnomalyInspector
     /**
      * @param  array<string, mixed>  $connector
      */
-    private function reason(TradingAccount $account, array $connector, ?TradingAccountSyncLog $latestLog, bool $isMetaApi, bool $hasError): string
+    private function reason(TradingAccount $account, array $connector, ?TradingAccountSyncLog $latestLog, bool $isMetaApi, bool $hasError, bool $historicalNotOnboarded): string
     {
+        if ($historicalNotOnboarded) {
+            return 'historical_not_onboarded_metaapi_account';
+        }
+
         if ($hasError) {
             return 'sync_error: '.$this->shortError((string) ($account->sync_error ?: $latestLog?->error_message ?: 'latest sync log failed'));
         }
@@ -163,9 +183,13 @@ class Mt5SyncAnomalyInspector
         return 'no_sync_anomaly_detected';
     }
 
-    private function recommendedFix(TradingAccount $account, string $status, bool $isMetaApi, bool $hasError): string
+    private function recommendedFix(TradingAccount $account, string $status, bool $isMetaApi, bool $hasError, bool $historicalNotOnboarded): string
     {
         $login = (string) ($account->platform_login ?: $account->platform_account_id ?: $account->account_reference);
+
+        if ($historicalNotOnboarded) {
+            return 'Historical MetaApi-shaped record with no MetaApi UUID. Leave as a Phase 1 warning unless this account must be re-onboarded.';
+        }
 
         if (! $isMetaApi) {
             return 'Legacy EA fallback account. Verify the EA heartbeat if this account is still active, otherwise ignore it for MetaApi Phase 1 signoff.';
@@ -180,6 +204,69 @@ class Mt5SyncAnomalyInspector
         }
 
         return 'No action required.';
+    }
+
+    private function isHistoricalNotOnboardedMetaApiAccount(
+        TradingAccount $account,
+        ?TradingAccountSyncLog $latestLog,
+        bool $isMetaApi,
+        bool $hasMetaApiAccountId,
+    ): bool {
+        if (! $isMetaApi || $hasMetaApiAccountId || $this->hasMetaApiOnboardingIntent($account)) {
+            return false;
+        }
+
+        return $this->hasMissingMetaApiIdError($account, $latestLog);
+    }
+
+    private function hasMissingMetaApiIdError(TradingAccount $account, ?TradingAccountSyncLog $latestLog): bool
+    {
+        return str_contains((string) $account->sync_error, 'metaapi_account_id_missing')
+            || str_contains((string) data_get($account->meta, 'mt5_sync.last_error'), 'metaapi_account_id_missing')
+            || str_contains((string) ($latestLog?->error_message ?: ''), 'metaapi_account_id_missing');
+    }
+
+    private function hasMetaApiOnboardingIntent(TradingAccount $account): bool
+    {
+        return filled(data_get($account->meta, 'metaapi_onboarding.state'))
+            || filled(data_get($account->meta, 'metaapi_lifecycle.state'))
+            || filled(data_get($account->meta, 'mt5_pool_entry.id'));
+    }
+
+    private function hasMetaApiAccountId(TradingAccount $account): bool
+    {
+        $candidates = [
+            data_get($account->meta, 'metaapi_account_id'),
+            data_get($account->meta, 'mt5_sync.metaapi_account_id'),
+            data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'),
+        ];
+
+        $poolEntryId = data_get($account->meta, 'mt5_pool_entry.id');
+
+        if (is_numeric($poolEntryId)) {
+            $candidates[] = data_get(Mt5AccountPoolEntry::query()->find((int) $poolEntryId)?->meta, 'metaapi_account_id');
+        }
+
+        $allocatedPoolId = Mt5AccountPoolEntry::query()
+            ->where('allocated_trading_account_id', $account->id)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->value('meta->metaapi_account_id');
+
+        $candidates[] = $allocatedPoolId;
+
+        foreach ($candidates as $candidate) {
+            if ($this->looksLikeMetaApiAccountId((string) $candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function looksLikeMetaApiAccountId(string $id): bool
+    {
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', trim($id)) === 1;
     }
 
     private function shortError(string $error): string

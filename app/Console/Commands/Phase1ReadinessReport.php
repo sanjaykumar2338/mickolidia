@@ -77,6 +77,8 @@ class Phase1ReadinessReport extends Command
         $syncIssueCount = (int) $syncSummary['errors'];
         $metaApiIssueCount = (int) $syncSummary['metaapi_issues'];
         $legacyIgnoredCount = (int) $syncSummary['legacy_ignored_for_metaapi_signoff'];
+        $historicalNotOnboardedCount = (int) $syncSummary['historical_metaapi_not_onboarded'];
+        $activeMetaApiValidationCount = (int) $syncSummary['active_metaapi_validation_accounts'];
         $breachedCount = $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count();
         $recoveredCount = $accounts->filter(fn (TradingAccount $account): bool => (int) data_get($account->meta, 'metaapi_lifecycle.recovery_count', 0) > 0)->count();
         $poolAvailable = Mt5AccountPoolEntry::query()
@@ -96,7 +98,13 @@ class Phase1ReadinessReport extends Command
 
         if ($metaApiIssueCount > 0) {
             $warnings[] = "{$metaApiIssueCount} MetaApi account(s) have stale/disconnected/error sync anomalies that need review. Run wolforix:diagnose-sync-anomalies.";
-        } elseif ($legacyIgnoredCount > 0) {
+        }
+
+        if ($historicalNotOnboardedCount > 0) {
+            $warnings[] = "{$historicalNotOnboardedCount} historical MetaApi records not onboarded into MetaApi.";
+        }
+
+        if ($legacyIgnoredCount > 0) {
             $warnings[] = "{$legacyIgnoredCount} legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff.";
         }
 
@@ -114,12 +122,16 @@ class Phase1ReadinessReport extends Command
                 'inconsistent' => $inconsistentCount,
             ],
             'sync' => [
-                'status' => $metaApiIssueCount === 0 ? 'ready' : 'needs_attention',
-                'summary' => "metaapi_connected={$syncSummary['metaapi_connected']}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}, metaapi_errors={$syncSummary['metaapi_errors']}, legacy_ignored={$legacyIgnoredCount}",
+                'status' => $metaApiIssueCount === 0
+                    ? ($historicalNotOnboardedCount > 0 || $legacyIgnoredCount > 0 ? 'ready_with_warnings' : 'ready')
+                    : 'needs_attention',
+                'summary' => "active_metaapi_validation_accounts={$activeMetaApiValidationCount}, historical_metaapi_not_onboarded={$historicalNotOnboardedCount}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}, metaapi_errors={$syncSummary['metaapi_errors']}, legacy_ignored={$legacyIgnoredCount}",
                 'connected' => $connectedCount,
                 'stale' => $staleCount,
                 'disconnected' => $disconnectedCount,
                 'errors' => $syncIssueCount,
+                'active_metaapi_validation_accounts' => $activeMetaApiValidationCount,
+                'historical_metaapi_not_onboarded' => $historicalNotOnboardedCount,
                 'metaapi_connected' => (int) $syncSummary['metaapi_connected'],
                 'metaapi_stale' => (int) $syncSummary['metaapi_stale'],
                 'metaapi_disconnected' => (int) $syncSummary['metaapi_disconnected'],
