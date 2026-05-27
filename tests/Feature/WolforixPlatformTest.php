@@ -1975,6 +1975,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('FusionMarkets-Demo', data_get($account->meta, 'credentials.server'));
         $this->assertSame('fusion-trading-pass', data_get($account->meta, 'credentials.password'));
         $this->assertSame('fusion-investor-pass', data_get($account->meta, 'credentials.investor_password'));
+        $this->assertSame('account_assigned', data_get($account->meta, 'metaapi_onboarding.state'));
+        $this->assertContains('account_assigned', collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all());
         $this->assertSame($account->id, $poolEntry->allocated_trading_account_id);
         $this->assertFalse((bool) $poolEntry->is_available);
         $this->assertNotNull($account->challenge_purchase_email_sent_at);
@@ -2270,6 +2272,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('0.00', (string) $order->final_price);
         $this->assertSame('335374', $account->platform_login);
         $this->assertSame('promo-trading-pass', data_get($account->meta, 'credentials.password'));
+        $this->assertSame('account_assigned', data_get($account->meta, 'metaapi_onboarding.state'));
+        $this->assertContains('account_assigned', collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all());
         $this->assertNotNull($promoCode->used_at);
         $this->assertSame($user->id, $promoCode->used_by_user_id);
         $this->assertSame($order->id, $promoCode->used_order_id);
@@ -4324,6 +4328,8 @@ class WolforixPlatformTest extends TestCase
         $this->assertSame('mt5', $trialAccount->platform_slug);
         $this->assertEquals(10000.0, (float) $trialAccount->balance);
         $this->assertEquals(8.0, (float) $trialAccount->profit_target_percent);
+        $this->assertSame('purchased', data_get($trialAccount->meta, 'metaapi_onboarding.state'));
+        $this->assertContains('onboarding_initialized', collect((array) data_get($trialAccount->meta, 'metaapi_events', []))->pluck('type')->all());
         $this->assertFileExists(public_path('mt5software/wolforix-mt5-connector.zip'));
         Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
             return $mail->hasTo($user->email)

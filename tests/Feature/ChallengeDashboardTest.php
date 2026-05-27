@@ -646,6 +646,157 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_phase_2_onboarding_first_sync_marks_ready_to_trade_and_dashboard_indicator(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340160');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'eaeaeaea-eaea-4aea-8aea-eaeaeaeaeaea');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10025,
+            'equity' => 10040,
+            'login' => '340160',
+        ], [
+            [
+                'id' => 'P-ONBOARD-1',
+                'symbol' => 'EURUSD',
+                'profit' => 15,
+                'volume' => 0.1,
+            ],
+        ]);
+
+        $result = app(MetaApiLiveSyncService::class)->syncByLogin('340160');
+
+        $account->refresh();
+
+        $this->assertSame('success', $result['status']);
+        $this->assertTrue($result['phase_2_ready']);
+        $this->assertSame('ready_to_trade', $result['onboarding_state']);
+        $this->assertSame('ready_to_trade', data_get($account->meta, 'metaapi_onboarding.state'));
+        $this->assertTrue((bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade'));
+        $this->assertNotNull(data_get($account->meta, 'metaapi_onboarding.first_sync_received_at'));
+        $this->assertNotNull(data_get($account->meta, 'metaapi_onboarding.completed_at'));
+
+        $events = collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all();
+        $this->assertContains('ready_to_trade', $events);
+        $this->assertContains('onboarding_completed', $events);
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('Onboarding')
+            ->assertSee('Ready To Trade')
+            ->assertSee('Ready to trade')
+            ->assertSee('Yes');
+    }
+
+    public function test_phase_2_pool_assignment_command_assigns_available_pool_account_and_blocks_duplicates(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340161', [
+            'platform_login' => null,
+            'platform_account_id' => null,
+            'platform_environment' => 'FusionMarkets-Demo',
+            'meta' => [],
+        ]);
+        $metaApiAccountId = 'fafafafa-fafa-4afa-8afa-fafafafafafa';
+
+        $entry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340161',
+            'password' => 'assignment-pass',
+            'investor_password' => 'assignment-investor',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => $metaApiAccountId,
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:assign-pool-account', [
+            'login' => $account->account_reference,
+            '--pool-login' => '340161',
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('assigned', Artisan::output());
+
+        $account->refresh();
+        $entry->refresh();
+
+        $this->assertSame($account->id, $entry->allocated_trading_account_id);
+        $this->assertSame('340161', $account->platform_login);
+        $this->assertSame('FusionMarkets-Demo', $account->platform_environment);
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+        $this->assertSame('waiting_metaapi_connection', data_get($account->meta, 'metaapi_onboarding.state'));
+        $this->assertContains('account_assigned', collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all());
+
+        $otherAccount = $this->createMetaApiChallengeAccount('340162', [
+            'account_size' => 25000,
+            'platform_login' => null,
+            'platform_account_id' => null,
+        ]);
+
+        $duplicateExit = Artisan::call('wolforix:assign-pool-account', [
+            'login' => $otherAccount->account_reference,
+            '--pool-login' => '340161',
+        ]);
+
+        $this->assertSame(1, $duplicateExit);
+        $this->assertStringContainsString('pool_entry_allocated_elsewhere', Artisan::output());
+        $this->assertSame($account->id, $entry->fresh()->allocated_trading_account_id);
+    }
+
+    public function test_phase_2_onboarding_diagnostics_and_event_commands_report_readiness(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340163');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'fbfbfbfb-fbfb-4bfb-8bfb-fbfbfbfbfbfb');
+
+        $this->fakeMetaApiSync($metaApiAccountId, [
+            'balance' => 10010,
+            'equity' => 10018,
+            'login' => '340163',
+        ]);
+
+        app(MetaApiLiveSyncService::class)->syncByLogin('340163');
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-onboarding', [
+            'login' => '340163',
+            '--json' => true,
+        ]));
+        $this->assertStringContainsString('Onboarding state', Artisan::output());
+        $this->assertSame('ready_to_trade', data_get($account->fresh()->meta, 'metaapi_onboarding.state'));
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-lifecycle-readiness', [
+            'login' => '340163',
+        ]));
+        $this->assertStringContainsString('MetaApi lifecycle readiness diagnostics', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-onboarding-events', [
+            'login' => '340163',
+        ]));
+        $this->assertStringContainsString('Phase 2 onboarding event hook test', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-pool-assignment'));
+        $this->assertStringContainsString('Phase 2 pool assignment diagnostics', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-discord-webhook'));
+        $this->assertStringContainsString('Discord webhook readiness', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-telegram-webhook'));
+        $this->assertStringContainsString('Telegram webhook readiness', Artisan::output());
+
+        $account->refresh();
+        $events = collect((array) data_get($account->meta, 'metaapi_events', []))->pluck('type')->all();
+        $this->assertContains('test_ready_to_trade', $events);
+        $this->assertContains('test_onboarding_completed', $events);
+    }
+
     public function test_metaapi_repair_command_assigns_pool_entry_and_persists_uuid_without_overwriting(): void
     {
         $account = $this->createMetaApiChallengeAccount('340140', [
@@ -3595,10 +3746,17 @@ class ChallengeDashboardTest extends TestCase
         config()->set('services.metaapi.sync.stale_minutes', 10);
         config()->set('services.metaapi.sync.retries', 1);
         config()->set('services.metaapi.sync.retry_delay_ms', 0);
+        config()->set('services.metaapi.onboarding.max_retries', 5);
+        config()->set('services.metaapi.onboarding.retry_delay_minutes', 0);
+        config()->set('services.metaapi.onboarding.connection_wait_minutes', 15);
         config()->set('services.metaapi.events.email_enabled', true);
         config()->set('services.metaapi.events.discord_enabled', false);
+        config()->set('services.metaapi.events.discord_webhook_url', null);
         config()->set('services.metaapi.events.telegram_enabled', false);
+        config()->set('services.metaapi.events.telegram_bot_token', null);
+        config()->set('services.metaapi.events.telegram_chat_id', null);
         config()->set('services.metaapi.events.crm_webhook_enabled', false);
+        config()->set('services.metaapi.events.crm_webhook_url', null);
     }
 
     /**

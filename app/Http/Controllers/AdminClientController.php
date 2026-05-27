@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountBalanceSnapshot;
 use App\Models\User;
@@ -888,6 +889,17 @@ class AdminClientController extends Controller
             'stale' => $accounts->filter(fn (TradingAccount $account): bool => $this->mt5ConnectorStatus->status($account) === Mt5ConnectorStatus::STALE)->count(),
             'breached' => $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count(),
             'sync_issues' => $accounts->filter(fn (TradingAccount $account): bool => $account->sync_status === 'error' || filled((string) $account->sync_error))->count(),
+            'onboarding_queue' => $accounts->filter(fn (TradingAccount $account): bool => in_array((string) data_get($account->meta, 'metaapi_onboarding.state'), ['purchased', 'account_assigned', 'waiting_metaapi_connection', 'first_sync_received'], true))->count(),
+            'ready_to_trade' => $accounts->filter(fn (TradingAccount $account): bool => (bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade', false))->count(),
+            'onboarding_failures' => $accounts->filter(fn (TradingAccount $account): bool => data_get($account->meta, 'metaapi_onboarding.retry.last_error') !== null)->count(),
+            'pool_available' => Mt5AccountPoolEntry::query()
+                ->where('is_available', true)
+                ->whereNull('allocated_trading_account_id')
+                ->count(),
+            'pool_unassigned_metaapi' => Mt5AccountPoolEntry::query()
+                ->whereNotNull('meta->metaapi_account_id')
+                ->whereNull('allocated_trading_account_id')
+                ->count(),
         ];
     }
 

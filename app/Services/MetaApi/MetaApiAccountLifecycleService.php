@@ -529,14 +529,18 @@ class MetaApiAccountLifecycleService
             'discord' => [
                 'prepared' => true,
                 'enabled' => (bool) config('services.metaapi.events.discord_enabled', false),
+                'configured' => filled((string) config('services.metaapi.events.discord_webhook_url')),
             ],
             'telegram' => [
                 'prepared' => true,
                 'enabled' => (bool) config('services.metaapi.events.telegram_enabled', false),
+                'configured' => filled((string) config('services.metaapi.events.telegram_bot_token'))
+                    && filled((string) config('services.metaapi.events.telegram_chat_id')),
             ],
             'crm_webhook' => [
                 'prepared' => true,
                 'enabled' => (bool) config('services.metaapi.events.crm_webhook_enabled', false),
+                'configured' => filled((string) config('services.metaapi.events.crm_webhook_url')),
             ],
         ];
     }

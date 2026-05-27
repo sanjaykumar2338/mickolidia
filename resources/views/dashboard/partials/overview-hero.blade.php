@@ -201,6 +201,14 @@
                         <dt class="text-slate-400">{{ __('Sync health') }}</dt>
                         <dd class="font-semibold text-white">{{ $hero['sync_health'] ?? __('Pending') }}</dd>
                     </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Onboarding') }}</dt>
+                        <dd class="font-semibold text-white">{{ $hero['onboarding_state'] ?? __('Pending') }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
+                        <dt class="text-slate-400">{{ __('Ready to trade') }}</dt>
+                        <dd class="font-semibold text-white">{{ ! empty($hero['ready_to_trade']) ? __('Yes') : __('No') }}</dd>
+                    </div>
                 </dl>
             </article>
         </div>

@@ -5,6 +5,7 @@ namespace App\Services\Mt5;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\Mt5PromoCode;
 use App\Models\TradingAccount;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,10 @@ use RuntimeException;
 
 class Mt5AccountAllocator
 {
+    public function __construct(
+        private readonly MetaApiOnboardingService $onboardingService,
+    ) {}
+
     /**
      * @param  array{source_pool?: string, source_file?: string, broker?: string, platform?: string}  $criteria
      */
@@ -25,6 +30,9 @@ class Mt5AccountAllocator
         if ($existingAllocation instanceof Mt5AccountPoolEntry) {
             try {
                 $this->hydrateAccount($account, $existingAllocation, $this->credentialsFor($existingAllocation));
+                $this->onboardingService->markAssigned($account->fresh() ?? $account, $existingAllocation, [
+                    'source' => 'mt5_existing_allocation',
+                ]);
             } catch (DecryptException $exception) {
                 $this->reportInvalidCredentials($existingAllocation, $exception);
             }
@@ -73,6 +81,9 @@ class Mt5AccountAllocator
             ])->save();
 
             $this->hydrateAccount($account, $entry, $credentials);
+            $this->onboardingService->markAssigned($account->fresh() ?? $account, $entry, [
+                'source' => 'mt5_account_allocator',
+            ]);
 
             return $entry;
         }
@@ -116,6 +127,9 @@ class Mt5AccountAllocator
         ])->save();
 
         $this->hydrateAccount($account, $entry, $credentials);
+        $this->onboardingService->markAssigned($account->fresh() ?? $account, $entry, [
+            'source' => 'mt5_promo_allocator',
+        ]);
 
         $lockedPromoCode->forceFill([
             'used_at' => now(),
@@ -123,6 +137,37 @@ class Mt5AccountAllocator
             'used_order_id' => $account->order_id,
             'used_trading_account_id' => $account->id,
         ])->save();
+
+        return $entry;
+    }
+
+    /**
+     * @param  array{force_account_size?: bool}  $options
+     */
+    public function allocateSpecific(TradingAccount $account, Mt5AccountPoolEntry $entry, array $options = []): Mt5AccountPoolEntry
+    {
+        if ($entry->allocated_trading_account_id !== null && (int) $entry->allocated_trading_account_id !== (int) $account->id) {
+            throw new RuntimeException('The selected MT5 pool account is already allocated.');
+        }
+
+        if ((int) $entry->account_size !== (int) $account->account_size && ! (bool) ($options['force_account_size'] ?? false)) {
+            throw new RuntimeException('The selected MT5 pool account size does not match this challenge.');
+        }
+
+        $credentials = $this->credentialsFor($entry);
+
+        $entry->forceFill([
+            'allocated_trading_account_id' => $account->id,
+            'allocated_user_id' => $account->user_id,
+            'allocated_at' => $entry->allocated_at ?? now(),
+            'is_available' => false,
+            'source_status' => 'assigned',
+        ])->save();
+
+        $this->hydrateAccount($account, $entry, $credentials);
+        $this->onboardingService->markAssigned($account->fresh() ?? $account, $entry, [
+            'source' => 'mt5_specific_allocator',
+        ]);
 
         return $entry;
     }
@@ -147,26 +192,38 @@ class Mt5AccountAllocator
 
         $credentials['last_updated_at'] = now()->toIso8601String();
 
+        $existingSync = is_array(Arr::get($meta, 'mt5_sync')) ? Arr::get($meta, 'mt5_sync') : [];
+        $metaApiAccountId = Arr::get($meta, 'metaapi_account_id')
+            ?: Arr::get($existingSync, 'metaapi_account_id')
+            ?: data_get($entry->meta, 'metaapi_account_id');
+
+        if (filled($metaApiAccountId)) {
+            $meta['metaapi_account_id'] = (string) $metaApiAccountId;
+        }
+
         $meta['credentials'] = $credentials;
         $meta['mt5_server'] = $entry->server;
         $meta['broker'] = data_get($entry->meta, 'broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS);
         $meta['provider'] = data_get($entry->meta, 'provider', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS);
         $meta['platform'] = data_get($entry->meta, 'platform', Mt5AccountPoolEntry::PLATFORM_MT5);
-        $meta['mt5_sync'] = array_filter([
+        $meta['mt5_sync'] = array_filter(array_merge($existingSync, [
             'identifier' => $entry->login,
             'account_reference' => $account->account_reference,
             'server' => $entry->server,
             'broker' => data_get($entry->meta, 'broker', Mt5AccountPoolEntry::BROKER_FUSION_MARKETS),
             'status' => $account->last_synced_at ? 'connected' : 'waiting_for_first_sync',
-        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+            'metaapi_account_id' => filled($metaApiAccountId) ? (string) $metaApiAccountId : null,
+        ]), static fn (mixed $value): bool => $value !== null && $value !== '');
         $meta['mt5_pool_entry'] = array_filter([
             'id' => $entry->id,
+            'login' => $entry->login,
             'source_pool' => $entry->source_pool,
             'source_file' => $entry->source_file,
             'source_batch' => $entry->source_batch,
             'source_status' => $entry->source_status,
             'broker' => data_get($entry->meta, 'broker'),
             'platform' => data_get($entry->meta, 'platform'),
+            'metaapi_account_id' => filled($metaApiAccountId) ? (string) $metaApiAccountId : null,
             'source_created_at' => optional($entry->source_created_at)->toDateString(),
         ], static fn (mixed $value): bool => $value !== null && $value !== '');
 

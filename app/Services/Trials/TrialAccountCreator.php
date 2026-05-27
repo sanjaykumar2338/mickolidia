@@ -5,12 +5,17 @@ namespace App\Services\Trials;
 use App\Mail\TrialAccountInstructionsMail;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class TrialAccountCreator
 {
+    public function __construct(
+        private readonly MetaApiOnboardingService $onboardingService,
+    ) {}
+
     public function create(User $user): TradingAccount
     {
         $startingBalance = (float) config('wolforix.trial.starting_balance', 10000);
@@ -67,6 +72,12 @@ class TrialAccountCreator
                     'created_at' => now()->toIso8601String(),
                 ],
             ],
+        ]);
+
+        $trialAccount = $this->onboardingService->initialize($trialAccount, [
+            'source' => 'free_trial_registration',
+            'trial' => true,
+            'message' => 'Free trial onboarding lifecycle initialized.',
         ]);
 
         try {

@@ -15,7 +15,7 @@
     </div>
 
     @if (! empty($metaApiSummary ?? []))
-        <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             @foreach ([
                 'MetaApi total' => $metaApiSummary['total'] ?? 0,
                 'Connected' => $metaApiSummary['connected'] ?? 0,
@@ -23,6 +23,10 @@
                 'Stale' => $metaApiSummary['stale'] ?? 0,
                 'Breached' => $metaApiSummary['breached'] ?? 0,
                 'Sync issues' => $metaApiSummary['sync_issues'] ?? 0,
+                'Onboarding queue' => $metaApiSummary['onboarding_queue'] ?? 0,
+                'Ready to trade' => $metaApiSummary['ready_to_trade'] ?? 0,
+                'Pool available' => $metaApiSummary['pool_available'] ?? 0,
+                'Pool MetaApi unassigned' => $metaApiSummary['pool_unassigned_metaapi'] ?? 0,
             ] as $label => $value)
                 <div class="surface-panel rounded-[1.4rem] p-5">
                     <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ $label }}</dt>

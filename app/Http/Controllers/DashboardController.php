@@ -285,6 +285,7 @@ class DashboardController extends Controller
         $fundedTiming = $this->fundedTiming($account, $plan);
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
+        $onboarding = $this->metaApiOnboarding($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -327,6 +328,11 @@ class DashboardController extends Controller
             'sync_health' => $lifecycle['health_label'],
             'sync_health_key' => $lifecycle['health'],
             'sync_health_hint' => $lifecycle['message'],
+            'onboarding_state' => $onboarding['state_label'],
+            'onboarding_state_key' => $onboarding['state'],
+            'onboarding_tone' => $onboarding['tone'],
+            'onboarding_message' => $onboarding['message'],
+            'ready_to_trade' => $onboarding['ready_to_trade'],
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
@@ -390,6 +396,7 @@ class DashboardController extends Controller
         $targetProgress = $this->profitTargetProgressPercent($phaseProfit, $targetAmount);
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
+        $onboarding = $this->metaApiOnboarding($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -418,6 +425,11 @@ class DashboardController extends Controller
             'sync_health' => $lifecycle['health_label'],
             'sync_health_key' => $lifecycle['health'],
             'sync_health_hint' => $lifecycle['message'],
+            'onboarding_state' => $onboarding['state_label'],
+            'onboarding_state_key' => $onboarding['state'],
+            'onboarding_tone' => $onboarding['tone'],
+            'onboarding_message' => $onboarding['message'],
+            'ready_to_trade' => $onboarding['ready_to_trade'],
             'sync_freshness' => $syncFreshness,
             'badges' => $this->dashboardBadges($account),
             'state_notice' => $this->stateNotice($account),
@@ -508,8 +520,10 @@ class DashboardController extends Controller
 
         if ($account->platform_slug === 'mt5') {
             $lifecycle = $this->metaApiLifecycle($account);
+            $onboarding = $this->metaApiOnboarding($account);
             $badges[] = ['label' => $lifecycle['state_label'], 'tone' => $lifecycle['tone']];
             $badges[] = ['label' => $lifecycle['health_label'], 'tone' => $lifecycle['tone']];
+            $badges[] = ['label' => $onboarding['state_label'], 'tone' => $onboarding['tone']];
         }
 
         return collect($badges)
@@ -1373,6 +1387,7 @@ class DashboardController extends Controller
             $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
             $syncFreshness = $this->mt5ConnectorStatus->freshnessForAccount($account);
             $lifecycle = $this->metaApiLifecycle($account);
+            $onboarding = $this->metaApiOnboarding($account);
 
             return [
                 'title' => $connectorStatus['status'] === Mt5ConnectorStatus::STALE
@@ -1382,6 +1397,8 @@ class DashboardController extends Controller
                     ?? __('Challenge balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
                 'meta' => [
                     __('Connector status: :value', ['value' => $connectorStatus['label']]),
+                    __('Onboarding: :value', ['value' => $onboarding['state_label']]),
+                    __('Ready to trade: :value', ['value' => $onboarding['ready_to_trade'] ? __('Yes') : __('No')]),
                     __('Lifecycle: :value', ['value' => $lifecycle['state_label']]),
                     __('Sync health: :value', ['value' => $lifecycle['health_label']]),
                     __('Sync freshness: :value', ['value' => $syncFreshness['label']]),
@@ -1409,6 +1426,7 @@ class DashboardController extends Controller
     {
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
+        $onboarding = $this->metaApiOnboarding($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -1470,6 +1488,11 @@ class DashboardController extends Controller
             'sync_health' => $lifecycle['health_label'],
             'sync_health_key' => $lifecycle['health'],
             'sync_health_hint' => $lifecycle['message'],
+            'onboarding_state' => $onboarding['state_label'],
+            'onboarding_state_key' => $onboarding['state'],
+            'onboarding_tone' => $onboarding['tone'],
+            'onboarding_message' => $onboarding['message'],
+            'ready_to_trade' => $onboarding['ready_to_trade'],
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
             'sync_source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : __('Not available'),
             'failure_reason' => $account->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : null,
@@ -1804,12 +1827,21 @@ class DashboardController extends Controller
 
         if ($account->platform_slug === 'mt5') {
             $lifecycle = $this->metaApiLifecycle($account);
+            $onboarding = $this->metaApiOnboarding($account);
 
             if (in_array($lifecycle['state'], ['stale', 'disconnected'], true)) {
                 return [
                     'tone' => $lifecycle['tone'],
                     'title' => __('Sync attention needed'),
                     'message' => $lifecycle['message'],
+                ];
+            }
+
+            if (! $onboarding['ready_to_trade'] && in_array($onboarding['state'], ['purchased', 'account_assigned', 'waiting_metaapi_connection'], true)) {
+                return [
+                    'tone' => $onboarding['tone'],
+                    'title' => __('Onboarding in progress'),
+                    'message' => $onboarding['message'],
                 ];
             }
         }
@@ -1841,6 +1873,29 @@ class DashboardController extends Controller
         ];
     }
 
+    /**
+     * @return array{state:string,state_label:string,tone:string,message:string,ready_to_trade:bool}
+     */
+    private function metaApiOnboarding(TradingAccount $account): array
+    {
+        $state = (string) data_get($account->meta, 'metaapi_onboarding.state', $this->defaultOnboardingState($account));
+        $ready = (bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade', in_array($state, ['ready_to_trade', 'active'], true));
+        $tone = match ($state) {
+            'ready_to_trade', 'active' => 'emerald',
+            'breached', 'disabled' => 'rose',
+            'waiting_metaapi_connection' => 'amber',
+            default => 'slate',
+        };
+
+        return [
+            'state' => $state,
+            'state_label' => $this->humanizeStatus($state),
+            'tone' => $tone,
+            'message' => $this->metaApiOnboardingMessage($state, $ready),
+            'ready_to_trade' => $ready,
+        ];
+    }
+
     private function defaultLifecycleState(TradingAccount $account): string
     {
         if ($account->challenge_status === 'failed' || filled((string) $account->failure_reason)) {
@@ -1862,6 +1917,31 @@ class DashboardController extends Controller
         return (string) $account->account_status === 'pending_activation'
             ? 'pending_activation'
             : 'waiting_for_first_sync';
+    }
+
+    private function defaultOnboardingState(TradingAccount $account): string
+    {
+        if ($account->challenge_status === 'failed' || filled((string) $account->failure_reason)) {
+            return 'breached';
+        }
+
+        if ((bool) $account->trading_blocked || in_array((string) $account->challenge_status, ['passed', 'funded'], true)) {
+            return 'disabled';
+        }
+
+        if ($account->last_synced_at !== null || (string) $account->platform_status === 'connected') {
+            return 'ready_to_trade';
+        }
+
+        if (filled((string) data_get($account->meta, 'metaapi_account_id')) || filled((string) data_get($account->meta, 'mt5_sync.metaapi_account_id'))) {
+            return 'waiting_metaapi_connection';
+        }
+
+        if (filled((string) $account->platform_login) || filled((string) $account->platform_account_id)) {
+            return 'account_assigned';
+        }
+
+        return 'purchased';
     }
 
     private function defaultSyncHealth(TradingAccount $account): string
@@ -1888,6 +1968,23 @@ class DashboardController extends Controller
             $health === 'stale' => __('MetaApi sync is stale. A successful refresh will update the dashboard automatically.'),
             $health === 'disconnected' => __('MetaApi sync is disconnected. The system will keep retrying and preserve the latest trusted metrics.'),
             default => __('MetaApi sync is connected and live account metrics are readable.'),
+        };
+    }
+
+    private function metaApiOnboardingMessage(string $state, bool $ready): string
+    {
+        if ($ready) {
+            return __('Account setup is complete and the dashboard is reading live MetaApi metrics.');
+        }
+
+        return match ($state) {
+            'purchased' => __('Challenge purchase is recorded and waiting for MT5 pool assignment.'),
+            'account_assigned' => __('MT5 account credentials are assigned and MetaApi connection readiness is being checked.'),
+            'waiting_metaapi_connection' => __('MetaApi is linked and waiting for the first readable account sync.'),
+            'first_sync_received' => __('The first MetaApi sync was received and final readiness checks are running.'),
+            'breached' => __('A challenge rule was violated and onboarding is locked in the final state.'),
+            'disabled' => __('This account is disabled or locked and cannot be reactivated automatically.'),
+            default => __('Onboarding automation is checking account readiness.'),
         };
     }
 

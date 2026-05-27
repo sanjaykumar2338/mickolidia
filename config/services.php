@@ -133,11 +133,20 @@ return [
             'retry_delay_ms' => (int) env('METAAPI_SYNC_RETRY_DELAY_MS', 500),
             'recovery_window_minutes' => (int) env('METAAPI_SYNC_RECOVERY_WINDOW_MINUTES', 60),
         ],
+        'onboarding' => [
+            'max_retries' => (int) env('METAAPI_ONBOARDING_MAX_RETRIES', 5),
+            'retry_delay_minutes' => (int) env('METAAPI_ONBOARDING_RETRY_DELAY_MINUTES', 2),
+            'connection_wait_minutes' => (int) env('METAAPI_ONBOARDING_CONNECTION_WAIT_MINUTES', 15),
+        ],
         'events' => [
             'email_enabled' => filter_var(env('METAAPI_EVENTS_EMAIL_ENABLED', true), FILTER_VALIDATE_BOOL),
             'discord_enabled' => filter_var(env('METAAPI_EVENTS_DISCORD_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'discord_webhook_url' => env('METAAPI_EVENTS_DISCORD_WEBHOOK_URL'),
             'telegram_enabled' => filter_var(env('METAAPI_EVENTS_TELEGRAM_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'telegram_bot_token' => env('METAAPI_EVENTS_TELEGRAM_BOT_TOKEN'),
+            'telegram_chat_id' => env('METAAPI_EVENTS_TELEGRAM_CHAT_ID'),
             'crm_webhook_enabled' => filter_var(env('METAAPI_EVENTS_CRM_WEBHOOK_ENABLED', false), FILTER_VALIDATE_BOOL),
+            'crm_webhook_url' => env('METAAPI_EVENTS_CRM_WEBHOOK_URL'),
         ],
         'demo' => [
             'server_name' => env('METAAPI_DEMO_SERVER_NAME', 'MetaQuotes-Demo'),

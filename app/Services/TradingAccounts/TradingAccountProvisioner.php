@@ -7,6 +7,7 @@ use App\Models\ChallengePurchase;
 use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\TradingAccount;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use App\Services\Mt5\Mt5AccountAllocator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,6 +16,7 @@ class TradingAccountProvisioner
 {
     public function __construct(
         private readonly Mt5AccountAllocator $mt5AccountAllocator,
+        private readonly MetaApiOnboardingService $onboardingService,
     ) {
     }
 
@@ -94,6 +96,13 @@ class TradingAccountProvisioner
 
         DB::transaction(function () use ($account, $order, $purchase): void {
             $account->save();
+            $wasRecentlyCreated = $account->wasRecentlyCreated;
+            $this->onboardingService->initialize($account, [
+                'source' => 'order_fulfillment',
+                'order_id' => $order->id,
+                'challenge_purchase_id' => $purchase->id,
+            ]);
+            $account->refresh();
 
             $purchase->forceFill([
                 'account_status' => 'pending_activation',
@@ -114,7 +123,7 @@ class TradingAccountProvisioner
                 $this->mt5AccountAllocator->allocate($account);
             }
 
-            if ($account->wasRecentlyCreated) {
+            if ($wasRecentlyCreated) {
                 $account->statusHistories()->create([
                     'previous_status' => null,
                     'new_status' => 'pending_activation',

@@ -18,6 +18,7 @@ class MetaApiLiveSyncService
         private readonly TradingAccountSnapshotApplyService $snapshotApplyService,
         private readonly MetaApiAccountMappingRepairService $mappingRepairService,
         private readonly MetaApiAccountLifecycleService $lifecycleService,
+        private readonly MetaApiOnboardingService $onboardingService,
     ) {}
 
     /**
@@ -188,7 +189,9 @@ class MetaApiLiveSyncService
         ];
 
         $updatedAccount = $this->lifecycleService->recordSyncResult($updatedAccount, $syncResult);
+        $updatedAccount = $this->onboardingService->recordSyncResult($updatedAccount, $syncResult);
         $lifecycle = $this->lifecycleService->diagnose($updatedAccount);
+        $onboarding = $this->onboardingService->diagnose($updatedAccount);
 
         Log::info('MetaApi live account sync completed.', [
             'trading_account_id' => $updatedAccount->id,
@@ -202,12 +205,15 @@ class MetaApiLiveSyncService
             'history_ok' => $history['ok'],
             'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
             'sync_health' => $lifecycle['sync_health'] ?? null,
+            'onboarding_state' => $onboarding['onboarding_state'] ?? null,
         ]);
 
         return array_merge($syncResult, [
             'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
             'sync_health' => $lifecycle['sync_health'] ?? null,
             'recovery' => $lifecycle['recovery'] ?? [],
+            'onboarding_state' => $onboarding['onboarding_state'] ?? null,
+            'phase_2_ready' => (bool) data_get($onboarding, 'sync_readiness.ready_to_trade', false),
         ]);
     }
 
@@ -277,6 +283,7 @@ class MetaApiLiveSyncService
         $syncLog = $account?->syncLogs()->latest('id')->first();
         $snapshot = $account?->balanceSnapshots()->latest('snapshot_at')->latest('id')->first();
         $lifecycle = $account instanceof TradingAccount ? $this->lifecycleService->diagnose($account) : null;
+        $onboarding = $account instanceof TradingAccount ? $this->onboardingService->diagnose($account) : null;
 
         return [
             'login' => $login,
@@ -323,6 +330,7 @@ class MetaApiLiveSyncService
             ] : null,
             'mapping_diagnostics' => $mappingDiagnostic,
             'lifecycle' => $lifecycle,
+            'onboarding' => $onboarding,
         ];
     }
 
@@ -667,7 +675,12 @@ class MetaApiLiveSyncService
                 'deploy_status' => $metaApi['state'] ?? null,
             ],
         );
+        $account = $this->onboardingService->recordSyncFailure($account, $error, [
+            'connection_status' => $metaApi['connection_status'] ?? null,
+            'deploy_status' => $metaApi['state'] ?? null,
+        ]);
         $lifecycle = $this->lifecycleService->diagnose($account);
+        $onboarding = $this->onboardingService->diagnose($account);
 
         return [
             'status' => 'error',
@@ -686,6 +699,8 @@ class MetaApiLiveSyncService
             'lifecycle_state' => $lifecycle['lifecycle_state'] ?? null,
             'sync_health' => $lifecycle['sync_health'] ?? null,
             'recovery' => $lifecycle['recovery'] ?? [],
+            'onboarding_state' => $onboarding['onboarding_state'] ?? null,
+            'phase_2_ready' => false,
         ];
     }
 

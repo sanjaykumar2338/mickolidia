@@ -7,6 +7,7 @@ use App\Models\ChallengePurchase;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use App\Services\Mt5\Mt5AccountAllocator;
 use App\Services\TradingAccounts\TradingAccountProvisioner;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class AdminChallengeActivationService
     public function __construct(
         private readonly TradingAccountProvisioner $tradingAccountProvisioner,
         private readonly Mt5AccountAllocator $mt5AccountAllocator,
+        private readonly MetaApiOnboardingService $onboardingService,
     ) {
     }
 
@@ -162,6 +164,12 @@ class AdminChallengeActivationService
                     'account_reference' => $account->account_reference,
                 ],
                 'changed_at' => $activatedAt,
+            ]);
+
+            $account = $this->onboardingService->initialize($account, [
+                'source' => 'admin_activation',
+                'challenge_purchase_id' => $purchase->id,
+                'order_id' => $order?->id,
             ]);
 
             $this->mt5AccountAllocator->allocate($account);

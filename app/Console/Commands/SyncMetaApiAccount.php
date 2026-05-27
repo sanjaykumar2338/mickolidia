@@ -61,7 +61,9 @@ class SyncMetaApiAccount extends Command
             ['Sync log', (string) ($result['sync_log_id'] ?? '-')],
             ['Lifecycle state', (string) ($result['lifecycle_state'] ?? '-')],
             ['Sync health', (string) ($result['sync_health'] ?? '-')],
+            ['Onboarding state', (string) ($result['onboarding_state'] ?? '-')],
             ['Phase 1B ready', ! empty($result['phase_1b_ready']) ? 'yes' : 'no'],
+            ['Phase 2 ready', ! empty($result['phase_2_ready']) ? 'yes' : 'no'],
         ]);
 
         if (($result['history_errors'] ?? []) !== []) {

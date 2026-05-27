@@ -6,6 +6,7 @@ use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\MetaApi\MetaApiClient;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class CreateMetaApiTradingAccount extends Command
 
     protected $description = 'Create a minimal TradingAccount row for an existing MetaApi MT5 pool account without printing secrets.';
 
-    public function handle(MetaApiClient $metaApi): int
+    public function handle(MetaApiClient $metaApi, MetaApiOnboardingService $onboardingService): int
     {
         $login = trim((string) $this->argument('login'));
         $dryRun = (bool) $this->option('dry-run');
@@ -97,7 +98,7 @@ class CreateMetaApiTradingAccount extends Command
             return self::SUCCESS;
         }
 
-        $account = DB::transaction(function () use ($login, $poolEntry, $attributes): TradingAccount {
+        $account = DB::transaction(function () use ($login, $poolEntry, $attributes, $onboardingService): TradingAccount {
             /** @var Mt5AccountPoolEntry $lockedPoolEntry */
             $lockedPoolEntry = Mt5AccountPoolEntry::query()
                 ->lockForUpdate()
@@ -126,7 +127,13 @@ class CreateMetaApiTradingAccount extends Command
                 'meta' => $poolMeta,
             ])->save();
 
-            return $account->fresh() ?? $account;
+            $account = $onboardingService->initialize($account, [
+                'source' => 'metaapi_trading_account_onboarding_helper',
+            ]);
+
+            return $onboardingService->markAssigned($account, $lockedPoolEntry, [
+                'source' => 'metaapi_trading_account_onboarding_helper',
+            ]);
         });
 
         $this->newLine();
