@@ -17,6 +17,7 @@ class Mt5ConnectorStatusTest extends TestCase
         config([
             'trading.platforms.mt5.freshness.stale_seconds' => 300,
             'trading.platforms.mt5.freshness.heartbeat_seconds' => 90,
+            'services.metaapi.sync.stale_minutes' => 10,
         ]);
     }
 
@@ -166,6 +167,66 @@ class Mt5ConnectorStatusTest extends TestCase
 
         $this->assertSame(Mt5ConnectorStatus::NOT_CONNECTED, $status['status']);
         $this->assertFalse($status['is_connected']);
+    }
+
+    public function test_metaapi_connected_lifecycle_prevents_false_stale_status(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'metaapi',
+            'sync_status' => 'success',
+            'last_synced_at' => now()->subHour(),
+            'balance' => 10000,
+            'equity' => 10025,
+            'meta' => [
+                'metaapi_account_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'metaapi_lifecycle' => [
+                    'state' => 'connected',
+                    'sync_health' => 'connected',
+                    'core_sync_health' => 'connected',
+                ],
+                'mt5_sync' => [
+                    'status' => 'connected',
+                    'last_successful_metric_update_at' => now()->subHour()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::CONNECTED, $status['status']);
+        $this->assertTrue($status['is_connected']);
+    }
+
+    public function test_metaapi_stale_lifecycle_still_reports_stale(): void
+    {
+        $account = new TradingAccount([
+            'platform_slug' => 'mt5',
+            'platform_status' => 'connected',
+            'sync_source' => 'metaapi',
+            'sync_status' => 'success',
+            'last_synced_at' => now()->subHour(),
+            'balance' => 10000,
+            'equity' => 10025,
+            'meta' => [
+                'metaapi_account_id' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                'metaapi_lifecycle' => [
+                    'state' => 'stale',
+                    'sync_health' => 'stale',
+                    'core_sync_health' => 'stale',
+                ],
+                'mt5_sync' => [
+                    'status' => 'connected',
+                    'last_successful_metric_update_at' => now()->subHour()->toIso8601String(),
+                ],
+            ],
+        ]);
+
+        $status = $this->connectorStatus()->forAccount($account);
+
+        $this->assertSame(Mt5ConnectorStatus::STALE, $status['status']);
+        $this->assertTrue($status['is_stale']);
     }
 
     private function connectorStatus(): Mt5ConnectorStatus

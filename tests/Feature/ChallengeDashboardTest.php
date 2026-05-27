@@ -15,6 +15,7 @@ use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use App\Services\MetaApi\MetaApiLiveSyncService;
+use App\Services\MetaApi\MetaApiOnboardingService;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\Mt5ConnectorStatus;
@@ -823,7 +824,7 @@ class ChallengeDashboardTest extends TestCase
             data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->toIso8601String());
             $account->forceFill(['meta' => $meta])->save();
 
-            $diagnostic = app(\App\Services\MetaApi\MetaApiOnboardingService::class)->diagnose($account);
+            $diagnostic = app(MetaApiOnboardingService::class)->diagnose($account);
 
             $this->assertTrue(data_get($diagnostic, 'sync_readiness.ready_to_trade'));
             $this->assertFalse(data_get($diagnostic, 'sync_readiness.stored_ready_to_trade'));
@@ -855,7 +856,7 @@ class ChallengeDashboardTest extends TestCase
                 'meta' => $meta,
             ])->save();
 
-            $staleDiagnostic = app(\App\Services\MetaApi\MetaApiOnboardingService::class)->diagnose($account);
+            $staleDiagnostic = app(MetaApiOnboardingService::class)->diagnose($account);
 
             $this->assertFalse(data_get($staleDiagnostic, 'sync_readiness.ready_to_trade'));
         } finally {
@@ -911,6 +912,72 @@ class ChallengeDashboardTest extends TestCase
             '--json' => true,
         ]));
         $this->assertStringContainsString('onboarding', Artisan::output());
+    }
+
+    public function test_phase_2c_metaapi_sync_anomalies_ignore_legacy_ea_false_positives_for_signoff(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-27 11:00:00'));
+
+        try {
+            $metaApiAccount = $this->createMetaApiChallengeAccount('340166', [
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'platform_status' => 'connected',
+                'sync_status' => 'success',
+                'sync_source' => 'metaapi',
+                'last_synced_at' => now()->subHour(),
+                'last_sync_completed_at' => now()->subHour(),
+                'balance' => 10000,
+                'equity' => 10020,
+            ]);
+            $this->attachMetaApiPoolEntry($metaApiAccount, '12121212-1212-4212-8212-121212121212');
+            $meta = is_array($metaApiAccount->fresh()->meta) ? $metaApiAccount->fresh()->meta : [];
+            data_set($meta, 'metaapi_lifecycle.state', 'connected');
+            data_set($meta, 'metaapi_lifecycle.sync_health', 'connected');
+            data_set($meta, 'metaapi_lifecycle.core_sync_health', 'connected');
+            data_set($meta, 'mt5_sync.status', 'connected');
+            data_set($meta, 'mt5_sync.last_successful_metric_update_at', now()->subHour()->toIso8601String());
+            $metaApiAccount->forceFill(['meta' => $meta])->save();
+
+            $legacyAccount = $this->createChallengeAccount('one_step', [
+                'account_reference' => 'WFX-MT5-LEGACY-STALE',
+                'account_size' => 25000,
+                'platform_login' => '990166',
+                'platform_account_id' => '990166',
+                'platform_status' => 'connected',
+                'sync_status' => 'success',
+                'sync_source' => 'mt5_ea',
+                'last_synced_at' => now()->subHour(),
+                'last_sync_completed_at' => now()->subHour(),
+                'meta' => [
+                    'mt5_sync' => [
+                        'status' => 'connected',
+                        'last_successful_metric_update_at' => now()->subHour()->toIso8601String(),
+                    ],
+                ],
+            ]);
+
+            $this->assertSame(0, Artisan::call('wolforix:diagnose-sync-anomalies', [
+                '--json' => true,
+            ]));
+            $output = Artisan::output();
+
+            $this->assertStringContainsString('legacy_ea_no_recent_heartbeat_or_metric_sync', $output);
+            $this->assertStringContainsString('"metaapi_stale": 0', $output);
+            $this->assertStringContainsString('"legacy_ignored_for_metaapi_signoff": 1', $output);
+            $this->assertStringNotContainsString((string) $metaApiAccount->platform_login.'",', $output);
+            $this->assertStringContainsString((string) $legacyAccount->platform_login, $output);
+
+            $this->assertSame(0, Artisan::call('wolforix:phase1-readiness-report', [
+                '--json' => true,
+            ]));
+            $readiness = Artisan::output();
+
+            $this->assertStringContainsString('legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff', $readiness);
+            $this->assertStringContainsString('"metaapi_issues": 0', $readiness);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_metaapi_repair_command_assigns_pool_entry_and_persists_uuid_without_overwriting(): void

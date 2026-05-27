@@ -4,8 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
-use App\Support\Mt5ConnectorStatus;
+use App\Support\Mt5SyncAnomalyInspector;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 class Phase1ReadinessReport extends Command
 {
@@ -14,7 +15,7 @@ class Phase1ReadinessReport extends Command
 
     protected $description = 'Print final MVP cloud-sync readiness across onboarding, sync, lifecycle, webhooks, dashboard, recovery, pool, and migration.';
 
-    public function handle(Mt5ConnectorStatus $connectorStatus): int
+    public function handle(Mt5SyncAnomalyInspector $anomalyInspector): int
     {
         $accounts = TradingAccount::query()
             ->where(function ($query): void {
@@ -23,7 +24,7 @@ class Phase1ReadinessReport extends Command
                     ->orWhere('platform', 'MT5 Demo');
             })
             ->get();
-        $report = $this->report($accounts, $connectorStatus);
+        $report = $this->report($accounts, $anomalyInspector);
 
         $this->info('Phase 1 cloud-sync readiness report');
         $this->line('MVP stabilization report only. No new provider, payment, CRM, wallet, or trading UI automation is created.');
@@ -51,10 +52,10 @@ class Phase1ReadinessReport extends Command
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, TradingAccount>  $accounts
+     * @param  Collection<int, TradingAccount>  $accounts
      * @return array<string, mixed>
      */
-    private function report($accounts, Mt5ConnectorStatus $connectorStatus): array
+    private function report($accounts, Mt5SyncAnomalyInspector $anomalyInspector): array
     {
         $readyCount = $accounts->filter(fn (TradingAccount $account): bool => $this->readyToTrade($account))->count();
         $queueCount = $accounts->filter(fn (TradingAccount $account): bool => in_array((string) data_get($account->meta, 'metaapi_onboarding.state'), [
@@ -68,10 +69,14 @@ class Phase1ReadinessReport extends Command
 
             return $state === 'ready_to_trade' && ! $this->readyToTrade($account);
         })->count();
-        $connectedCount = $accounts->filter(fn (TradingAccount $account): bool => $connectorStatus->status($account) === Mt5ConnectorStatus::CONNECTED)->count();
-        $staleCount = $accounts->filter(fn (TradingAccount $account): bool => $connectorStatus->status($account) === Mt5ConnectorStatus::STALE)->count();
-        $disconnectedCount = $accounts->filter(fn (TradingAccount $account): bool => $connectorStatus->status($account) === Mt5ConnectorStatus::DISCONNECTED)->count();
-        $syncIssueCount = $accounts->filter(fn (TradingAccount $account): bool => $account->sync_status === 'error' || filled((string) $account->sync_error))->count();
+        $syncReport = $anomalyInspector->report($accounts, 10);
+        $syncSummary = (array) $syncReport['summary'];
+        $connectedCount = (int) $syncSummary['connected'];
+        $staleCount = (int) $syncSummary['stale'];
+        $disconnectedCount = (int) $syncSummary['disconnected'];
+        $syncIssueCount = (int) $syncSummary['errors'];
+        $metaApiIssueCount = (int) $syncSummary['metaapi_issues'];
+        $legacyIgnoredCount = (int) $syncSummary['legacy_ignored_for_metaapi_signoff'];
         $breachedCount = $accounts->filter(fn (TradingAccount $account): bool => $account->challenge_status === 'failed' || filled((string) $account->failure_reason))->count();
         $recoveredCount = $accounts->filter(fn (TradingAccount $account): bool => (int) data_get($account->meta, 'metaapi_lifecycle.recovery_count', 0) > 0)->count();
         $poolAvailable = Mt5AccountPoolEntry::query()
@@ -89,8 +94,10 @@ class Phase1ReadinessReport extends Command
             $warnings[] = "{$inconsistentCount} account(s) have ready_to_trade state but are not currently readable/connected.";
         }
 
-        if ($syncIssueCount > 0) {
-            $warnings[] = "{$syncIssueCount} account(s) have sync errors that need review.";
+        if ($metaApiIssueCount > 0) {
+            $warnings[] = "{$metaApiIssueCount} MetaApi account(s) have stale/disconnected/error sync anomalies that need review. Run wolforix:diagnose-sync-anomalies.";
+        } elseif ($legacyIgnoredCount > 0) {
+            $warnings[] = "{$legacyIgnoredCount} legacy EA fallback account(s) show stale/disconnected/error sync anomalies and are ignored for MetaApi Phase 1 signoff.";
         }
 
         if ($poolAvailable === 0) {
@@ -107,12 +114,18 @@ class Phase1ReadinessReport extends Command
                 'inconsistent' => $inconsistentCount,
             ],
             'sync' => [
-                'status' => $syncIssueCount === 0 ? 'ready' : 'needs_attention',
-                'summary' => "connected={$connectedCount}, stale={$staleCount}, disconnected={$disconnectedCount}, errors={$syncIssueCount}",
+                'status' => $metaApiIssueCount === 0 ? 'ready' : 'needs_attention',
+                'summary' => "metaapi_connected={$syncSummary['metaapi_connected']}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}, metaapi_errors={$syncSummary['metaapi_errors']}, legacy_ignored={$legacyIgnoredCount}",
                 'connected' => $connectedCount,
                 'stale' => $staleCount,
                 'disconnected' => $disconnectedCount,
                 'errors' => $syncIssueCount,
+                'metaapi_connected' => (int) $syncSummary['metaapi_connected'],
+                'metaapi_stale' => (int) $syncSummary['metaapi_stale'],
+                'metaapi_disconnected' => (int) $syncSummary['metaapi_disconnected'],
+                'metaapi_errors' => (int) $syncSummary['metaapi_errors'],
+                'metaapi_issues' => $metaApiIssueCount,
+                'legacy_ignored_for_metaapi_signoff' => $legacyIgnoredCount,
             ],
             'lifecycle' => [
                 'status' => 'ready',
@@ -132,7 +145,7 @@ class Phase1ReadinessReport extends Command
             ],
             'recovery' => [
                 'status' => 'ready',
-                'summary' => "recovered={$recoveredCount}, stale={$staleCount}, disconnected={$disconnectedCount}",
+                'summary' => "recovered={$recoveredCount}, metaapi_stale={$syncSummary['metaapi_stale']}, metaapi_disconnected={$syncSummary['metaapi_disconnected']}",
                 'recovered' => $recoveredCount,
             ],
             'pool' => [

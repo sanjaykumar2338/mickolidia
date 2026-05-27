@@ -49,6 +49,8 @@ class Mt5ConnectorStatus
 
         if (! $account instanceof TradingAccount) {
             $status = self::NOT_CONNECTED;
+        } elseif ($this->hasMetaApiConnectedEvidence($account)) {
+            $status = self::CONNECTED;
         } elseif ($lastHeartbeatAt instanceof Carbon && ! $this->isMetaApiAccount($account)) {
             $status = $this->isRecentHeartbeat($lastHeartbeatAt)
                 ? self::CONNECTED
@@ -231,12 +233,46 @@ class Mt5ConnectorStatus
             || (string) $account->platform_status === 'disconnected';
     }
 
-    private function isMetaApiAccount(TradingAccount $account): bool
+    public function isMetaApiAccount(TradingAccount $account): bool
     {
         return (string) $account->sync_source === 'metaapi'
             || filled(data_get($account->meta, 'metaapi_account_id'))
             || filled(data_get($account->meta, 'mt5_sync.metaapi_account_id'))
             || filled(data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'));
+    }
+
+    private function hasMetaApiConnectedEvidence(TradingAccount $account): bool
+    {
+        if (! $this->isMetaApiAccount($account)) {
+            return false;
+        }
+
+        if ($this->isExplicitlyDisconnected($account) || $account->sync_status === 'error' || filled((string) $account->sync_error)) {
+            return false;
+        }
+
+        $lifecycleState = (string) data_get($account->meta, 'metaapi_lifecycle.state');
+        $syncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.sync_health');
+        $coreSyncHealth = (string) data_get($account->meta, 'metaapi_lifecycle.core_sync_health', $syncHealth);
+        $mt5SyncStatus = (string) data_get($account->meta, 'mt5_sync.status');
+
+        if (in_array($lifecycleState, ['stale', 'disconnected', 'breached', 'disabled'], true)
+            || in_array($syncHealth, ['stale', 'disconnected'], true)
+            || in_array($coreSyncHealth, ['stale', 'disconnected'], true)
+            || in_array($mt5SyncStatus, ['stale', 'disconnected', 'error'], true)) {
+            return false;
+        }
+
+        $connected = $lifecycleState === 'connected'
+            || in_array($syncHealth, ['connected', 'recovered', 'degraded'], true)
+            || in_array($coreSyncHealth, ['connected', 'degraded'], true)
+            || $mt5SyncStatus === 'connected';
+
+        return $connected
+            && (string) $account->platform_status === 'connected'
+            && $this->lastMetricUpdateAt($account) instanceof Carbon
+            && is_numeric($account->balance)
+            && is_numeric($account->equity);
     }
 
     private function isRecent(Carbon $timestamp, ?TradingAccount $account = null): bool
