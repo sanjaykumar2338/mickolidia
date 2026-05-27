@@ -781,6 +781,109 @@ class ChallengeDashboardTest extends TestCase
         $this->assertStringContainsString('wolforix:repair-metaapi-account 340134 --assign', $output);
     }
 
+    public function test_create_metaapi_trading_account_dry_run_prints_plan_without_writing(): void
+    {
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340144',
+            'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+            'account_size' => 10000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => null,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => '99999999-9999-4999-9999-999999999999',
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:create-metaapi-trading-account', [
+            'login' => '340144',
+            '--dry-run' => true,
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('DRY RUN ONLY', $output);
+        $this->assertStringContainsString('WFX-MT5-340144', $output);
+        $this->assertDatabaseMissing('trading_accounts', [
+            'platform_login' => '340144',
+        ]);
+    }
+
+    public function test_create_metaapi_trading_account_creates_safe_row_and_binds_pool_entry(): void
+    {
+        $user = User::factory()->create();
+        $metaApiAccountId = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+
+        Mt5AccountPoolEntry::factory()->create([
+            'login' => '340145',
+            'server' => 'Fusion Markets Pty - FusionMarkets Demo',
+            'account_size' => 25000,
+            'allocated_trading_account_id' => null,
+            'allocated_user_id' => $user->id,
+            'allocated_at' => null,
+            'is_available' => true,
+            'source_status' => 'available',
+            'meta' => [
+                'metaapi_account_id' => $metaApiAccountId,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:create-metaapi-trading-account', [
+            'login' => '340145',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Trading account created and pool entry bound', $output);
+
+        $account = TradingAccount::query()->where('platform_login', '340145')->firstOrFail();
+        $entry = Mt5AccountPoolEntry::query()->where('login', '340145')->firstOrFail();
+
+        $this->assertSame($user->id, $account->user_id);
+        $this->assertSame('340145', $account->platform_account_id);
+        $this->assertSame('FusionMarkets-Demo', $account->platform_environment);
+        $this->assertSame('WFX-MT5-340145', $account->account_reference);
+        $this->assertSame('pending_activation', $account->account_status);
+        $this->assertSame('pending_activation', $account->challenge_status);
+        $this->assertSame('metaapi', $account->sync_source);
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($entry->id, data_get($account->meta, 'mt5_pool_entry.id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'));
+        $this->assertSame($account->id, $entry->allocated_trading_account_id);
+        $this->assertSame($user->id, $entry->allocated_user_id);
+        $this->assertFalse((bool) $entry->is_available);
+        $this->assertSame('assigned', $entry->source_status);
+    }
+
+    public function test_create_metaapi_trading_account_refuses_existing_valid_account(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340146');
+
+        Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340146',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'meta' => [
+                    'metaapi_account_id' => 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+                ],
+            ]);
+
+        $exitCode = Artisan::call('wolforix:create-metaapi-trading-account', [
+            'login' => '340146',
+        ]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('trading_account_already_exists', $output);
+        $this->assertSame(1, TradingAccount::query()->where('platform_login', '340146')->count());
+    }
+
     public function test_metaapi_sync_auto_heals_pool_uuid_into_trading_account_before_sync(): void
     {
         $account = $this->createMetaApiChallengeAccount('340141');
