@@ -941,7 +941,7 @@ class AdminClientController extends Controller
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|null>
      */
     private function validatedMetaApiAccountRow(string $login): array
     {
@@ -957,6 +957,7 @@ class AdminClientController extends Controller
                 'onboarding' => 'Missing',
                 'ready_to_trade' => 'No',
                 'last_sync' => 'N/A',
+                'metrics_url' => null,
             ];
         }
 
@@ -971,6 +972,10 @@ class AdminClientController extends Controller
             'onboarding' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_onboarding.state', 'pending')),
             'ready_to_trade' => $this->metaApiReadyToTrade($account) ? 'Yes' : 'No',
             'last_sync' => $this->formatDateTime($connector['last_sync_at'] ?? $account->last_synced_at),
+            'metrics_url' => route('admin.clients.metrics', [
+                'user' => $account->user_id,
+                'account' => $account->id,
+            ]),
         ];
     }
 

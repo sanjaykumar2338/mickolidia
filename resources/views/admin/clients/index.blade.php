@@ -44,11 +44,14 @@
                     </div>
                     <p class="text-sm text-slate-400">Phase 1 visibility scope only</p>
                 </div>
+                <p class="mt-3 text-sm leading-6 text-slate-400">
+                    Click View Metrics to review balance, equity, drawdown, positions, history, and sync details.
+                </p>
                 <div class="mt-5 overflow-x-auto">
                     <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                         <thead class="text-xs uppercase tracking-[0.18em] text-slate-400">
                             <tr>
-                                @foreach (['Login', 'Reference', 'Source', 'Connection', 'Lifecycle', 'Onboarding', 'Ready', 'Last sync'] as $heading)
+                                @foreach (['Login', 'Reference', 'Source', 'Connection', 'Lifecycle', 'Onboarding', 'Ready', 'Last sync', 'Actions'] as $heading)
                                     <th class="px-3 py-2 font-semibold">{{ $heading }}</th>
                                 @endforeach
                             </tr>
@@ -64,6 +67,15 @@
                                     <td class="px-3 py-3">{{ $row['onboarding'] }}</td>
                                     <td class="px-3 py-3">{{ $row['ready_to_trade'] }}</td>
                                     <td class="px-3 py-3">{{ $row['last_sync'] }}</td>
+                                    <td class="px-3 py-3">
+                                        @if (! empty($row['metrics_url']))
+                                            <a href="{{ $row['metrics_url'] }}" class="inline-flex rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                                                View Metrics
+                                            </a>
+                                        @else
+                                            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Unavailable</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

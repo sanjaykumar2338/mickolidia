@@ -924,6 +924,11 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('335400')
                 ->assertSee('MetaApi')
                 ->assertSee('Phase 1 visibility scope only')
+                ->assertSee('Click View Metrics to review balance, equity, drawdown, positions, history, and sync details.')
+                ->assertSee('Actions')
+                ->assertSee('View Metrics')
+                ->assertSee(route('admin.clients.metrics', ['user' => $account->user_id, 'account' => $account->id]), false)
+                ->assertSee(route('admin.clients.metrics', ['user' => $secondAccount->user_id, 'account' => $secondAccount->id]), false)
                 ->assertDontSee('metaapi-token-secret');
             $metaApiSummary = $adminIndexResponse->viewData('metaApiSummary');
 
