@@ -8,6 +8,7 @@ use App\Models\Mt5PromoCode;
 use App\Models\Order;
 use App\Models\TradingAccount;
 use App\Services\MetaApi\MetaApiOnboardingService;
+use App\Services\MetaQuotes\MetaQuotesPoolProvisioningService;
 use App\Services\Mt5\Mt5AccountAllocator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ class TradingAccountProvisioner
     public function __construct(
         private readonly Mt5AccountAllocator $mt5AccountAllocator,
         private readonly MetaApiOnboardingService $onboardingService,
+        private readonly MetaQuotesPoolProvisioningService $metaQuotesPoolProvisioning,
     ) {
     }
 
@@ -120,7 +122,14 @@ class TradingAccountProvisioner
             if ($promoCode instanceof Mt5PromoCode) {
                 $this->mt5AccountAllocator->allocatePromo($account, $promoCode);
             } else {
-                $this->mt5AccountAllocator->allocate($account);
+                $this->metaQuotesPoolProvisioning->provisionForAccount($account, [
+                    'server' => config('wolforix.mt5_account_pool.fusionmarkets.server', 'FusionMarkets-Demo'),
+                    'source_pool' => config('wolforix.mt5_account_pool.default_pool', 'client_pool'),
+                    'source_file' => config('wolforix.mt5_account_pool.active_source_file'),
+                    'broker' => config('wolforix.mt5_account_pool.active_broker', 'FusionMarkets'),
+                    'platform' => config('wolforix.mt5_account_pool.active_platform', 'MT5'),
+                    'source' => 'order_fulfillment',
+                ]);
             }
 
             if ($wasRecentlyCreated) {

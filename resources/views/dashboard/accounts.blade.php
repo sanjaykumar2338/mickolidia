@@ -77,6 +77,15 @@
                     <dd class="mt-3 text-lg font-semibold text-white">{{ ! empty($primaryAccount['ready_to_trade']) ? __('Yes') : __('No') }}</dd>
                 </div>
                 <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Provisioning Status') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['provisioning_status'] ?? __('Pending') }}</dd>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
+                    <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Assigned MT5 Login') }}</dt>
+                    <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['assigned_mt5_login'] ?? __('Link pending') }}</dd>
+                    <p class="mt-2 text-sm leading-6 text-slate-400">{{ __('Pool source: :source', ['source' => $primaryAccount['pool_source'] ?? __('Manual or pending')]) }}</p>
+                </div>
+                <div class="surface-card rounded-[1.6rem] p-5">
                     <dt class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ __('Open positions') }}</dt>
                     <dd class="mt-3 text-lg font-semibold text-white">{{ $primaryAccount['positions_count'] ?? 0 }}</dd>
                 </div>
@@ -339,6 +348,22 @@
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                         <dt class="text-slate-400">{{ __('Source') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['sync_source'] }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-slate-400">{{ __('Provisioning Status') }}</dt>
+                                        <dd class="font-semibold text-white">{{ $account['provisioning_status'] }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-slate-400">{{ __('Assigned MT5 Login') }}</dt>
+                                        <dd class="font-semibold text-white">{{ $account['assigned_mt5_login'] }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-slate-400">{{ __('Pool Source') }}</dt>
+                                        <dd class="font-semibold text-white">{{ $account['pool_source'] }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
+                                        <dt class="text-slate-400">{{ __('MetaApi Connected') }}</dt>
+                                        <dd class="font-semibold text-white">{{ ! empty($account['metaapi_connected']) ? __('Yes') : __('No') }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                                         <dt class="text-slate-400">{{ __('Platform account') }}</dt>

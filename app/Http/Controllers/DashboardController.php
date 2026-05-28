@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\User;
 use App\Services\Pricing\ChallengePricingService;
@@ -286,6 +287,7 @@ class DashboardController extends Controller
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
         $onboarding = $this->metaApiOnboarding($account);
+        $provisioning = $this->metaQuotesProvisioning($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -337,6 +339,10 @@ class DashboardController extends Controller
             'ready_to_trade' => $onboarding['ready_to_trade'],
             'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
             'phase_2_ready' => $onboarding['ready_to_trade'],
+            'provisioning_status' => $provisioning['status_label'],
+            'assigned_mt5_login' => $provisioning['assigned_login'],
+            'pool_source' => $provisioning['pool_source'],
+            'metaapi_connected' => $provisioning['metaapi_connected'],
             'sync_status' => $this->humanizeStatus((string) $account->sync_status),
             'last_synced_at' => $this->formatDateTime($account->platform_slug === 'mt5' ? $connectorStatus['last_sync_at'] : $account->last_synced_at),
             'last_evaluated_at' => $this->formatDateTime($account->last_evaluated_at),
@@ -404,6 +410,7 @@ class DashboardController extends Controller
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
         $onboarding = $this->metaApiOnboarding($account);
+        $provisioning = $this->metaQuotesProvisioning($account);
         $openPositionsCount = $this->openPositionsCount($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
@@ -441,6 +448,10 @@ class DashboardController extends Controller
             'ready_to_trade' => $onboarding['ready_to_trade'],
             'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
             'phase_2_ready' => $onboarding['ready_to_trade'],
+            'provisioning_status' => $provisioning['status_label'],
+            'assigned_mt5_login' => $provisioning['assigned_login'],
+            'pool_source' => $provisioning['pool_source'],
+            'metaapi_connected' => $provisioning['metaapi_connected'],
             'positions_count' => $openPositionsCount,
             'sync_freshness' => $syncFreshness,
             'badges' => $this->dashboardBadges($account),
@@ -1445,6 +1456,7 @@ class DashboardController extends Controller
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($account);
         $lifecycle = $this->metaApiLifecycle($account);
         $onboarding = $this->metaApiOnboarding($account);
+        $provisioning = $this->metaQuotesProvisioning($account);
         $syncFreshness = $account->platform_slug === 'mt5'
             ? $this->mt5ConnectorStatus->freshnessForAccount($account)
             : $this->syncFreshness($account->last_synced_at);
@@ -1515,6 +1527,10 @@ class DashboardController extends Controller
             'ready_to_trade' => $onboarding['ready_to_trade'],
             'phase_1_ready' => $this->phaseOneReady($account, $lifecycle),
             'phase_2_ready' => $onboarding['ready_to_trade'],
+            'provisioning_status' => $provisioning['status_label'],
+            'assigned_mt5_login' => $provisioning['assigned_login'],
+            'pool_source' => $provisioning['pool_source'],
+            'metaapi_connected' => $provisioning['metaapi_connected'],
             'positions_count' => $openPositionsCount,
             'closed_trades_count' => $closedTradesCount,
             'mt5_deactivation_status' => $this->mt5DeactivationStatusLabel($account),
@@ -1919,6 +1935,53 @@ class DashboardController extends Controller
             'message' => $this->metaApiOnboardingMessage($state, $ready),
             'ready_to_trade' => $ready,
         ];
+    }
+
+    /**
+     * @return array{status:string,status_label:string,assigned_login:string,pool_source:string,metaapi_connected:bool}
+     */
+    private function metaQuotesProvisioning(TradingAccount $account): array
+    {
+        $poolEntry = $this->poolEntryForAccount($account);
+        $status = (string) data_get($account->meta, 'metaquotes_pool_provisioning.status');
+
+        if ($status === '') {
+            $status = $poolEntry instanceof Mt5AccountPoolEntry
+                ? 'assigned'
+                : (filled((string) $account->platform_login) || filled((string) $account->platform_account_id) ? 'manual_credentials' : 'pending_assignment');
+        }
+
+        $sourceParts = array_filter([
+            $poolEntry?->source_pool ?: data_get($account->meta, 'mt5_pool_entry.source_pool'),
+            $poolEntry?->source_file ?: data_get($account->meta, 'mt5_pool_entry.source_file'),
+        ], static fn (mixed $value): bool => filled((string) $value));
+
+        return [
+            'status' => $status,
+            'status_label' => $this->humanizeStatus($status),
+            'assigned_login' => (string) ($poolEntry?->login ?: $account->platform_login ?: $account->platform_account_id ?: __('Link pending')),
+            'pool_source' => $sourceParts !== [] ? implode(' / ', $sourceParts) : __('Manual or pending'),
+            'metaapi_connected' => $this->phaseOneReady($account, $this->metaApiLifecycle($account)),
+        ];
+    }
+
+    private function poolEntryForAccount(TradingAccount $account): ?Mt5AccountPoolEntry
+    {
+        $poolEntryId = data_get($account->meta, 'mt5_pool_entry.id');
+
+        if (is_numeric($poolEntryId)) {
+            $entry = Mt5AccountPoolEntry::query()->find((int) $poolEntryId);
+
+            if ($entry instanceof Mt5AccountPoolEntry) {
+                return $entry;
+            }
+        }
+
+        return Mt5AccountPoolEntry::query()
+            ->where('allocated_trading_account_id', $account->id)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->first();
     }
 
     private function onboardingReadyToTrade(TradingAccount $account, string $state): bool

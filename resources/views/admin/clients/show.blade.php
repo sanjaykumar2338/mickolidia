@@ -487,6 +487,10 @@
                         <span><strong class="text-white">Trial status:</strong> {{ $providerReferences['trial_status'] }}</span>
                         <span><strong class="text-white">Account status:</strong> {{ $providerReferences['account_status'] }}</span>
                         <span><strong class="text-white">Connector status:</strong> {{ $providerReferences['connector_status'] }}</span>
+                        <span><strong class="text-white">Provisioning status:</strong> {{ $providerReferences['provisioning_status'] }}</span>
+                        <span><strong class="text-white">Assigned MT5 login:</strong> {{ $providerReferences['assigned_mt5_login'] }}</span>
+                        <span><strong class="text-white">Pool source:</strong> {{ $providerReferences['pool_source'] }}</span>
+                        <span><strong class="text-white">MetaApi connected:</strong> {{ $providerReferences['metaapi_connected'] }}</span>
                         <span><strong class="text-white">Stored connector flag:</strong> {{ $providerReferences['stored_connector_status'] }}</span>
                         <span><strong class="text-white">Lifecycle state:</strong> {{ $providerReferences['lifecycle_state'] }}</span>
                         <span><strong class="text-white">Sync health:</strong> {{ $providerReferences['sync_health'] }}</span>

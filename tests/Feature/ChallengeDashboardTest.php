@@ -753,6 +753,104 @@ class ChallengeDashboardTest extends TestCase
         $this->assertSame($account->id, $entry->fresh()->allocated_trading_account_id);
     }
 
+    public function test_metaquotes_pool_provisioning_assigns_precreated_account_idempotently_and_surfaces_dashboard_visibility(): void
+    {
+        config()->set('wolforix.mt5_account_pool.active_source_file', 'Account List FusionMarkets-Demo30.04.ods');
+
+        $account = $this->createMetaApiChallengeAccount('340170', [
+            'platform_login' => null,
+            'platform_account_id' => null,
+            'platform_environment' => 'FusionMarkets-Demo',
+            'sync_source' => null,
+            'meta' => [],
+        ]);
+        $metaApiAccountId = 'ab12cd34-ab12-4abc-8abc-ab12cd34ef56';
+        $firstEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340170',
+            'password' => 'pool-trading-pass',
+            'investor_password' => 'pool-investor-pass',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'source_status' => 'available',
+            'is_available' => true,
+            'allocated_at' => null,
+            'allocated_trading_account_id' => null,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+                'metaapi_account_id' => $metaApiAccountId,
+            ],
+        ]);
+        $secondEntry = Mt5AccountPoolEntry::factory()->create([
+            'login' => '340171',
+            'server' => 'FusionMarkets-Demo',
+            'account_size' => 10000,
+            'source_file' => 'Account List FusionMarkets-Demo30.04.ods',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'is_available' => true,
+            'allocated_at' => null,
+            'allocated_trading_account_id' => null,
+            'meta' => [
+                'broker' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'provider' => Mt5AccountPoolEntry::BROKER_FUSION_MARKETS,
+                'platform' => Mt5AccountPoolEntry::PLATFORM_MT5,
+            ],
+        ]);
+
+        $exitCode = Artisan::call('wolforix:assign-metaquotes-pool-account', [
+            'user' => (string) $account->user_id,
+            '--account' => $account->account_reference,
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('assigned', Artisan::output());
+
+        $account->refresh();
+        $firstEntry->refresh();
+        $secondEntry->refresh();
+
+        $this->assertSame($account->id, $firstEntry->allocated_trading_account_id);
+        $this->assertSame('340170', $account->platform_login);
+        $this->assertSame('FusionMarkets-Demo', $account->platform_environment);
+        $this->assertSame('metaapi', $account->sync_source);
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'metaapi_account_id'));
+        $this->assertSame($metaApiAccountId, data_get($account->meta, 'mt5_sync.metaapi_account_id'));
+        $this->assertSame('assigned', data_get($account->meta, 'metaquotes_pool_provisioning.status'));
+        $this->assertSame('waiting_metaapi_connection', data_get($account->meta, 'metaapi_onboarding.state'));
+        $this->assertFalse((bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade'));
+        $this->assertNull($secondEntry->allocated_trading_account_id);
+
+        $duplicateExit = Artisan::call('wolforix:assign-metaquotes-pool-account', [
+            'user' => (string) $account->user_id,
+            '--account' => $account->account_reference,
+        ]);
+
+        $this->assertSame(0, $duplicateExit);
+        $this->assertStringContainsString('already_assigned', Artisan::output());
+        $this->assertNull($secondEntry->fresh()->allocated_trading_account_id);
+
+        $this->assertSame(0, Artisan::call('wolforix:diagnose-metaquotes-pool', [
+            '--server' => 'FusionMarkets-Demo',
+        ]));
+        $this->assertStringContainsString('Available accounts', Artisan::output());
+
+        $this->assertSame(0, Artisan::call('wolforix:test-metaquotes-onboarding', [
+            'login' => '340170',
+        ]));
+        $this->assertStringContainsString('MetaQuotes onboarding test', Artisan::output());
+
+        $this->actingAs($account->user)
+            ->get(route('dashboard.accounts'))
+            ->assertOk()
+            ->assertSee('Provisioning Status')
+            ->assertSee('Assigned MT5 Login')
+            ->assertSee('Pool Source')
+            ->assertSee('340170');
+    }
+
     public function test_phase_2_onboarding_diagnostics_and_event_commands_report_readiness(): void
     {
         $account = $this->createMetaApiChallengeAccount('340163');

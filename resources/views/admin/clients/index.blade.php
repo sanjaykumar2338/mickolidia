@@ -51,7 +51,7 @@
                     <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                         <thead class="text-xs uppercase tracking-[0.18em] text-slate-400">
                             <tr>
-                                @foreach (['Login', 'Reference', 'Source', 'Connection', 'Lifecycle', 'Onboarding', 'Ready', 'Last sync', 'Actions'] as $heading)
+                                @foreach (['Login', 'Reference', 'Source', 'Connection', 'Provisioning', 'Pool Source', 'MetaApi Connected', 'Lifecycle', 'Onboarding', 'Ready', 'Last sync', 'Actions'] as $heading)
                                     <th class="px-3 py-2 font-semibold">{{ $heading }}</th>
                                 @endforeach
                             </tr>
@@ -63,6 +63,9 @@
                                     <td class="px-3 py-3">{{ $row['reference'] }}</td>
                                     <td class="px-3 py-3">{{ $row['source'] }}</td>
                                     <td class="px-3 py-3">{{ $row['connection'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['provisioning'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['pool_source'] }}</td>
+                                    <td class="px-3 py-3">{{ $row['metaapi_connected'] }}</td>
                                     <td class="px-3 py-3">{{ $row['lifecycle'] }}</td>
                                     <td class="px-3 py-3">{{ $row['onboarding'] }}</td>
                                     <td class="px-3 py-3">{{ $row['ready_to_trade'] }}</td>

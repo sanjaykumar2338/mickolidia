@@ -101,6 +101,7 @@ class AdminClientController extends Controller
             : 'N/A';
         $selectedReadyToTrade = $selectedAccount instanceof TradingAccount && $this->metaApiReadyToTrade($selectedAccount);
         $selectedPhaseOneReady = $selectedAccount instanceof TradingAccount && $this->metaApiPhaseOneReady($selectedAccount);
+        $selectedProvisioning = $this->metaQuotesProvisioning($selectedAccount);
 
         return view('admin.clients.show', [
             'client' => [
@@ -273,6 +274,10 @@ class AdminClientController extends Controller
                 'sync_health' => $selectedSyncHealth !== 'N/A' ? $this->humanizeStatus($selectedSyncHealth) : 'N/A',
                 'onboarding_state' => $selectedOnboardingState !== 'N/A' ? $this->humanizeStatus($selectedOnboardingState) : 'N/A',
                 'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'provisioning_status' => $selectedProvisioning['status_label'],
+                'assigned_mt5_login' => $selectedProvisioning['assigned_login'],
+                'pool_source' => $selectedProvisioning['pool_source'],
+                'metaapi_connected' => $selectedProvisioning['metaapi_connected'] ? 'Yes' : 'No',
                 'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
                 'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
             ],
@@ -312,6 +317,7 @@ class AdminClientController extends Controller
             : [];
         $selectedReadyToTrade = $selectedAccount instanceof TradingAccount && $this->metaApiReadyToTrade($selectedAccount);
         $selectedPhaseOneReady = $selectedAccount instanceof TradingAccount && $this->metaApiPhaseOneReady($selectedAccount);
+        $selectedProvisioning = $this->metaQuotesProvisioning($selectedAccount);
         $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
         $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
         $filters = $this->adminTradeFilters($request);
@@ -356,6 +362,10 @@ class AdminClientController extends Controller
                 'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
                 'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
                 'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'provisioning_status' => $selectedProvisioning['status_label'],
+                'assigned_mt5_login' => $selectedProvisioning['assigned_login'],
+                'pool_source' => $selectedProvisioning['pool_source'],
+                'metaapi_connected' => $selectedProvisioning['metaapi_connected'] ? 'Yes' : 'No',
                 'sync_source' => $selectedAccount?->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
                 'connector_download_url' => $selectedAccount instanceof TradingAccount && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
@@ -462,6 +472,7 @@ class AdminClientController extends Controller
         $calculation = $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot);
         $selectedReadyToTrade = $this->metaApiReadyToTrade($selectedAccount);
         $selectedPhaseOneReady = $this->metaApiPhaseOneReady($selectedAccount);
+        $selectedProvisioning = $this->metaQuotesProvisioning($selectedAccount);
         $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
         $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
         $filters = $this->adminTradeFilters($request);
@@ -498,6 +509,10 @@ class AdminClientController extends Controller
                 'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
                 'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
                 'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'provisioning_status' => $selectedProvisioning['status_label'],
+                'assigned_mt5_login' => $selectedProvisioning['assigned_login'],
+                'pool_source' => $selectedProvisioning['pool_source'],
+                'metaapi_connected' => $selectedProvisioning['metaapi_connected'] ? 'Yes' : 'No',
                 'sync_source' => $selectedAccount->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
                 'connector_download_url' => $user instanceof User && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
@@ -1097,6 +1112,10 @@ class AdminClientController extends Controller
                 'reference' => 'Missing trading account',
                 'source' => 'MetaApi',
                 'connection' => 'Missing',
+                'provisioning' => 'Missing',
+                'assigned_mt5_login' => 'Link pending',
+                'pool_source' => 'N/A',
+                'metaapi_connected' => 'No',
                 'lifecycle' => 'Missing',
                 'onboarding' => 'Missing',
                 'ready_to_trade' => 'No',
@@ -1108,12 +1127,17 @@ class AdminClientController extends Controller
         $connector = $this->mt5ConnectorStatus->forAccount($account);
         $account = $this->repairValidatedAccountUserBinding($login, $account);
         $metricsUrl = $this->metricsUrlForValidatedAccount($login, $account);
+        $provisioning = $this->metaQuotesProvisioning($account);
 
         return [
             'login' => $login,
             'reference' => (string) ($account->account_reference ?? 'N/A'),
             'source' => $account->sync_source ? $this->sourceLabel((string) $account->sync_source) : 'N/A',
             'connection' => $connector['label'],
+            'provisioning' => $provisioning['status_label'],
+            'assigned_mt5_login' => $provisioning['assigned_login'],
+            'pool_source' => $provisioning['pool_source'],
+            'metaapi_connected' => $provisioning['metaapi_connected'] ? 'Yes' : 'No',
             'lifecycle' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync')),
             'onboarding' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_onboarding.state', 'pending')),
             'ready_to_trade' => $this->metaApiReadyToTrade($account) ? 'Yes' : 'No',
@@ -1292,6 +1316,63 @@ class AdminClientController extends Controller
             ->map(fn (mixed $userId): int => (int) $userId)
             ->unique()
             ->values();
+    }
+
+    /**
+     * @return array{status:string,status_label:string,assigned_login:string,pool_source:string,metaapi_connected:bool}
+     */
+    private function metaQuotesProvisioning(?TradingAccount $account): array
+    {
+        if (! $account instanceof TradingAccount) {
+            return [
+                'status' => 'missing',
+                'status_label' => 'Missing',
+                'assigned_login' => 'Link pending',
+                'pool_source' => 'N/A',
+                'metaapi_connected' => false,
+            ];
+        }
+
+        $poolEntry = $this->poolEntryForAccount($account);
+        $status = (string) data_get($account->meta, 'metaquotes_pool_provisioning.status');
+
+        if ($status === '') {
+            $status = $poolEntry instanceof Mt5AccountPoolEntry
+                ? 'assigned'
+                : (filled((string) $account->platform_login) || filled((string) $account->platform_account_id) ? 'manual_credentials' : 'pending_assignment');
+        }
+
+        $sourceParts = array_filter([
+            $poolEntry?->source_pool ?: data_get($account->meta, 'mt5_pool_entry.source_pool'),
+            $poolEntry?->source_file ?: data_get($account->meta, 'mt5_pool_entry.source_file'),
+        ], static fn (mixed $value): bool => filled((string) $value));
+
+        return [
+            'status' => $status,
+            'status_label' => $this->humanizeStatus($status),
+            'assigned_login' => (string) ($poolEntry?->login ?: $account->platform_login ?: $account->platform_account_id ?: 'Link pending'),
+            'pool_source' => $sourceParts !== [] ? implode(' / ', $sourceParts) : 'Manual or pending',
+            'metaapi_connected' => $this->metaApiPhaseOneReady($account),
+        ];
+    }
+
+    private function poolEntryForAccount(TradingAccount $account): ?Mt5AccountPoolEntry
+    {
+        $poolEntryId = data_get($account->meta, 'mt5_pool_entry.id');
+
+        if (is_numeric($poolEntryId)) {
+            $entry = Mt5AccountPoolEntry::query()->find((int) $poolEntryId);
+
+            if ($entry instanceof Mt5AccountPoolEntry) {
+                return $entry;
+            }
+        }
+
+        return Mt5AccountPoolEntry::query()
+            ->where('allocated_trading_account_id', $account->id)
+            ->latest('allocated_at')
+            ->latest('id')
+            ->first();
     }
 
     private function metaApiReadyToTrade(TradingAccount $account): bool
