@@ -6,6 +6,7 @@ use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Services\TradingAccounts\TradingAccountSnapshotApplyService;
+use App\Support\MetaApiTodayProfitBreakdown;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -19,6 +20,7 @@ class MetaApiLiveSyncService
         private readonly MetaApiAccountMappingRepairService $mappingRepairService,
         private readonly MetaApiAccountLifecycleService $lifecycleService,
         private readonly MetaApiOnboardingService $onboardingService,
+        private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
     ) {}
 
     /**
@@ -456,7 +458,12 @@ class MetaApiLiveSyncService
         $balance = $this->numericValue($this->firstValue($info, ['balance', 'Balance'])) ?? 0.0;
         $equity = $this->numericValue($this->firstValue($info, ['equity', 'Equity'])) ?? $balance;
         $floatingPnl = $this->floatingPnl($positionRows);
-        $closedRows = $history['deals'] !== [] ? $history['deals'] : $history['orders'];
+        $historyRows = $history['deals'] !== [] ? $history['deals'] : $history['orders'];
+        $closedRows = collect($historyRows)
+            ->filter(fn (array $row): bool => $this->todayProfitBreakdown->isTradingHistoryRow($row))
+            ->values()
+            ->all();
+        $todayBreakdown = $this->todayProfitBreakdown->fromRows($closedRows, $snapshotAt);
         $server = (string) (data_get($accountPayload, 'server') ?: data_get($info, 'server') ?: $account->platform_environment ?: 'MetaApi');
         $connectionStatus = strtoupper((string) (data_get($accountPayload, 'connectionStatus') ?: 'UNKNOWN'));
 
@@ -468,6 +475,8 @@ class MetaApiLiveSyncService
             'leverage' => $this->numericValue($this->firstValue($info, ['leverage', 'Leverage'])),
             'profit_loss' => $floatingPnl ?? round($equity - $balance, 2),
             'open_profit' => $floatingPnl ?? round($equity - $balance, 2),
+            'today_profit' => (float) $todayBreakdown['net_today_profit'],
+            'today_profit_source' => $todayBreakdown['source_of_today_profit'],
             'positions_count' => count($positionRows),
             'closed_positions_count' => count($closedRows),
             'trade_count' => count($positionRows) + count($closedRows),
@@ -496,6 +505,7 @@ class MetaApiLiveSyncService
                 'history_deals' => $this->sanitizePayload($history['deals']),
                 'history_status' => $history['ok'] ? 'ok' : 'degraded',
                 'history_errors' => $history['errors'],
+                'today_profit_breakdown' => $todayBreakdown,
                 'balance' => $balance,
                 'equity' => $equity,
                 'margin' => $this->numericValue($this->firstValue($info, ['margin', 'Margin'])),
@@ -503,6 +513,7 @@ class MetaApiLiveSyncService
                 'leverage' => $this->numericValue($this->firstValue($info, ['leverage', 'Leverage'])),
                 'open_positions_count' => count($positionRows),
                 'trade_history_rows' => count($closedRows),
+                'excluded_non_trade_history_rows' => count($historyRows) - count($closedRows),
             ],
         ];
     }

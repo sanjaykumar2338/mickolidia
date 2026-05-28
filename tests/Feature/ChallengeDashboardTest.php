@@ -600,6 +600,191 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_admin_metrics_page_refreshes_stale_metaapi_data_on_load_and_labels_closed_pl(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-28 08:00:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('335400', [
+                'sync_source' => 'metaapi',
+                'last_synced_at' => now()->subMinutes(3),
+                'last_sync_completed_at' => now()->subMinutes(3),
+                'balance' => 10000,
+                'equity' => 10000,
+                'total_profit' => 0,
+                'today_profit' => -4.5,
+            ]);
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'ed749805-4cad-4622-a0bc-3b1c8dd241d2');
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now()->subMinutes(3),
+                'balance' => 10000,
+                'equity' => 10000,
+                'profit_loss' => 0,
+                'total_profit' => 0,
+                'today_profit' => -4.5,
+                'payload' => [
+                    'today_profit' => -4.5,
+                    'trade_history' => [],
+                    'open_positions' => [],
+                ],
+            ]);
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10036,
+                'equity' => 10036,
+                'margin' => 0,
+                'freeMargin' => 10036,
+                'leverage' => 100,
+                'login' => '335400',
+            ], [], [
+                [
+                    'id' => 'COMMISSION-ONLY',
+                    'type' => 'DEAL_TYPE_COMMISSION',
+                    'time' => '2026-05-28T07:58:00.000Z',
+                    'profit' => -4.5,
+                ],
+                [
+                    'id' => 'D-335400-1',
+                    'symbol' => 'EURUSD',
+                    'type' => 'DEAL_TYPE_BUY',
+                    'time' => '2026-05-28T07:59:00.000Z',
+                    'profit' => 40,
+                    'commission' => -2.25,
+                    'swap' => -1.75,
+                    'volume' => 0.2,
+                ],
+            ]);
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->get(route('admin.clients.metrics', ['user' => $account->user, 'account' => $account->id]))
+                ->assertOk()
+                ->assertSee('Refresh MetaApi Data')
+                ->assertSee('Last refreshed at')
+                ->assertSee('MetaApi data refreshed successfully.')
+                ->assertSee('Today Closed P/L')
+                ->assertSee('Gross today profit')
+                ->assertSee('$40.00')
+                ->assertSee('Today commission')
+                ->assertSee('-$2.25')
+                ->assertSee('Today swap')
+                ->assertSee('-$1.75')
+                ->assertSee('Net today profit')
+                ->assertSee('$36.00')
+                ->assertSee('Calculated from today’s closed trades')
+                ->assertDontSee('-$4.50')
+                ->assertDontSee('test-token');
+
+            $account->refresh();
+
+            $this->assertSame('10036.00', (string) $account->balance);
+            $this->assertSame('10036.00', (string) $account->equity);
+            $this->assertSame('36.00', (string) $account->today_profit);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_admin_metrics_manual_refresh_button_forces_metaapi_sync(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-28 08:05:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('335400', [
+                'sync_source' => 'metaapi',
+                'last_synced_at' => now(),
+                'balance' => 10000,
+                'equity' => 10000,
+            ]);
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'ed749805-4cad-4622-a0bc-3b1c8dd241d2');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10012,
+                'equity' => 10018,
+                'margin' => 120,
+                'freeMargin' => 9898,
+                'leverage' => 100,
+                'login' => '335400',
+            ], [
+                [
+                    'id' => 'P-335400-1',
+                    'symbol' => 'XAUUSD',
+                    'type' => 'POSITION_TYPE_BUY',
+                    'openTime' => '2026-05-28T08:00:00.000Z',
+                    'profit' => 6,
+                ],
+            ]);
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->post(route('admin.clients.metrics.refresh', ['user' => $account->user]), [
+                'account' => $account->id,
+            ])->assertRedirect(route('admin.clients.metrics', ['user' => $account->user, 'account' => $account->id]))
+                ->assertSessionHas('status', 'MetaApi data refreshed successfully.');
+
+            $account->refresh();
+
+            $this->assertSame('10012.00', (string) $account->balance);
+            $this->assertSame('10018.00', (string) $account->equity);
+            $this->assertSame('6.00', (string) $account->profit_loss);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_refresh_metaapi_metrics_command_reports_closed_profit_breakdown(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-28 08:10:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('335400', [
+                'sync_source' => 'metaapi',
+                'balance' => 10000,
+                'equity' => 10000,
+            ]);
+            $metaApiAccountId = $this->attachMetaApiPoolEntry($account, 'ed749805-4cad-4622-a0bc-3b1c8dd241d2');
+
+            $this->fakeMetaApiSync($metaApiAccountId, [
+                'balance' => 10036,
+                'equity' => 10036,
+                'login' => '335400',
+            ], [], [
+                [
+                    'id' => 'D-335400-2',
+                    'symbol' => 'GBPUSD',
+                    'type' => 'DEAL_TYPE_SELL',
+                    'time' => '2026-05-28T08:09:00.000Z',
+                    'profit' => 40,
+                    'commission' => -2.25,
+                    'swap' => -1.75,
+                ],
+            ]);
+
+            $exitCode = Artisan::call('wolforix:refresh-metaapi-metrics', [
+                'login' => '335400',
+                '--debug' => true,
+            ]);
+            $output = Artisan::output();
+
+            $this->assertSame(0, $exitCode);
+            $this->assertStringContainsString('MetaApi metrics refresh result', $output);
+            $this->assertStringContainsString('Gross today profit', $output);
+            $this->assertStringContainsString('40', $output);
+            $this->assertStringContainsString('Commission', $output);
+            $this->assertStringContainsString('-2.25', $output);
+            $this->assertStringContainsString('Swap', $output);
+            $this->assertStringContainsString('-1.75', $output);
+            $this->assertStringContainsString('Net today profit', $output);
+            $this->assertStringContainsString('36', $output);
+            $this->assertStringContainsString('Total realized P/L', $output);
+            $this->assertStringNotContainsString('test-token', $output);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_metaapi_first_sync_activates_lifecycle_and_records_events(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-05-26 10:00:00'));

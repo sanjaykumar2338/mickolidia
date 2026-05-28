@@ -9,9 +9,11 @@ use App\Models\TradingAccountBalanceSnapshot;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
 use App\Services\Challenge\ChallengeLifecycleMailer;
+use App\Services\MetaApi\MetaApiLiveSyncService;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\ChallengeCalculationBreakdown;
 use App\Support\CountryEligibility;
+use App\Support\MetaApiTodayProfitBreakdown;
 use App\Support\Mt5ConnectorCredentials;
 use App\Support\Mt5ConnectorPackageBuilder;
 use App\Support\Mt5ConnectorStatus;
@@ -36,6 +38,8 @@ class AdminClientController extends Controller
         private readonly CountryEligibility $countryEligibility,
         private readonly Mt5ConnectorStatus $mt5ConnectorStatus,
         private readonly ChallengeCalculationBreakdown $challengeCalculationBreakdown,
+        private readonly MetaApiLiveSyncService $metaApiLiveSyncService,
+        private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
     ) {}
 
     public function index(): View
@@ -300,6 +304,11 @@ class AdminClientController extends Controller
             ? $accounts->firstWhere('id', $requestedAccountId)
             : null;
         $selectedAccount ??= $accounts->first();
+        $metaApiRefresh = $this->refreshMetaApiMetricsForPage($selectedAccount);
+        $selectedAccount = $selectedAccount instanceof TradingAccount
+            ? ($selectedAccount->fresh(['challengePlan', 'user']) ?? $selectedAccount)
+            : $selectedAccount;
+        $accounts = $this->availableAccountsForUser($user);
 
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
         $mt5SyncMeta = is_array($selectedAccount?->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
@@ -370,11 +379,20 @@ class AdminClientController extends Controller
                 'connector_download_url' => $selectedAccount instanceof TradingAccount && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
                     : null,
+                'refresh_action_url' => $selectedAccount instanceof TradingAccount
+                    ? route('admin.clients.metrics.refresh', array_filter([
+                        'user' => $user,
+                        'account' => $selectedAccount->id,
+                    ], fn (mixed $value): bool => $value !== null))
+                    : null,
+                'can_refresh_metaapi' => $selectedAccount instanceof TradingAccount && $this->isMetaApiRefreshableAccount($selectedAccount),
+                'last_refreshed_at' => $todaySummary['last_synced_at'],
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount?->last_synced_at),
                 'balance' => $this->formatMoney((float) ($calculation['challenge_balance'] ?? 0)),
                 'equity' => $this->formatMoney((float) ($calculation['challenge_equity'] ?? 0)),
                 'floating_pl' => $this->formatMoney((float) ($calculation['floating_pnl'] ?? $todaySummary['current_floating_pnl_value'])),
                 'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount?->profit_loss)),
+                'today_profit_label' => $todaySummary['today_profit_label'],
                 'today_profit' => $todaySummary['today_profit_loss'],
                 'total_realized_pl' => $this->formatMoney((float) ($calculation['realized_profit'] ?? $this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount?->total_profit))),
                 'profit_target_progress' => number_format((float) ($calculation['profit_target_progress_percent'] ?? 0), 1).'%',
@@ -399,6 +417,7 @@ class AdminClientController extends Controller
             'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
             'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
             'todaySummary' => $todaySummary,
+            'metaApiRefresh' => $metaApiRefresh,
             'tradeFilterActionUrl' => $this->adminMetricsUrl($user, $selectedAccount),
             'calculation' => $this->formatAdminCalculationBreakdown($calculation),
             'diagnostics' => [
@@ -457,6 +476,17 @@ class AdminClientController extends Controller
                 ->values()
             : collect([$account]);
         $selectedAccount = $account;
+        $metaApiRefresh = $this->refreshMetaApiMetricsForPage($selectedAccount);
+        $selectedAccount = $selectedAccount->fresh(['challengePlan', 'user']) ?? $selectedAccount;
+        $user = $selectedAccount->user;
+        $accounts = $user instanceof User
+            ? $this->availableAccountsForUser($user)
+                ->push($selectedAccount)
+                ->filter(fn (?TradingAccount $candidate): bool => $candidate instanceof TradingAccount)
+                ->unique('id')
+                ->sortByDesc('created_at')
+                ->values()
+            : collect([$selectedAccount]);
 
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
         $mt5SyncMeta = is_array($selectedAccount->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
@@ -517,11 +547,15 @@ class AdminClientController extends Controller
                 'connector_download_url' => $user instanceof User && $this->isMt5Account($selectedAccount)
                     ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
                     : null,
+                'refresh_action_url' => route('admin.trading-accounts.metrics.refresh', ['account' => $selectedAccount]),
+                'can_refresh_metaapi' => $this->isMetaApiRefreshableAccount($selectedAccount),
+                'last_refreshed_at' => $todaySummary['last_synced_at'],
                 'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount->last_synced_at),
                 'balance' => $this->formatMoney((float) ($calculation['challenge_balance'] ?? 0)),
                 'equity' => $this->formatMoney((float) ($calculation['challenge_equity'] ?? 0)),
                 'floating_pl' => $this->formatMoney((float) ($calculation['floating_pnl'] ?? $todaySummary['current_floating_pnl_value'])),
                 'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount->profit_loss)),
+                'today_profit_label' => $todaySummary['today_profit_label'],
                 'today_profit' => $todaySummary['today_profit_loss'],
                 'total_realized_pl' => $this->formatMoney((float) ($calculation['realized_profit'] ?? $this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount->total_profit))),
                 'profit_target_progress' => number_format((float) ($calculation['profit_target_progress_percent'] ?? 0), 1).'%',
@@ -544,6 +578,7 @@ class AdminClientController extends Controller
             'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
             'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
             'todaySummary' => $todaySummary,
+            'metaApiRefresh' => $metaApiRefresh,
             'tradeFilterActionUrl' => $this->adminMetricsUrl($user, $selectedAccount),
             'calculation' => $this->formatAdminCalculationBreakdown($calculation),
             'diagnostics' => [
@@ -579,6 +614,36 @@ class AdminClientController extends Controller
                 'close_result_message' => $mt5DeactivationCurrent['close_result_message'] ?? 'None',
             ],
         ]);
+    }
+
+    public function refreshMetrics(Request $request, User $user): RedirectResponse
+    {
+        $accounts = $this->availableAccountsForUser($user);
+        $requestedAccountId = (int) $request->input('account', $request->query('account', 0));
+        $account = $requestedAccountId > 0
+            ? $accounts->firstWhere('id', $requestedAccountId)
+            : $accounts->first();
+
+        if (! $account instanceof TradingAccount) {
+            return redirect()
+                ->route('admin.clients.metrics', $user)
+                ->with('error', __('No trading account is available to refresh.'));
+        }
+
+        $refresh = $this->refreshMetaApiMetricsForPage($account, force: true);
+        $flashKey = $refresh['ok'] ? 'status' : 'error';
+
+        return redirect($this->adminMetricsUrl($user, $account))
+            ->with($flashKey, (string) $refresh['message']);
+    }
+
+    public function refreshAccountMetrics(TradingAccount $account): RedirectResponse
+    {
+        $refresh = $this->refreshMetaApiMetricsForPage($account, force: true);
+        $flashKey = $refresh['ok'] ? 'status' : 'error';
+
+        return redirect($this->adminMetricsUrl($account->user, $account))
+            ->with($flashKey, (string) $refresh['message']);
     }
 
     public function downloadMt5Connector(
@@ -729,6 +794,114 @@ class AdminClientController extends Controller
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function refreshMetaApiMetricsForPage(?TradingAccount $account, bool $force = false): array
+    {
+        $lastRefreshedAt = $this->lastMetaApiMetricsRefreshAt($account);
+        $default = [
+            'attempted' => false,
+            'ok' => true,
+            'message' => __('Latest saved metrics are current.'),
+            'last_refreshed_at' => $this->formatDateTimeValue($lastRefreshedAt),
+        ];
+
+        if (! $account instanceof TradingAccount || ! $this->isMetaApiRefreshableAccount($account)) {
+            return $default;
+        }
+
+        if (! $force && $lastRefreshedAt instanceof Carbon && $lastRefreshedAt->greaterThanOrEqualTo(now()->subSeconds(30))) {
+            return $default;
+        }
+
+        $originalConfig = [
+            'services.metaapi.timeout' => config('services.metaapi.timeout'),
+            'services.metaapi.connect_timeout' => config('services.metaapi.connect_timeout'),
+            'services.metaapi.history.timeout' => config('services.metaapi.history.timeout'),
+            'services.metaapi.sync.retries' => config('services.metaapi.sync.retries'),
+            'services.metaapi.sync.retry_delay_ms' => config('services.metaapi.sync.retry_delay_ms'),
+        ];
+
+        try {
+            config()->set('services.metaapi.timeout', min(2, max(1, (int) config('services.metaapi.timeout', 30))));
+            config()->set('services.metaapi.connect_timeout', min(1, max(1, (int) config('services.metaapi.connect_timeout', 10))));
+            config()->set('services.metaapi.history.timeout', min(1, max(1, (int) config('services.metaapi.history.timeout', 30))));
+            config()->set('services.metaapi.sync.retries', 0);
+            config()->set('services.metaapi.sync.retry_delay_ms', 0);
+
+            $result = $this->metaApiLiveSyncService->syncAccount($account, [
+                'history_days' => 1,
+                'history_limit' => 25,
+            ]);
+
+            $ok = ($result['status'] ?? null) !== 'error';
+            $freshAccount = $account->fresh();
+
+            return [
+                'attempted' => true,
+                'ok' => $ok,
+                'message' => $ok
+                    ? __('MetaApi data refreshed successfully.')
+                    : __('MetaApi refresh failed; showing the latest saved metrics.'),
+                'result' => $result,
+                'last_refreshed_at' => $this->formatDateTimeValue($freshAccount?->last_synced_at ?? $lastRefreshedAt),
+            ];
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            Log::warning('Admin MetaApi metrics refresh failed; rendering saved metrics.', [
+                'trading_account_id' => $account->id,
+                'account_reference' => $account->account_reference,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return [
+                'attempted' => true,
+                'ok' => false,
+                'message' => __('MetaApi refresh failed; showing the latest saved metrics.'),
+                'error' => $exception->getMessage(),
+                'last_refreshed_at' => $this->formatDateTimeValue($lastRefreshedAt),
+            ];
+        } finally {
+            foreach ($originalConfig as $key => $value) {
+                config()->set($key, $value);
+            }
+        }
+    }
+
+    private function isMetaApiRefreshableAccount(?TradingAccount $account): bool
+    {
+        return $account instanceof TradingAccount
+            && ($account->sync_source === 'metaapi' || $this->hasMetaApiAccountId($account));
+    }
+
+    private function lastMetaApiMetricsRefreshAt(?TradingAccount $account): ?Carbon
+    {
+        if (! $account instanceof TradingAccount) {
+            return null;
+        }
+
+        $snapshotAt = $account->balanceSnapshots()
+            ->latest('snapshot_at')
+            ->latest('id')
+            ->value('snapshot_at');
+
+        if ($snapshotAt instanceof Carbon) {
+            return $snapshotAt;
+        }
+
+        if ($snapshotAt !== null) {
+            try {
+                return Carbon::parse($snapshotAt);
+            } catch (\Throwable) {
+                return $account->last_synced_at;
+            }
+        }
+
+        return $account->last_synced_at;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $rows
      * @param  array<string, mixed>  $connectorStatus
      * @return array<string, mixed>
@@ -747,18 +920,36 @@ class AdminClientController extends Controller
         $openToday = $rowCollection->filter(fn (array $row): bool => ($row['filter'] ?? null) === 'open'
             && $this->tradeRowFallsBetween($row, $todayStart, $todayEnd, preferCloseTime: false));
         $currentOpenRows = $rowCollection->filter(fn (array $row): bool => ($row['filter'] ?? null) === 'open');
+        $closedTradeBreakdown = $this->todayProfitBreakdown->fromRows($closedToday->values()->all(), now());
+        $payloadBreakdown = $this->todayProfitBreakdownFromSnapshot($latestSnapshot);
 
-        $todayProfitValue = $this->snapshotPayloadHasTodayProfit($latestSnapshot)
-            ? $this->adminMetricAmount($latestSnapshot?->today_profit, $account?->today_profit)
-            : null;
-        $todayProfitSource = __('Latest MT5 payload');
-
-        if ($todayProfitValue === null) {
-            $todayProfitValue = round($closedToday->sum(
-                fn (array $row): float => (float) ($row['net_result_value'] ?? $row['profit_value'] ?? 0)
-            ), 2);
+        if ((int) $closedTradeBreakdown['closed_trades_today_count'] > 0 || $account?->sync_source === 'metaapi') {
+            $breakdown = $closedTradeBreakdown;
+            $todayProfitSource = __('Calculated from today’s closed trades');
+        } elseif ($payloadBreakdown !== null) {
+            $breakdown = $payloadBreakdown;
+            $todayProfitSource = __('Latest MT5 payload closed-trade breakdown');
+        } elseif ($this->snapshotPayloadHasTodayProfit($latestSnapshot)) {
+            $includesFloating = $this->payloadTodayProfitIncludesFloating($latestSnapshot?->payload);
+            $payloadTodayProfit = $this->adminMetricAmount($latestSnapshot?->today_profit, $account?->today_profit);
+            $breakdown = [
+                'closed_trades_today_count' => $closedToday->count(),
+                'gross_today_profit' => $payloadTodayProfit,
+                'today_commission' => 0.0,
+                'today_swap' => 0.0,
+                'net_today_profit' => $payloadTodayProfit,
+                'source_of_today_profit' => 'latest_payload_today_profit',
+                'label' => $includesFloating ? 'Today P/L incl. floating' : 'Today Closed P/L',
+                'includes_floating' => $includesFloating,
+            ];
+            $todayProfitSource = __('Latest MT5 payload');
+        } else {
+            $breakdown = $closedTradeBreakdown;
             $todayProfitSource = __('Calculated from today’s closed trades');
         }
+
+        $todayProfitValue = round((float) ($breakdown['net_today_profit'] ?? 0), 2);
+        $todayProfitLabel = (string) ($breakdown['label'] ?? 'Today Closed P/L');
 
         $openRowsWithProfit = $currentOpenRows->filter(
             fn (array $row): bool => is_numeric($row['profit_value'] ?? null)
@@ -795,11 +986,21 @@ class AdminClientController extends Controller
             ?? $account?->last_synced_at;
 
         return [
+            'today_profit_label' => $todayProfitLabel,
             'today_profit_loss' => $this->formatMoney($todayProfitValue),
             'today_profit_loss_value' => $todayProfitValue,
             'today_profit_source' => $todayProfitSource,
-            'today_closed_trades_count' => $closedToday->count(),
+            'source_of_today_profit' => (string) ($breakdown['source_of_today_profit'] ?? 'today_closed_trades'),
+            'today_closed_trades_count' => (int) ($breakdown['closed_trades_today_count'] ?? $closedToday->count()),
             'today_open_trades_count' => $openToday->count(),
+            'gross_today_profit' => $this->formatMoney((float) ($breakdown['gross_today_profit'] ?? 0)),
+            'gross_today_profit_value' => (float) ($breakdown['gross_today_profit'] ?? 0),
+            'today_commission' => $this->formatMoney((float) ($breakdown['today_commission'] ?? 0)),
+            'today_commission_value' => (float) ($breakdown['today_commission'] ?? 0),
+            'today_swap' => $this->formatMoney((float) ($breakdown['today_swap'] ?? 0)),
+            'today_swap_value' => (float) ($breakdown['today_swap'] ?? 0),
+            'net_today_profit' => $this->formatMoney((float) ($breakdown['net_today_profit'] ?? $todayProfitValue)),
+            'net_today_profit_value' => (float) ($breakdown['net_today_profit'] ?? $todayProfitValue),
             'current_open_positions_count' => $currentOpenRows->count(),
             'current_floating_pnl' => $this->formatMoney($currentFloatingPnl),
             'current_floating_pnl_value' => $currentFloatingPnl,
@@ -834,6 +1035,60 @@ class AdminClientController extends Controller
             'raw.todayPnl',
             'mt5.today_profit',
             'mt5.todayProfit',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function todayProfitBreakdownFromSnapshot(?TradingAccountBalanceSnapshot $snapshot): ?array
+    {
+        $payload = $snapshot?->payload;
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $breakdown = data_get($payload, 'raw.today_profit_breakdown')
+            ?: data_get($payload, 'today_profit_breakdown');
+
+        if (! is_array($breakdown)) {
+            return null;
+        }
+
+        $serverDay = (string) ($breakdown['server_day'] ?? '');
+
+        if ($serverDay !== '' && $serverDay !== now()->toDateString()) {
+            return null;
+        }
+
+        return [
+            'closed_trades_today_count' => (int) ($breakdown['closed_trades_today_count'] ?? 0),
+            'gross_today_profit' => $this->adminMetricAmount($breakdown['gross_today_profit'] ?? null),
+            'today_commission' => $this->adminMetricAmount($breakdown['today_commission'] ?? null),
+            'today_swap' => $this->adminMetricAmount($breakdown['today_swap'] ?? null),
+            'net_today_profit' => $this->adminMetricAmount($breakdown['net_today_profit'] ?? null),
+            'source_of_today_profit' => (string) ($breakdown['source_of_today_profit'] ?? 'today_closed_trades'),
+            'label' => (string) ($breakdown['label'] ?? 'Today Closed P/L'),
+            'includes_floating' => (bool) ($breakdown['includes_floating'] ?? false),
+        ];
+    }
+
+    private function payloadTodayProfitIncludesFloating(mixed $payload): bool
+    {
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        return $this->payloadHasFilledValue($payload, [
+            'today_pnl_including_floating',
+            'todayPnlIncludingFloating',
+            'today_profit_including_floating',
+            'todayProfitIncludingFloating',
+            'raw.today_pnl_including_floating',
+            'raw.todayPnlIncludingFloating',
+            'raw.today_profit_including_floating',
+            'raw.todayProfitIncludingFloating',
         ]);
     }
 
@@ -909,7 +1164,7 @@ class AdminClientController extends Controller
                 ['label' => 'Raw MT5 Broker Equity', 'value' => $this->formatMoney((float) $calculation['raw_equity'])],
                 ['label' => 'Challenge balance / equity', 'value' => $this->formatMoney((float) $calculation['challenge_balance']).' / '.$this->formatMoney((float) $calculation['challenge_equity'])],
                 ['label' => 'Realized P/L', 'value' => $this->formatMoney((float) $calculation['realized_profit'])],
-                ['label' => 'Today P/L', 'value' => $this->formatMoney((float) $calculation['today_profit'])],
+                ['label' => 'Today Closed P/L', 'value' => $this->formatMoney((float) $calculation['today_profit'])],
                 ['label' => 'Profit target', 'value' => $this->formatMoney((float) $calculation['profit_target_amount']).' · '.number_format((float) $calculation['profit_target_progress_percent'], 1).'%'],
                 ['label' => 'Profit target met', 'value' => (bool) $calculation['profit_target_met'] ? 'Yes' : 'No'],
                 ['label' => 'Daily loss', 'value' => $this->formatMoney((float) $calculation['daily_loss_used']).' / '.$this->formatMoney((float) $calculation['daily_loss_limit'])],

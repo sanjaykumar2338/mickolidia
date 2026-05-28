@@ -125,7 +125,9 @@ Route::prefix('admin')->group(function (): void {
             ->name('admin.wolfi.voices.preview');
         Route::post('/client/{user}/activate', [AdminClientController::class, 'activate'])->name('admin.clients.activate');
         Route::post('/client/{user}/credentials', [AdminClientController::class, 'updateCredentials'])->name('admin.clients.credentials');
+        Route::post('/client/{user}/metrics/refresh', [AdminClientController::class, 'refreshMetrics'])->name('admin.clients.metrics.refresh');
         Route::get('/client/{user}/metrics', [AdminClientController::class, 'metrics'])->name('admin.clients.metrics');
+        Route::post('/trading-account/{account}/metrics/refresh', [AdminClientController::class, 'refreshAccountMetrics'])->name('admin.trading-accounts.metrics.refresh');
         Route::get('/trading-account/{account}/metrics', [AdminClientController::class, 'accountMetrics'])->name('admin.trading-accounts.metrics');
         Route::get('/client/{user}/accounts/{account}/mt5-connector/download', [AdminClientController::class, 'downloadMt5Connector'])->name('admin.clients.mt5-connector.download');
         Route::get('/client/{user}', [AdminClientController::class, 'show'])->name('admin.clients.show');

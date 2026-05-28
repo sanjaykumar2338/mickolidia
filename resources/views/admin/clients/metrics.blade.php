@@ -10,6 +10,15 @@
             <p class="mt-4 max-w-3xl text-base leading-8 text-slate-300">{{ $client['email'] }}</p>
         </div>
         <div class="flex flex-wrap gap-3">
+            @if (! empty($account['can_refresh_metaapi']) && ! empty($account['refresh_action_url']))
+                <form method="POST" action="{{ $account['refresh_action_url'] }}">
+                    @csrf
+                    <input type="hidden" name="account" value="{{ request('account') }}">
+                    <button type="submit" class="rounded-full border border-sky-300/30 bg-sky-400/12 px-4 py-2 text-sm font-semibold text-sky-100 transition hover:border-sky-200/50 hover:bg-sky-400/18">
+                        Refresh MetaApi Data
+                    </button>
+                </form>
+            @endif
             @if (! empty($account['connector_download_url']))
                 <a href="{{ $account['connector_download_url'] }}" class="rounded-full border border-amber-300/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/18">
                     Download EA connector
@@ -41,8 +50,9 @@
             'Challenge equity' => $account['equity'],
             'Current floating PnL' => $account['floating_pl'],
             'Snapshot P/L' => $account['snapshot_pl'],
-            'Today profit' => $account['today_profit'],
+            $account['today_profit_label'] ?? 'Today Closed P/L' => $account['today_profit'],
             'Total realized P/L' => $account['total_realized_pl'],
+            'Last refreshed at' => $account['last_refreshed_at'],
             'Profit target progress' => $account['profit_target_progress'],
             'Trading days' => $account['trading_days'],
             'Open positions' => $account['open_positions_count'],
@@ -86,6 +96,12 @@
         </div>
     </div>
 
+    @if (! empty($metaApiRefresh['attempted']))
+        <div class="{{ ! empty($metaApiRefresh['ok']) ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100' : 'border-amber-400/20 bg-amber-500/10 text-amber-100' }} mt-4 rounded-2xl border px-5 py-4 text-sm font-semibold">
+            {{ $metaApiRefresh['message'] }}
+        </div>
+    @endif
+
     @if ($account['connector_is_stale'])
         <div class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm font-semibold text-rose-100">
             MT5 data may be outdated because the EA has not synced recently.
@@ -125,7 +141,11 @@
         </div>
         <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             @foreach ([
-                'Today profit/loss' => $todaySummary['today_profit_loss'],
+                $todaySummary['today_profit_label'] => $todaySummary['today_profit_loss'],
+                'Gross today profit' => $todaySummary['gross_today_profit'],
+                'Today commission' => $todaySummary['today_commission'],
+                'Today swap' => $todaySummary['today_swap'],
+                'Net today profit' => $todaySummary['net_today_profit'],
                 'Today closed trades count' => $todaySummary['today_closed_trades_count'],
                 'Today open trades count' => $todaySummary['today_open_trades_count'],
                 'Current floating PnL' => $todaySummary['current_floating_pnl'],

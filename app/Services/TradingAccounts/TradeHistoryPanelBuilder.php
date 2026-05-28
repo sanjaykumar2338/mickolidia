@@ -408,6 +408,7 @@ class TradeHistoryPanelBuilder
         $rows = collect($paths)
             ->flatMap(fn (string $path): array => $this->coerceTradeRows(Arr::get($payload, $path)))
             ->filter(fn ($row): bool => is_array($row))
+            ->filter(fn (array $row): bool => ! $allowAggregateFallback || $this->isDisplayableClosedTradeRow($row))
             ->values();
 
         if ($rows->isEmpty() && $allowAggregateFallback) {
@@ -1308,6 +1309,38 @@ class TradeHistoryPanelBuilder
         ]);
 
         return $openCount === 0;
+    }
+
+    private function isDisplayableClosedTradeRow(array $row): bool
+    {
+        $type = strtolower((string) $this->firstFilledValue($row, [
+            'type',
+            'Type',
+            'deal_type',
+            'dealType',
+            'entryType',
+            'entry_type',
+            'raw.type',
+            'raw.Type',
+            'raw.deal_type',
+            'raw.dealType',
+        ]));
+
+        if ($type === '') {
+            return true;
+        }
+
+        if (str_contains($type, 'buy') || str_contains($type, 'sell')) {
+            return true;
+        }
+
+        foreach (['balance', 'credit', 'charge', 'correction', 'bonus', 'commission', 'fee', 'tax', 'interest', 'dividend', 'agent'] as $excluded) {
+            if (str_contains($type, $excluded)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function payloadHasAnyPath(array $payload, array $paths): bool

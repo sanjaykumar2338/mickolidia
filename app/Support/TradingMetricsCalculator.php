@@ -10,6 +10,7 @@ class TradingMetricsCalculator
 {
     public function __construct(
         private readonly ChallengeAccountMetrics $challengeAccountMetrics,
+        private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
     ) {
     }
 
@@ -101,33 +102,14 @@ class TradingMetricsCalculator
             return null;
         }
 
-        $total = 0.0;
-        $matchedRows = 0;
+        $breakdown = $this->todayProfitBreakdown->fromRows(
+            collect($rows)->filter(fn (mixed $row): bool => is_array($row))->values()->all(),
+            $serverDay,
+        );
 
-        foreach ($rows as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-
-            $closedAt = $this->tradeCloseTime($row);
-
-            if (! $closedAt instanceof Carbon || ! $closedAt->isSameDay($serverDay)) {
-                continue;
-            }
-
-            $profit = $this->numericValue($row['net_profit'] ?? $row['net_result'] ?? null);
-
-            if ($profit === null) {
-                $profit = ($this->numericValue($row['profit'] ?? null) ?? 0.0)
-                    + ($this->numericValue($row['commission'] ?? null) ?? 0.0)
-                    + ($this->numericValue($row['swap'] ?? null) ?? 0.0);
-            }
-
-            $total += $profit;
-            $matchedRows++;
-        }
-
-        return $matchedRows > 0 ? round($total, 2) : null;
+        return (int) $breakdown['closed_trades_today_count'] > 0
+            ? (float) $breakdown['net_today_profit']
+            : null;
     }
 
     /**
@@ -138,21 +120,6 @@ class TradingMetricsCalculator
         $value = $snapshot['server_day'] ?? $snapshot['timestamp'] ?? data_get($snapshot, 'raw.server_day') ?? data_get($snapshot, 'raw.server_time');
 
         return $this->carbonValue($value);
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     */
-    private function tradeCloseTime(array $row): ?Carbon
-    {
-        return $this->carbonValue(
-            $row['execution_timestamp']
-                ?? $row['execution_time']
-                ?? $row['close_timestamp']
-                ?? $row['close_time']
-                ?? $row['closed_at']
-                ?? null
-        );
     }
 
     private function carbonValue(mixed $value): ?Carbon
@@ -182,8 +149,4 @@ class TradingMetricsCalculator
         return null;
     }
 
-    private function numericValue(mixed $value): ?float
-    {
-        return is_numeric($value) ? round((float) $value, 2) : null;
-    }
 }

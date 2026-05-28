@@ -47,7 +47,7 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('$250.00')
             ->assertSee('2 / 3')
             ->assertSee('Today Summary')
-            ->assertSee('Today profit/loss')
+            ->assertSee('Today Closed P/L')
             ->assertSee('Today closed trades count')
             ->assertSee('Today open trades count')
             ->assertSee('Current floating PnL')
