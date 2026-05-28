@@ -1051,9 +1051,10 @@ class ChallengeDashboardTest extends TestCase
             ->assertDontSee('abababab-abab-4bab-8bab-abababababab');
     }
 
-    public function test_validated_metaapi_metrics_action_does_not_crash_when_account_has_no_user_binding(): void
+    public function test_validated_metaapi_metrics_action_repairs_user_binding_from_pool(): void
     {
         $account = $this->createMetaApiChallengeAccount('340134');
+        $userId = $account->user_id;
         $this->markMetaApiDashboardReady($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332')
             ->forceFill(['user_id' => null])
             ->save();
@@ -1065,8 +1066,80 @@ class ChallengeDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Validated MetaApi accounts')
             ->assertSee('340134')
+            ->assertSee('View Metrics')
+            ->assertSee(route('admin.clients.metrics', ['user' => $userId, 'account' => $account->id]), false)
+            ->assertDontSee('Missing required parameter');
+
+        $this->assertSame($userId, $account->refresh()->user_id);
+    }
+
+    public function test_validated_metaapi_metrics_action_does_not_crash_when_account_has_no_user_binding(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340134');
+        $this->markMetaApiDashboardReady($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332')
+            ->forceFill(['user_id' => null])
+            ->save();
+        Mt5AccountPoolEntry::query()
+            ->where('allocated_trading_account_id', $account->id)
+            ->update(['allocated_user_id' => null]);
+
+        $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.clients.index'))
+            ->assertOk()
+            ->assertSee('Validated MetaApi accounts')
+            ->assertSee('340134')
             ->assertSee('Unavailable')
             ->assertDontSee('Missing required parameter');
+    }
+
+    public function test_validated_metaapi_metrics_action_prefers_user_bound_account_over_detached_duplicate(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340134');
+        $this->markMetaApiDashboardReady($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332');
+        $detachedDuplicate = $this->createChallengeAccount('one_step', [
+            'account_size' => 5000,
+            'platform' => 'MT5',
+            'platform_slug' => 'mt5',
+            'platform_login' => '340134',
+            'platform_account_id' => '340134',
+            'platform_environment' => 'FusionMarkets-Demo',
+            'platform_status' => 'connected',
+            'sync_status' => 'success',
+            'sync_source' => 'metaapi',
+            'meta' => [
+                'metaapi_account_id' => 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+                'metaapi_lifecycle' => [
+                    'state' => 'connected',
+                    'sync_health' => 'connected',
+                ],
+                'metaapi_onboarding' => [
+                    'state' => 'ready_to_trade',
+                ],
+                'mt5_sync' => [
+                    'identifier' => '340134',
+                    'metaapi_account_id' => 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+                ],
+            ],
+        ]);
+        $detachedDuplicate->forceFill(['user_id' => null])->save();
+
+        $response = $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.clients.index'))
+            ->assertOk()
+            ->assertSee('View Metrics')
+            ->assertSee(route('admin.clients.metrics', ['user' => $account->user_id, 'account' => $account->id]), false);
+
+        $row = collect($response->viewData('metaApiSummary')['validated_account_rows'])
+            ->firstWhere('login', '340134');
+
+        $this->assertSame(
+            route('admin.clients.metrics', ['user' => $account->user_id, 'account' => $account->id]),
+            $row['metrics_url'],
+        );
     }
 
     public function test_phase_2b_webhook_dry_runs_and_final_lifecycle_readiness_commands_are_safe(): void

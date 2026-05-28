@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -948,6 +949,8 @@ class AdminClientController extends Controller
         $account = $this->accountForLogin($login);
 
         if (! $account instanceof TradingAccount) {
+            $this->logMissingValidatedMetricsUrl($login, null, 'trading_account_missing');
+
             return [
                 'login' => $login,
                 'reference' => 'Missing trading account',
@@ -962,6 +965,8 @@ class AdminClientController extends Controller
         }
 
         $connector = $this->mt5ConnectorStatus->forAccount($account);
+        $account = $this->repairValidatedAccountUserBinding($login, $account);
+        $metricsUrl = $this->metricsUrlForValidatedAccount($login, $account);
 
         return [
             'login' => $login,
@@ -972,18 +977,13 @@ class AdminClientController extends Controller
             'onboarding' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_onboarding.state', 'pending')),
             'ready_to_trade' => $this->metaApiReadyToTrade($account) ? 'Yes' : 'No',
             'last_sync' => $this->formatDateTime($connector['last_sync_at'] ?? $account->last_synced_at),
-            'metrics_url' => $account->user_id !== null
-                ? route('admin.clients.metrics', [
-                    'user' => $account->user_id,
-                    'account' => $account->id,
-                ])
-                : null,
+            'metrics_url' => $metricsUrl,
         ];
     }
 
     private function accountForLogin(string $login): ?TradingAccount
     {
-        $account = TradingAccount::query()
+        $accounts = TradingAccount::query()
             ->where(function ($query) use ($login): void {
                 $query->where('platform_login', $login)
                     ->orWhere('platform_account_id', $login)
@@ -992,19 +992,154 @@ class AdminClientController extends Controller
                     ->orWhere('meta->mt5_sync->identifier', $login)
                     ->orWhere('meta->mt5_pool_entry->login', $login);
             })
-            ->latest('id')
-            ->first();
+            ->get();
 
-        if ($account instanceof TradingAccount) {
-            return $account;
-        }
-
-        return Mt5AccountPoolEntry::query()
+        $poolAccount = Mt5AccountPoolEntry::query()
             ->where('login', $login)
             ->latest('allocated_at')
             ->latest('id')
             ->first()
             ?->allocatedTradingAccount;
+
+        return $accounts
+            ->push($poolAccount)
+            ->filter(fn (?TradingAccount $account): bool => $account instanceof TradingAccount)
+            ->unique('id')
+            ->sort(function (TradingAccount $first, TradingAccount $second) use ($login): int {
+                return $this->validatedAccountRank($second, $login) <=> $this->validatedAccountRank($first, $login);
+            })
+            ->first();
+    }
+
+    private function validatedAccountRank(TradingAccount $account, string $login): int
+    {
+        $rank = 0;
+
+        if ($account->user_id !== null) {
+            $rank += 1000;
+        }
+
+        if ($this->accountMatchesExactLogin($account, $login)) {
+            $rank += 300;
+        }
+
+        if ($this->hasMetaApiAccountId($account)) {
+            $rank += 100;
+        }
+
+        if ((string) $account->sync_source === 'metaapi') {
+            $rank += 50;
+        }
+
+        if ((string) $account->platform_status === 'connected') {
+            $rank += 25;
+        }
+
+        if ($account->last_synced_at !== null) {
+            $rank += 10;
+        }
+
+        return $rank + min((int) $account->id, 9);
+    }
+
+    private function accountMatchesExactLogin(TradingAccount $account, string $login): bool
+    {
+        return in_array($login, [
+            (string) $account->platform_login,
+            (string) $account->platform_account_id,
+            (string) data_get($account->meta, 'mt5_sync.identifier'),
+            (string) data_get($account->meta, 'mt5_pool_entry.login'),
+        ], true);
+    }
+
+    private function hasMetaApiAccountId(TradingAccount $account): bool
+    {
+        return filled(data_get($account->meta, 'metaapi_account_id'))
+            || filled(data_get($account->meta, 'mt5_sync.metaapi_account_id'))
+            || filled(data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'));
+    }
+
+    private function metricsUrlForValidatedAccount(string $login, TradingAccount $account): ?string
+    {
+        if ($account->user_id === null) {
+            $this->logMissingValidatedMetricsUrl($login, $account, 'missing_user_id');
+
+            return null;
+        }
+
+        return route('admin.clients.metrics', [
+            'user' => $account->user_id,
+            'account' => $account->id,
+        ]);
+    }
+
+    private function logMissingValidatedMetricsUrl(string $login, ?TradingAccount $account, string $reason): void
+    {
+        Log::warning('Validated MetaApi metrics link unavailable.', [
+            'login' => $login,
+            'reason' => $reason,
+            'trading_account_id' => $account?->id,
+            'has_user_id' => $account?->user_id !== null,
+            'has_metaapi_account_id' => $account instanceof TradingAccount && $this->hasMetaApiAccountId($account),
+            'sync_source' => $account?->sync_source,
+            'platform_status' => $account?->platform_status,
+        ]);
+    }
+
+    private function repairValidatedAccountUserBinding(string $login, TradingAccount $account): TradingAccount
+    {
+        if ($account->user_id !== null) {
+            return $account;
+        }
+
+        $userIds = $this->userIdCandidatesForValidatedAccount($login, $account);
+
+        if ($userIds->count() === 1) {
+            $userId = (int) $userIds->first();
+
+            if (User::query()->whereKey($userId)->exists()) {
+                $account->forceFill(['user_id' => $userId])->save();
+
+                Log::info('Validated MetaApi trading account user binding repaired.', [
+                    'login' => $login,
+                    'trading_account_id' => $account->id,
+                    'user_id' => $userId,
+                    'source' => 'admin_dashboard_validated_metaapi_metrics',
+                ]);
+
+                return $account->refresh();
+            }
+        }
+
+        if ($userIds->count() > 1) {
+            $this->logMissingValidatedMetricsUrl($login, $account, 'ambiguous_user_binding');
+        }
+
+        return $account;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    private function userIdCandidatesForValidatedAccount(string $login, TradingAccount $account)
+    {
+        $poolUserIds = Mt5AccountPoolEntry::query()
+            ->where(function ($query) use ($login, $account): void {
+                $query->where('allocated_trading_account_id', $account->id)
+                    ->orWhere('login', $login);
+            })
+            ->pluck('allocated_user_id');
+        $relationshipUserIds = collect([
+            $account->order_id !== null ? $account->order()->value('user_id') : null,
+            $account->challenge_purchase_id !== null ? $account->challengePurchase()->value('user_id') : null,
+        ]);
+
+        return $poolUserIds
+            ->merge($relationshipUserIds)
+            ->filter(fn (mixed $userId): bool => is_numeric($userId) && (int) $userId > 0)
+            ->map(fn (mixed $userId): int => (int) $userId)
+            ->unique()
+            ->values();
     }
 
     private function metaApiReadyToTrade(TradingAccount $account): bool
