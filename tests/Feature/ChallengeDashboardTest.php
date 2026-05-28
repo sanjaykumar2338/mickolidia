@@ -1051,6 +1051,24 @@ class ChallengeDashboardTest extends TestCase
             ->assertDontSee('abababab-abab-4bab-8bab-abababababab');
     }
 
+    public function test_validated_metaapi_metrics_action_does_not_crash_when_account_has_no_user_binding(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340134');
+        $this->markMetaApiDashboardReady($account, '7ed465cc-2315-4311-b4a1-4cc90f66e332')
+            ->forceFill(['user_id' => null])
+            ->save();
+
+        $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.clients.index'))
+            ->assertOk()
+            ->assertSee('Validated MetaApi accounts')
+            ->assertSee('340134')
+            ->assertSee('Unavailable')
+            ->assertDontSee('Missing required parameter');
+    }
+
     public function test_phase_2b_webhook_dry_runs_and_final_lifecycle_readiness_commands_are_safe(): void
     {
         $account = $this->createMetaApiChallengeAccount('340165');

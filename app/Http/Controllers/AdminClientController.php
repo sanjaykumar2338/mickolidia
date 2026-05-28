@@ -972,10 +972,12 @@ class AdminClientController extends Controller
             'onboarding' => $this->humanizeStatus((string) data_get($account->meta, 'metaapi_onboarding.state', 'pending')),
             'ready_to_trade' => $this->metaApiReadyToTrade($account) ? 'Yes' : 'No',
             'last_sync' => $this->formatDateTime($connector['last_sync_at'] ?? $account->last_synced_at),
-            'metrics_url' => route('admin.clients.metrics', [
-                'user' => $account->user_id,
-                'account' => $account->id,
-            ]),
+            'metrics_url' => $account->user_id !== null
+                ? route('admin.clients.metrics', [
+                    'user' => $account->user_id,
+                    'account' => $account->id,
+                ])
+                : null,
         ];
     }
 
