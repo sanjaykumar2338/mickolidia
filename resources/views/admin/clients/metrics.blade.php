@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('admin.clients.metrics', $client['id']) }}" class="mt-6 grid gap-3 md:grid-cols-6">
+        <form method="GET" action="{{ $tradeFilterActionUrl ?? route('admin.clients.metrics', $client['id']) }}" class="mt-6 grid gap-3 md:grid-cols-6">
             @foreach ($accountOptions as $option)
                 @if ($option['is_selected'])
                     <input type="hidden" name="account" value="{{ $option['id'] }}">

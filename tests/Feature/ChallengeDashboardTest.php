@@ -1090,8 +1090,17 @@ class ChallengeDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Validated MetaApi accounts')
             ->assertSee('340134')
-            ->assertSee('Unavailable')
+            ->assertSee('View Metrics')
+            ->assertSee(route('admin.trading-accounts.metrics', ['account' => $account->id]), false)
             ->assertDontSee('Missing required parameter');
+
+        $this->withSession([
+            'admin.authenticated' => true,
+            'admin.username' => 'admin',
+        ])->get(route('admin.trading-accounts.metrics', ['account' => $account->id]))
+            ->assertOk()
+            ->assertSee('Unassigned MetaApi account')
+            ->assertSee($account->account_reference);
     }
 
     public function test_validated_metaapi_metrics_action_prefers_user_bound_account_over_detached_duplicate(): void

@@ -329,7 +329,7 @@ class AdminClientController extends Controller
                 ->map(fn (TradingAccount $account): array => [
                     'id' => $account->id,
                     'reference' => $account->account_reference ?? 'Pending link',
-                    'url' => route('admin.clients.metrics', ['user' => $user, 'account' => $account->id]),
+                    'url' => $this->adminMetricsUrl($user, $account),
                     'is_selected' => (int) $account->id === (int) ($selectedAccount?->id ?? 0),
                 ])
                 ->all(),
@@ -389,6 +389,147 @@ class AdminClientController extends Controller
             'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
             'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
             'todaySummary' => $todaySummary,
+            'tradeFilterActionUrl' => $this->adminMetricsUrl($user, $selectedAccount),
+            'calculation' => $this->formatAdminCalculationBreakdown($calculation),
+            'diagnostics' => [
+                'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
+                'latest_sync_log_message' => $latestSyncLog?->message ?? 'N/A',
+                'latest_sync_log_error' => $latestSyncLog?->error_message ?? 'None',
+                'latest_sync_log_completed_at' => $this->formatDateTime($latestSyncLog?->completed_at),
+                'last_rejected_reason' => $mt5SyncMeta['last_rejected_reason'] ?? 'None',
+                'last_ignored_reason' => $mt5SyncMeta['last_ignored_reason'] ?? 'None',
+                'last_payload_summary' => is_array($mt5SyncMeta['last_payload_summary'] ?? null) ? $mt5SyncMeta['last_payload_summary'] : [],
+                'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
+                'disable_status' => isset($mt5DeactivationCurrent['status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['status']) : 'N/A',
+                'disable_requested_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['requested_at'] ?? null),
+                'disable_last_attempt_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['last_attempt_at'] ?? null),
+                'disable_attempts' => isset($mt5DeactivationCurrent['attempts']) ? (string) $mt5DeactivationCurrent['attempts'] : 'N/A',
+                'disable_executed_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['executed_at'] ?? null),
+                'disable_acknowledged_at' => $this->formatDateTimeValue($mt5DeactivationCurrent['acknowledged_at'] ?? null),
+                'disable_source' => $mt5DeactivationCurrent['source'] ?? 'N/A',
+                'disable_bridge_status' => isset($mt5DeactivationCurrent['bridge_status']) ? (string) $mt5DeactivationCurrent['bridge_status'] : 'N/A',
+                'disable_response_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['bridge_response'] ?? null),
+                'disable_error' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'disable_failure_reason' => $mt5DeactivationCurrent['last_error'] ?? 'None',
+                'mt5_trading_permission_state' => $mt5DeactivationCurrent['trading_permission_state'] ?? 'Unknown',
+                'mt5_trading_permission_payload' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['trading_permission_payload'] ?? null),
+                'close_status' => isset($mt5DeactivationCurrent['close_status']) ? $this->humanizeStatus((string) $mt5DeactivationCurrent['close_status']) : 'N/A',
+                'close_success' => array_key_exists('close_success', $mt5DeactivationCurrent) ? ((bool) $mt5DeactivationCurrent['close_success'] ? 'Yes' : 'No') : 'N/A',
+                'closed_positions_count' => isset($mt5DeactivationCurrent['closed_positions_count']) ? (string) $mt5DeactivationCurrent['closed_positions_count'] : 'N/A',
+                'positions_remaining_count' => isset($mt5DeactivationCurrent['positions_remaining_count']) ? (string) $mt5DeactivationCurrent['positions_remaining_count'] : 'N/A',
+                'closed_position_tickets' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['closed_position_tickets'] ?? null),
+                'closed_position_identifiers' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['closed_position_identifiers'] ?? null),
+                'failed_close_tickets' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['failed_close_tickets'] ?? null),
+                'close_failed_reasons' => $this->formatDiagnosticPayload($mt5DeactivationCurrent['close_failed_reasons'] ?? null),
+                'close_result_message' => $mt5DeactivationCurrent['close_result_message'] ?? 'None',
+            ],
+        ]);
+    }
+
+    public function accountMetrics(Request $request, TradingAccount $account): View
+    {
+        $account->loadMissing([
+            'challengePlan',
+            'user.profile',
+            'user.challengeTradingAccounts.challengePlan',
+            'user.latestChallengeTradingAccount.challengePlan',
+            'user.latestTradingAccount.challengePlan',
+            'user.latestChallengePurchase.order',
+        ]);
+
+        $user = $account->user;
+        $accounts = $user instanceof User
+            ? $this->availableAccountsForUser($user)
+                ->push($account)
+                ->filter(fn (?TradingAccount $candidate): bool => $candidate instanceof TradingAccount)
+                ->unique('id')
+                ->sortByDesc('created_at')
+                ->values()
+            : collect([$account]);
+        $selectedAccount = $account;
+
+        $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
+        $mt5SyncMeta = is_array($selectedAccount->meta) ? (array) data_get($selectedAccount->meta, 'mt5_sync', []) : [];
+        $mt5DeactivationCurrent = is_array($selectedAccount->meta) ? (array) data_get($selectedAccount->meta, 'mt5_deactivation.current', []) : [];
+        $latestSyncLog = $selectedAccount->syncLogs()
+            ->latest('id')
+            ->first();
+        $tradesPanel = $this->tradeHistoryPanelBuilder->build($selectedAccount, [
+            'empty_message' => __('Detailed trade rows will appear here after this account receives synced MT5 open positions or trade history.'),
+            'available_message' => __('This table is built from the latest persisted MT5 sync snapshots; no duplicate trade store is created.'),
+        ]);
+        $latestSnapshot = $this->latestAdminMetricSnapshot($selectedAccount);
+        $calculation = $this->challengeCalculationBreakdown->forAccount($selectedAccount, $latestSnapshot);
+        $selectedReadyToTrade = $this->metaApiReadyToTrade($selectedAccount);
+        $selectedPhaseOneReady = $this->metaApiPhaseOneReady($selectedAccount);
+        $tradeRowsForSummary = $tradesPanel['rows'] ?? [];
+        $todaySummary = $this->adminTodayTradeSummary($selectedAccount, $latestSnapshot, $tradeRowsForSummary, $connectorStatus);
+        $filters = $this->adminTradeFilters($request);
+        $filteredRows = $this->filterAdminTradeRows($tradeRowsForSummary, $filters);
+        $tradeRows = $this->paginateAdminTradeRows($filteredRows, $request);
+
+        return view('admin.clients.metrics', [
+            'client' => [
+                'id' => $user?->id ?? 0,
+                'full_name' => $user?->name ?? 'Unassigned MetaApi account',
+                'email' => $user?->email ?? (($selectedAccount->account_reference ?? 'Trading account').' has no client user binding yet.'),
+                'plan_selected' => $user instanceof User ? $this->resolvePlanLabel($user) : $this->challengeTypeLabel((string) $selectedAccount->challenge_type),
+            ],
+            'accountOptions' => $accounts
+                ->map(fn (TradingAccount $optionAccount): array => [
+                    'id' => $optionAccount->id,
+                    'reference' => $optionAccount->account_reference ?? 'Pending link',
+                    'url' => $this->adminMetricsUrl($user, $optionAccount),
+                    'is_selected' => (int) $optionAccount->id === (int) $selectedAccount->id,
+                ])
+                ->all(),
+            'account' => [
+                'reference' => $selectedAccount->account_reference ?? 'N/A',
+                'plan' => $this->challengeTypeLabel((string) $selectedAccount->challenge_type),
+                'phase' => $this->phaseLabel($selectedAccount),
+                'status' => $selectedAccount->account_status ? $this->humanizeStatus((string) $selectedAccount->account_status) : 'N/A',
+                'challenge_status' => $selectedAccount->challenge_status ? $this->humanizeStatus((string) $selectedAccount->challenge_status) : 'N/A',
+                'connector_status' => $connectorStatus['label'],
+                'connector_badge' => $connectorStatus['badge'],
+                'connector_is_stale' => (bool) $connectorStatus['is_stale'],
+                'lifecycle_state' => $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.state', 'waiting_for_first_sync')),
+                'sync_health' => $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_lifecycle.sync_health', $connectorStatus['status'] ?? 'not_connected')),
+                'onboarding_state' => $this->humanizeStatus((string) data_get($selectedAccount->meta, 'metaapi_onboarding.state', 'pending')),
+                'ready_to_trade' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'phase_1_ready' => $selectedPhaseOneReady ? 'Yes' : 'No',
+                'phase_2_ready' => $selectedReadyToTrade ? 'Yes' : 'No',
+                'sync_source' => $selectedAccount->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
+                'connector_download_url' => $user instanceof User && $this->isMt5Account($selectedAccount)
+                    ? route('admin.clients.mt5-connector.download', ['user' => $user, 'account' => $selectedAccount])
+                    : null,
+                'last_ea_sync' => $this->formatDateTime($connectorStatus['last_heartbeat_at'] ?? $connectorStatus['last_sync_at'] ?? $selectedAccount->last_synced_at),
+                'balance' => $this->formatMoney((float) ($calculation['challenge_balance'] ?? 0)),
+                'equity' => $this->formatMoney((float) ($calculation['challenge_equity'] ?? 0)),
+                'floating_pl' => $this->formatMoney((float) ($calculation['floating_pnl'] ?? $todaySummary['current_floating_pnl_value'])),
+                'snapshot_pl' => $this->formatMoney($this->adminMetricAmount($latestSnapshot?->profit_loss, $selectedAccount->profit_loss)),
+                'today_profit' => $todaySummary['today_profit_loss'],
+                'total_realized_pl' => $this->formatMoney((float) ($calculation['realized_profit'] ?? $this->adminMetricAmount($latestSnapshot?->total_profit, $selectedAccount->total_profit))),
+                'profit_target_progress' => number_format((float) ($calculation['profit_target_progress_percent'] ?? 0), 1).'%',
+                'trading_days' => sprintf('%d / %d', (int) $selectedAccount->trading_days_completed, (int) $selectedAccount->minimum_trading_days),
+                'open_positions_count' => (string) ($tradesPanel['summary']['open'] ?? data_get($mt5SyncMeta, 'last_payload_summary.positions_count', 0)),
+                'closed_trades_count' => (string) ($tradesPanel['summary']['closed'] ?? data_get($mt5SyncMeta, 'last_payload_summary.closed_positions_count', 0)),
+                'breach_status' => $selectedAccount->failure_reason
+                    ? __('Failed: :reason', ['reason' => $this->humanizeStatus((string) $selectedAccount->failure_reason)])
+                    : __('None'),
+            ],
+            'filters' => $filters,
+            'symbols' => collect($tradesPanel['rows'] ?? [])
+                ->pluck('symbol')
+                ->filter(fn (mixed $symbol): bool => is_string($symbol) && $symbol !== '' && $symbol !== '—')
+                ->unique()
+                ->sort()
+                ->values()
+                ->all(),
+            'tradeRows' => $tradeRows,
+            'tradesSummary' => $tradesPanel['summary'] ?? ['open' => 0, 'closed' => 0, 'both' => 0],
+            'tradesMessage' => $tradesPanel['message'] ?? __('No trade rows are available yet.'),
+            'todaySummary' => $todaySummary,
+            'tradeFilterActionUrl' => $this->adminMetricsUrl($user, $selectedAccount),
             'calculation' => $this->formatAdminCalculationBreakdown($calculation),
             'diagnostics' => [
                 'latest_sync_log_status' => $latestSyncLog?->status ? $this->humanizeStatus((string) $latestSyncLog->status) : 'N/A',
@@ -1062,15 +1203,26 @@ class AdminClientController extends Controller
     private function metricsUrlForValidatedAccount(string $login, TradingAccount $account): ?string
     {
         if ($account->user_id === null) {
-            $this->logMissingValidatedMetricsUrl($login, $account, 'missing_user_id');
-
-            return null;
+            $this->logMissingValidatedMetricsUrl($login, $account, 'missing_user_id_using_account_scoped_metrics_route');
         }
 
-        return route('admin.clients.metrics', [
-            'user' => $account->user_id,
-            'account' => $account->id,
-        ]);
+        return $this->adminMetricsUrl($account->user, $account);
+    }
+
+    private function adminMetricsUrl(?User $user, ?TradingAccount $account = null): string
+    {
+        if ($user instanceof User && ($account === null || (int) $account->user_id === (int) $user->id)) {
+            return route('admin.clients.metrics', array_filter([
+                'user' => $user,
+                'account' => $account?->id,
+            ], fn (mixed $value): bool => $value !== null));
+        }
+
+        if ($account instanceof TradingAccount) {
+            return route('admin.trading-accounts.metrics', ['account' => $account]);
+        }
+
+        return route('admin.clients.index');
     }
 
     private function logMissingValidatedMetricsUrl(string $login, ?TradingAccount $account, string $reason): void
