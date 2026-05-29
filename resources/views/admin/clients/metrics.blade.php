@@ -15,14 +15,9 @@
                     @csrf
                     <input type="hidden" name="account" value="{{ request('account') }}">
                     <button type="submit" class="rounded-full border border-sky-300/30 bg-sky-400/12 px-4 py-2 text-sm font-semibold text-sky-100 transition hover:border-sky-200/50 hover:bg-sky-400/18">
-                        Refresh MetaApi Data
+                        Refresh
                     </button>
                 </form>
-            @endif
-            @if (! empty($account['connector_download_url']))
-                <a href="{{ $account['connector_download_url'] }}" class="rounded-full border border-amber-300/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/18">
-                    Download EA connector
-                </a>
             @endif
             <a href="{{ route('admin.clients.index') }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
                 Back to clients
@@ -45,7 +40,7 @@
             'Account reference' => $account['reference'],
             'Plan / challenge' => $account['plan'].' / '.$account['phase'],
             'Account status' => $account['status'].' / '.$account['challenge_status'],
-            'Last EA sync' => $account['last_ea_sync'],
+            'Last sync' => $account['last_ea_sync'],
             'Challenge balance' => $account['balance'],
             'Challenge equity' => $account['equity'],
             'Current floating PnL' => $account['floating_pl'],
@@ -78,17 +73,12 @@
 
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
         <div class="surface-panel rounded-[1.4rem] p-5">
-            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Connector status</dt>
+            <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Sync status</dt>
             <dd class="mt-3">
                 <span class="{{ $account['connector_badge'] }} inline-flex rounded-full border px-3 py-1 text-sm font-semibold">
                     {{ $account['connector_status'] }}
                 </span>
             </dd>
-            @if (! empty($account['connector_download_url']))
-                <a href="{{ $account['connector_download_url'] }}" class="mt-4 inline-flex rounded-full border border-amber-300/30 bg-amber-400/12 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-400/18">
-                    Download preconfigured EA connector
-                </a>
-            @endif
         </div>
         <div class="surface-panel rounded-[1.4rem] p-5">
             <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Rule breach status</dt>
@@ -104,7 +94,7 @@
 
     @if ($account['connector_is_stale'])
         <div class="mt-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-5 py-4 text-sm font-semibold text-rose-100">
-            MT5 data may be outdated because the EA has not synced recently.
+            MT5 data may be outdated because the account has not synced recently.
         </div>
     @endif
 
@@ -251,14 +241,14 @@
                 'Sync completed' => $diagnostics['latest_sync_log_completed_at'],
                 'Rejected reason' => $diagnostics['last_rejected_reason'],
                 'Ignored reason' => $diagnostics['last_ignored_reason'],
-                'EA disable event' => $diagnostics['disable_event'],
-                'EA disable status' => $diagnostics['disable_status'],
-                'EA disable requested' => $diagnostics['disable_requested_at'],
-                'EA disable last attempt' => $diagnostics['disable_last_attempt_at'],
-                'EA disable attempts' => $diagnostics['disable_attempts'],
-                'EA disable executed' => $diagnostics['disable_executed_at'],
-                'EA disable ack' => $diagnostics['disable_acknowledged_at'],
-                'EA disable source' => $diagnostics['disable_source'],
+                'MT5 disable event' => $diagnostics['disable_event'],
+                'MT5 disable status' => $diagnostics['disable_status'],
+                'MT5 disable requested' => $diagnostics['disable_requested_at'],
+                'MT5 disable last attempt' => $diagnostics['disable_last_attempt_at'],
+                'MT5 disable attempts' => $diagnostics['disable_attempts'],
+                'MT5 disable executed' => $diagnostics['disable_executed_at'],
+                'MT5 disable ack' => $diagnostics['disable_acknowledged_at'],
+                'MT5 disable source' => $diagnostics['disable_source'],
                 'Bridge status' => $diagnostics['disable_bridge_status'],
                 'MT5 trading permission' => $diagnostics['mt5_trading_permission_state'],
                 'Position close status' => $diagnostics['close_status'],
@@ -267,7 +257,7 @@
                 'Positions remaining' => $diagnostics['positions_remaining_count'],
                 'Close result' => $diagnostics['close_result_message'],
                 'Disable failure reason' => $diagnostics['disable_failure_reason'],
-                'EA disable error' => $diagnostics['disable_error'],
+                'MT5 disable error' => $diagnostics['disable_error'],
             ] as $label => $value)
                 <div class="rounded-2xl border border-white/6 bg-black/15 p-4">
                     <dt class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{{ $label }}</dt>

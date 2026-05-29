@@ -41,7 +41,7 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->get(route('trial.dashboard'))
             ->assertOk()
             ->assertSee('Disconnected/Stale')
-            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.')
+            ->assertSee('Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.')
             ->assertSee('Last sync:');
 
         $this->actingAs($user)
@@ -62,7 +62,7 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Disconnected/Stale')
-            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
+            ->assertSee('Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.');
 
         $this->actingAs($user)
             ->get(route('dashboard.accounts'))
@@ -84,7 +84,7 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Connected')
-            ->assertDontSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
+            ->assertDontSee('Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.');
     }
 
     public function test_dashboard_goes_stale_when_ea_ping_expires_even_if_metric_sync_is_recent(): void
@@ -106,7 +106,7 @@ class Mt5ConnectorStaleStatusTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Disconnected/Stale')
-            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
+            ->assertSee('Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.');
     }
 
     public function test_successful_metrics_sync_immediately_clears_stale_connector_warning(): void
@@ -159,11 +159,11 @@ class Mt5ConnectorStaleStatusTest extends TestCase
         ])
             ->get(route('admin.clients.show', $user))
             ->assertOk()
-            ->assertSee('Connector status')
+            ->assertSee('Sync status')
             ->assertSee('Disconnected/Stale')
-            ->assertSee('Stored connector flag')
+            ->assertSee('Stored sync flag')
             ->assertSee('connected')
-            ->assertSee('Connector stale/offline. Please keep MT5 Desktop open with the Wolforix EA attached to an active chart.');
+            ->assertSee('Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.');
     }
 
     private function createMt5Account(User $user, bool $isTrial = false): TradingAccount

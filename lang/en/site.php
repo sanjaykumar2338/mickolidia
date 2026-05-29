@@ -640,7 +640,7 @@ return [
             'status_title' => 'Connection Status',
             'last_connected' => 'Last sync: :time',
             'waiting_sync' => 'Waiting for the first EA sync.',
-            'offline_message' => 'Connector stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.',
+            'offline_message' => 'Sync stale/offline. Please keep MT5 Desktop or the MetaApi cloud terminal connected for this account.',
             'details_title' => 'Connector Credentials',
             'base_url' => 'Base URL',
             'endpoint_url' => 'Full API endpoint',

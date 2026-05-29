@@ -486,12 +486,12 @@
                         <span><strong class="text-white">Challenge status:</strong> {{ $providerReferences['challenge_status'] }}</span>
                         <span><strong class="text-white">Trial status:</strong> {{ $providerReferences['trial_status'] }}</span>
                         <span><strong class="text-white">Account status:</strong> {{ $providerReferences['account_status'] }}</span>
-                        <span><strong class="text-white">Connector status:</strong> {{ $providerReferences['connector_status'] }}</span>
+                        <span><strong class="text-white">Sync status:</strong> {{ $providerReferences['connector_status'] }}</span>
                         <span><strong class="text-white">Provisioning status:</strong> {{ $providerReferences['provisioning_status'] }}</span>
                         <span><strong class="text-white">Assigned MT5 login:</strong> {{ $providerReferences['assigned_mt5_login'] }}</span>
                         <span><strong class="text-white">Pool source:</strong> {{ $providerReferences['pool_source'] }}</span>
                         <span><strong class="text-white">MetaApi connected:</strong> {{ $providerReferences['metaapi_connected'] }}</span>
-                        <span><strong class="text-white">Stored connector flag:</strong> {{ $providerReferences['stored_connector_status'] }}</span>
+                        <span><strong class="text-white">Stored sync flag:</strong> {{ $providerReferences['stored_connector_status'] }}</span>
                         <span><strong class="text-white">Lifecycle state:</strong> {{ $providerReferences['lifecycle_state'] }}</span>
                         <span><strong class="text-white">Sync health:</strong> {{ $providerReferences['sync_health'] }}</span>
                         <span><strong class="text-white">Onboarding:</strong> {{ $providerReferences['onboarding_state'] }}</span>
@@ -499,10 +499,10 @@
                         <span><strong class="text-white">Phase 1 ready:</strong> {{ $providerReferences['phase_1_ready'] }}</span>
                         <span><strong class="text-white">Phase 2 ready:</strong> {{ $providerReferences['phase_2_ready'] }}</span>
                         @if (! empty($providerReferences['connector_status_message']))
-                            <span class="text-rose-100 sm:col-span-2"><strong class="text-white">Connector notice:</strong> {{ $providerReferences['connector_status_message'] }}</span>
+                            <span class="text-rose-100 sm:col-span-2"><strong class="text-white">Sync notice:</strong> {{ $providerReferences['connector_status_message'] }}</span>
                         @endif
                         <span><strong class="text-white">Stale timeout:</strong> {{ $providerReferences['connector_status_timeout_seconds'] }}s</span>
-                        <span><strong class="text-white">Last EA ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
+                        <span><strong class="text-white">Last sync ping:</strong> {{ $providerReferences['last_ea_ping_at'] }}</span>
                         <span><strong class="text-white">Last metric update:</strong> {{ $providerReferences['last_successful_metric_update_at'] }}</span>
                         <span><strong class="text-white">Breach reason:</strong> {{ $providerReferences['breach_reason'] }}</span>
                         <span><strong class="text-white">Breach detected at:</strong> {{ $providerReferences['breach_detected_at'] }}</span>

@@ -1426,12 +1426,12 @@ class DashboardController extends Controller
 
             return [
                 'title' => $connectorStatus['status'] === Mt5ConnectorStatus::STALE
-                    ? __('MT5 connector stale/offline')
+                    ? __('MT5 sync stale/offline')
                     : __('MT5 live sync'),
                 'message' => $connectorStatus['message']
                     ?? __('Challenge balance, equity, floating P&L, and rule usage refresh from MT5 trade events with timer fallback so open and closed trades appear quickly in the dashboard.'),
                 'meta' => [
-                    __('Connector status: :value', ['value' => $connectorStatus['label']]),
+                    __('Sync status: :value', ['value' => $connectorStatus['label']]),
                     __('Onboarding: :value', ['value' => $onboarding['state_label']]),
                     __('Ready to trade: :value', ['value' => $onboarding['ready_to_trade'] ? __('Yes') : __('No')]),
                     __('Lifecycle: :value', ['value' => $lifecycle['state_label']]),
@@ -1645,7 +1645,7 @@ class DashboardController extends Controller
         if ($account->challenge_status === 'failed') {
             return [
                 'title' => __('Account Closed: Rule Breach Detected'),
-                'message' => __('Your account has been marked inactive because a trading rule was breached earlier. The connector may still show recent sync activity, but dashboard tracking is now locked for this account. MT5 disable status: :status.', [
+                'message' => __('Your account has been marked inactive because a trading rule was breached earlier. Sync may still show recent activity, but dashboard tracking is now locked for this account. MT5 disable status: :status.', [
                     'status' => $status,
                 ]),
             ];

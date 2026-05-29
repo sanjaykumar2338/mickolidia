@@ -55,7 +55,7 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('Connected')
             ->assertSee('Ignored reason')
             ->assertSee('stale_timestamp')
-            ->assertSee('EA disable status')
+            ->assertSee('MT5 disable status')
             ->assertSee('Disable Pending Ack');
     }
 
@@ -290,7 +290,7 @@ class AdminClientMetricsTest extends TestCase
 
         $this->adminGet(route('admin.clients.metrics', $user))
             ->assertOk()
-            ->assertSee('MT5 data may be outdated because the EA has not synced recently.');
+            ->assertSee('MT5 data may be outdated because the account has not synced recently.');
     }
 
     public function test_admin_metrics_separate_mt5_broker_balance_from_challenge_calculation(): void

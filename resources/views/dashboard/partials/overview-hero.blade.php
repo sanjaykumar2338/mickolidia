@@ -190,7 +190,7 @@
                         <dd class="font-semibold text-white">{{ $hero['challenge_status'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
-                        <dt class="text-slate-400">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? __('Connector status') : __('Sync status') }}</dt>
+                        <dt class="text-slate-400">{{ __('Sync status') }}</dt>
                         <dd class="font-semibold text-white">{{ ($primaryAccount['platform_slug'] ?? null) === 'mt5' ? ($hero['connector_status'] ?? $hero['sync_status']) : $hero['sync_status'] }}</dd>
                     </div>
                     <div class="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/4 px-4 py-3">

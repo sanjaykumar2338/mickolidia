@@ -660,7 +660,7 @@ class ChallengeDashboardTest extends TestCase
                 'admin.username' => 'admin',
             ])->get(route('admin.clients.metrics', ['user' => $account->user, 'account' => $account->id]))
                 ->assertOk()
-                ->assertSee('Refresh MetaApi Data')
+                ->assertSee('Refresh')
                 ->assertSee('Last refreshed at')
                 ->assertSee('MetaApi data refreshed successfully.')
                 ->assertSee('Today Closed P/L')
@@ -2272,7 +2272,7 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('Yes')
                 ->assertSee('Daily Loss Limit Breached')
                 ->assertSee('Rule breach status')
-                ->assertSee('EA disable status')
+                ->assertSee('MT5 disable status')
                 ->assertSee('Disabled')
                 ->assertDontSee('Active / Active');
 
@@ -3568,7 +3568,7 @@ class ChallengeDashboardTest extends TestCase
             'admin.username' => 'admin',
         ])->get(route('admin.clients.metrics', $account->user))
             ->assertOk()
-            ->assertSee('EA disable status')
+            ->assertSee('MT5 disable status')
             ->assertSee('Disable Failed')
             ->assertSee('Disable failure reason')
             ->assertSee('Bridge returned HTTP 500.')
@@ -3687,7 +3687,7 @@ class ChallengeDashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Account Closed: Rule Breach Detected')
-            ->assertSee('connector may still show recent sync activity')
+            ->assertSee('Sync may still show recent activity')
             ->assertSee('Pending MT5 acknowledgement')
             ->assertDontSee('Not Connected');
 
@@ -3697,7 +3697,7 @@ class ChallengeDashboardTest extends TestCase
         ])->get(route('admin.clients.show', $account->user))
             ->assertOk()
             ->assertSee('MT5 Sync Diagnostics')
-            ->assertSee('Connector status')
+            ->assertSee('Sync status')
             ->assertSee('connected')
             ->assertSee('Breach reason')
             ->assertSee('Daily Loss Breached')

@@ -693,7 +693,7 @@ class TrialController extends Controller
 
         return [
             'title' => __('Account Closed: Rule Breach Detected'),
-            'message' => __('Your account has been marked inactive because a trading rule was breached earlier. The connector may still show recent sync activity, but dashboard tracking is now locked for this account.'),
+            'message' => __('Your account has been marked inactive because a trading rule was breached earlier. Sync may still show recent activity, but dashboard tracking is now locked for this account.'),
             'items' => [
                 [
                     'label' => __('Breach reason'),
@@ -718,11 +718,11 @@ class TrialController extends Controller
                         : __('Not available'),
                 ],
                 [
-                    'label' => __('Connector status'),
+                    'label' => __('Sync status'),
                     'value' => (string) ($connector['status_label'] ?? __('Not Connected')),
                 ],
                 [
-                    'label' => __('Last connector sync'),
+                    'label' => __('Last sync'),
                     'value' => (string) ($connector['last_connected_at'] ?? $this->formatTrialDateTime($trialAccount->last_synced_at)),
                 ],
                 [
