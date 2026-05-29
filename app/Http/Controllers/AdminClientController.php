@@ -8,6 +8,7 @@ use App\Models\TradingAccount;
 use App\Models\TradingAccountBalanceSnapshot;
 use App\Models\User;
 use App\Services\Admin\AdminChallengeActivationService;
+use App\Services\Challenge\ChallengeBreachFinalizer;
 use App\Services\Challenge\ChallengeLifecycleMailer;
 use App\Services\MetaApi\MetaApiLiveSyncService;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
@@ -40,6 +41,7 @@ class AdminClientController extends Controller
         private readonly ChallengeCalculationBreakdown $challengeCalculationBreakdown,
         private readonly MetaApiLiveSyncService $metaApiLiveSyncService,
         private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
+        private readonly ChallengeBreachFinalizer $breachFinalizer,
     ) {}
 
     public function index(): View
@@ -81,6 +83,8 @@ class AdminClientController extends Controller
             ? $accounts->firstWhere('id', $requestedAccountId)
             : null;
         $selectedAccount ??= $accounts->first();
+        $selectedAccount = $this->reconcileDisplayedBreachState($selectedAccount, 'admin_client_show');
+        $accounts = $this->availableAccountsForUser($user);
         $latestOrder = $user->latestOrder;
         $latestSyncLog = $selectedAccount?->syncLogs()
             ->latest('id')
@@ -172,7 +176,7 @@ class AdminClientController extends Controller
                 [
                     'label' => 'Failure Reason',
                     'value' => $selectedAccount?->failure_reason
-                        ? $this->humanizeStatus((string) $selectedAccount->failure_reason)
+                        ? $this->breachReasonLabel((string) $selectedAccount->failure_reason)
                         : 'None',
                 ],
                 [
@@ -231,10 +235,10 @@ class AdminClientController extends Controller
                 'last_evaluated_at' => $this->formatDateTime($selectedAccount?->last_evaluated_at),
                 'sync_source' => $selectedAccount?->sync_source ? $this->sourceLabel((string) $selectedAccount->sync_source) : 'N/A',
                 'sync_error' => $selectedAccount?->sync_error ?? 'None',
-                'breach_reason' => $selectedAccount?->failure_reason ? $this->humanizeStatus((string) $selectedAccount->failure_reason) : 'None',
+                'breach_reason' => $selectedAccount?->failure_reason ? $this->breachReasonLabel((string) $selectedAccount->failure_reason) : 'None',
                 'breach_detected_at' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
                 'breach_timestamp' => $this->formatDateTimeValue($failureContext['breach_timestamp'] ?? $selectedAccount?->failed_at),
-                'breach_rule' => isset($failureContext['rule_breached']) ? $this->humanizeStatus((string) $failureContext['rule_breached']) : 'N/A',
+                'breach_rule' => isset($failureContext['rule_breached']) ? $this->breachReasonLabel((string) $failureContext['rule_breached']) : 'N/A',
                 'breach_equity' => $this->formatMoneyValue($failureContext['equity_at_breach'] ?? null),
                 'breach_balance' => $this->formatMoneyValue($failureContext['balance_at_breach'] ?? null),
                 'disable_event' => $mt5DeactivationCurrent['event'] ?? 'N/A',
@@ -308,6 +312,7 @@ class AdminClientController extends Controller
         $selectedAccount = $selectedAccount instanceof TradingAccount
             ? ($selectedAccount->fresh(['challengePlan', 'user']) ?? $selectedAccount)
             : $selectedAccount;
+        $selectedAccount = $this->reconcileDisplayedBreachState($selectedAccount, 'admin_client_metrics');
         $accounts = $this->availableAccountsForUser($user);
 
         $connectorStatus = $this->mt5ConnectorStatus->forAccount($selectedAccount);
@@ -402,7 +407,7 @@ class AdminClientController extends Controller
                 'open_positions_count' => (string) ($tradesPanel['summary']['open'] ?? data_get($mt5SyncMeta, 'last_payload_summary.positions_count', 0)),
                 'closed_trades_count' => (string) ($tradesPanel['summary']['closed'] ?? data_get($mt5SyncMeta, 'last_payload_summary.closed_positions_count', 0)),
                 'breach_status' => $selectedAccount?->failure_reason
-                    ? __('Failed: :reason', ['reason' => $this->humanizeStatus((string) $selectedAccount->failure_reason)])
+                    ? __('Failed: :reason', ['reason' => $this->breachReasonLabel((string) $selectedAccount->failure_reason)])
                     : __('None'),
             ],
             'filters' => $filters,
@@ -478,6 +483,7 @@ class AdminClientController extends Controller
         $selectedAccount = $account;
         $metaApiRefresh = $this->refreshMetaApiMetricsForPage($selectedAccount);
         $selectedAccount = $selectedAccount->fresh(['challengePlan', 'user']) ?? $selectedAccount;
+        $selectedAccount = $this->reconcileDisplayedBreachState($selectedAccount, 'admin_trading_account_metrics');
         $user = $selectedAccount->user;
         $accounts = $user instanceof User
             ? $this->availableAccountsForUser($user)
@@ -563,7 +569,7 @@ class AdminClientController extends Controller
                 'open_positions_count' => (string) ($tradesPanel['summary']['open'] ?? data_get($mt5SyncMeta, 'last_payload_summary.positions_count', 0)),
                 'closed_trades_count' => (string) ($tradesPanel['summary']['closed'] ?? data_get($mt5SyncMeta, 'last_payload_summary.closed_positions_count', 0)),
                 'breach_status' => $selectedAccount->failure_reason
-                    ? __('Failed: :reason', ['reason' => $this->humanizeStatus((string) $selectedAccount->failure_reason)])
+                    ? __('Failed: :reason', ['reason' => $this->breachReasonLabel((string) $selectedAccount->failure_reason)])
                     : __('None'),
             ],
             'filters' => $filters,
@@ -791,6 +797,32 @@ class AdminClientController extends Controller
             ]);
 
         return $snapshot;
+    }
+
+    private function reconcileDisplayedBreachState(?TradingAccount $account, string $source): ?TradingAccount
+    {
+        if (! $account instanceof TradingAccount) {
+            return null;
+        }
+
+        $snapshot = $this->latestAdminMetricSnapshot($account);
+
+        if (! $snapshot instanceof TradingAccountBalanceSnapshot) {
+            return $account;
+        }
+
+        $calculation = $this->challengeCalculationBreakdown->forAccount($account, $snapshot);
+
+        if (! (bool) ($calculation['breach'] ?? false)) {
+            return $account;
+        }
+
+        return $this->breachFinalizer->finalizeIfBreached(
+            account: $account,
+            calculation: $calculation,
+            breachAt: $snapshot->snapshot_at,
+            source: $source,
+        )->fresh(['challengePlan', 'user']) ?? $account->fresh(['challengePlan', 'user']) ?? $account;
     }
 
     /**
@@ -1196,7 +1228,7 @@ class AdminClientController extends Controller
                 'max_drawdown_limit' => $this->formatMoney((float) $calculation['max_drawdown_limit']),
                 'profit_target_progress' => number_format((float) $calculation['profit_target_progress_percent'], 1).'%',
                 'breach_status' => (bool) $calculation['breach']
-                    ? $this->humanizeStatus((string) $calculation['breach_reason'])
+                    ? $this->breachReasonLabel((string) $calculation['breach_reason'])
                     : 'No breach',
             ];
         }
@@ -1213,7 +1245,7 @@ class AdminClientController extends Controller
             'max_drawdown_remaining' => $this->formatMoney(max((float) ($account?->max_drawdown_limit_amount ?? 0) - (float) ($account?->max_drawdown_used ?? 0), 0)),
             'max_drawdown_limit' => $this->formatMoney((float) ($account?->max_drawdown_limit_amount ?? 0)),
             'profit_target_progress' => number_format((float) ($account?->profit_target_progress_percent ?? 0), 1).'%',
-            'breach_status' => $account?->failure_reason ? $this->humanizeStatus((string) $account->failure_reason) : 'No breach',
+            'breach_status' => $account?->failure_reason ? $this->breachReasonLabel((string) $account->failure_reason) : 'No breach',
         ];
     }
 
@@ -1960,5 +1992,14 @@ class AdminClientController extends Controller
     private function humanizeStatus(string $status): string
     {
         return str($status)->replace('_', ' ')->title()->toString();
+    }
+
+    private function breachReasonLabel(string $reason): string
+    {
+        return match ($reason) {
+            'daily_loss_breached' => 'Daily Loss Limit Breached',
+            'max_drawdown_breached' => 'Max Drawdown Limit Breached',
+            default => $this->humanizeStatus($reason),
+        };
     }
 }

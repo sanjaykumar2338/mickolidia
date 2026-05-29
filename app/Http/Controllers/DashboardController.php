@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
+use App\Models\TradingAccountBalanceSnapshot;
 use App\Models\User;
+use App\Services\Challenge\ChallengeBreachFinalizer;
 use App\Services\Pricing\ChallengePricingService;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Services\Voice\OpenAiTextToSpeechService;
 use App\Services\Wolfi\WolfiAssistantService;
 use App\Services\Wolfi\WolfiVoiceSettings;
 use App\Support\ChallengeAccountMetrics;
+use App\Support\ChallengeCalculationBreakdown;
 use App\Support\Mt5ConnectorStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +34,8 @@ class DashboardController extends Controller
         private readonly TradeHistoryPanelBuilder $tradeHistoryPanelBuilder,
         private readonly WolfiAssistantService $wolfiAssistantService,
         private readonly Mt5ConnectorStatus $mt5ConnectorStatus,
+        private readonly ChallengeCalculationBreakdown $challengeCalculationBreakdown,
+        private readonly ChallengeBreachFinalizer $breachFinalizer,
     ) {}
 
     public function index(Request $request, ChallengePricingService $pricingService): View
@@ -186,6 +191,7 @@ class DashboardController extends Controller
 
         $accounts = $user->challengeTradingAccounts
             ->sortByDesc('created_at')
+            ->map(fn (TradingAccount $account): TradingAccount => $this->reconcileDisplayedBreachState($account))
             ->values();
 
         /** @var TradingAccount|null $primaryAccount */
@@ -1812,7 +1818,7 @@ class DashboardController extends Controller
     {
         if ($account->challenge_status === 'failed') {
             return $account->failure_reason
-                ? $this->humanizeStatus((string) $account->failure_reason)
+                ? $this->breachReasonLabel((string) $account->failure_reason)
                 : __('Breached');
         }
 
@@ -1821,6 +1827,15 @@ class DashboardController extends Controller
         }
 
         return __('No breach');
+    }
+
+    private function breachReasonLabel(string $reason): string
+    {
+        return match ($reason) {
+            'daily_loss_breached' => __('Daily Loss Limit Breached'),
+            'max_drawdown_breached' => __('Max Drawdown Limit Breached'),
+            default => $this->humanizeStatus($reason),
+        };
     }
 
     /**
@@ -2152,6 +2167,46 @@ class DashboardController extends Controller
         }
 
         return round(max(min(($value / $maximum) * 100, 100), 0), 1);
+    }
+
+    private function reconcileDisplayedBreachState(TradingAccount $account): TradingAccount
+    {
+        $snapshot = $this->latestMetricSnapshot($account);
+
+        if (! $snapshot instanceof TradingAccountBalanceSnapshot) {
+            return $account;
+        }
+
+        $calculation = $this->challengeCalculationBreakdown->forAccount($account, $snapshot);
+
+        if (! (bool) ($calculation['breach'] ?? false)) {
+            return $account;
+        }
+
+        return $this->breachFinalizer->finalizeIfBreached(
+            account: $account,
+            calculation: $calculation,
+            breachAt: $snapshot->snapshot_at,
+            source: 'client_dashboard_breach_visibility',
+        )->fresh(['challengePlan']) ?? $account->fresh(['challengePlan']) ?? $account;
+    }
+
+    private function latestMetricSnapshot(TradingAccount $account): ?TradingAccountBalanceSnapshot
+    {
+        return $account->balanceSnapshots()
+            ->latest('snapshot_at')
+            ->latest('id')
+            ->first([
+                'id',
+                'trading_account_id',
+                'snapshot_at',
+                'balance',
+                'equity',
+                'profit_loss',
+                'total_profit',
+                'today_profit',
+                'payload',
+            ]);
     }
 
     /**

@@ -2200,6 +2200,98 @@ class ChallengeDashboardTest extends TestCase
         }
     }
 
+    public function test_metrics_page_reconciles_active_metaapi_daily_loss_breach_to_failed_state(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-05-28 07:45:00'));
+
+        try {
+            $account = $this->createMetaApiChallengeAccount('335400');
+            $this->markMetaApiDashboardReady($account, '44444444-4444-4444-8444-444444444444');
+            $account = $account->fresh();
+            $meta = is_array($account->meta) ? $account->meta : [];
+            data_set($meta, 'rule_state.highest_challenge_equity_today', 10000);
+            data_set($meta, 'rule_state.rules.daily_drawdown_limit_amount', 500);
+            data_set($meta, 'rule_state.rules.max_drawdown_limit_amount', 1000);
+
+            $account->forceFill([
+                'account_status' => 'active',
+                'challenge_status' => 'active',
+                'status' => 'Active',
+                'platform_status' => 'connected',
+                'sync_status' => 'success',
+                'sync_source' => 'metaapi',
+                'activated_at' => now()->subHour(),
+                'last_synced_at' => now(),
+                'last_sync_completed_at' => now(),
+                'last_evaluated_at' => now(),
+                'highest_equity_today' => 10000,
+                'balance' => 10000,
+                'equity' => 9459.94,
+                'profit_loss' => -540.06,
+                'daily_drawdown' => 0,
+                'daily_loss_used' => 0,
+                'daily_drawdown_limit_amount' => 500,
+                'max_drawdown_limit_amount' => 1000,
+                'meta' => $meta,
+            ])->save();
+
+            $account->balanceSnapshots()->create([
+                'snapshot_at' => now(),
+                'balance' => 10000,
+                'equity' => 9459.94,
+                'profit_loss' => -540.06,
+                'total_profit' => 0,
+                'today_profit' => 0,
+                'payload' => [
+                    'balance' => 10000,
+                    'equity' => 9459.94,
+                    'open_profit' => -540.06,
+                    'broker_phase_reference_balance' => 10000,
+                    'platform_login' => '335400',
+                    'platform_environment' => 'FusionMarkets-Demo',
+                    'open_positions' => [],
+                    'trade_history' => [],
+                ],
+            ]);
+
+            $this->withSession([
+                'admin.authenticated' => true,
+                'admin.username' => 'admin',
+            ])->get(route('admin.trading-accounts.metrics', ['account' => $account]))
+                ->assertOk()
+                ->assertSee('Failed / Failed')
+                ->assertSee('Daily breach')
+                ->assertSee('Yes')
+                ->assertSee('Daily Loss Limit Breached')
+                ->assertSee('Rule breach status')
+                ->assertDontSee('Active / Active');
+
+            $account->refresh();
+
+            $this->assertSame('failed', $account->challenge_status);
+            $this->assertSame('failed', $account->account_status);
+            $this->assertSame('Failed', $account->status);
+            $this->assertSame('daily_loss_breached', $account->failure_reason);
+            $this->assertTrue((bool) $account->trading_blocked);
+            $this->assertTrue((bool) $account->final_state_locked);
+            $this->assertFalse((bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade'));
+            $this->assertSame('breached', data_get($account->meta, 'metaapi_lifecycle.state'));
+            $this->assertSame('breached', data_get($account->meta, 'metaapi_onboarding.state'));
+            $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+            $this->assertSame(9459.94, (float) data_get($account->failure_context, 'equity_at_breach'));
+            $this->assertSame(540.06, (float) data_get($account->failure_context, 'daily_loss_used'));
+            $this->assertSame(500.0, (float) data_get($account->failure_context, 'daily_loss_threshold'));
+
+            $this->actingAs($account->user)
+                ->get(route('dashboard', ['account' => $account->id]))
+                ->assertOk()
+                ->assertSee('Daily Loss Limit Breached')
+                ->assertSee('Breached');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_metaapi_max_drawdown_breach_from_balance_locks_account(): void
     {
         $account = $this->createMetaApiChallengeAccount('340136');
