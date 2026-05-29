@@ -46,6 +46,7 @@ class Mt5AccountDeactivationService
         $eventPath = "mt5_deactivation.events.{$eventKey}";
         $event = (array) Arr::get($meta, $eventPath, []);
         $status = (string) ($event['status'] ?? '');
+        $endpoint = trim((string) config('services.mt5_deactivation.endpoint', ''));
 
         if (
             $status === self::STATUS_DISABLE_FAILED
@@ -68,6 +69,14 @@ class Mt5AccountDeactivationService
             self::STATUS_DISABLE_PENDING_ACK,
             self::STATUS_DISABLED,
         ], true)) {
+            if ($this->shouldExecuteBridgeForExistingEvent($status, $event, $endpoint)) {
+                $requestedAt = now();
+                $payload = $this->payload($freshAccount, $eventKey, $context, (string) ($event['requested_at'] ?? $requestedAt->toIso8601String()));
+                $freshAccount = $this->recordBridgeAttempt($freshAccount, $eventKey, $payload, $requestedAt);
+
+                return $this->sendBridgeRequest($freshAccount, $eventKey, $payload, $endpoint);
+            }
+
             $expectedPlatformStatus = $status;
 
             if ((string) $freshAccount->platform_status !== $expectedPlatformStatus) {
@@ -81,7 +90,6 @@ class Mt5AccountDeactivationService
 
         $requestedAt = now();
         $payload = $this->payload($freshAccount, $eventKey, $context, $requestedAt->toIso8601String());
-        $endpoint = trim((string) config('services.mt5_deactivation.endpoint', ''));
         $initialStatus = $endpoint === ''
             ? self::STATUS_DISABLE_PENDING_ACK
             : self::STATUS_DISABLE_REQUESTED;
@@ -343,6 +351,69 @@ class Mt5AccountDeactivationService
                 requestPayload: $payload,
             );
         }
+
+        return $account->fresh() ?? $account;
+    }
+
+    /**
+     * @param  array<string, mixed>  $event
+     */
+    private function shouldExecuteBridgeForExistingEvent(string $status, array $event, string $endpoint): bool
+    {
+        if ($endpoint === '' || $status === self::STATUS_DISABLED) {
+            return false;
+        }
+
+        if (($event['source'] ?? null) !== 'bridge_request') {
+            return in_array($status, [self::STATUS_DISABLE_PENDING_ACK, self::STATUS_DISABLE_REQUESTED], true);
+        }
+
+        return ! isset($event['bridge_status'])
+            && ! isset($event['bridge_response'])
+            && ! isset($event['executed_at']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function recordBridgeAttempt(TradingAccount $account, string $eventKey, array $payload, \DateTimeInterface $attemptedAt): TradingAccount
+    {
+        $meta = $this->meta($account);
+        $eventPath = "mt5_deactivation.events.{$eventKey}";
+        $event = (array) Arr::get($meta, $eventPath, []);
+
+        Arr::set($meta, $eventPath, array_filter([
+            ...$event,
+            'event' => $eventKey,
+            'status' => self::STATUS_DISABLE_REQUESTED,
+            'requested_at' => $event['requested_at'] ?? $attemptedAt->format(DATE_ATOM),
+            'last_attempt_at' => $attemptedAt->format(DATE_ATOM),
+            'attempts' => max((int) ($event['attempts'] ?? 0), 0) + 1,
+            'action' => $payload['action'],
+            'platform_login' => $payload['platform_login'],
+            'platform_account_id' => $payload['platform_account_id'],
+            'reason' => $payload['reason'],
+            'completed_phase' => $payload['completed_phase'],
+            'final_status' => $payload['final_status'],
+            'failure_reason' => $payload['failure_reason'] ?? null,
+            'source' => 'bridge_request',
+            'bridge_response' => null,
+            'error' => null,
+        ], static fn (mixed $value): bool => $value !== null && $value !== ''));
+
+        Arr::set($meta, 'mt5_deactivation.current_event_key', $eventKey);
+        Arr::set($meta, 'mt5_deactivation.current', $this->currentStatePayload($eventKey, (array) Arr::get($meta, $eventPath, [])));
+
+        $account->forceFill([
+            'platform_status' => self::STATUS_DISABLE_REQUESTED,
+            'meta' => $meta,
+        ])->save();
+
+        Log::info('Existing MT5 deactivation request promoted to bridge execution.', [
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'event' => $eventKey,
+        ]);
 
         return $account->fresh() ?? $account;
     }

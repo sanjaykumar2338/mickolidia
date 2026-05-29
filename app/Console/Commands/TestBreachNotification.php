@@ -27,11 +27,13 @@ class TestBreachNotification extends Command
         }
 
         $message = $this->message($account);
+        $deactivation = $this->deactivationSummary($account);
         $account = $lifecycleService->recordEvent($account, 'breach_notification_tested', [
             'message' => $message,
             'login' => $login,
             'challenge_status' => $account->challenge_status,
             'failure_reason' => $account->failure_reason,
+            'mt5_deactivation_status' => $deactivation['status'],
             'external_delivery' => 'not_sent_by_test_command',
         ]);
         $diagnostic = $lifecycleService->diagnose($account);
@@ -46,6 +48,8 @@ class TestBreachNotification extends Command
             ['Failure reason', (string) ($account->failure_reason ?: '-')],
             ['Lifecycle state', (string) ($diagnostic['lifecycle_state'] ?? '-')],
             ['Sync health', (string) ($diagnostic['sync_health'] ?? '-')],
+            ['MT5 deactivation event', (string) ($deactivation['event'] ?: '-')],
+            ['MT5 deactivation status', (string) ($deactivation['status'] ?: '-')],
             ['Message', $message],
         ]);
 
@@ -54,6 +58,7 @@ class TestBreachNotification extends Command
             $this->line(json_encode([
                 'login' => $login,
                 'message' => $message,
+                'mt5_deactivation' => $deactivation,
                 'diagnostic' => $diagnostic,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '[diagnostic unavailable]');
         }
@@ -66,6 +71,23 @@ class TestBreachNotification extends Command
         $rule = str((string) ($account->failure_reason ?: 'risk_rule'))->replace('_', ' ')->title()->toString();
 
         return "We respect the effort behind this challenge. A trading rule was violated ({$rule}), so the challenge cannot continue in its current phase. The account has been protected in its final state, and the next best step is to review the trade decisions calmly and prepare for stronger future participation.";
+    }
+
+    /**
+     * @return array{event: string|null, status: string|null}
+     */
+    private function deactivationSummary(TradingAccount $account): array
+    {
+        $eventKey = (string) data_get($account->meta, 'mt5_deactivation.current_event_key', '');
+        $current = (array) data_get($account->meta, 'mt5_deactivation.current', []);
+        $event = $eventKey !== ''
+            ? (array) data_get($account->meta, "mt5_deactivation.events.{$eventKey}", [])
+            : [];
+
+        return [
+            'event' => $eventKey !== '' ? $eventKey : null,
+            'status' => (string) ($event['status'] ?? $current['status'] ?? $account->platform_status ?: '') ?: null,
+        ];
     }
 
     private function accountForLogin(string $login): ?TradingAccount

@@ -2203,8 +2203,16 @@ class ChallengeDashboardTest extends TestCase
     public function test_metrics_page_reconciles_active_metaapi_daily_loss_breach_to_failed_state(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-05-28 07:45:00'));
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
 
         try {
+            Http::fake([
+                'https://bridge.example.test/disable' => Http::response([
+                    'disabled' => true,
+                    'provider' => 'bridge',
+                ]),
+            ]);
+
             $account = $this->createMetaApiChallengeAccount('335400');
             $this->markMetaApiDashboardReady($account, '44444444-4444-4444-8444-444444444444');
             $account = $account->fresh();
@@ -2264,6 +2272,8 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('Yes')
                 ->assertSee('Daily Loss Limit Breached')
                 ->assertSee('Rule breach status')
+                ->assertSee('EA disable status')
+                ->assertSee('Disabled')
                 ->assertDontSee('Active / Active');
 
             $account->refresh();
@@ -2277,10 +2287,20 @@ class ChallengeDashboardTest extends TestCase
             $this->assertFalse((bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade'));
             $this->assertSame('breached', data_get($account->meta, 'metaapi_lifecycle.state'));
             $this->assertSame('breached', data_get($account->meta, 'metaapi_onboarding.state'));
-            $this->assertSame('disable_pending_ack', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+            $this->assertSame('disabled', $account->platform_status);
+            $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+            $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+            $this->assertSame(200, data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_status'));
             $this->assertSame(9459.94, (float) data_get($account->failure_context, 'equity_at_breach'));
             $this->assertSame(540.06, (float) data_get($account->failure_context, 'daily_loss_used'));
             $this->assertSame(500.0, (float) data_get($account->failure_context, 'daily_loss_threshold'));
+            Http::assertSent(function ($request) use ($account): bool {
+                return $request->url() === 'https://bridge.example.test/disable'
+                    && $request['event'] === 'fail_daily_loss_breached'
+                    && $request['account_reference'] === $account->account_reference
+                    && $request['final_status'] === 'failed'
+                    && $request['failure_reason'] === 'daily_loss_breached';
+            });
 
             $this->actingAs($account->user)
                 ->get(route('dashboard', ['account' => $account->id]))
@@ -3225,6 +3245,140 @@ class ChallengeDashboardTest extends TestCase
                 && $request['account_reference'] === $account->account_reference
                 && $request['final_status'] === 'passed';
         });
+    }
+
+    public function test_configured_mt5_deactivation_bridge_is_called_for_daily_loss_breach(): void
+    {
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+        config()->set('services.mt5_deactivation.token', 'bridge-secret');
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('failure_reason', 'daily_loss_breached')
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertTrue((bool) $account->trading_blocked);
+        $this->assertTrue((bool) $account->final_state_locked);
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+        $this->assertSame(200, data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_status'));
+        $this->assertNotEmpty(data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.executed_at'));
+
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request->hasHeader('Authorization', 'Bearer bridge-secret')
+                && $request['event'] === 'fail_daily_loss_breached'
+                && $request['account_reference'] === $account->account_reference
+                && $request['final_status'] === 'failed'
+                && $request['failure_reason'] === 'daily_loss_breached';
+        });
+    }
+
+    public function test_configured_mt5_deactivation_bridge_is_called_for_max_drawdown_breach(): void
+    {
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 9150, 9700, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('failure_reason', 'max_drawdown_breached')
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled')
+            ->assertJsonPath('ea_action', 'block_trading');
+
+        $account->refresh();
+
+        $this->assertSame('failed', $account->challenge_status);
+        $this->assertSame('max_drawdown_breached', $account->failure_reason);
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_max_drawdown_breached.status'));
+        $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_max_drawdown_breached.source'));
+
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request['event'] === 'fail_max_drawdown_breached'
+                && $request['account_reference'] === $account->account_reference
+                && $request['final_status'] === 'failed'
+                && $request['failure_reason'] === 'max_drawdown_breached';
+        });
+    }
+
+    public function test_existing_pending_deactivation_is_promoted_to_configured_bridge_execution(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $account->refresh();
+
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('ea_action', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+        $requestedAt = (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at');
+
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $this->pushMetrics($account, '2026-04-05 09:00:10', 10000, 9400, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_required', false)
+            ->assertJsonPath('mt5_deactivation_status', 'disabled');
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+        $this->assertSame($requestedAt, (string) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.requested_at'));
+        $this->assertSame(2, (int) data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.attempts'));
+
+        Http::assertSentCount(1);
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request['event'] === 'fail_daily_loss_breached'
+                && $request['account_reference'] === $account->account_reference;
+        });
+
+        $this->pushMetrics($account, '2026-04-05 09:00:20', 10000, 9300, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disabled');
+
+        Http::assertSentCount(1);
     }
 
     public function test_failed_mt5_deactivation_bridge_response_is_persisted_and_not_spammed(): void
