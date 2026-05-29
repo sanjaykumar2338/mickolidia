@@ -29,6 +29,7 @@ class DiagnoseSyncHealth extends Command
         $diagnostic = $lifecycleService->diagnose($account);
         $latestLog = $account->syncLogs()->latest('id')->first();
         $deactivation = $this->deactivationSummary($account);
+        $bridgeConfig = $this->bridgeConfig();
 
         $this->info('MetaApi sync health diagnosis');
         $this->line('Secrets are never printed by this command.');
@@ -43,6 +44,10 @@ class DiagnoseSyncHealth extends Command
             ['Lifecycle state', (string) ($diagnostic['lifecycle_state'] ?? '-')],
             ['Connector status', (string) ($diagnostic['connector_status'] ?? '-')],
             ['Ready to trade', ! empty($diagnostic['ready_to_trade']) ? 'yes' : 'no'],
+            ['MT5 bridge endpoint configured', $bridgeConfig['endpoint_configured'] ? 'yes' : 'no'],
+            ['MT5 bridge endpoint host', (string) ($bridgeConfig['endpoint_host'] ?: '-')],
+            ['MT5 bridge timeout', (string) $bridgeConfig['timeout']],
+            ['MT5 bridge retries', (string) $bridgeConfig['http_retries']],
             ['Last sync', (string) ($diagnostic['last_sync_at'] ?? '-')],
             ['Sync age seconds', (string) ($diagnostic['sync_age_seconds'] ?? '-')],
             ['Stale threshold minutes', (string) ($diagnostic['stale_threshold_minutes'] ?? '-')],
@@ -67,6 +72,7 @@ class DiagnoseSyncHealth extends Command
                 'challenge_status' => $account->challenge_status,
                 'account_status' => $account->account_status,
                 'trading_blocked' => (bool) $account->trading_blocked,
+                'mt5_bridge_config' => $bridgeConfig,
                 'mt5_deactivation' => $deactivation,
                 'latest_sync_log' => $latestLog ? [
                     'id' => $latestLog->id,
@@ -96,7 +102,24 @@ class DiagnoseSyncHealth extends Command
             'event' => $eventKey !== '' ? $eventKey : null,
             'status' => (string) ($event['status'] ?? $current['status'] ?? $account->platform_status ?: '') ?: null,
             'source' => (string) ($event['source'] ?? $current['source'] ?? '') ?: null,
-            'error' => (string) ($event['error'] ?? $current['error'] ?? '') ?: null,
+            'error' => (string) ($event['error'] ?? $current['last_error'] ?? $event['bridge_configuration_error'] ?? '') ?: null,
+        ];
+    }
+
+    /**
+     * @return array{endpoint_configured: bool, endpoint_host: string|null, timeout: int, connect_timeout: int, http_retries: int, retry_sleep_ms: int}
+     */
+    private function bridgeConfig(): array
+    {
+        $endpoint = trim((string) config('services.mt5_deactivation.endpoint', ''));
+
+        return [
+            'endpoint_configured' => $endpoint !== '',
+            'endpoint_host' => $endpoint !== '' ? (parse_url($endpoint, PHP_URL_HOST) ?: 'configured-endpoint') : null,
+            'timeout' => max((int) config('services.mt5_deactivation.timeout', 10), 1),
+            'connect_timeout' => max((int) config('services.mt5_deactivation.connect_timeout', 5), 1),
+            'http_retries' => max((int) config('services.mt5_deactivation.http_retries', 2), 0),
+            'retry_sleep_ms' => max((int) config('services.mt5_deactivation.retry_sleep_ms', 500), 0),
         ];
     }
 

@@ -4,7 +4,9 @@ namespace App\Services\Mt5;
 
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -29,7 +31,7 @@ class Mt5AccountDeactivationService
     /**
      * @param  array<string, mixed>  $context
      */
-    public function requestForFinalState(TradingAccount $account, string $eventKey, array $context = [], bool $allowTrial = false): TradingAccount
+    public function requestForFinalState(TradingAccount $account, string $eventKey, array $context = [], bool $allowTrial = false, bool $forceBridgeRetry = false): TradingAccount
     {
         if (($account->is_trial && ! $allowTrial) || $account->platform_slug !== 'mt5') {
             return $account;
@@ -50,6 +52,7 @@ class Mt5AccountDeactivationService
 
         if (
             $status === self::STATUS_DISABLE_FAILED
+            && ! $forceBridgeRetry
             && ! $this->failedRetryWindowElapsed($event)
         ) {
             Log::warning('MT5 deactivation retry skipped while failure cooldown is active.', [
@@ -72,7 +75,7 @@ class Mt5AccountDeactivationService
             if ($this->shouldExecuteBridgeForExistingEvent($status, $event, $endpoint)) {
                 $requestedAt = now();
                 $payload = $this->payload($freshAccount, $eventKey, $context, (string) ($event['requested_at'] ?? $requestedAt->toIso8601String()));
-                $freshAccount = $this->recordBridgeAttempt($freshAccount, $eventKey, $payload, $requestedAt);
+                $freshAccount = $this->recordBridgeAttempt($freshAccount, $eventKey, $payload, $endpoint, $requestedAt);
 
                 return $this->sendBridgeRequest($freshAccount, $eventKey, $payload, $endpoint);
             }
@@ -109,6 +112,9 @@ class Mt5AccountDeactivationService
             'final_status' => $payload['final_status'],
             'failure_reason' => $payload['failure_reason'] ?? null,
             'source' => $endpoint === '' ? 'ea_action' : 'bridge_request',
+            'bridge_configured' => $endpoint !== '',
+            'endpoint_host' => $endpoint !== '' ? $this->endpointHost($endpoint) : null,
+            'bridge_configuration_error' => $endpoint === '' ? 'MT5_DEACTIVATION_ENDPOINT is not configured; broker bridge was not executed.' : null,
             'bridge_response' => null,
             'acknowledged_at' => $event['acknowledged_at'] ?? null,
             'executed_at' => $event['executed_at'] ?? null,
@@ -126,13 +132,23 @@ class Mt5AccountDeactivationService
         ])->save();
 
         if ($endpoint === '') {
-            Log::info('MT5 deactivation queued for EA acknowledgement.', [
+            Log::warning('MT5 deactivation bridge endpoint is not configured; queued for EA acknowledgement only.', [
                 'trading_account_id' => $freshAccount->id,
                 'account_reference' => $freshAccount->account_reference,
                 'event' => $eventKey,
                 'platform_login' => $payload['platform_login'],
             ]);
-            $this->recordDeactivationLog($freshAccount, 'pending_ack', 'MT5 deactivation queued for EA acknowledgement.', null, $payload);
+            $this->recordDeactivationLog(
+                $freshAccount,
+                'pending_ack',
+                'MT5 deactivation bridge endpoint is not configured; queued for EA acknowledgement only.',
+                'MT5_DEACTIVATION_ENDPOINT is not configured.',
+                [
+                    'event' => $eventKey,
+                    'bridge_configured' => false,
+                    'request' => $this->sanitizePayload($payload),
+                ],
+            );
 
             return $freshAccount->fresh() ?? $freshAccount;
         }
@@ -154,6 +170,20 @@ class Mt5AccountDeactivationService
     public function requestForTrialFailure(TradingAccount $account, string $eventKey, array $context = []): TradingAccount
     {
         return $this->requestForFinalState($account, $eventKey, $context, allowTrial: true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public function retryFinalStateBridge(TradingAccount $account, string $eventKey, array $context = [], bool $force = false): TradingAccount
+    {
+        return $this->requestForFinalState(
+            account: $account,
+            eventKey: $eventKey,
+            context: $context,
+            allowTrial: (bool) $account->is_trial,
+            forceBridgeRetry: $force,
+        );
     }
 
     /**
@@ -272,7 +302,14 @@ class Mt5AccountDeactivationService
     private function sendBridgeRequest(TradingAccount $account, string $eventKey, array $payload, string $endpoint): TradingAccount
     {
         try {
-            $request = Http::timeout((int) config('services.mt5_deactivation.timeout', 10))
+            $timeout = max((int) config('services.mt5_deactivation.timeout', 10), 1);
+            $connectTimeout = max((int) config('services.mt5_deactivation.connect_timeout', 5), 1);
+            $httpRetries = max((int) config('services.mt5_deactivation.http_retries', 2), 0);
+            $retrySleepMs = max((int) config('services.mt5_deactivation.retry_sleep_ms', 500), 0);
+            $endpointHost = $this->endpointHost($endpoint);
+
+            $request = Http::timeout($timeout)
+                ->connectTimeout($connectTimeout)
                 ->acceptJson()
                 ->asJson();
 
@@ -282,8 +319,30 @@ class Mt5AccountDeactivationService
                 $request = $request->withToken($token);
             }
 
+            if ($httpRetries > 0) {
+                $request = $request->retry($httpRetries, $retrySleepMs, throw: true);
+            }
+
+            Log::info('MT5 deactivation bridge request firing.', [
+                'trading_account_id' => $account->id,
+                'account_reference' => $account->account_reference,
+                'event' => $eventKey,
+                'endpoint_host' => $endpointHost,
+                'timeout' => $timeout,
+                'connect_timeout' => $connectTimeout,
+                'http_retries' => $httpRetries,
+            ]);
+            $this->recordDeactivationLog($account, 'requested', 'MT5 deactivation bridge request fired.', null, [
+                'event' => $eventKey,
+                'endpoint_host' => $endpointHost,
+                'timeout' => $timeout,
+                'connect_timeout' => $connectTimeout,
+                'http_retries' => $httpRetries,
+                'request' => $this->sanitizePayload($payload),
+            ]);
+
             $response = $request->post($endpoint, $payload);
-            $body = $this->responsePayload($response);
+            $body = $this->sanitizePayload($this->responsePayload($response));
 
             if (! $response->successful()) {
                 return $this->markBridgeFailure(
@@ -314,6 +373,9 @@ class Mt5AccountDeactivationService
                 'executed_at' => $event['executed_at'] ?? $executedAt,
                 'acknowledged_at' => $event['acknowledged_at'] ?? $acknowledgedAt,
                 'source' => 'bridge_request',
+                'bridge_configured' => true,
+                'endpoint_host' => $endpointHost,
+                'bridge_http_retries' => $httpRetries,
                 'trading_permission_state' => $permissionState['label'],
                 'trading_permission_payload' => $permissionState['payload'],
                 'error' => null,
@@ -333,11 +395,16 @@ class Mt5AccountDeactivationService
                 'account_reference' => $account->account_reference,
                 'event' => $eventKey,
                 'status' => $status,
+                'endpoint_host' => $endpointHost,
+                'bridge_status' => $response->status(),
+                'executed_at' => $executedAt,
             ]);
             $this->recordDeactivationLog($account, $disabled ? 'success' : 'requested', 'MT5 deactivation bridge request succeeded.', null, [
                 'event' => $eventKey,
+                'endpoint_host' => $endpointHost,
                 'bridge_status' => $response->status(),
                 'bridge_response' => is_array($body) ? $body : null,
+                'executed_at' => $executedAt,
             ]);
         } catch (Throwable $exception) {
             report($exception);
@@ -376,7 +443,7 @@ class Mt5AccountDeactivationService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function recordBridgeAttempt(TradingAccount $account, string $eventKey, array $payload, \DateTimeInterface $attemptedAt): TradingAccount
+    private function recordBridgeAttempt(TradingAccount $account, string $eventKey, array $payload, string $endpoint, \DateTimeInterface $attemptedAt): TradingAccount
     {
         $meta = $this->meta($account);
         $eventPath = "mt5_deactivation.events.{$eventKey}";
@@ -397,6 +464,8 @@ class Mt5AccountDeactivationService
             'final_status' => $payload['final_status'],
             'failure_reason' => $payload['failure_reason'] ?? null,
             'source' => 'bridge_request',
+            'bridge_configured' => true,
+            'endpoint_host' => $this->endpointHost($endpoint),
             'bridge_response' => null,
             'error' => null,
         ], static fn (mixed $value): bool => $value !== null && $value !== ''));
@@ -413,6 +482,7 @@ class Mt5AccountDeactivationService
             'trading_account_id' => $account->id,
             'account_reference' => $account->account_reference,
             'event' => $eventKey,
+            'endpoint_host' => $this->endpointHost($endpoint),
         ]);
 
         return $account->fresh() ?? $account;
@@ -433,13 +503,17 @@ class Mt5AccountDeactivationService
         $meta = $this->meta($account);
         $eventPath = "mt5_deactivation.events.{$eventKey}";
         $event = (array) Arr::get($meta, $eventPath, []);
+        $endpoint = trim((string) config('services.mt5_deactivation.endpoint', ''));
+        $sanitizedResponse = $this->sanitizePayload($bridgeResponse);
 
         Arr::set($meta, $eventPath, array_filter([
             ...$event,
             'status' => self::STATUS_DISABLE_FAILED,
             'source' => 'bridge_request',
+            'bridge_configured' => $endpoint !== '',
+            'endpoint_host' => $endpoint !== '' ? $this->endpointHost($endpoint) : null,
             'bridge_status' => $bridgeStatus,
-            'bridge_response' => $bridgeResponse,
+            'bridge_response' => $sanitizedResponse,
             'error' => $reason,
             'failed_at' => now()->toIso8601String(),
             'trading_permission_state' => $event['trading_permission_state'] ?? $this->permissionStateLabel('unknown'),
@@ -458,12 +532,14 @@ class Mt5AccountDeactivationService
             'event' => $eventKey,
             'bridge_status' => $bridgeStatus,
             'reason' => $reason,
+            'endpoint_host' => $endpoint !== '' ? $this->endpointHost($endpoint) : null,
         ]);
         $this->recordDeactivationLog($account, 'error', 'MT5 deactivation bridge request failed.', $reason, [
             'event' => $eventKey,
+            'endpoint_host' => $endpoint !== '' ? $this->endpointHost($endpoint) : null,
             'bridge_status' => $bridgeStatus,
-            'bridge_response' => $bridgeResponse,
-            'request' => $requestPayload,
+            'bridge_response' => $sanitizedResponse,
+            'request' => $this->sanitizePayload($requestPayload),
         ]);
 
         return $account->fresh() ?? $account;
@@ -523,6 +599,10 @@ class Mt5AccountDeactivationService
             'last_attempt_at' => $event['last_attempt_at'] ?? null,
             'attempts' => $event['attempts'] ?? null,
             'source' => $event['source'] ?? null,
+            'bridge_configured' => $event['bridge_configured'] ?? null,
+            'endpoint_host' => $event['endpoint_host'] ?? null,
+            'bridge_configuration_error' => $event['bridge_configuration_error'] ?? null,
+            'bridge_http_retries' => $event['bridge_http_retries'] ?? null,
             'bridge_status' => $event['bridge_status'] ?? null,
             'bridge_response' => $event['bridge_response'] ?? null,
             'trading_permission_state' => $event['trading_permission_state'] ?? null,
@@ -912,13 +992,13 @@ class Mt5AccountDeactivationService
         }
 
         try {
-            return now()->diffInSeconds(\Illuminate\Support\Carbon::parse($lastAttemptAt), true) >= $this->retryAfterSeconds();
+            return now()->diffInSeconds(Carbon::parse($lastAttemptAt), true) >= $this->retryAfterSeconds();
         } catch (Throwable) {
             return true;
         }
     }
 
-    private function responsePayload(\Illuminate\Http\Client\Response $response): array|string|null
+    private function responsePayload(Response $response): array|string|null
     {
         try {
             $json = $response->json();
@@ -933,6 +1013,48 @@ class Mt5AccountDeactivationService
         $body = trim($response->body());
 
         return $body !== '' ? $body : null;
+    }
+
+    private function endpointHost(string $endpoint): string
+    {
+        return (string) (parse_url($endpoint, PHP_URL_HOST) ?: 'configured-endpoint');
+    }
+
+    private function sanitizePayload(mixed $payload): mixed
+    {
+        if (! is_array($payload)) {
+            return is_string($payload) ? $this->sanitizeText($payload) : $payload;
+        }
+
+        $sanitized = [];
+
+        foreach ($payload as $key => $value) {
+            $normalized = Str::of((string) $key)->lower()->toString();
+
+            if (str_contains($normalized, 'token')
+                || str_contains($normalized, 'secret')
+                || str_contains($normalized, 'password')
+                || str_contains($normalized, 'authorization')
+            ) {
+                $sanitized[$key] = '[redacted]';
+
+                continue;
+            }
+
+            $sanitized[$key] = is_array($value)
+                ? $this->sanitizePayload($value)
+                : (is_string($value) ? $this->sanitizeText($value) : $value);
+        }
+
+        return $sanitized;
+    }
+
+    private function sanitizeText(string $value): string
+    {
+        $value = preg_replace('/Bearer\s+[A-Za-z0-9._~+\-\/]+=*/i', 'Bearer [redacted]', $value) ?? $value;
+        $value = preg_replace('/(token|secret|password)=([^&\s]+)/i', '$1=[redacted]', $value) ?? $value;
+
+        return Str::limit($value, 2000, '... [truncated]');
     }
 
     /**

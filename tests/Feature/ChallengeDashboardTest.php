@@ -3381,6 +3381,138 @@ class ChallengeDashboardTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_retry_mt5_deactivation_command_executes_pending_bridge_request(): void
+    {
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $account->refresh();
+
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('ea_action', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+        config()->set('services.mt5_deactivation.timeout', 8);
+        config()->set('services.mt5_deactivation.connect_timeout', 3);
+        config()->set('services.mt5_deactivation.http_retries', 1);
+        config()->set('services.mt5_deactivation.retry_sleep_ms', 10);
+
+        Http::fake([
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $exitCode = Artisan::call('wolforix:retry-mt5-deactivation', [
+            'login' => (string) $account->platform_login,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Endpoint configured', Artisan::output());
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+        $this->assertSame(200, data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_status'));
+        $this->assertNotEmpty(data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.executed_at'));
+
+        $this->assertDatabaseHas('trading_account_sync_logs', [
+            'trading_account_id' => $account->id,
+            'status' => 'requested',
+            'message' => 'MT5 deactivation bridge request fired.',
+        ]);
+        $this->assertDatabaseHas('trading_account_sync_logs', [
+            'trading_account_id' => $account->id,
+            'status' => 'success',
+            'message' => 'MT5 deactivation bridge request succeeded.',
+        ]);
+
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request['event'] === 'fail_daily_loss_breached'
+                && $request['account_reference'] === $account->account_reference
+                && $request['platform_login'] === $account->platform_login;
+        });
+    }
+
+    public function test_retry_mt5_deactivation_command_reports_missing_bridge_endpoint(): void
+    {
+        config()->set('services.mt5_deactivation.endpoint', '');
+
+        $account = $this->createChallengeAccount('one_step');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $exitCode = Artisan::call('wolforix:retry-mt5-deactivation', [
+            'login' => (string) $account->platform_login,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('MT5_DEACTIVATION_ENDPOINT is not configured', Artisan::output());
+
+        $account->refresh();
+
+        $this->assertSame('disable_pending_ack', $account->platform_status);
+        $this->assertSame('ea_action', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+        $this->assertSame('MT5_DEACTIVATION_ENDPOINT is not configured; broker bridge was not executed.', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.bridge_configuration_error'));
+    }
+
+    public function test_metaapi_timeout_failure_still_retries_pending_mt5_deactivation_bridge(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('335400');
+        $metaApiAccountId = $this->attachMetaApiPoolEntry($account, '55555555-5555-4555-8555-555555555555');
+
+        $this->pushMetrics($account, '2026-04-05 09:00:00', 10000, 9500, ['trade_count' => 1])
+            ->assertOk()
+            ->assertJsonPath('challenge_status', 'failed')
+            ->assertJsonPath('mt5_deactivation_status', 'disable_pending_ack');
+
+        $account->refresh();
+
+        $this->enableMetaApiForTests();
+        config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');
+
+        Http::fake([
+            "https://metaapi-provisioning.test/users/current/accounts/{$metaApiAccountId}" => fn () => throw new ConnectionException('cURL error 28: Operation timed out'),
+            'https://bridge.example.test/disable' => Http::response([
+                'disabled' => true,
+                'provider' => 'bridge',
+            ]),
+        ]);
+
+        $result = app(MetaApiLiveSyncService::class)->syncByLogin('335400');
+
+        $this->assertSame('error', $result['status']);
+        $this->assertSame('disabled', $result['mt5_deactivation_status']);
+        $this->assertSame('bridge_request', $result['mt5_deactivation_source']);
+        $this->assertSame(200, $result['mt5_deactivation_bridge_status']);
+        $this->assertNotEmpty($result['mt5_deactivation_executed_at']);
+
+        $account->refresh();
+
+        $this->assertSame('disabled', $account->platform_status);
+        $this->assertSame('disabled', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.status'));
+        $this->assertSame('bridge_request', data_get($account->meta, 'mt5_deactivation.events.fail_daily_loss_breached.source'));
+
+        Http::assertSent(function ($request) use ($account): bool {
+            return $request->url() === 'https://bridge.example.test/disable'
+                && $request['event'] === 'fail_daily_loss_breached'
+                && $request['account_reference'] === $account->account_reference;
+        });
+    }
+
     public function test_failed_mt5_deactivation_bridge_response_is_persisted_and_not_spammed(): void
     {
         config()->set('services.mt5_deactivation.endpoint', 'https://bridge.example.test/disable');

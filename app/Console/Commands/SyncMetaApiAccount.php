@@ -62,6 +62,10 @@ class SyncMetaApiAccount extends Command
             ['Lifecycle state', (string) ($result['lifecycle_state'] ?? '-')],
             ['Sync health', (string) ($result['sync_health'] ?? '-')],
             ['Onboarding state', (string) ($result['onboarding_state'] ?? '-')],
+            ['MT5 deactivation status', (string) ($result['mt5_deactivation_status'] ?? '-')],
+            ['MT5 deactivation source', (string) ($result['mt5_deactivation_source'] ?? '-')],
+            ['MT5 bridge status', (string) ($result['mt5_deactivation_bridge_status'] ?? '-')],
+            ['MT5 disable executed at', (string) ($result['mt5_deactivation_executed_at'] ?? '-')],
             ['Phase 1B ready', ! empty($result['phase_1b_ready']) ? 'yes' : 'no'],
             ['Phase 2 ready', ! empty($result['phase_2_ready']) ? 'yes' : 'no'],
         ]);

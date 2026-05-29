@@ -109,6 +109,9 @@ return [
         'endpoint' => env('MT5_DEACTIVATION_ENDPOINT'),
         'token' => env('MT5_DEACTIVATION_TOKEN'),
         'timeout' => (int) env('MT5_DEACTIVATION_TIMEOUT', 10),
+        'connect_timeout' => (int) env('MT5_DEACTIVATION_CONNECT_TIMEOUT', 5),
+        'http_retries' => (int) env('MT5_DEACTIVATION_HTTP_RETRIES', 2),
+        'retry_sleep_ms' => (int) env('MT5_DEACTIVATION_RETRY_SLEEP_MS', 500),
         'retry_after_seconds' => (int) env('MT5_DEACTIVATION_RETRY_AFTER_SECONDS', 300),
     ],
 

@@ -5,6 +5,7 @@ namespace App\Services\MetaApi;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
+use App\Services\Mt5\Mt5AccountDeactivationService;
 use App\Services\TradingAccounts\TradingAccountSnapshotApplyService;
 use App\Support\MetaApiTodayProfitBreakdown;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,7 @@ class MetaApiLiveSyncService
         private readonly MetaApiAccountLifecycleService $lifecycleService,
         private readonly MetaApiOnboardingService $onboardingService,
         private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
+        private readonly Mt5AccountDeactivationService $deactivationService,
     ) {}
 
     /**
@@ -194,6 +196,7 @@ class MetaApiLiveSyncService
         $updatedAccount = $this->onboardingService->recordSyncResult($updatedAccount, $syncResult);
         $lifecycle = $this->lifecycleService->diagnose($updatedAccount);
         $onboarding = $this->onboardingService->diagnose($updatedAccount);
+        $deactivation = $this->deactivationSummary($updatedAccount);
 
         Log::info('MetaApi live account sync completed.', [
             'trading_account_id' => $updatedAccount->id,
@@ -216,6 +219,10 @@ class MetaApiLiveSyncService
             'recovery' => $lifecycle['recovery'] ?? [],
             'onboarding_state' => $onboarding['onboarding_state'] ?? null,
             'phase_2_ready' => (bool) data_get($onboarding, 'sync_readiness.ready_to_trade', false),
+            'mt5_deactivation_status' => $deactivation['status'],
+            'mt5_deactivation_source' => $deactivation['source'],
+            'mt5_deactivation_bridge_status' => $deactivation['bridge_status'],
+            'mt5_deactivation_executed_at' => $deactivation['executed_at'],
         ]);
     }
 
@@ -690,8 +697,10 @@ class MetaApiLiveSyncService
             'connection_status' => $metaApi['connection_status'] ?? null,
             'deploy_status' => $metaApi['state'] ?? null,
         ]);
+        $account = $this->retryFinalStateDeactivationIfNeeded($account, 'metaapi_sync_failure');
         $lifecycle = $this->lifecycleService->diagnose($account);
         $onboarding = $this->onboardingService->diagnose($account);
+        $deactivation = $this->deactivationSummary($account);
 
         return [
             'status' => 'error',
@@ -712,6 +721,54 @@ class MetaApiLiveSyncService
             'recovery' => $lifecycle['recovery'] ?? [],
             'onboarding_state' => $onboarding['onboarding_state'] ?? null,
             'phase_2_ready' => false,
+            'mt5_deactivation_status' => $deactivation['status'],
+            'mt5_deactivation_source' => $deactivation['source'],
+            'mt5_deactivation_bridge_status' => $deactivation['bridge_status'],
+            'mt5_deactivation_executed_at' => $deactivation['executed_at'],
+        ];
+    }
+
+    private function retryFinalStateDeactivationIfNeeded(TradingAccount $account, string $source): TradingAccount
+    {
+        if ($account->platform_slug !== 'mt5') {
+            return $account;
+        }
+
+        if ($account->challenge_status !== 'failed' || ! (bool) $account->final_state_locked) {
+            return $account;
+        }
+
+        $eventKey = (string) data_get($account->meta, 'mt5_deactivation.current_event_key');
+
+        if ($eventKey === '') {
+            $eventKey = 'fail_'.str((string) ($account->failure_reason ?: 'rule_violation'))->slug('_');
+        }
+
+        return $this->deactivationService->retryFinalStateBridge($account, $eventKey, [
+            'reason' => (string) ($account->failure_reason ?: 'rule_violation'),
+            'completed_phase' => $account->stage ?: 'Challenge',
+            'final_status' => 'failed',
+            'failure_reason' => $account->failure_reason,
+            'source' => $source,
+        ]);
+    }
+
+    /**
+     * @return array{status: string|null, source: string|null, bridge_status: mixed, executed_at: mixed}
+     */
+    private function deactivationSummary(TradingAccount $account): array
+    {
+        $eventKey = (string) data_get($account->meta, 'mt5_deactivation.current_event_key', '');
+        $current = (array) data_get($account->meta, 'mt5_deactivation.current', []);
+        $event = $eventKey !== ''
+            ? (array) data_get($account->meta, "mt5_deactivation.events.{$eventKey}", [])
+            : [];
+
+        return [
+            'status' => (string) ($event['status'] ?? $current['status'] ?? $account->platform_status ?: '') ?: null,
+            'source' => (string) ($event['source'] ?? $current['source'] ?? '') ?: null,
+            'bridge_status' => $event['bridge_status'] ?? $current['bridge_status'] ?? null,
+            'executed_at' => $event['executed_at'] ?? $current['executed_at'] ?? null,
         ];
     }
 
