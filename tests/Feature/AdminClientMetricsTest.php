@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use App\Models\User;
+use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
+use App\Support\ChallengeCalculationBreakdown;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -75,10 +77,61 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('1.10000')
             ->assertSee('1.09000')
             ->assertSee('1.12000')
+            ->assertSee('May 09, 2026 09:00')
+            ->assertSee('Ongoing')
+            ->assertSee('May 08, 2026 08:00')
+            ->assertSee('May 08, 2026 10:00')
             ->assertSee('-$3.50')
             ->assertSee('$120.00')
+            ->assertSee('Realized P/L')
+            ->assertSee('Floating P/L')
             ->assertSee('open')
             ->assertSee('closed');
+    }
+
+    public function test_metaapi_deal_execution_time_maps_to_closed_trade_close_time(): void
+    {
+        [, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+
+        $snapshot->forceFill([
+            'payload' => [
+                'open_positions' => [[
+                    'position_id' => 'OPEN-TIME-1',
+                    'symbol' => 'EURUSD',
+                    'type' => 'POSITION_TYPE_BUY',
+                    'volume' => 1,
+                    'time' => '2026-05-09T09:15:00Z',
+                    'profit' => 12.5,
+                    'commission' => -0.50,
+                    'swap' => 0,
+                ]],
+                'history_deals' => [[
+                    'id' => 'DEAL-TIME-1',
+                    'symbol' => 'GBPUSD',
+                    'type' => 'DEAL_TYPE_SELL',
+                    'volume' => 0.5,
+                    'time' => '2026-05-09T10:45:00Z',
+                    'profit' => 36,
+                    'commission' => -2,
+                    'swap' => -1,
+                ]],
+            ],
+        ])->save();
+
+        $panel = app(TradeHistoryPanelBuilder::class)->build($account);
+        $openRow = collect($panel['rows'])->firstWhere('id', 'OPEN-TIME-1');
+        $closedRow = collect($panel['rows'])->firstWhere('id', 'DEAL-TIME-1');
+
+        $this->assertSame('May 09, 2026 09:15', $openRow['open_date']);
+        $this->assertSame('Ongoing', $openRow['close_date']);
+        $this->assertSame('$12.50', $openRow['profit']);
+        $this->assertSame('—', $closedRow['open_date']);
+        $this->assertSame('May 09, 2026 10:45', $closedRow['close_date']);
+        $this->assertSame('$36.00', $closedRow['profit']);
+        $this->assertSame('-$2.00', $closedRow['commission']);
+        $this->assertSame('-$1.00', $closedRow['swap']);
+        $this->assertSame('$33.00', $closedRow['net_result']);
     }
 
     public function test_breach_closed_trade_rows_are_labeled_without_hiding_profit(): void
@@ -348,6 +401,64 @@ class AdminClientMetricsTest extends TestCase
             ->assertSee('$100,000.00')
             ->assertSee('Profit target progress')
             ->assertSee('0.0%');
+    }
+
+    public function test_daily_loss_uses_intraday_high_water_equity_even_when_balance_is_profitable(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+
+        $account->forceFill([
+            'account_size' => 10000,
+            'starting_balance' => 10000,
+            'phase_starting_balance' => 10000,
+            'balance' => 10036,
+            'equity' => 10000,
+            'profit_loss' => -36,
+            'total_profit' => 36,
+            'daily_drawdown_limit_amount' => 500,
+            'rule_state' => [
+                'broker_phase_reference_balance' => 10000,
+                'highest_challenge_equity_today' => 10540.06,
+                'rules' => [
+                    'daily_drawdown_limit_amount' => 500,
+                    'max_drawdown_limit_amount' => 1000,
+                ],
+            ],
+        ])->save();
+
+        $snapshot = $account->balanceSnapshots()->create([
+            'snapshot_at' => now()->addSecond(),
+            'balance' => 10036,
+            'equity' => 10000,
+            'profit_loss' => -36,
+            'total_profit' => 36,
+            'today_profit' => 36,
+            'payload' => [
+                'broker_phase_reference_balance' => 10000,
+                'balance' => 10036,
+                'equity' => 10000,
+                'open_positions' => [],
+                'trade_history' => [],
+            ],
+        ]);
+
+        $calculation = app(ChallengeCalculationBreakdown::class)->forAccount($account, $snapshot);
+
+        $this->assertSame(36.0, $calculation['realized_profit']);
+        $this->assertSame(10540.06, $calculation['highest_challenge_equity_today']);
+        $this->assertSame(540.06, $calculation['daily_loss_used']);
+        $this->assertTrue($calculation['daily_breach']);
+        $this->assertSame(
+            'max(today_highest_challenge_equity - current_challenge_equity, 0)',
+            $calculation['formula']['daily_loss_used']
+        );
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('Highest challenge equity today')
+            ->assertSee('$10,540.06')
+            ->assertSee('Daily loss from intraday high')
+            ->assertSee('$540.06 / $500.00');
     }
 
     public function test_admin_client_show_uses_challenge_balance_not_raw_mt5_balance(): void

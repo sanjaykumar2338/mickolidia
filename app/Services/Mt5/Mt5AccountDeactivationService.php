@@ -5,6 +5,8 @@ namespace App\Services\Mt5;
 use App\Models\TradingAccount;
 use App\Models\TradingAccountSyncLog;
 use Illuminate\Http\Client\Response;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -320,7 +322,12 @@ class Mt5AccountDeactivationService
             }
 
             if ($httpRetries > 0) {
-                $request = $request->retry($httpRetries, $retrySleepMs, throw: true);
+                $request = $request->retry(
+                    $httpRetries,
+                    $retrySleepMs,
+                    when: fn (Throwable $exception): bool => $exception instanceof ConnectionException,
+                    throw: true,
+                );
             }
 
             Log::info('MT5 deactivation bridge request firing.', [
@@ -408,13 +415,19 @@ class Mt5AccountDeactivationService
             ]);
         } catch (Throwable $exception) {
             report($exception);
+            $bridgeStatus = $exception instanceof RequestException && $exception->response instanceof Response
+                ? $exception->response->status()
+                : null;
+            $bridgeResponse = $exception instanceof RequestException && $exception->response instanceof Response
+                ? $this->sanitizePayload($this->responsePayload($exception->response))
+                : null;
 
             return $this->markBridgeFailure(
                 account: $account,
                 eventKey: $eventKey,
-                reason: $exception->getMessage(),
-                bridgeStatus: null,
-                bridgeResponse: null,
+                reason: $bridgeStatus !== null ? 'Bridge returned HTTP '.$bridgeStatus.'.' : $exception->getMessage(),
+                bridgeStatus: $bridgeStatus,
+                bridgeResponse: $bridgeResponse,
                 requestPayload: $payload,
             );
         }

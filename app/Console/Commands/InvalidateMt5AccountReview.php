@@ -313,7 +313,7 @@ class InvalidateMt5AccountReview extends Command
             'platform_login' => self::TARGET_LOGIN,
             'platform_account_id' => self::TARGET_LOGIN,
             'platform_environment' => $account->platform_environment ?: ($poolEntry instanceof Mt5AccountPoolEntry ? $poolEntry->server : null),
-            'status' => 'Failed',
+            'status' => 'Breached',
             'account_status' => 'failed',
             'challenge_status' => 'failed',
             'failed_at' => $failedAt,
@@ -491,7 +491,7 @@ class InvalidateMt5AccountReview extends Command
         $this->newLine();
         $this->info($applied ? 'Final verification' : 'Planned final verification');
         $this->table(['Check', 'Result'], [
-            ['account_is_failed_invalid', $this->boolString($account instanceof TradingAccount && $account->status === 'Failed' && $account->account_status === 'failed' && $account->challenge_status === 'failed')],
+            ['account_is_failed_invalid', $this->boolString($account instanceof TradingAccount && in_array($account->status, ['Breached', 'Failed'], true) && $account->account_status === 'failed' && $account->challenge_status === 'failed')],
             ['failure_reason', $account instanceof TradingAccount ? (string) ($account->failure_reason ?: '-') : '-'],
             ['trading_blocked', $this->boolString($account instanceof TradingAccount && (bool) $account->trading_blocked)],
             ['final_state_locked', $this->boolString($account instanceof TradingAccount && (bool) $account->final_state_locked)],

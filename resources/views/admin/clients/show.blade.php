@@ -10,6 +10,9 @@
             'failed', 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
             default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
         };
+        $storedServerName = null;
+        $hasStoredPassword = false;
+        $hasStoredInvestorPassword = false;
     @endphp
 
     <div class="flex flex-wrap items-start justify-between gap-4">
@@ -161,7 +164,10 @@
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Challenge Status</dt>
-                            <dd class="mt-2 font-semibold text-white">{{ str($selectedAccount->challenge_status ?: $selectedAccount->account_status)->replace('_', ' ')->title() }}</dd>
+                            <dd class="mt-2 font-semibold text-white">
+                                @php($selectedAccountStatus = (string) ($selectedAccount->challenge_status ?: $selectedAccount->account_status))
+                                {{ $selectedAccountStatus === 'failed' ? 'Breached' : str($selectedAccountStatus)->replace('_', ' ')->title() }}
+                            </dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Consistency Status</dt>
@@ -196,7 +202,7 @@
                             <dd class="mt-2 font-semibold text-white">${{ number_format((float) $selectedAccount->daily_drawdown, 2) }}</dd>
                         </div>
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                            <dt class="text-slate-400">Daily Loss Used / Remaining</dt>
+                            <dt class="text-slate-400">Daily Loss From Intraday High / Remaining</dt>
                             <dd class="mt-2 font-semibold text-white">
                                 {{ $selectedAccountMetrics['daily_loss_used'] }}
                                 /

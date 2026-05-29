@@ -55,11 +55,21 @@ class MetaApiLiveSyncService
         $startedAt = now();
         $account = $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account;
         $login = (string) ($account->platform_login ?: $account->platform_account_id ?: $account->account_reference);
+
+        if ($this->isFinalLockedAccount($account)) {
+            return $this->skipFinalLockedAccount($account, $startedAt, $login);
+        }
+
         $repair = $this->mappingRepairService->repairAccount($account, [
             'metaapi_account_id' => $this->manualMetaApiAccountId($options),
             'allow_api_lookup' => true,
         ]);
         $account = $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account;
+
+        if ($this->isFinalLockedAccount($account)) {
+            return $this->skipFinalLockedAccount($account, $startedAt, $login);
+        }
+
         $metaApiAccountId = $this->manualMetaApiAccountId($options)
             ?? ($this->looksLikeMetaApiAccountId((string) ($repair['metaapi_account_id'] ?? null)) ? (string) $repair['metaapi_account_id'] : null)
             ?? $this->metaApiAccountIdFor($account);
@@ -600,6 +610,92 @@ class MetaApiLiveSyncService
             'sync_source' => 'metaapi',
             'last_sync_started_at' => $startedAt,
         ])->save();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function skipFinalLockedAccount(TradingAccount $account, Carbon $startedAt, string $login): array
+    {
+        $completedAt = now();
+        $reason = $account->challenge_status === 'failed' || filled((string) $account->failure_reason)
+            ? 'breached_account_sync_stopped'
+            : 'final_state_account_sync_stopped';
+        $account = $this->retryFinalStateDeactivationIfNeeded($account, 'metaapi_sync_stopped_final_state');
+        $deactivation = $this->deactivationSummary($account);
+
+        $log = $this->createSyncLog($account, $startedAt, [
+            'login' => $login,
+            'reason' => $reason,
+            'final_state_locked' => (bool) $account->final_state_locked,
+            'challenge_status' => $account->challenge_status,
+            'account_status' => $account->account_status,
+        ]);
+        $this->completeSyncLog($log, 'skipped', 'MetaApi live sync skipped because account is locked in a final state.', [
+            'reason' => $reason,
+            'stopped_at' => $completedAt->toIso8601String(),
+        ]);
+
+        $meta = is_array($account->meta) ? $account->meta : [];
+        $meta['metaapi_lifecycle'] = array_merge((array) data_get($meta, 'metaapi_lifecycle', []), [
+            'state' => $account->challenge_status === 'failed' ? 'breached' : 'final_state_locked',
+            'sync_stopped' => true,
+            'sync_stop_reason' => $reason,
+            'sync_stopped_at' => $completedAt->toIso8601String(),
+        ]);
+        $meta['metaapi_onboarding'] = array_merge((array) data_get($meta, 'metaapi_onboarding', []), [
+            'state' => $account->challenge_status === 'failed' ? 'breached' : 'final_state_locked',
+            'ready_to_trade' => false,
+            'phase_1_ready' => false,
+            'phase_2_ready' => false,
+            'sync_stopped' => true,
+        ]);
+
+        $account->forceFill([
+            'sync_status' => 'stopped',
+            'sync_source' => 'metaapi',
+            'sync_error' => $reason,
+            'sync_error_at' => $completedAt,
+            'last_sync_started_at' => $startedAt,
+            'last_sync_completed_at' => $completedAt,
+            'meta' => $meta,
+        ])->save();
+
+        Log::info('MetaApi live sync skipped for final-state account.', [
+            'trading_account_id' => $account->id,
+            'account_reference' => $account->account_reference,
+            'login' => $login,
+            'reason' => $reason,
+            'challenge_status' => $account->challenge_status,
+            'account_status' => $account->account_status,
+        ]);
+
+        return [
+            'status' => 'skipped',
+            'validation_state' => 'SYNC_STOPPED',
+            'trading_account_id' => $account->id,
+            'login' => $login,
+            'reason' => $reason,
+            'final_state_locked' => (bool) $account->final_state_locked,
+            'challenge_status' => $account->challenge_status,
+            'account_status' => $account->account_status,
+            'phase_1b_ready' => false,
+            'phase_2_ready' => false,
+            'sync_log_id' => $log->id,
+            'mt5_deactivation_status' => $deactivation['status'],
+            'mt5_deactivation_source' => $deactivation['source'],
+            'mt5_deactivation_bridge_status' => $deactivation['bridge_status'],
+            'mt5_deactivation_executed_at' => $deactivation['executed_at'],
+        ];
+    }
+
+    private function isFinalLockedAccount(TradingAccount $account): bool
+    {
+        return (bool) $account->final_state_locked
+            || (bool) $account->trading_blocked
+            || in_array((string) $account->challenge_status, ['failed', 'passed', 'funded'], true)
+            || in_array((string) $account->account_status, ['failed', 'passed', 'funded'], true)
+            || filled((string) $account->failure_reason);
     }
 
     /**

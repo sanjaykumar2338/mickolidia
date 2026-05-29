@@ -2176,6 +2176,7 @@ class ChallengeDashboardTest extends TestCase
 
             $account->refresh();
 
+            $this->assertSame('Breached', $account->status);
             $this->assertSame('failed', $account->challenge_status);
             $this->assertSame('daily_loss_breached', $account->failure_reason);
             $this->assertTrue((bool) $account->trading_blocked);
@@ -2195,6 +2196,28 @@ class ChallengeDashboardTest extends TestCase
                 'status' => 'success',
             ]);
             Mail::assertSent(ChallengeFailedMail::class, 1);
+
+            Http::fake([
+                '*' => Http::response(['unexpected' => true], 500),
+            ]);
+
+            $stoppedResult = app(MetaApiLiveSyncService::class)->syncAccount($account->fresh());
+
+            $this->assertSame('skipped', $stoppedResult['status']);
+            $this->assertSame('breached_account_sync_stopped', $stoppedResult['reason']);
+
+            $account->refresh();
+
+            $this->assertSame('stopped', $account->sync_status);
+            $this->assertSame('breached_account_sync_stopped', $account->sync_error);
+            $this->assertTrue((bool) data_get($account->meta, 'metaapi_lifecycle.sync_stopped'));
+            $this->assertFalse((bool) data_get($account->meta, 'metaapi_onboarding.ready_to_trade'));
+            $this->assertDatabaseHas('trading_account_sync_logs', [
+                'trading_account_id' => $account->id,
+                'platform' => 'metaapi',
+                'status' => 'skipped',
+                'message' => 'MetaApi live sync skipped because account is locked in a final state.',
+            ]);
         } finally {
             Carbon::setTestNow();
         }
@@ -2267,7 +2290,7 @@ class ChallengeDashboardTest extends TestCase
                 'admin.username' => 'admin',
             ])->get(route('admin.trading-accounts.metrics', ['account' => $account]))
                 ->assertOk()
-                ->assertSee('Failed / Failed')
+                ->assertSee('Breached / Breached')
                 ->assertSee('Daily breach')
                 ->assertSee('Yes')
                 ->assertSee('Daily Loss Limit Breached')
@@ -2280,7 +2303,7 @@ class ChallengeDashboardTest extends TestCase
 
             $this->assertSame('failed', $account->challenge_status);
             $this->assertSame('failed', $account->account_status);
-            $this->assertSame('Failed', $account->status);
+            $this->assertSame('Breached', $account->status);
             $this->assertSame('daily_loss_breached', $account->failure_reason);
             $this->assertTrue((bool) $account->trading_blocked);
             $this->assertTrue((bool) $account->final_state_locked);
@@ -2809,7 +2832,7 @@ class ChallengeDashboardTest extends TestCase
                 && $mail->details['rule'] === 'Daily loss limit'
                 && $mail->details['reason'] === 'Daily loss limit'
                 && $mail->details['violation_timestamp'] === $account->failed_at?->toDateTimeString()
-                && $mail->details['final_account_status'] === 'Failed';
+                && $mail->details['final_account_status'] === 'Breached';
         });
         Mail::assertSent(TrustpilotReviewRequestMail::class, 1);
         Mail::assertNotSent(ChallengePhasePassSupportNotificationMail::class);
@@ -2931,7 +2954,7 @@ class ChallengeDashboardTest extends TestCase
 
         $this->assertSame('failed', $account->challenge_status);
         $this->assertSame('failed', $account->account_status);
-        $this->assertSame('Failed', $account->status);
+        $this->assertSame('Breached', $account->status);
         $this->assertSame('9500.00', (string) $account->equity);
         $this->assertTrue((bool) $account->final_state_locked);
     }
@@ -3199,7 +3222,7 @@ class ChallengeDashboardTest extends TestCase
         Mail::assertSent(ChallengePhasePassSupportNotificationMail::class, function (ChallengePhasePassSupportNotificationMail $mail) use ($account): bool {
             return $mail->hasTo((string) config('wolforix.support.email'))
                 && $mail->details['account_reference'] === $account->account_reference
-                && $mail->details['final_status'] === 'Failed'
+                && $mail->details['final_status'] === 'Breached'
                 && $mail->details['reason'] === 'Daily loss limit'
                 && $mail->details['mt5_deactivation_status'] === 'Disable Pending Ack';
         });
@@ -3494,7 +3517,7 @@ class ChallengeDashboardTest extends TestCase
 
         $result = app(MetaApiLiveSyncService::class)->syncByLogin('335400');
 
-        $this->assertSame('error', $result['status']);
+        $this->assertSame('skipped', $result['status']);
         $this->assertSame('disabled', $result['mt5_deactivation_status']);
         $this->assertSame('bridge_request', $result['mt5_deactivation_source']);
         $this->assertSame(200, $result['mt5_deactivation_bridge_status']);
@@ -3700,7 +3723,7 @@ class ChallengeDashboardTest extends TestCase
             ->assertSee('Sync status')
             ->assertSee('connected')
             ->assertSee('Breach reason')
-            ->assertSee('Daily Loss Breached')
+            ->assertSee('Daily Loss Limit Breached')
             ->assertSee('Breach rule')
             ->assertSee('Equity at breach')
             ->assertSee('$9,500.00')
@@ -4851,7 +4874,6 @@ class ChallengeDashboardTest extends TestCase
                 ->assertSee('-$584.13')
                 ->assertSee('Today P/L')
                 ->assertSee('$1.50')
-                ->assertSee('No breach')
                 ->assertDontSee('$99,415.87');
         }
     }

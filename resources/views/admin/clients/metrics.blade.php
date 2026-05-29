@@ -193,7 +193,7 @@
             <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                 <thead class="bg-white/3 text-xs uppercase tracking-[0.18em] text-slate-400">
                     <tr>
-                        @foreach (['Ticket / order', 'Symbol', 'Type', 'Lot size', 'Open price', 'Close price', 'Stop loss', 'Take profit', 'Open time', 'Close time', 'Commission', 'Swap', 'Profit', 'Floating PnL', 'Status'] as $heading)
+                        @foreach (['Ticket / order', 'Symbol', 'Type', 'Lot size', 'Open price', 'Close price', 'Stop loss', 'Take profit', 'Open time', 'Close time', 'Commission', 'Swap', 'Realized P/L', 'Floating P/L', 'Status'] as $heading)
                             <th class="px-4 py-3 font-semibold">{{ $heading }}</th>
                         @endforeach
                     </tr>
@@ -213,7 +213,7 @@
                             <td class="px-4 py-4">{{ $row['close_date'] }}</td>
                             <td class="px-4 py-4">{{ $row['commission'] ?? '—' }}</td>
                             <td class="px-4 py-4">{{ $row['swap'] ?? '—' }}</td>
-                            <td class="px-4 py-4 font-semibold text-white">{{ $row['profit'] }}</td>
+                            <td class="px-4 py-4 font-semibold text-white">{{ $row['filter'] === 'closed' ? $row['profit'] : '—' }}</td>
                             <td class="px-4 py-4 font-semibold text-white">{{ $row['filter'] === 'open' ? $row['profit'] : '—' }}</td>
                             <td class="px-4 py-4">{{ ($row['auto_closed_by_breach'] ?? false) ? 'auto closed by breach' : strtolower((string) ($row['status'] ?? ($row['filter'] === 'open' ? 'open' : 'closed'))) }}</td>
                         </tr>

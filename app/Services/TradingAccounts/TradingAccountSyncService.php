@@ -35,6 +35,10 @@ class TradingAccountSyncService
             'started_at' => $startedAt,
         ]);
 
+        if ($this->isFinalLockedAccount($account)) {
+            return $this->markSkipped($account, $log, 'Trading account sync stopped because account is locked in a final state.');
+        }
+
         if (! $platform->isEnabled()) {
             return $this->markSkipped($account, $log, 'Trading sync is disabled by configuration.');
         }
@@ -165,5 +169,14 @@ class TradingAccountSyncService
             'account_id' => $account->id,
             'message' => $message,
         ];
+    }
+
+    private function isFinalLockedAccount(TradingAccount $account): bool
+    {
+        return (bool) $account->final_state_locked
+            || (bool) $account->trading_blocked
+            || in_array((string) $account->challenge_status, ['failed', 'passed', 'funded'], true)
+            || in_array((string) $account->account_status, ['failed', 'passed', 'funded'], true)
+            || filled((string) $account->failure_reason);
     }
 }

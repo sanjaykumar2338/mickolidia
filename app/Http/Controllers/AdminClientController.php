@@ -1197,9 +1197,10 @@ class AdminClientController extends Controller
                 ['label' => 'Challenge balance / equity', 'value' => $this->formatMoney((float) $calculation['challenge_balance']).' / '.$this->formatMoney((float) $calculation['challenge_equity'])],
                 ['label' => 'Realized P/L', 'value' => $this->formatMoney((float) $calculation['realized_profit'])],
                 ['label' => 'Today Closed P/L', 'value' => $this->formatMoney((float) $calculation['today_profit'])],
+                ['label' => 'Highest challenge equity today', 'value' => $this->formatMoney((float) ($calculation['highest_challenge_equity_today'] ?? $calculation['challenge_equity']))],
                 ['label' => 'Profit target', 'value' => $this->formatMoney((float) $calculation['profit_target_amount']).' · '.number_format((float) $calculation['profit_target_progress_percent'], 1).'%'],
                 ['label' => 'Profit target met', 'value' => (bool) $calculation['profit_target_met'] ? 'Yes' : 'No'],
-                ['label' => 'Daily loss', 'value' => $this->formatMoney((float) $calculation['daily_loss_used']).' / '.$this->formatMoney((float) $calculation['daily_loss_limit'])],
+                ['label' => 'Daily loss from intraday high', 'value' => $this->formatMoney((float) $calculation['daily_loss_used']).' / '.$this->formatMoney((float) $calculation['daily_loss_limit'])],
                 ['label' => 'Daily breach', 'value' => (bool) $calculation['daily_breach'] ? 'Yes' : 'No'],
                 ['label' => 'Max drawdown', 'value' => $this->formatMoney((float) $calculation['max_drawdown_used']).' / '.$this->formatMoney((float) $calculation['max_drawdown_limit'])],
                 ['label' => 'Max breach', 'value' => (bool) $calculation['max_breach'] ? 'Yes' : 'No'],
@@ -1991,7 +1992,13 @@ class AdminClientController extends Controller
 
     private function humanizeStatus(string $status): string
     {
-        return str($status)->replace('_', ' ')->title()->toString();
+        $normalized = str($status)->replace('_', ' ')->lower()->toString();
+
+        if ($normalized === 'failed') {
+            return 'Breached';
+        }
+
+        return str($normalized)->title()->toString();
     }
 
     private function breachReasonLabel(string $reason): string

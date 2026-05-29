@@ -476,9 +476,9 @@ class DashboardController extends Controller
                     'tone' => $targetProgress >= 100 ? 'emerald' : 'amber',
                 ],
                 [
-                    'label' => __('Daily loss used'),
+                    'label' => __('Daily loss from intraday high'),
                     'value' => $this->formatMoney((float) $account->daily_loss_used),
-                    'hint' => __('Limit: :value', ['value' => $this->formatMoney((float) $account->daily_drawdown_limit_amount)]),
+                    'hint' => __('Drop from today\'s highest challenge equity. Limit: :value', ['value' => $this->formatMoney((float) $account->daily_drawdown_limit_amount)]),
                     'tone' => (float) $account->daily_loss_used >= (float) $account->daily_drawdown_limit_amount && (float) $account->daily_drawdown_limit_amount > 0 ? 'rose' : 'sky',
                 ],
                 [
@@ -597,13 +597,13 @@ class DashboardController extends Controller
                 'tone' => 'amber',
             ],
             [
-                'label' => __('Daily loss usage'),
+                'label' => __('Daily loss from intraday high'),
                 'value' => $this->safePercentage((float) $account->daily_loss_used, $dailyLossLimit),
                 'value_label' => number_format($this->safePercentage((float) $account->daily_loss_used, $dailyLossLimit), 1).'%',
                 'current' => $this->formatMoney((float) $account->daily_loss_used),
                 'target' => $this->formatMoney($dailyLossLimit),
                 'target_label' => __('Limit'),
-                'meta' => __('Remaining :amount', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
+                'meta' => __('Remaining :amount before daily limit', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
                 'tone' => ((float) $account->daily_loss_used) >= ($dailyLossLimit * 0.8) && $dailyLossLimit > 0 ? 'rose' : 'sky',
             ],
             [
@@ -765,9 +765,9 @@ class DashboardController extends Controller
                 'tone' => (int) $account->trading_days_completed >= (int) $account->minimum_trading_days ? 'emerald' : 'amber',
             ],
             [
-                'label' => __('Daily loss used'),
+                'label' => __('Daily loss from intraday high'),
                 'value' => $this->formatMoney((float) $account->daily_loss_used),
-                'hint' => __('Consumed daily loss room'),
+                'hint' => __('Drop from today\'s highest challenge equity'),
                 'tone' => 'slate',
             ],
             [
@@ -3085,6 +3085,11 @@ class DashboardController extends Controller
     private function humanizeStatus(string $status): string
     {
         $normalized = str($status)->replace('_', ' ')->lower()->toString();
+
+        if ($normalized === 'failed') {
+            return __('Breached');
+        }
+
         $translated = __($normalized);
 
         if ($translated !== $normalized) {

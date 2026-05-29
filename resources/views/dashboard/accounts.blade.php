@@ -311,7 +311,7 @@
 
                                 <dl class="mt-5 space-y-3 text-sm">
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
-                                        <dt class="text-slate-400">{{ __('Daily loss used') }}</dt>
+                                        <dt class="text-slate-400">{{ __('Daily loss from intraday high') }}</dt>
                                         <dd class="font-semibold text-white">{{ $account['daily_loss_used'] }} / {{ $account['daily_loss_limit'] }}</dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/6 bg-black/15 px-4 py-3">

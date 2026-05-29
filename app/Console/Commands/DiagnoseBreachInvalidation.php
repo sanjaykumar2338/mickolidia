@@ -140,7 +140,7 @@ class DiagnoseBreachInvalidation extends Command
                 : [];
 
             $lockedAccount->forceFill(array_merge($manualEvidenceFill, [
-                'status' => 'Failed',
+                'status' => 'Breached',
                 'account_status' => 'failed',
                 'challenge_status' => 'failed',
                 'failure_reason' => $reason,

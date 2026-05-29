@@ -273,6 +273,7 @@ class ChallengeFinalStateMailer
     private function reasonLabel(string $reason): string
     {
         return match ($reason) {
+            'failed' => 'Breached',
             'daily_loss_breached' => 'Daily loss limit',
             'max_drawdown_breached' => 'Maximum drawdown limit',
             default => str($reason)->replace('_', ' ')->title()->toString(),

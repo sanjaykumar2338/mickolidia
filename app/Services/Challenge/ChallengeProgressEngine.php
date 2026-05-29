@@ -169,7 +169,7 @@ class ChallengeProgressEngine
                 serverDay: $serverDay,
                 evaluatedAt: $evaluatedAt,
             ), [
-                'status' => 'Failed',
+                'status' => 'Breached',
                 'failure_reason' => $failureReason,
                 'failure_context' => [
                     'server_day' => $serverDay,

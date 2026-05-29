@@ -354,7 +354,7 @@ class TradingAccountSnapshotApplyService
 
         if ($isFailed) {
             return [
-                'status' => 'Failed',
+                'status' => 'Breached',
                 'account_status' => 'failed',
                 'challenge_status' => 'failed',
                 'failure_reason' => filled((string) $account->failure_reason)

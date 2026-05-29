@@ -241,7 +241,7 @@ class TradeHistoryPanelBuilder
 
     public function tradeCloseTimestampForRow(array $row): ?Carbon
     {
-        return $this->tradeCloseTimestamp($row);
+        return $this->tradeCloseTimestamp($row, true);
     }
 
     public function tradeRealizedResultForRow(array $row): ?float
@@ -263,8 +263,8 @@ class TradeHistoryPanelBuilder
         array $autoCloseReferences = [],
         array $autoCloseContext = [],
     ): array {
-        $openedAt = $this->tradeOpenTimestamp($row);
-        $closedAt = $isOpen ? null : $this->tradeCloseTimestamp($row);
+        $openedAt = $this->tradeOpenTimestamp($row, $isOpen);
+        $closedAt = $isOpen ? null : $this->tradeCloseTimestamp($row, true);
         $commission = $this->tradeCommissionValue($row);
         $swap = $this->tradeSwapValue($row);
         $pnl = $this->tradePnlValue($row);
@@ -1064,15 +1064,13 @@ class TradeHistoryPanelBuilder
         return $value !== null ? (float) $value : null;
     }
 
-    private function tradeOpenTimestamp(array $row): ?Carbon
+    private function tradeOpenTimestamp(array $row, bool $allowGenericTime = true): ?Carbon
     {
-        foreach ([
+        $keys = [
             'open_timestamp',
             'open_time',
             'openTime',
             'openTimeMsc',
-            'time',
-            'Time',
             'time_open',
             'TimeOpen',
             'opened_at',
@@ -1080,8 +1078,13 @@ class TradeHistoryPanelBuilder
             'raw.tradeData.openTimestamp',
             'raw.open_time',
             'raw.openTime',
-            'raw.time',
-        ] as $key) {
+        ];
+
+        if ($allowGenericTime) {
+            array_push($keys, 'time', 'Time', 'timeMsc', 'raw.time', 'raw.Time', 'raw.timeMsc');
+        }
+
+        foreach ($keys as $key) {
             $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
 
             if ($timestamp instanceof Carbon) {
@@ -1092,9 +1095,9 @@ class TradeHistoryPanelBuilder
         return null;
     }
 
-    private function tradeCloseTimestamp(array $row): ?Carbon
+    private function tradeCloseTimestamp(array $row, bool $allowGenericTime = false): ?Carbon
     {
-        foreach ([
+        $keys = [
             'close_timestamp',
             'closed_at',
             'close_time',
@@ -1109,7 +1112,13 @@ class TradeHistoryPanelBuilder
             'raw.executionTimestamp',
             'raw.closeTime',
             'raw.executionTime',
-        ] as $key) {
+        ];
+
+        if ($allowGenericTime) {
+            array_push($keys, 'time', 'Time', 'timeMsc', 'raw.time', 'raw.Time', 'raw.timeMsc');
+        }
+
+        foreach ($keys as $key) {
             $timestamp = $this->parseTradeTimestamp(Arr::get($row, $key));
 
             if ($timestamp instanceof Carbon) {

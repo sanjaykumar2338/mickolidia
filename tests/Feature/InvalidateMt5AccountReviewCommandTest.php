@@ -83,7 +83,7 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
         $this->assertStringContainsString('SAFE INVALIDATION COMPLETE', $output);
 
         $accountAfter = $account->fresh(['challengePurchase']);
-        $this->assertSame('Failed', $accountAfter->status);
+        $this->assertSame('Breached', $accountAfter->status);
         $this->assertSame('failed', $accountAfter->account_status);
         $this->assertSame('failed', $accountAfter->challenge_status);
         $this->assertSame('failed', $accountAfter->challengePurchase?->account_status);
@@ -128,9 +128,9 @@ class InvalidateMt5AccountReviewCommandTest extends TestCase
             ->latest('id')
             ->firstOrFail();
 
-        $this->assertSame('MT5 deactivation queued for EA acknowledgement.', $deactivationLog->message);
+        $this->assertSame('MT5 deactivation bridge endpoint is not configured; queued for EA acknowledgement only.', $deactivationLog->message);
         $this->assertSame('fail_scalping_rule_violation', data_get($deactivationLog->payload, 'event'));
-        $this->assertSame('335374', data_get($deactivationLog->payload, 'platform_login'));
+        $this->assertSame('335374', data_get($deactivationLog->payload, 'request.platform_login'));
     }
 
     public function test_invalidate_mt5_account_review_refuses_unexpected_account_reference_without_writes(): void

@@ -12,6 +12,7 @@ class ChallengeBreachFinalizer
 {
     public function __construct(
         private readonly Mt5AccountDeactivationService $deactivationService,
+        private readonly ChallengeFinalStateMailer $finalStateMailer,
     ) {}
 
     /**
@@ -53,7 +54,7 @@ class ChallengeBreachFinalizer
             $previousPhaseIndex = (int) $lockedAccount->phase_index;
 
             $lockedAccount->forceFill([
-                'status' => 'Failed',
+                'status' => 'Breached',
                 'account_status' => 'failed',
                 'challenge_status' => 'failed',
                 'failure_reason' => $reason,
@@ -109,7 +110,7 @@ class ChallengeBreachFinalizer
 
         $eventKey = 'fail_'.str($reason)->slug('_');
 
-        return $updatedAccount->is_trial
+        $updatedAccount = $updatedAccount->is_trial
             ? $this->deactivationService->requestForTrialFailure($updatedAccount, 'trial_'.$eventKey, [
                 'reason' => $reason,
                 'final_status' => 'failed',
@@ -122,6 +123,10 @@ class ChallengeBreachFinalizer
                 'failure_reason' => $reason,
                 'source' => $source,
             ]);
+
+        $this->finalStateMailer->sendIfNeeded($updatedAccount);
+
+        return $updatedAccount->fresh(['challengePurchase']) ?? $updatedAccount;
     }
 
     /**
