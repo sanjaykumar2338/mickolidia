@@ -182,6 +182,7 @@ class MetaQuotesPoolProvisioningService
             'allocated_accounts' => (clone $allocatedRows)->count(),
             'stale_allocations' => $staleAllocations,
             'missing_metaapi_mapping' => $missingMetaApiMapping,
+            'missing_metaapi_mappings' => $this->missingMetaApiMappingRows($options)->values()->all(),
             'duplicate_login_risk' => $duplicateLoginRows->count(),
             'duplicate_logins' => $duplicateLoginRows->take(10)->values()->all(),
             'onboarding_blockers' => array_values(array_unique($blockers)),
@@ -527,6 +528,65 @@ class MetaQuotesPoolProvisioningService
                 'login' => (string) $row->login,
                 'count' => (int) $row->aggregate_count,
             ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function missingMetaApiMappingRows(array $options): Collection
+    {
+        return (clone $this->scopedPoolQuery($options))
+            ->with('allocatedTradingAccount')
+            ->whereNotNull('allocated_trading_account_id')
+            ->where(function (Builder $query): void {
+                $query->whereNull('meta->metaapi_account_id')
+                    ->orWhere('meta->metaapi_account_id', '');
+            })
+            ->orderBy('allocated_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function (Mt5AccountPoolEntry $entry): array {
+                $account = $entry->allocatedTradingAccount;
+                $accountMetaApiId = $account instanceof TradingAccount
+                    ? $this->firstMetaApiAccountId([
+                        data_get($account->meta, 'metaapi_account_id'),
+                        data_get($account->meta, 'mt5_sync.metaapi_account_id'),
+                        data_get($account->meta, 'mt5_pool_entry.metaapi_account_id'),
+                    ])
+                    : null;
+
+                return [
+                    'pool_entry_id' => $entry->id,
+                    'login' => $entry->login,
+                    'server' => $entry->server,
+                    'source_pool' => $entry->source_pool,
+                    'source_file' => $entry->source_file,
+                    'allocated_trading_account_id' => $entry->allocated_trading_account_id,
+                    'account_reference' => $account?->account_reference,
+                    'account_status' => $account?->account_status,
+                    'challenge_status' => $account?->challenge_status,
+                    'pool_metaapi_uuid_state' => 'missing',
+                    'account_metaapi_uuid_state' => $accountMetaApiId !== null ? 'present' : 'missing',
+                    'expected_metaapi_uuid_state' => $accountMetaApiId !== null ? 'copy_from_trading_account' : 'lookup_required',
+                ];
+            });
+    }
+
+    /**
+     * @param  array<int, mixed>  $candidates
+     */
+    private function firstMetaApiAccountId(array $candidates): ?string
+    {
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+
+            if ((bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -16,6 +16,7 @@ use App\Models\TradingAccountSyncLog;
 use App\Models\User;
 use App\Services\MetaApi\MetaApiLiveSyncService;
 use App\Services\MetaApi\MetaApiOnboardingService;
+use App\Services\MetaQuotes\MetaQuotesPoolProvisioningService;
 use App\Services\Reviews\TrustpilotReviewRequestMailer;
 use App\Services\TradingAccounts\TradeHistoryPanelBuilder;
 use App\Support\Mt5ConnectorStatus;
@@ -2147,6 +2148,116 @@ class ChallengeDashboardTest extends TestCase
             'trading_account_id' => $account->id,
             'error_message' => 'metaapi_account_id_missing',
         ]);
+    }
+
+    public function test_metaquotes_pool_diagnostics_show_allocated_rows_missing_metaapi_mapping(): void
+    {
+        $account = $this->createMetaApiChallengeAccount('340147', [
+            'account_reference' => 'WFX-MT5-MISSING-MAP',
+            'meta' => [
+                'metaapi_account_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'mt5_sync' => [
+                    'metaapi_account_id' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                ],
+            ],
+        ]);
+
+        $entry = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340147',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'source_status' => 'assigned',
+                'source_file' => config('wolforix.mt5_account_pool.active_source_file'),
+                'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'meta' => [
+                    'broker' => 'FusionMarkets',
+                    'platform' => 'MT5',
+                ],
+            ]);
+
+        $diagnostic = app(MetaQuotesPoolProvisioningService::class)->diagnose([
+            'server' => 'FusionMarkets-Demo',
+        ]);
+
+        $this->assertSame(1, $diagnostic['missing_metaapi_mapping']);
+        $this->assertContains('missing_metaapi_mapping', $diagnostic['onboarding_blockers']);
+        $this->assertSame([
+            'pool_entry_id' => $entry->id,
+            'login' => '340147',
+            'server' => 'FusionMarkets-Demo',
+            'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+            'source_file' => config('wolforix.mt5_account_pool.active_source_file'),
+            'allocated_trading_account_id' => $account->id,
+            'account_reference' => 'WFX-MT5-MISSING-MAP',
+            'account_status' => $account->account_status,
+            'challenge_status' => $account->challenge_status,
+            'pool_metaapi_uuid_state' => 'missing',
+            'account_metaapi_uuid_state' => 'present',
+            'expected_metaapi_uuid_state' => 'copy_from_trading_account',
+        ], $diagnostic['missing_metaapi_mappings'][0]);
+    }
+
+    public function test_repair_metaquotes_pool_mappings_copies_existing_trading_account_uuid_to_pool_entry(): void
+    {
+        $metaApiAccountId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $account = $this->createMetaApiChallengeAccount('340148', [
+            'account_reference' => 'WFX-MT5-REPAIR-MAP',
+            'meta' => [
+                'metaapi_account_id' => $metaApiAccountId,
+                'mt5_sync' => [
+                    'metaapi_account_id' => $metaApiAccountId,
+                ],
+            ],
+        ]);
+
+        $entry = Mt5AccountPoolEntry::factory()
+            ->allocated()
+            ->create([
+                'login' => '340148',
+                'server' => 'FusionMarkets-Demo',
+                'account_size' => 10000,
+                'source_status' => 'assigned',
+                'source_file' => config('wolforix.mt5_account_pool.active_source_file'),
+                'source_pool' => Mt5AccountPoolEntry::SOURCE_POOL_CLIENT,
+                'allocated_trading_account_id' => $account->id,
+                'allocated_user_id' => $account->user_id,
+                'meta' => [
+                    'broker' => 'FusionMarkets',
+                    'platform' => 'MT5',
+                ],
+            ]);
+
+        $dryRunExit = Artisan::call('wolforix:repair-metaquotes-pool-mappings', [
+            '--server' => 'FusionMarkets-Demo',
+            '--no-api-lookup' => true,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $dryRunExit);
+        $this->assertStringContainsString('repair_available', Artisan::output());
+        $this->assertNull(data_get($entry->fresh()->meta, 'metaapi_account_id'));
+
+        $applyExit = Artisan::call('wolforix:repair-metaquotes-pool-mappings', [
+            '--server' => 'FusionMarkets-Demo',
+            '--no-api-lookup' => true,
+            '--confirm' => true,
+            '--json' => true,
+        ]);
+
+        $this->assertSame(0, $applyExit);
+        $this->assertStringContainsString('repaired', Artisan::output());
+        $this->assertSame($metaApiAccountId, data_get($entry->fresh()->meta, 'metaapi_account_id'));
+
+        $diagnostic = app(MetaQuotesPoolProvisioningService::class)->diagnose([
+            'server' => 'FusionMarkets-Demo',
+        ]);
+
+        $this->assertSame(0, $diagnostic['missing_metaapi_mapping']);
+        $this->assertSame([], $diagnostic['missing_metaapi_mappings']);
     }
 
     public function test_metaapi_daily_drawdown_breach_from_equity_locks_account_and_notifies(): void

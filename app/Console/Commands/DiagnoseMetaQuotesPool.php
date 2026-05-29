@@ -40,6 +40,26 @@ class DiagnoseMetaQuotesPool extends Command
         ]);
 
         $this->printList('Onboarding blockers', (array) data_get($diagnostic, 'onboarding_blockers', []));
+
+        $missingMappings = (array) data_get($diagnostic, 'missing_metaapi_mappings', []);
+
+        if ($missingMappings !== []) {
+            $this->newLine();
+            $this->info('Allocated accounts missing MetaApi mapping');
+            $this->table(
+                ['Pool row', 'Login', 'Account reference', 'Trading account', 'Pool UUID', 'Account UUID', 'Expected UUID state'],
+                collect($missingMappings)->map(fn (array $row): array => [
+                    (string) data_get($row, 'pool_entry_id', '-'),
+                    (string) data_get($row, 'login', '-'),
+                    (string) (data_get($row, 'account_reference') ?: '-'),
+                    (string) (data_get($row, 'allocated_trading_account_id') ?: '-'),
+                    (string) data_get($row, 'pool_metaapi_uuid_state', '-'),
+                    (string) data_get($row, 'account_metaapi_uuid_state', '-'),
+                    (string) data_get($row, 'expected_metaapi_uuid_state', '-'),
+                ])->all(),
+            );
+        }
+
         $this->printList('Recommendations', (array) data_get($diagnostic, 'recommendations', []));
 
         if ((bool) $this->option('json')) {
