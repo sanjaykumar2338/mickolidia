@@ -189,8 +189,48 @@
             </button>
         </form>
 
-        <div class="mt-6 overflow-x-auto rounded-[1.4rem] border border-white/6">
-            <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
+        <div class="mt-6 space-y-3 md:hidden">
+            @forelse ($tradeRows as $row)
+                <article class="rounded-[1.35rem] border border-white/6 bg-black/15 p-4 text-sm">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-base font-semibold text-white">{{ $row['symbol'] }}</p>
+                            <p class="mt-1 break-words text-xs uppercase tracking-[0.14em] text-slate-500">{{ $row['id'] }}</p>
+                        </div>
+                        <span class="shrink-0 rounded-full border border-white/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-slate-200">
+                            {{ ($row['auto_closed_by_breach'] ?? false) ? 'auto closed' : strtolower((string) ($row['status'] ?? ($row['filter'] === 'open' ? 'open' : 'closed'))) }}
+                        </span>
+                    </div>
+
+                    <dl class="mt-4 grid grid-cols-2 gap-3">
+                        @foreach ([
+                            'Type' => $row['side'] === '—' ? '—' : strtolower((string) $row['side']),
+                            'Lot size' => $row['volume'],
+                            'Open time' => $row['open_date'],
+                            'Close time' => $row['close_date'],
+                            'Open price' => $row['entry_price'] ?? '—',
+                            'Close price' => $row['exit_price'] ?? '—',
+                            'Commission' => $row['commission'] ?? '—',
+                            'Swap' => $row['swap'] ?? '—',
+                            'Realized P/L' => $row['filter'] === 'closed' ? $row['profit'] : '—',
+                            'Floating P/L' => $row['filter'] === 'open' ? $row['profit'] : '—',
+                        ] as $label => $value)
+                            <div>
+                                <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $label }}</dt>
+                                <dd class="mt-1 break-words font-medium text-slate-200">{{ $value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </article>
+            @empty
+                <div class="rounded-[1.35rem] border border-dashed border-white/10 px-4 py-8 text-center text-slate-400">
+                    No trades match these filters.
+                </div>
+            @endforelse
+        </div>
+
+        <div class="mt-6 hidden overflow-x-auto rounded-[1.4rem] border border-white/6 md:block">
+            <table class="min-w-[1280px] divide-y divide-white/6 text-left text-sm text-slate-300">
                 <thead class="bg-white/3 text-xs uppercase tracking-[0.18em] text-slate-400">
                     <tr>
                         @foreach (['Ticket / order', 'Symbol', 'Type', 'Lot size', 'Open price', 'Close price', 'Stop loss', 'Take profit', 'Open time', 'Close time', 'Commission', 'Swap', 'Realized P/L', 'Floating P/L', 'Status'] as $heading)

@@ -478,7 +478,7 @@ class DashboardController extends Controller
                 [
                     'label' => __('Daily loss from intraday high'),
                     'value' => $this->formatMoney((float) $account->daily_loss_used),
-                    'hint' => __('Drop from today\'s highest challenge equity. Limit: :value', ['value' => $this->formatMoney((float) $account->daily_drawdown_limit_amount)]),
+                    'hint' => __('Intraday equity pullback, not total profit. Limit: :value', ['value' => $this->formatMoney((float) $account->daily_drawdown_limit_amount)]),
                     'tone' => (float) $account->daily_loss_used >= (float) $account->daily_drawdown_limit_amount && (float) $account->daily_drawdown_limit_amount > 0 ? 'rose' : 'sky',
                 ],
                 [
@@ -603,7 +603,7 @@ class DashboardController extends Controller
                 'current' => $this->formatMoney((float) $account->daily_loss_used),
                 'target' => $this->formatMoney($dailyLossLimit),
                 'target_label' => __('Limit'),
-                'meta' => __('Remaining :amount before daily limit', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
+                'meta' => __('Intraday equity pullback, not total account profit. Remaining :amount', ['amount' => $this->formatMoney(max($dailyLossLimit - (float) $account->daily_loss_used, 0))]),
                 'tone' => ((float) $account->daily_loss_used) >= ($dailyLossLimit * 0.8) && $dailyLossLimit > 0 ? 'rose' : 'sky',
             ],
             [
@@ -767,7 +767,7 @@ class DashboardController extends Controller
             [
                 'label' => __('Daily loss from intraday high'),
                 'value' => $this->formatMoney((float) $account->daily_loss_used),
-                'hint' => __('Drop from today\'s highest challenge equity'),
+                'hint' => __('Intraday equity pullback, not total account profit'),
                 'tone' => 'slate',
             ],
             [

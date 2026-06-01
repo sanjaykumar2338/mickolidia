@@ -134,6 +134,100 @@ class AdminClientMetricsTest extends TestCase
         $this->assertSame('$33.00', $closedRow['net_result']);
     }
 
+    public function test_metaapi_history_uses_broker_close_time_and_ignores_opening_deals(): void
+    {
+        [, $account] = $this->createTraderWithTrades();
+        $snapshot = $account->balanceSnapshots()->latest('id')->firstOrFail();
+
+        $snapshot->forceFill([
+            'payload' => [
+                'history_deals' => [
+                    [
+                        'id' => 'DEAL-OPEN-IGNORED',
+                        'symbol' => 'EURUSD',
+                        'type' => 'DEAL_TYPE_BUY',
+                        'entryType' => 'DEAL_ENTRY_IN',
+                        'volume' => 0.5,
+                        'time' => '2026-05-09T07:00:00.000Z',
+                        'brokerTime' => '2026-05-09 10:00:00.000',
+                        'profit' => 0,
+                    ],
+                    [
+                        'id' => 'DEAL-CLOSE-BROKER',
+                        'symbol' => 'EURUSD',
+                        'type' => 'DEAL_TYPE_SELL',
+                        'entryType' => 'DEAL_ENTRY_OUT',
+                        'volume' => 0.5,
+                        'time' => '2026-05-09T10:45:00.000Z',
+                        'brokerTime' => '2026-05-09 13:45:00.000',
+                        'profit' => 48,
+                        'commission' => -2,
+                        'swap' => -0.5,
+                    ],
+                ],
+                'history_orders' => [[
+                    'id' => 'ORDER-DONE-TIME',
+                    'symbol' => 'GBPUSD',
+                    'type' => 'ORDER_TYPE_BUY',
+                    'state' => 'ORDER_STATE_FILLED',
+                    'volume' => 1,
+                    'time' => '2026-05-09T08:00:00.000Z',
+                    'brokerTime' => '2026-05-09 11:00:00.000',
+                    'doneTime' => '2026-05-09T09:30:00.000Z',
+                    'doneBrokerTime' => '2026-05-09 12:30:00.000',
+                    'profit' => 12,
+                ]],
+            ],
+        ])->save();
+
+        $panel = app(TradeHistoryPanelBuilder::class)->build($account);
+        $rows = collect($panel['rows']);
+
+        $this->assertNull($rows->firstWhere('id', 'DEAL-OPEN-IGNORED'));
+
+        $deal = $rows->firstWhere('id', 'DEAL-CLOSE-BROKER');
+        $this->assertSame('—', $deal['open_date']);
+        $this->assertSame('May 09, 2026 13:45', $deal['close_date']);
+        $this->assertSame('$45.50', $deal['net_result']);
+
+        $order = $rows->firstWhere('id', 'ORDER-DONE-TIME');
+        $this->assertSame('May 09, 2026 11:00', $order['open_date']);
+        $this->assertSame('May 09, 2026 12:30', $order['close_date']);
+    }
+
+    public function test_daily_loss_explanation_clarifies_profitable_intraday_pullback(): void
+    {
+        [$user, $account] = $this->createTraderWithTrades();
+
+        $account->forceFill([
+            'balance' => 10400,
+            'equity' => 10300,
+            'highest_equity_today' => 10500,
+            'daily_loss_used' => 200,
+            'daily_drawdown' => 200,
+            'total_profit' => 400,
+            'rule_state' => [
+                'highest_challenge_equity_today' => 10500,
+                'challenge_balance' => 10400,
+                'challenge_equity' => 10300,
+                'rules' => [
+                    'daily_drawdown_limit_amount' => 500,
+                    'max_drawdown_limit_amount' => 1000,
+                ],
+            ],
+        ])->save();
+
+        $breakdown = app(ChallengeCalculationBreakdown::class)->forAccount($account->fresh());
+
+        $this->assertSame(200.0, $breakdown['daily_loss_used']);
+        $this->assertSame('max(today_highest_challenge_equity - current_challenge_equity, 0)', $breakdown['formula']['daily_loss_used']);
+
+        $this->adminGet(route('admin.clients.metrics', $user))
+            ->assertOk()
+            ->assertSee('Daily loss from intraday high')
+            ->assertSee('max(today_highest_challenge_equity - current_challenge_equity, 0)');
+    }
+
     public function test_breach_closed_trade_rows_are_labeled_without_hiding_profit(): void
     {
         [$user, $account] = $this->createTraderWithTrades();

@@ -1081,7 +1081,9 @@ class TradeHistoryPanelBuilder
         ];
 
         if ($allowGenericTime) {
-            array_push($keys, 'time', 'Time', 'timeMsc', 'raw.time', 'raw.Time', 'raw.timeMsc');
+            array_push($keys, 'brokerTime', 'time', 'Time', 'timeMsc', 'raw.brokerTime', 'raw.time', 'raw.Time', 'raw.timeMsc');
+        } elseif ($this->isMetaApiHistoryOrderRow($row)) {
+            array_push($keys, 'brokerTime', 'time', 'Time', 'timeMsc', 'raw.brokerTime', 'raw.time', 'raw.Time', 'raw.timeMsc');
         }
 
         foreach ($keys as $key) {
@@ -1098,6 +1100,10 @@ class TradeHistoryPanelBuilder
     private function tradeCloseTimestamp(array $row, bool $allowGenericTime = false): ?Carbon
     {
         $keys = [
+            'doneBrokerTime',
+            'done_broker_time',
+            'doneTime',
+            'done_time',
             'close_timestamp',
             'closed_at',
             'close_time',
@@ -1108,10 +1114,16 @@ class TradeHistoryPanelBuilder
             'executionTime',
             'time_close',
             'TimeClose',
+            'brokerTime',
+            'raw.doneBrokerTime',
+            'raw.done_broker_time',
+            'raw.doneTime',
+            'raw.done_time',
             'raw.closeTimestamp',
             'raw.executionTimestamp',
             'raw.closeTime',
             'raw.executionTime',
+            'raw.brokerTime',
         ];
 
         if ($allowGenericTime) {
@@ -1127,6 +1139,26 @@ class TradeHistoryPanelBuilder
         }
 
         return null;
+    }
+
+    private function isMetaApiHistoryOrderRow(array $row): bool
+    {
+        if ($this->firstFilledValue($row, [
+            'doneTime',
+            'done_time',
+            'doneBrokerTime',
+            'done_broker_time',
+            'raw.doneTime',
+            'raw.done_time',
+            'raw.doneBrokerTime',
+            'raw.done_broker_time',
+        ]) !== null) {
+            return true;
+        }
+
+        $state = strtolower((string) $this->firstFilledValue($row, ['state', 'State', 'raw.state', 'raw.State']));
+
+        return str_starts_with($state, 'order_state_');
     }
 
     private function parseTradeTimestamp(mixed $value): ?Carbon
@@ -1322,6 +1354,17 @@ class TradeHistoryPanelBuilder
 
     private function isDisplayableClosedTradeRow(array $row): bool
     {
+        $entryType = strtolower((string) $this->firstFilledValue($row, [
+            'entryType',
+            'entry_type',
+            'raw.entryType',
+            'raw.entry_type',
+        ]));
+
+        if ($entryType !== '' && (str_contains($entryType, 'entry_in') || $entryType === 'in')) {
+            return false;
+        }
+
         $type = strtolower((string) $this->firstFilledValue($row, [
             'type',
             'Type',

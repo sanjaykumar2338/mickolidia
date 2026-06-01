@@ -47,7 +47,40 @@
                 <p class="mt-3 text-sm leading-6 text-slate-400">
                     Click View Metrics to review balance, equity, drawdown, positions, history, and sync details.
                 </p>
-                <div class="mt-5 overflow-x-auto">
+                <div class="mt-5 space-y-3 md:hidden">
+                    @foreach ($metaApiSummary['validated_account_rows'] as $row)
+                        <article class="rounded-[1.3rem] border border-white/6 bg-black/15 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-base font-semibold text-white">{{ $row['login'] }}</p>
+                                    <p class="mt-1 break-words text-xs text-slate-400">{{ $row['reference'] }}</p>
+                                </div>
+                                @if (! empty($row['metrics_url']))
+                                    <a href="{{ $row['metrics_url'] }}" class="shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                                        View
+                                    </a>
+                                @endif
+                            </div>
+                            <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                @foreach ([
+                                    'Connection' => $row['connection'],
+                                    'Provisioning' => $row['provisioning'],
+                                    'Lifecycle' => $row['lifecycle'],
+                                    'Ready' => $row['ready_to_trade'],
+                                    'Pool' => $row['pool_source'],
+                                    'Last sync' => $row['last_sync'],
+                                ] as $label => $value)
+                                    <div>
+                                        <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $label }}</dt>
+                                        <dd class="mt-1 break-words text-slate-200">{{ $value }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </article>
+                    @endforeach
+                </div>
+
+                <div class="mt-5 hidden overflow-x-auto md:block">
                     <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                         <thead class="text-xs uppercase tracking-[0.18em] text-slate-400">
                             <tr>
@@ -88,8 +121,66 @@
         @endif
     @endif
 
-    <div class="mt-10 surface-panel overflow-hidden rounded-[2rem]">
-        <div class="overflow-x-auto">
+    <div class="mt-10 surface-panel rounded-[2rem] p-4 md:p-0 md:overflow-hidden">
+        <div class="space-y-4 md:hidden">
+            @forelse ($clients as $client)
+                @php
+                    $statusClass = match (strtolower($client['account_status_key'])) {
+                        'active', 'completed' => 'border-emerald-400/25 bg-emerald-500/12 text-emerald-100',
+                        'passed' => 'border-sky-400/25 bg-sky-500/12 text-sky-100',
+                        'failed', 'cancelled' => 'border-rose-400/25 bg-rose-500/12 text-rose-100',
+                        default => 'border-amber-400/25 bg-amber-400/12 text-amber-50',
+                    };
+                @endphp
+                <article class="rounded-[1.4rem] border border-white/6 bg-black/15 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-base font-semibold text-white">{{ $client['full_name'] }}</p>
+                            <p class="mt-1 break-words text-sm text-slate-400">{{ $client['email'] }}</p>
+                        </div>
+                        <span class="{{ $statusClass }} shrink-0 rounded-full border px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em]">
+                            {{ $client['account_status'] }}
+                        </span>
+                    </div>
+
+                    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        @foreach ([
+                            __('site.admin.table.country') => $client['country'],
+                            __('site.admin.table.plan_selected') => $client['plan_selected'],
+                            __('site.admin.table.payment_amount') => $client['payment_amount'],
+                            __('site.admin.table.payment_status') => $client['payment_status'],
+                            __('site.admin.table.order_date') => $client['order_date'],
+                            __('site.admin.account.reference') => $client['account_reference'] ?: '—',
+                        ] as $label => $value)
+                            <div>
+                                <dt class="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $label }}</dt>
+                                <dd class="mt-1 break-words font-medium text-slate-200">{{ $value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <a href="{{ route('admin.clients.metrics', $client['id']) }}" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/20 hover:bg-white/6">
+                            {{ __('site.admin.table.view_metrics') }}
+                        </a>
+                        @if ($client['can_activate'])
+                            <form method="POST" action="{{ route('admin.clients.activate', $client['id']) }}">
+                                @csrf
+                                <button type="submit" class="rounded-full border border-amber-400/25 bg-amber-400/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-300/40 hover:bg-amber-400/18">
+                                    {{ __('site.admin.table.activate_account') }}
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <div class="rounded-[1.4rem] border border-dashed border-white/10 px-4 py-8 text-center text-slate-400">
+                    {{ __('site.admin.clients.empty') }}
+                </div>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto md:block">
             <table class="min-w-full divide-y divide-white/6 text-left text-sm text-slate-300">
                 <thead class="bg-white/3 text-xs uppercase tracking-[0.2em] text-slate-400">
                     <tr>

@@ -114,7 +114,26 @@ class MetaApiTodayProfitBreakdown
      */
     public function isTradingHistoryRow(array $row): bool
     {
+        if ($this->isOpeningDeal($row)) {
+            return false;
+        }
+
         return $this->isTradingDeal($row);
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function isOpeningDeal(array $row): bool
+    {
+        $entryType = strtolower((string) $this->first($row, [
+            'entryType',
+            'entry_type',
+            'raw.entryType',
+            'raw.entry_type',
+        ]));
+
+        return $entryType !== '' && (str_contains($entryType, 'entry_in') || $entryType === 'in');
     }
 
     /**
