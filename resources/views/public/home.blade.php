@@ -85,6 +85,11 @@
         'value_templates' => trans('site.home.challenge_selector.value_templates'),
         'consistency_required' => __('site.home.challenge_selector.consistency_required'),
     ];
+    $trustpilotUrl = 'https://www.trustpilot.com/review/wolforix.com?languages=all';
+    $trustpilotRating = '4.2';
+    $trustpilotReviewCount = 6;
+    $trustpilotStarFill = ((float) $trustpilotRating / 5) * 100;
+    $trustpilotLabel = 'Great';
 @endphp
 
 @section('content')
@@ -133,6 +138,40 @@
                                 </div>
                             </div>
 
+                            <a
+                                href="{{ $trustpilotUrl }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="hero-trustpilot mobile-hero-trustpilot"
+                                aria-label="Wolforix Trustpilot rating: {{ $trustpilotLabel }}, {{ $trustpilotRating }} out of 5 from {{ $trustpilotReviewCount }} reviews"
+                            >
+                                <span class="hero-trustpilot-rating">
+                                    <span class="hero-trustpilot-label">{{ $trustpilotLabel }}</span>
+                                    <span class="trustpilot-stars" aria-hidden="true">
+                                        @for ($star = 0; $star < 5; $star++)
+                                            @php
+                                                $trustpilotTileFill = max(0, min(100, ($trustpilotStarFill - ($star * 20)) * 5));
+                                            @endphp
+                                            <span class="trustpilot-star-tile" style="--trustpilot-star-fill: {{ $trustpilotTileFill }}%;">
+                                                <span class="trustpilot-star-fill"></span>
+                                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                    <path d="M12 2.6 14.9 8.5l6.5.95-4.7 4.58 1.1 6.47L12 17.45 6.2 20.5l1.1-6.47-4.7-4.58 6.5-.95L12 2.6Z" />
+                                                </svg>
+                                            </span>
+                                        @endfor
+                                    </span>
+                                </span>
+                                <span class="hero-trustpilot-brand">
+                                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                        <path d="M12 2.6 14.9 8.5l6.5.95-4.7 4.58 1.1 6.47L12 17.45 6.2 20.5l1.1-6.47-4.7-4.58 6.5-.95L12 2.6Z" />
+                                    </svg>
+                                    <span>Trustpilot</span>
+                                </span>
+                                <span class="hero-trustpilot-summary">
+                                    Rated {{ $trustpilotRating }}/5 from {{ $trustpilotReviewCount }} reviews
+                                </span>
+                            </a>
+
                             <div class="mobile-hero-features">
                                 @foreach (trans('site.home.feature_cards') as $card)
                                     <span class="mobile-hero-feature">
@@ -177,6 +216,40 @@
                                 <p class="mt-3 text-sm font-medium text-slate-400">{{ __('site.home.free_trial_caption') }}</p>
                             </div>
                         </div>
+
+                        <a
+                            href="{{ $trustpilotUrl }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="hero-trustpilot desktop-hero-trustpilot"
+                            aria-label="Wolforix Trustpilot rating: {{ $trustpilotLabel }}, {{ $trustpilotRating }} out of 5 from {{ $trustpilotReviewCount }} reviews"
+                        >
+                            <span class="hero-trustpilot-rating">
+                                <span class="hero-trustpilot-label">{{ $trustpilotLabel }}</span>
+                                <span class="trustpilot-stars" aria-hidden="true">
+                                    @for ($star = 0; $star < 5; $star++)
+                                        @php
+                                            $trustpilotTileFill = max(0, min(100, ($trustpilotStarFill - ($star * 20)) * 5));
+                                        @endphp
+                                        <span class="trustpilot-star-tile" style="--trustpilot-star-fill: {{ $trustpilotTileFill }}%;">
+                                            <span class="trustpilot-star-fill"></span>
+                                            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                <path d="M12 2.6 14.9 8.5l6.5.95-4.7 4.58 1.1 6.47L12 17.45 6.2 20.5l1.1-6.47-4.7-4.58 6.5-.95L12 2.6Z" />
+                                            </svg>
+                                        </span>
+                                    @endfor
+                                </span>
+                            </span>
+                            <span class="hero-trustpilot-brand">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 2.6 14.9 8.5l6.5.95-4.7 4.58 1.1 6.47L12 17.45 6.2 20.5l1.1-6.47-4.7-4.58 6.5-.95L12 2.6Z" />
+                                </svg>
+                                <span>Trustpilot</span>
+                            </span>
+                            <span class="hero-trustpilot-summary">
+                                Rated {{ $trustpilotRating }}/5 from {{ $trustpilotReviewCount }} reviews
+                            </span>
+                        </a>
                     </div>
 
                     <div class="hero-visual-stage relative">

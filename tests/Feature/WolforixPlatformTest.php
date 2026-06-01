@@ -151,6 +151,16 @@ class WolforixPlatformTest extends TestCase
         }
     }
 
+    public function test_homepage_hero_shows_linked_trustpilot_rating(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('href="https://www.trustpilot.com/review/wolforix.com?languages=all"', false)
+            ->assertSee('Great')
+            ->assertSee('Trustpilot')
+            ->assertSee('Rated 4.2/5 from 6 reviews');
+    }
+
     public function test_homepage_security_trust_copy_is_localized(): void
     {
         $this->withSession(['locale' => 'es'])
