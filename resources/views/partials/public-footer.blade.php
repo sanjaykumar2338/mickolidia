@@ -10,6 +10,13 @@
                 <path d="M16.46 2.75c.35 2.28 1.7 3.64 3.98 3.79v3.52a7.45 7.45 0 0 1-3.9-1.16v5.74c0 3.55-2.23 6.61-6.25 6.61-3.44 0-6.23-2.53-6.23-5.82 0-3.57 2.83-5.96 6.42-5.96.37 0 .73.04 1.08.12v3.66a3.67 3.67 0 0 0-1.28-.24c-1.42 0-2.56.92-2.56 2.3 0 1.31 1.08 2.27 2.46 2.27 1.55 0 2.55-.89 2.55-2.89V2.75h3.73Z" />
             </svg>
         SVG,
+        'instagram' => <<<'SVG'
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="4" y="4" width="16" height="16" rx="4.5" />
+                <circle cx="12" cy="12" r="3.25" />
+                <circle cx="16.75" cy="7.25" r="0.75" fill="currentColor" stroke="none" />
+            </svg>
+        SVG,
         'telegram' => <<<'SVG'
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.5 4.75 3.75 11.2c-.84.32-.8 1.52.07 1.78l4.3 1.28 1.62 4.73c.29.84 1.39.98 1.87.24l2.22-3.43 4.37 3.2c.74.54 1.8.13 1.96-.77l2.2-12.1c.16-.9-.99-1.58-1.86-1.38Z" />

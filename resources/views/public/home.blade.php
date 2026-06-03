@@ -18,6 +18,13 @@
     $defaultCheckoutUrl = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? route('checkout.show', $defaultCheckoutParams)
         : route('checkout.show');
+    $launchPromoDisplayCode = trim((string) config('wolforix.launch_discount.code', ''));
+    $launchDiscountAvailable = app(\App\Services\Pricing\ChallengePricingService::class)->publicLaunchDiscountAvailable()
+        && filled($launchPromoDisplayCode);
+    $launchOfferVisible = $launchDiscountAvailable && ! session()->has('launch_offer.decision');
+    $launchOfferApplyUrl = $launchDiscountAvailable
+        ? route('home', ['promo_code' => $launchPromoDisplayCode]).'#plans'
+        : $plansUrl;
     $challengeComparisonSizes = array_reverse($challengeSizes);
     $formatMoney = static function (int|float $amount, string $currency = 'USD'): string {
         return match ($currency) {
@@ -120,6 +127,21 @@
                                 <span>{{ __('site.home.mobile_description.line_1') }}</span>
                                 <span>{{ __('site.home.mobile_description.line_2') }}</span>
                             </p>
+
+                            @if ($launchOfferVisible)
+                                <a
+                                    href="{{ $launchOfferApplyUrl }}"
+                                    data-launch-offer-mobile
+                                    class="mt-5 inline-flex w-full max-w-sm flex-col items-center gap-2 rounded-[1.5rem] border border-amber-300/30 bg-slate-950/65 px-4 py-4 text-amber-50 shadow-[0_18px_55px_rgba(2,6,23,0.34)] backdrop-blur"
+                                >
+                                    <span class="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">{{ __('site.launch_popup.title') }}</span>
+                                    <span class="text-sm leading-6 text-slate-100">{{ __('site.launch_popup.description') }}</span>
+                                    <span class="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/12 px-3 py-1.5 text-xs font-semibold text-amber-100">
+                                        <span>{{ __('site.launch_popup.promo_label') }}</span>
+                                        <strong class="truncate">{{ $launchPromoDisplayCode }}</strong>
+                                    </span>
+                                </a>
+                            @endif
                         </div>
 
                         <div class="mobile-hero-footer">
@@ -201,6 +223,25 @@
                                 <span class="gold-pill rounded-full px-4 py-2 text-sm font-medium">{{ $badge }}</span>
                             @endforeach
                         </div>
+
+                        @if ($launchOfferVisible)
+                            <div
+                                data-launch-offer-desktop
+                                class="mt-6 flex max-w-2xl flex-col gap-4 rounded-[1.65rem] border border-amber-300/24 bg-amber-300/10 p-5 shadow-[0_24px_70px_rgba(2,6,23,0.26)] sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-200">{{ __('site.launch_popup.title') }}</p>
+                                    <p class="mt-2 text-sm leading-6 text-slate-200">{{ __('site.launch_popup.description') }}</p>
+                                    <p class="mt-3 inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-slate-950/40 px-3 py-1.5 text-xs font-semibold text-amber-100">
+                                        <span>{{ __('site.launch_popup.promo_label') }}</span>
+                                        <strong class="truncate">{{ $launchPromoDisplayCode }}</strong>
+                                    </p>
+                                </div>
+                                <a href="{{ $launchOfferApplyUrl }}" class="gold-pill inline-flex shrink-0 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold">
+                                    {{ __('site.launch_popup.primary_action') }}
+                                </a>
+                            </div>
+                        @endif
 
                         <div class="mt-8 flex flex-wrap items-start gap-4">
                             <a

@@ -64,7 +64,7 @@ class WolforixPlatformTest extends TestCase
             'percent' => 20,
             'code' => self::TEST_PUBLIC_LAUNCH_PROMO_CODE,
             'campaign' => self::TEST_PUBLIC_LAUNCH_PROMO_CAMPAIGN,
-            'ends_at' => '2026-05-31 23:59:59',
+            'ends_at' => '2026-06-30 23:59:59',
             'single_use_per_customer' => false,
             'badge' => '20% OFF - Launch Access Ending Soon',
             'urgency_text' => 'Launch Discount - Limited Time Only',
@@ -200,7 +200,7 @@ class WolforixPlatformTest extends TestCase
         $this->get(route('home'))
             ->assertOk()
             ->assertSee('data-footer-brand', false)
-            ->assertSee('https://www.facebook.com/share/1JQhTJwzJq/', false)
+            ->assertSee('https://www.tiktok.com/@wolforixhq?_r=1&amp;_t=ZG-96KJYhlgHVR', false)
             ->assertSee('https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA', false)
             ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://x.com/wolforixhq', false)
@@ -745,6 +745,8 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('Launch Discount - Limited Time Only')
             ->assertSee('20% OFF - Launch Access Ending Soon')
             ->assertSee(config('wolforix.launch_discount.code'))
+            ->assertSee('data-launch-offer-mobile', false)
+            ->assertSee('data-launch-offer-desktop', false)
             ->assertSee('Start Challenge')
             ->assertSee('Get Plan')
             ->assertSee('Get Discount')
@@ -854,9 +856,9 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('50% OFF - Support Courtesy');
     }
 
-    public function test_public_launch_discount_expires_after_may_31_2026(): void
+    public function test_public_launch_discount_expires_after_june_30_2026(): void
     {
-        Carbon::setTestNow(Carbon::parse('2026-06-01 00:00:00'));
+        Carbon::setTestNow(Carbon::parse('2026-07-01 00:00:00'));
 
         try {
             $this->get(route('home'))

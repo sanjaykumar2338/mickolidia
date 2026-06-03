@@ -66,7 +66,7 @@ $launchDiscount = [
     'percent' => (float) env('LAUNCH_DISCOUNT_PERCENT', 20),
     'code' => trim((string) env('LAUNCH_PROMO_CODE', 'Wolforix2026')),
     'campaign' => env('LAUNCH_DISCOUNT_CAMPAIGN', 'launch_discount'),
-    'ends_at' => env('LAUNCH_DISCOUNT_ENDS_AT', '2026-05-31 23:59:59'),
+    'ends_at' => env('LAUNCH_DISCOUNT_ENDS_AT', '2026-06-30 23:59:59'),
     'single_use_per_customer' => false,
     'badge' => env('LAUNCH_DISCOUNT_BADGE', '20% OFF - Launch Access Ending Soon'),
     'urgency_text' => env('LAUNCH_DISCOUNT_URGENCY_TEXT', 'Launch Discount - Limited Time Only'),
@@ -267,6 +267,10 @@ return [
         'tiktok' => [
             'label' => 'TikTok',
             'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
+        ],
+        'instagram' => [
+            'label' => 'Instagram',
+            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
         ],
         'telegram' => [
             'label' => 'Telegram',
