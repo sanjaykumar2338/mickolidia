@@ -1,5 +1,5 @@
 @php
-    $launchPromoCode = (string) config('wolforix.launch_discount.code', '');
+    $launchPromoCode = (string) config('wolforix.launch_offer.code', config('wolforix.launch_discount.code', ''));
     $launchPlansHref = route('home').'#plans';
     $launchOfferReturnHref = route('home');
 @endphp

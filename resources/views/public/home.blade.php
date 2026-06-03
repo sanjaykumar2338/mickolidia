@@ -18,7 +18,7 @@
     $defaultCheckoutUrl = $defaultChallengeType !== null && $defaultChallengeSize !== null
         ? route('checkout.show', $defaultCheckoutParams)
         : route('checkout.show');
-    $launchPromoDisplayCode = trim((string) config('wolforix.launch_discount.code', ''));
+    $launchPromoDisplayCode = trim((string) config('wolforix.launch_offer.code', config('wolforix.launch_discount.code', '')));
     $launchDiscountAvailable = app(\App\Services\Pricing\ChallengePricingService::class)->publicLaunchDiscountAvailable()
         && filled($launchPromoDisplayCode);
     $launchOfferVisible = $launchDiscountAvailable && ! session()->has('launch_offer.decision');

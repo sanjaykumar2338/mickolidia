@@ -28,12 +28,13 @@
 </head>
 @php
     $hasPostMainSections = ! request()->routeIs('checkout.*', 'login', 'password.*');
+    $launchPromoCode = (string) config('wolforix.launch_offer.code', config('wolforix.launch_discount.code', ''));
     $launchDiscountAvailable = app(\App\Services\Pricing\ChallengePricingService::class)->publicLaunchDiscountAvailable()
-        && filled((string) config('wolforix.launch_discount.code'));
+        && filled($launchPromoCode);
 @endphp
 <body
     class="selection:bg-amber-400/30 selection:text-white"
-    data-launch-promo-code="{{ session('launch_offer.applied') && $launchDiscountAvailable ? config('wolforix.launch_discount.code') : '' }}"
+    data-launch-promo-code="{{ session('launch_offer.applied') && $launchDiscountAvailable ? $launchPromoCode : '' }}"
 >
     <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div class="absolute inset-0 grid-pattern opacity-40"></div>

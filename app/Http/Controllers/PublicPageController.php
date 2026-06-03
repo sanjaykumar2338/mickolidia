@@ -81,7 +81,7 @@ class PublicPageController extends Controller
         ]);
 
         $decision = (string) $validated['decision'];
-        $promoCode = trim((string) config('wolforix.launch_discount.code', ''));
+        $promoCode = trim((string) config('wolforix.launch_offer.code', config('wolforix.launch_discount.code', '')));
         $launchDiscountAvailable = $pricingService->publicLaunchDiscountAvailable() && $promoCode !== '';
 
         if ($decision === 'apply' && $launchDiscountAvailable) {

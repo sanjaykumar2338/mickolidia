@@ -110,13 +110,13 @@ class ChallengePricingService
             'entry_fee' => $priceSnapshot['final_price'],
             'discount' => [
                 'enabled' => $priceSnapshot['discount_enabled'],
-                'type' => config('wolforix.launch_discount.type', 'percentage'),
+                'type' => $this->launchOfferValue('type', 'percentage'),
                 'percent' => $priceSnapshot['discount_percent'],
                 'amount' => $priceSnapshot['discount_amount'],
-                'badge' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.badge', 'Launch Offer') : '',
-                'urgency_text' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.urgency_text', 'Limited-time offer') : '',
-                'code' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.code') : null,
-                'campaign' => $priceSnapshot['discount_enabled'] ? config('wolforix.launch_discount.campaign', 'launch_discount') : null,
+                'badge' => $priceSnapshot['discount_enabled'] ? $this->launchOfferValue('badge', 'Launch Offer') : '',
+                'urgency_text' => $priceSnapshot['discount_enabled'] ? $this->launchOfferValue('urgency_text', 'Limited-time offer') : '',
+                'code' => $priceSnapshot['discount_enabled'] ? $this->launchOfferValue('code') : null,
+                'campaign' => $priceSnapshot['discount_enabled'] ? $this->launchOfferValue('campaign', 'launch_discount') : null,
                 'kind' => $priceSnapshot['discount_enabled'] ? 'public_launch' : null,
             ],
             'steps' => $definition['steps'],
@@ -210,7 +210,7 @@ class ChallengePricingService
     public function normalizeLaunchPromoCode(?string $promoCode): ?string
     {
         $promoCode = trim((string) $promoCode);
-        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
+        $expectedCode = trim((string) $this->launchOfferValue('code', ''));
 
         if (! $this->publicLaunchDiscountAvailable() || $promoCode === '' || $expectedCode === '') {
             return null;
@@ -230,10 +230,10 @@ class ChallengePricingService
             return [
                 'kind' => 'public_launch',
                 'code' => $publicCode,
-                'campaign' => (string) config('wolforix.launch_discount.campaign', 'launch_discount'),
-                'type' => (string) config('wolforix.launch_discount.type', 'percentage'),
-                'percent' => (float) config('wolforix.launch_discount.percent', 20),
-                'badge' => (string) config('wolforix.launch_discount.badge', '20% OFF - Launch Access Ending Soon'),
+                'campaign' => (string) $this->launchOfferValue('campaign', 'launch_discount'),
+                'type' => (string) $this->launchOfferValue('type', 'percentage'),
+                'percent' => (float) $this->launchOfferValue('percent', 20),
+                'badge' => (string) $this->launchOfferValue('badge', '20% OFF - Launch Access Ending Soon'),
             ];
         }
 
@@ -292,18 +292,18 @@ class ChallengePricingService
             return null;
         }
 
-        $expectedCode = trim((string) config('wolforix.launch_discount.code', ''));
+        $expectedCode = trim((string) $this->launchOfferValue('code', ''));
 
         return $expectedCode !== '' ? $expectedCode : null;
     }
 
     public function publicLaunchDiscountAvailable(): bool
     {
-        if (! (bool) config('wolforix.launch_discount.enabled', false)) {
+        if (! (bool) $this->launchOfferValue('enabled', false)) {
             return false;
         }
 
-        $endsAt = trim((string) config('wolforix.launch_discount.ends_at', ''));
+        $endsAt = trim((string) config('wolforix.launch_offer.expires_at', config('wolforix.launch_discount.ends_at', '')));
 
         if ($endsAt === '') {
             return true;
@@ -345,6 +345,11 @@ class ChallengePricingService
         }
 
         return $launchDiscountEnabled ?? false;
+    }
+
+    private function launchOfferValue(string $key, mixed $default = null): mixed
+    {
+        return config("wolforix.launch_offer.{$key}", config("wolforix.launch_discount.{$key}", $default));
     }
 
     /**

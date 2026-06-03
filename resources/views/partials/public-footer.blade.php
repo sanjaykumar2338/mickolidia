@@ -1,7 +1,7 @@
 @php
     $authUser = request()->user();
     $footerBrandMark = asset('IMG_8543.png');
-    $socialLinks = collect(config('wolforix.social_links', []))
+    $socialLinks = collect(config('wolforix.social', config('wolforix.social_links', [])))
         ->filter(fn (array $link): bool => filled($link['url'] ?? null))
         ->all();
     $socialIconSvgs = [

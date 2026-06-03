@@ -52,13 +52,15 @@ class WolforixPlatformTest extends TestCase
 
     private const TEST_PRIVATE_PROMO_CAMPAIGN = 'test_private_manual_coupon';
 
+    private const TEST_INSTAGRAM_URL = 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA';
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Storage::fake('public');
-        config()->set('wolforix.launch_discount', [
+        $launchDiscount = [
             'enabled' => true,
             'type' => 'percentage',
             'percent' => 20,
@@ -68,7 +70,12 @@ class WolforixPlatformTest extends TestCase
             'single_use_per_customer' => false,
             'badge' => '20% OFF - Launch Access Ending Soon',
             'urgency_text' => 'Launch Discount - Limited Time Only',
-        ]);
+        ];
+
+        config()->set('wolforix.launch_discount', $launchDiscount);
+        config()->set('wolforix.launch_offer', array_merge($launchDiscount, [
+            'expires_at' => $launchDiscount['ends_at'],
+        ]));
         config()->set('wolforix.private_coupon', [
             'enabled' => true,
             'type' => 'percentage',
@@ -78,6 +85,11 @@ class WolforixPlatformTest extends TestCase
             'single_use' => true,
             'badge' => 'Code applied',
         ]);
+
+        $socialLinks = config('wolforix.social', config('wolforix.social_links', []));
+        $socialLinks['instagram']['url'] = self::TEST_INSTAGRAM_URL;
+        config()->set('wolforix.social', $socialLinks);
+        config()->set('wolforix.social_links', $socialLinks);
     }
 
     public function test_public_pages_render_successfully(): void
@@ -201,12 +213,27 @@ class WolforixPlatformTest extends TestCase
             ->assertOk()
             ->assertSee('data-footer-brand', false)
             ->assertSee('https://www.tiktok.com/@wolforixhq?_r=1&amp;_t=ZG-96KJYhlgHVR', false)
-            ->assertSee('https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA', false)
+            ->assertSee(config('wolforix.social.instagram.url'), false)
             ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://x.com/wolforixhq', false)
             ->assertSee('https://youtube.com/@wolforix', false)
             ->assertDontSee('mibextid', false)
             ->assertDontSee('v3aluoTJ6BAc1gh7kuZvMg', false);
+    }
+
+    public function test_public_footer_renders_configured_instagram_link(): void
+    {
+        $customInstagramUrl = 'https://www.instagram.com/wolforix_config_test';
+        $socialLinks = config('wolforix.social');
+        $socialLinks['instagram']['url'] = $customInstagramUrl;
+
+        config()->set('wolforix.social', $socialLinks);
+        config()->set('wolforix.social_links', $socialLinks);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee($customInstagramUrl, false)
+            ->assertDontSee(self::TEST_INSTAGRAM_URL, false);
     }
 
     public function test_contact_page_contains_support_channels_and_voice_assistant(): void
@@ -771,7 +798,7 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('View full legal information')
             ->assertDontSee('Open main navigation')
             ->assertSee('https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3', false)
-            ->assertSee('https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA', false)
+            ->assertSee(config('wolforix.social.instagram.url'), false)
             ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t', false)
             ->assertSee('Back to top')
@@ -880,6 +907,32 @@ class WolforixPlatformTest extends TestCase
         } finally {
             Carbon::setTestNow();
         }
+    }
+
+    public function test_homepage_launch_offer_reads_configured_expiry(): void
+    {
+        config()->set('wolforix.launch_discount.ends_at', '2026-06-30 23:59:59');
+        config()->set('wolforix.launch_offer.expires_at', '2026-07-31 23:59:59');
+
+        Carbon::setTestNow(Carbon::parse('2026-07-15 12:00:00'));
+
+        try {
+            $this->get(route('home'))
+                ->assertOk()
+                ->assertSee('data-launch-offer-mobile', false)
+                ->assertSee('data-launch-offer-desktop', false)
+                ->assertSee(config('wolforix.launch_offer.code'));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_public_config_exposes_safe_launch_and_instagram_fallbacks(): void
+    {
+        $this->assertSame('2026-06-30 23:59:59', config('wolforix.launch_offer.expires_at'));
+        $this->assertSame(config('wolforix.launch_offer.expires_at'), config('wolforix.launch_discount.ends_at'));
+        $this->assertSame(self::TEST_INSTAGRAM_URL, config('wolforix.social.instagram.url'));
+        $this->assertSame(config('wolforix.social.instagram.url'), config('wolforix.social_links.instagram.url'));
     }
 
     public function test_launch_offer_ignore_keeps_regular_pricing_visible(): void

@@ -60,16 +60,30 @@ $supportedLocales = [
     ],
 ];
 
+$launchOfferExpiresAt = env('LAUNCH_OFFER_EXPIRES_AT', env('LAUNCH_DISCOUNT_ENDS_AT', '2026-06-30 23:59:59'));
+$instagramUrl = trim((string) env('INSTAGRAM_URL', 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA'));
+
 $launchDiscount = [
     'enabled' => filter_var(env('LAUNCH_DISCOUNT_ENABLED', true), FILTER_VALIDATE_BOOL),
     'type' => 'percentage',
     'percent' => (float) env('LAUNCH_DISCOUNT_PERCENT', 20),
     'code' => trim((string) env('LAUNCH_PROMO_CODE', 'Wolforix2026')),
     'campaign' => env('LAUNCH_DISCOUNT_CAMPAIGN', 'launch_discount'),
-    'ends_at' => env('LAUNCH_DISCOUNT_ENDS_AT', '2026-06-30 23:59:59'),
+    'ends_at' => $launchOfferExpiresAt,
     'single_use_per_customer' => false,
     'badge' => env('LAUNCH_DISCOUNT_BADGE', '20% OFF - Launch Access Ending Soon'),
     'urgency_text' => env('LAUNCH_DISCOUNT_URGENCY_TEXT', 'Launch Discount - Limited Time Only'),
+];
+
+$launchOffer = [
+    'enabled' => $launchDiscount['enabled'],
+    'type' => $launchDiscount['type'],
+    'percent' => $launchDiscount['percent'],
+    'code' => $launchDiscount['code'],
+    'campaign' => $launchDiscount['campaign'],
+    'expires_at' => $launchOfferExpiresAt,
+    'badge' => $launchDiscount['badge'],
+    'urgency_text' => $launchDiscount['urgency_text'],
 ];
 
 $privateCoupon = [
@@ -253,6 +267,29 @@ foreach ($challengeModels as $challengeType => $challengeTypeData) {
 
 ksort($challengeSizes);
 
+$socialLinks = [
+    'tiktok' => [
+        'label' => 'TikTok',
+        'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
+    ],
+    'instagram' => [
+        'label' => 'Instagram',
+        'url' => $instagramUrl,
+    ],
+    'telegram' => [
+        'label' => 'Telegram',
+        'url' => 'https://t.me/wolforix',
+    ],
+    'x' => [
+        'label' => 'X',
+        'url' => 'https://x.com/wolforixhq',
+    ],
+    'youtube' => [
+        'label' => 'YouTube',
+        'url' => 'https://youtube.com/@wolforix',
+    ],
+];
+
 return [
     'default_locale' => 'en',
     'default_currency' => 'USD',
@@ -263,28 +300,9 @@ return [
         'notify_failures' => filter_var(env('SUPPORT_NOTIFY_ON_CHALLENGE_FAILURE', false), FILTER_VALIDATE_BOOL),
     ],
 
-    'social_links' => [
-        'tiktok' => [
-            'label' => 'TikTok',
-            'url' => 'https://www.tiktok.com/@wolforixhq?_r=1&_t=ZG-96KJYhlgHVR',
-        ],
-        'instagram' => [
-            'label' => 'Instagram',
-            'url' => 'https://www.instagram.com/p/DXvmljMjOHS/?igsh=MXhvN3J2MTFjeTlkdA',
-        ],
-        'telegram' => [
-            'label' => 'Telegram',
-            'url' => 'https://t.me/wolforix',
-        ],
-        'x' => [
-            'label' => 'X',
-            'url' => 'https://x.com/wolforixhq',
-        ],
-        'youtube' => [
-            'label' => 'YouTube',
-            'url' => 'https://youtube.com/@wolforix',
-        ],
-    ],
+    'social' => $socialLinks,
+
+    'social_links' => $socialLinks,
 
     'review_requests' => [
         'trustpilot' => [
@@ -424,6 +442,8 @@ return [
     ],
 
     'launch_discount' => $launchDiscount,
+
+    'launch_offer' => $launchOffer,
 
     'private_coupon' => $privateCoupon,
 
