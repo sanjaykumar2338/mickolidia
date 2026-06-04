@@ -88,6 +88,14 @@
             'primary' => true,
         ],
         [
+            'key' => 'instagram',
+            'platform' => 'Instagram',
+            'title' => 'Visual Updates',
+            'description' => __('site.footer.community.channels.instagram.description'),
+            'url' => data_get(config('wolforix.social.instagram', []), 'url', 'https://www.instagram.com/'),
+            'media' => 'instagram',
+        ],
+        [
             'key' => 'telegram',
             'platform' => 'Telegram',
             'title' => 'English Community',
@@ -234,13 +242,26 @@
                             </span>
 
                             <span class="community-access-media" aria-hidden="true">
-                                <img
-                                    src="{{ $communityLink['image'] }}"
-                                    alt=""
-                                    class="community-access-image"
-                                    decoding="async"
-                                    loading="lazy"
-                                >
+                                @if (($communityLink['media'] ?? 'image') === 'instagram')
+                                    <span class="community-access-instagram-visual">
+                                        <span class="community-access-instagram-mark">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                                <rect x="3.4" y="3.4" width="17.2" height="17.2" rx="5.2" fill="none" stroke="currentColor" stroke-width="1.8" />
+                                                <circle cx="12" cy="12" r="3.65" fill="none" stroke="currentColor" stroke-width="1.8" />
+                                                <circle cx="17.1" cy="6.9" r="1.15" fill="currentColor" />
+                                            </svg>
+                                        </span>
+                                        <span class="community-access-instagram-caption">Wolforix on Instagram</span>
+                                    </span>
+                                @else
+                                    <img
+                                        src="{{ $communityLink['image'] }}"
+                                        alt=""
+                                        class="community-access-image"
+                                        decoding="async"
+                                        loading="lazy"
+                                    >
+                                @endif
                             </span>
 
                             <span class="community-access-copy">
@@ -261,6 +282,16 @@
                                 </span>
                             </span>
                         </a>
+                    @endforeach
+                </div>
+
+                <div class="community-access-indicators relative z-10" aria-label="Community channel indicators">
+                    @foreach ($communityLinks as $communityLink)
+                        <span
+                            class="community-access-indicator {{ ! empty($communityLink['primary']) ? 'is-active' : '' }}"
+                            aria-label="{{ $communityLink['platform'] }}"
+                            @if (! empty($communityLink['primary'])) aria-current="true" @endif
+                        ></span>
                     @endforeach
                 </div>
             </div>

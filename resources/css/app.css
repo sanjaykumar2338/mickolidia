@@ -4200,8 +4200,54 @@ body.wolfi-modal-scroll-lock {
     transition: transform 220ms ease;
 }
 
+.community-access-instagram-visual {
+    display: flex;
+    height: 100%;
+    min-height: 9rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    background:
+        radial-gradient(circle at 20% 18%, rgba(251, 191, 36, 0.58), transparent 30%),
+        radial-gradient(circle at 82% 18%, rgba(236, 72, 153, 0.5), transparent 34%),
+        linear-gradient(135deg, rgba(124, 58, 237, 0.82), rgba(219, 39, 119, 0.72) 48%, rgba(245, 158, 11, 0.74));
+    color: white;
+    transition: transform 220ms ease;
+}
+
+.community-access-instagram-mark {
+    display: inline-flex;
+    height: 4rem;
+    width: 4rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.45rem;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.22);
+}
+
+.community-access-instagram-mark svg {
+    height: 2.45rem;
+    width: 2.45rem;
+}
+
+.community-access-instagram-caption {
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.24);
+    padding: 0.45rem 0.78rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
 .community-access-card:hover .community-access-image,
-.community-access-card:focus-visible .community-access-image {
+.community-access-card:focus-visible .community-access-image,
+.community-access-card:hover .community-access-instagram-visual,
+.community-access-card:focus-visible .community-access-instagram-visual {
     transform: scale(1.035);
 }
 
@@ -4240,6 +4286,11 @@ body.wolfi-modal-scroll-lock {
     --community-accent-strong: #a5f3fc;
 }
 
+.community-access-card--instagram {
+    --community-accent: rgba(219, 39, 119, 0.25);
+    --community-accent-strong: #fbcfe8;
+}
+
 .community-access-card--telegram {
     --community-accent: rgba(56, 189, 248, 0.26);
     --community-accent-strong: #bae6fd;
@@ -4253,6 +4304,31 @@ body.wolfi-modal-scroll-lock {
 .community-access-card--youtube {
     --community-accent: rgba(239, 68, 68, 0.26);
     --community-accent-strong: #fecaca;
+}
+
+.community-access-indicators {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.42rem;
+    margin-top: 1rem;
+}
+
+.community-access-indicator {
+    display: block;
+    height: 0.32rem;
+    width: 0.32rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.community-access-indicator.is-active {
+    width: 1rem;
+    background: #f7d98b;
+    box-shadow:
+        0 0 0 1px rgba(247, 217, 139, 0.28),
+        0 0 16px rgba(247, 217, 139, 0.34);
 }
 
 @media (min-width: 640px) {
