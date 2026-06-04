@@ -209,7 +209,9 @@ class MetaQuotesDemoValidationService
             ];
 
             if ($attempt['credential'] !== null) {
-                $created[] = $attempt['credential'];
+                $created[] = array_merge($attempt['credential'], [
+                    'balance' => (float) $payload['balance'],
+                ]);
             }
 
             $this->throttle();
@@ -286,7 +288,7 @@ class MetaQuotesDemoValidationService
                 'investor_password' => trim((string) ($investorPasswords[$index] ?? $investorPasswords[0] ?? '')) ?: null,
                 'server' => $server,
                 'source' => 'existing_credentials',
-                'balance' => (float) config('services.metaapi.demo.balance', 10000),
+                'balance' => (float) ($options['balance'] ?? config('services.metaapi.demo.balance', 10000)),
             ];
         }
 
