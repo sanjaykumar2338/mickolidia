@@ -582,6 +582,49 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('No credentials were available for MetaApi registration.', data_get($report, 'stability.summary'));
     }
 
+    public function test_pool_only_demo_creation_reports_demo_block_when_no_credentials_are_returned(): void
+    {
+        Http::fake([
+            'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts' => Http::response([
+                'message' => 'To allow mt demo account generator please top up your account.',
+            ], 403),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--create-demo' => true,
+            '--pool-only' => true,
+            '--count' => 1,
+            '--server' => 'MetaQuotes-Demo',
+            '--pool' => 'metaquotes_demo_pool',
+            '--source-file' => 'metaquotes_demo_pool',
+            '--email' => 'support@example.test',
+            '--name' => 'Wolforix Test',
+            '--phone' => '+4915510194439',
+            '--account-type' => 'Forex Hedged USD',
+            '--balance' => 5000,
+            '--polls' => 0,
+        ])
+            ->expectsOutputToContain('Demo creation status')
+            ->expectsOutputToContain('Pool entries stored')
+            ->assertSuccessful();
+
+        Http::assertNotSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://metaapi-provisioning.test/users/current/accounts');
+        Http::assertNotSent(fn ($request): bool => str_contains($request->url(), '/deploy'));
+
+        $this->assertDatabaseCount('mt5_account_pool_entries', 0);
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('blocked', data_get($report, 'demo_creation.status'));
+        $this->assertSame('billing_or_feature_top_up_required', data_get($report, 'demo_creation.batch_stop_reason'));
+        $this->assertSame(
+            'Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: blocked. Reason: billing_or_feature_top_up_required.',
+            data_get($report, 'stability.summary'),
+        );
+    }
+
     public function test_account_registration_stops_batch_after_high_reliability_billing_block(): void
     {
         Http::fake([

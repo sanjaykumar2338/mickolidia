@@ -133,7 +133,7 @@ class MetaQuotesDemoValidationService
             : $this->credentialsFromOptions($options, $server);
 
         if ($credentials === []) {
-            $report['stability']['summary'] = 'No credentials were available for MetaApi registration.';
+            $report['stability']['summary'] = $this->emptyCredentialsSummary($options, $poolOnly, $report);
 
             return $this->finish($report);
         }
@@ -353,6 +353,27 @@ class MetaQuotesDemoValidationService
         $last = $lastKey !== null ? $responses[$lastKey] : null;
 
         return is_array($last) ? ($last['retry_after'] ?? null) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     * @param  array<string, mixed>  $report
+     */
+    private function emptyCredentialsSummary(array $options, bool $poolOnly, array $report): string
+    {
+        if ($poolOnly && (bool) ($options['create_demo'] ?? false)) {
+            $status = (string) data_get($report, 'demo_creation.status', 'failed');
+            $reason = (string) data_get($report, 'demo_creation.batch_stop_reason', '');
+            $suffix = $reason !== '' ? " Reason: {$reason}." : '';
+
+            return "Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: {$status}.{$suffix}";
+        }
+
+        if ($poolOnly) {
+            return 'Pool-only mode did not receive credentials; use --create-demo or provide --login/--password to store inventory.';
+        }
+
+        return 'No credentials were available for MetaApi registration.';
     }
 
     /**

@@ -90,6 +90,9 @@ class ValidateMetaQuotesDemo extends Command
             ['Broker', (string) data_get($report, 'config.broker')],
             ['Server', (string) data_get($report, 'config.server')],
             ['Source file', (string) data_get($report, 'config.source_file')],
+            ['Demo creation status', (string) data_get($report, 'demo_creation.status', '-')],
+            ['Demo stop reason', (string) data_get($report, 'demo_creation.batch_stop_reason', '-')],
+            ['Pool entries stored', (string) count((array) data_get($report, 'pool.stored', []))],
             ['Report', (string) data_get($report, 'report_path')],
             ['Stability', (string) data_get($report, 'stability.summary')],
         ]);
