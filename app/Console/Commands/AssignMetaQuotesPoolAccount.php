@@ -59,6 +59,8 @@ class AssignMetaQuotesPoolAccount extends Command
             ['Server', (string) data_get($result, 'pool_entry.server', data_get($result, 'trading_account.platform_environment', '-'))],
             ['Pool source', trim((string) data_get($result, 'pool_entry.source_pool', '-').' / '.(string) data_get($result, 'pool_entry.source_file', '-'))],
             ['MetaApi UUID present', data_get($result, 'pool_entry.metaapi_account_id_present') ? 'yes' : 'no'],
+            ['MetaApi workflow', (string) data_get($result, 'trading_account.metaapi_workflow_status', data_get($result, 'pool_entry.metaapi_workflow_status', '-'))],
+            ['Assignment MetaApi result', (string) data_get($result, 'metaapi_assignment.status', '-')],
             ['Onboarding state', (string) data_get($result, 'trading_account.onboarding_state', '-')],
         ]);
 

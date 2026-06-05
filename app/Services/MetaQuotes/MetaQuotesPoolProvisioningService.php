@@ -5,6 +5,7 @@ namespace App\Services\MetaQuotes;
 use App\Models\Mt5AccountPoolEntry;
 use App\Models\TradingAccount;
 use App\Models\User;
+use App\Services\MetaApi\MetaQuotesAssignmentMetaApiService;
 use App\Services\Mt5\Mt5AccountAllocator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -16,6 +17,7 @@ class MetaQuotesPoolProvisioningService
 {
     public function __construct(
         private readonly Mt5AccountAllocator $allocator,
+        private readonly MetaQuotesAssignmentMetaApiService $assignmentMetaApi,
     ) {}
 
     /**
@@ -34,12 +36,18 @@ class MetaQuotesPoolProvisioningService
 
         if ($existingAssignment instanceof Mt5AccountPoolEntry) {
             $warnings = array_merge($warnings, $this->mappingWarnings($account, $existingAssignment));
+            $metaApiAssignment = null;
 
             if (! $dryRun) {
                 $this->syncMetaApiMapping($account, $existingAssignment);
                 $this->stampProvisioning($account->fresh() ?? $account, $existingAssignment, 'already_assigned', [
                     'source' => (string) ($options['source'] ?? 'metaquotes_pool_provisioning'),
                 ]);
+                $metaApiAssignment = $this->assignmentMetaApi->ensureReadyForAssignedAccount($account->fresh() ?? $account, $existingAssignment, [
+                    'force' => (bool) ($options['force_metaapi'] ?? false),
+                ]);
+                $account = $account->fresh() ?? $account;
+                $existingAssignment = $existingAssignment->fresh() ?? $existingAssignment;
             }
 
             return [
@@ -47,6 +55,7 @@ class MetaQuotesPoolProvisioningService
                 'dry_run' => $dryRun,
                 'trading_account' => $this->accountSummary($account->fresh() ?? $account),
                 'pool_entry' => $this->poolSummary($existingAssignment->fresh() ?? $existingAssignment),
+                'metaapi_assignment' => $metaApiAssignment,
                 'warnings' => array_values(array_unique($warnings)),
                 'errors' => [],
                 'recommendations' => $this->recommendations([], $warnings),
@@ -122,17 +131,24 @@ class MetaQuotesPoolProvisioningService
         });
 
         $account = $account->fresh() ?? $account;
+        $metaApiAssignment = $this->assignmentMetaApi->ensureReadyForAssignedAccount($account, $assigned, [
+            'force' => (bool) ($options['force_metaapi'] ?? false),
+        ]);
+        $account = $account->fresh() ?? $account;
+        $assigned = $assigned->fresh() ?? $assigned;
 
         return array_merge($result, [
             'status' => 'assigned',
             'trading_account' => $this->accountSummary($account),
             'pool_entry' => $this->poolSummary($assigned),
+            'metaapi_assignment' => $metaApiAssignment,
             'warnings' => array_values(array_unique(array_merge($warnings, $this->mappingWarnings($account, $assigned)))),
             'changes' => [
                 'pool_entry_allocated',
                 'trading_account_bound',
                 'credentials_hydrated',
                 'provisioning_metadata_persisted',
+                'assignment_time_metaapi_checked',
             ],
         ]);
     }
@@ -151,12 +167,16 @@ class MetaQuotesPoolProvisioningService
         $staleAllocations = (clone $allocatedRows)
             ->whereDoesntHave('allocatedTradingAccount')
             ->count();
-        $missingMetaApiMapping = (clone $allocatedRows)
+        $missingMetaApiMappingRows = (clone $allocatedRows)
             ->where(function (Builder $query): void {
                 $query->whereNull('meta->metaapi_account_id')
                     ->orWhere('meta->metaapi_account_id', '');
             })
+            ->get();
+        $assignedPendingMetaApi = $missingMetaApiMappingRows
+            ->filter(fn (Mt5AccountPoolEntry $entry): bool => $this->assignmentMetaApi->isMetaQuotesPoolEntry($entry))
             ->count();
+        $missingMetaApiMapping = $missingMetaApiMappingRows->count() - $assignedPendingMetaApi;
         $duplicateLoginRows = $this->duplicateLoginRows($options);
         $blockers = [];
 
@@ -182,6 +202,7 @@ class MetaQuotesPoolProvisioningService
             'allocated_accounts' => (clone $allocatedRows)->count(),
             'stale_allocations' => $staleAllocations,
             'missing_metaapi_mapping' => $missingMetaApiMapping,
+            'assigned_pending_metaapi' => $assignedPendingMetaApi,
             'missing_metaapi_mappings' => $this->missingMetaApiMappingRows($options)->values()->all(),
             'duplicate_login_risk' => $duplicateLoginRows->count(),
             'duplicate_logins' => $duplicateLoginRows->take(10)->values()->all(),
@@ -451,7 +472,9 @@ class MetaQuotesPoolProvisioningService
         }
 
         if ($this->metaApiAccountId($account, $entry) === null) {
-            $warnings[] = 'missing_metaapi_mapping';
+            $warnings[] = $this->assignmentMetaApi->isMetaQuotesPoolEntry($entry)
+                ? MetaQuotesAssignmentMetaApiService::STATUS_ASSIGNED_PENDING_METAAPI
+                : 'missing_metaapi_mapping';
         }
 
         return $warnings;
@@ -476,6 +499,10 @@ class MetaQuotesPoolProvisioningService
 
         if (in_array('missing_metaapi_mapping', $warnings, true)) {
             $recommendations[] = 'Account can be assigned, but MetaApi sync needs a UUID before cloud synchronization can start.';
+        }
+
+        if (in_array(MetaQuotesAssignmentMetaApiService::STATUS_ASSIGNED_PENDING_METAAPI, $warnings, true)) {
+            $recommendations[] = 'MetaQuotes account is assigned; run assignment-time MetaApi registration/deployment before expecting dashboard sync.';
         }
 
         if (in_array('trading_account_login_mismatch', $warnings, true)) {
@@ -636,6 +663,8 @@ class MetaQuotesPoolProvisioningService
             'sync_source' => $account->sync_source,
             'onboarding_state' => data_get($account->meta, 'metaapi_onboarding.state'),
             'provisioning_status' => data_get($account->meta, 'metaquotes_pool_provisioning.status'),
+            'metaapi_workflow_status' => data_get($account->meta, 'metaapi_workflow.status'),
+            'metaapi_account_id' => data_get($account->meta, 'metaapi_account_id'),
         ];
     }
 
@@ -656,6 +685,7 @@ class MetaQuotesPoolProvisioningService
             'allocated_user_id' => $entry->allocated_user_id,
             'is_available' => (bool) $entry->is_available,
             'metaapi_account_id_present' => filled((string) data_get($entry->meta, 'metaapi_account_id')),
+            'metaapi_workflow_status' => data_get($entry->meta, 'metaapi_workflow.status'),
         ];
     }
 }

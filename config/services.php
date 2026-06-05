@@ -124,6 +124,7 @@ return [
         'connect_timeout' => (int) env('METAAPI_CONNECT_TIMEOUT', 10),
         'profile_id' => env('METAAPI_PROVISIONING_PROFILE_ID', 'default'),
         'account_type' => env('METAAPI_ACCOUNT_TYPE'),
+        'account_reliability' => env('METAAPI_ACCOUNT_RELIABILITY', 'regular'),
         'history' => [
             'days' => (int) env('METAAPI_HISTORY_DAYS', env('METAAPI_VALIDATION_HISTORY_DAYS', 7)),
             'limit' => (int) env('METAAPI_HISTORY_LIMIT', 50),
@@ -140,6 +141,9 @@ return [
             'max_retries' => (int) env('METAAPI_ONBOARDING_MAX_RETRIES', 5),
             'retry_delay_minutes' => (int) env('METAAPI_ONBOARDING_RETRY_DELAY_MINUTES', 2),
             'connection_wait_minutes' => (int) env('METAAPI_ONBOARDING_CONNECTION_WAIT_MINUTES', 15),
+            'assignment_registration_enabled' => filter_var(env('METAAPI_ASSIGNMENT_REGISTRATION_ENABLED', true), FILTER_VALIDATE_BOOL),
+            'deploy_on_assignment' => filter_var(env('METAAPI_DEPLOY_ON_ASSIGNMENT', true), FILTER_VALIDATE_BOOL),
+            'billing_block_retry_minutes' => (int) env('METAAPI_BILLING_BLOCK_RETRY_MINUTES', 60),
         ],
         'events' => [
             'email_enabled' => filter_var(env('METAAPI_EVENTS_EMAIL_ENABLED', true), FILTER_VALIDATE_BOOL),
@@ -167,7 +171,8 @@ return [
             'polls' => (int) env('METAAPI_VALIDATION_POLLS', 2),
             'poll_delay_seconds' => (int) env('METAAPI_VALIDATION_POLL_DELAY_SECONDS', 15),
             'history_days' => (int) env('METAAPI_HISTORY_DAYS', env('METAAPI_VALIDATION_HISTORY_DAYS', 7)),
-            'throttle_delay_ms' => (int) env('METAAPI_VALIDATION_THROTTLE_DELAY_MS', 1500),
+            'throttle_delay_ms' => (int) env('METAAPI_VALIDATION_THROTTLE_DELAY_MS', 65000),
+            'minimum_throttle_delay_ms' => (int) env('METAAPI_VALIDATION_MIN_THROTTLE_DELAY_MS', 65000),
             'max_without_force' => (int) env('METAAPI_VALIDATION_MAX_WITHOUT_FORCE', 2),
         ],
     ],

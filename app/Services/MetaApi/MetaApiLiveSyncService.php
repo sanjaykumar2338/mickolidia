@@ -21,6 +21,7 @@ class MetaApiLiveSyncService
         private readonly MetaApiAccountMappingRepairService $mappingRepairService,
         private readonly MetaApiAccountLifecycleService $lifecycleService,
         private readonly MetaApiOnboardingService $onboardingService,
+        private readonly MetaQuotesAssignmentMetaApiService $assignmentMetaApi,
         private readonly MetaApiTodayProfitBreakdown $todayProfitBreakdown,
         private readonly Mt5AccountDeactivationService $deactivationService,
     ) {}
@@ -73,14 +74,54 @@ class MetaApiLiveSyncService
         $metaApiAccountId = $this->manualMetaApiAccountId($options)
             ?? ($this->looksLikeMetaApiAccountId((string) ($repair['metaapi_account_id'] ?? null)) ? (string) $repair['metaapi_account_id'] : null)
             ?? $this->metaApiAccountIdFor($account);
+        $poolEntry = $this->poolEntryForAccount($account);
+        $assignmentMetaApi = null;
+
+        if (
+            $poolEntry instanceof Mt5AccountPoolEntry
+            && $this->assignmentMetaApi->isMetaQuotesPoolEntry($poolEntry)
+            && (
+                ! $this->looksLikeMetaApiAccountId((string) $metaApiAccountId)
+                || ! in_array((string) data_get($account->meta, 'metaapi_workflow.status'), [
+                    MetaQuotesAssignmentMetaApiService::STATUS_DEPLOYED,
+                    MetaQuotesAssignmentMetaApiService::STATUS_SYNC_ACTIVE,
+                ], true)
+            )
+        ) {
+            $assignmentMetaApi = $this->assignmentMetaApi->ensureReadyForAssignedAccount($account, $poolEntry, [
+                'force' => (bool) ($options['force_metaapi'] ?? false),
+            ]);
+            $account = $account->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $account;
+            $assignmentMetaApiAccountId = (string) data_get($assignmentMetaApi, 'metaapi_account_id');
+            $metaApiAccountId = $this->manualMetaApiAccountId($options)
+                ?? ($this->looksLikeMetaApiAccountId($assignmentMetaApiAccountId) ? $assignmentMetaApiAccountId : null)
+                ?? $this->metaApiAccountIdFor($account);
+        }
 
         $log = $this->createSyncLog($account, $startedAt, [
             'login' => $login,
             'metaapi_account_id' => $metaApiAccountId,
             'mapping_repair' => $repair,
+            'assignment_metaapi' => $assignmentMetaApi,
         ]);
 
         $this->markSyncStarted($account, $startedAt);
+
+        if (($assignmentMetaApi['status'] ?? null) === MetaQuotesAssignmentMetaApiService::STATUS_METAAPI_BILLING_BLOCKED) {
+            return $this->markFailed(
+                account: $account,
+                log: $log,
+                startedAt: $startedAt,
+                status: 'blocked',
+                message: 'MetaApi account sync is blocked by MetaApi billing/top-up requirements.',
+                error: 'metaapi_billing_blocked',
+                metaApi: [
+                    'login' => $login,
+                    'metaapi_account_id' => $metaApiAccountId,
+                    'assignment_metaapi' => $assignmentMetaApi,
+                ],
+            );
+        }
 
         if (! $this->looksLikeMetaApiAccountId((string) $metaApiAccountId)) {
             return $this->markFailed(
@@ -204,6 +245,13 @@ class MetaApiLiveSyncService
 
         $updatedAccount = $this->lifecycleService->recordSyncResult($updatedAccount, $syncResult);
         $updatedAccount = $this->onboardingService->recordSyncResult($updatedAccount, $syncResult);
+        $this->assignmentMetaApi->markSyncActive($updatedAccount, [
+            'metaapi_account_id' => $metaApiAccountId,
+            'sync_log_id' => $log->id,
+            'validation_state' => $validationState,
+            'connection_status' => $connectionStatus,
+        ]);
+        $updatedAccount = $updatedAccount->fresh(['challengePlan', 'challengePurchase', 'user']) ?? $updatedAccount;
         $lifecycle = $this->lifecycleService->diagnose($updatedAccount);
         $onboarding = $this->onboardingService->diagnose($updatedAccount);
         $deactivation = $this->deactivationSummary($updatedAccount);
@@ -742,7 +790,11 @@ class MetaApiLiveSyncService
         $completedAt = now();
         $meta = is_array($account->meta) ? $account->meta : [];
         $syncMeta = is_array(data_get($meta, 'mt5_sync')) ? (array) data_get($meta, 'mt5_sync') : [];
-        $syncMeta['status'] = $status === 'stale' ? 'stale' : 'disconnected';
+        $syncMeta['status'] = match ($status) {
+            'stale' => 'stale',
+            'blocked' => 'blocked',
+            default => 'disconnected',
+        };
         $syncMeta['last_error'] = $error;
         $syncMeta['last_error_at'] = $completedAt->toIso8601String();
         $syncMeta['last_sync_trigger'] = 'metaapi_live_sync';
@@ -760,7 +812,7 @@ class MetaApiLiveSyncService
 
         $account->forceFill([
             'platform_status' => $platformStatus,
-            'sync_status' => 'error',
+            'sync_status' => $status === 'blocked' ? 'blocked' : 'error',
             'sync_source' => 'metaapi',
             'sync_error' => $error,
             'sync_error_at' => $completedAt,
@@ -769,7 +821,7 @@ class MetaApiLiveSyncService
             'meta' => $meta,
         ])->save();
 
-        $this->completeSyncLog($log, 'error', $message, [
+        $this->completeSyncLog($log, $status === 'blocked' ? 'blocked' : 'error', $message, [
             'metaapi' => $metaApi,
         ], $error);
 
@@ -799,7 +851,7 @@ class MetaApiLiveSyncService
         $deactivation = $this->deactivationSummary($account);
 
         return [
-            'status' => 'error',
+            'status' => $status === 'blocked' ? 'blocked' : 'error',
             'validation_state' => strtoupper((string) ($lifecycle['sync_health'] ?? $syncMeta['status'])),
             'trading_account_id' => $account->id,
             'login' => $account->platform_login,

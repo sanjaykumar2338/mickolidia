@@ -24,6 +24,7 @@ class MetaQuotesDemoValidationService
     public function __construct(
         private readonly MetaApiClient $metaApi,
         private readonly Mt5AccountAllocator $allocator,
+        private readonly MetaQuotesAssignmentMetaApiService $assignmentMetaApi,
     ) {}
 
     /**
@@ -35,6 +36,7 @@ class MetaQuotesDemoValidationService
         $this->debugResponses = [];
         $startedAt = now();
         $live = (bool) ($options['live'] ?? false);
+        $poolOnly = (bool) ($options['pool_only'] ?? false);
         $count = max(1, (int) ($options['count'] ?? 1));
         $sourceFile = $this->sourceFile((string) ($options['source_file'] ?? config('wolforix.mt5_account_pool.metaquotes.source', 'metaapi-demo-validation')));
         $server = $this->stringOption($options, 'server', (string) config('wolforix.mt5_account_pool.metaquotes.server', 'MetaQuotes-Demo'));
@@ -66,6 +68,10 @@ class MetaQuotesDemoValidationService
                 'history_days' => max(1, (int) ($options['history_days'] ?? config('services.metaapi.history.days', 7))),
                 'history_limit' => max(1, (int) ($options['history_limit'] ?? config('services.metaapi.history.limit', 50))),
                 'debug_metaapi' => (bool) ($options['debug_metaapi'] ?? false),
+                'demo_creation_throttle_ms' => $this->effectiveThrottleMilliseconds(),
+                'account_type' => config('services.metaapi.account_type'),
+                'account_reliability' => config('services.metaapi.account_reliability'),
+                'pool_only' => $poolOnly,
             ],
             'verified_endpoints' => [
                 'create_account' => 'POST /users/current/accounts',
@@ -84,11 +90,13 @@ class MetaQuotesDemoValidationService
                 'requested' => (bool) ($options['create_demo'] ?? false),
                 'count' => $count,
                 'status' => 'not_run',
+                'batch_stop_reason' => null,
+                'next_retry_after' => null,
                 'attempts' => [],
             ],
             'accounts' => [],
             'pool' => [
-                'store_requested' => (bool) ($options['store_pool'] ?? false),
+                'store_requested' => (bool) ($options['store_pool'] ?? false) || $poolOnly,
                 'stored' => [],
                 'assignment' => null,
             ],
@@ -130,6 +138,43 @@ class MetaQuotesDemoValidationService
             return $this->finish($report);
         }
 
+        if ($poolOnly) {
+            foreach ($credentials as $credential) {
+                $poolEntry = $this->storePoolEntry($credential, $sourceFile, $broker, $platform, $pool, $batch);
+                $report['pool']['stored'][] = $poolEntry;
+                $report['accounts'][] = [
+                    'login' => (string) $credential['login'],
+                    'server' => (string) $credential['server'],
+                    'status' => MetaQuotesAssignmentMetaApiService::STATUS_POOL_ONLY,
+                    'pool_entry' => $poolEntry,
+                    'metaapi_account_id' => null,
+                    'create_account' => [
+                        'status' => 'skipped_pool_only',
+                        'reason' => 'MetaApi registration is deferred until assignment.',
+                    ],
+                    'deploy' => [
+                        'status' => 'skipped_pool_only',
+                        'reason' => 'MetaApi deployment is deferred until assignment.',
+                    ],
+                    'polls' => [],
+                ];
+
+                if (isset($poolEntry['id'])) {
+                    $entry = Mt5AccountPoolEntry::query()->find((int) $poolEntry['id']);
+
+                    if ($entry instanceof Mt5AccountPoolEntry) {
+                        $this->assignmentMetaApi->markPoolOnly($entry, [
+                            'source' => 'metaquotes_validate_demo_pool_only',
+                        ]);
+                    }
+                }
+            }
+
+            $report['stability']['summary'] = 'Pool-only mode completed. MetaApi registration, deployment, and sync were intentionally skipped.';
+
+            return $this->finish($report);
+        }
+
         foreach ($credentials as $credential) {
             $accountReport = $this->validateCredential(
                 credential: $credential,
@@ -146,6 +191,14 @@ class MetaQuotesDemoValidationService
             if (isset($accountReport['pool_entry'])) {
                 $report['pool']['stored'][] = $accountReport['pool_entry'];
             }
+
+            $stopReason = $this->accountBatchStopReason($accountReport);
+
+            if ($stopReason !== null) {
+                $report['metaapi_batch_stop_reason'] = $stopReason;
+
+                break;
+            }
         }
 
         if (filled($options['assign_account'] ?? null)) {
@@ -159,6 +212,10 @@ class MetaQuotesDemoValidationService
         }
 
         $report['stability'] = $this->stabilitySummary($report['accounts']);
+
+        if (isset($report['metaapi_batch_stop_reason'])) {
+            $report['stability']['summary'] = 'MetaApi validation stopped early after a billing/quota/rate-limit response: '.$report['metaapi_batch_stop_reason'];
+        }
 
         return $this->finish($report);
     }
@@ -214,10 +271,26 @@ class MetaQuotesDemoValidationService
                 ]);
             }
 
-            $this->throttle();
+            $stopReason = $attempt['credential'] === null ? $this->demoBatchStopReason($attempt) : null;
+
+            if ($stopReason !== null) {
+                $report['demo_creation']['batch_stop_reason'] = $stopReason;
+                $report['demo_creation']['next_retry_after'] = $this->lastRetryAfter($attempt['responses']);
+
+                break;
+            }
+
+            if ($index < $count) {
+                $this->throttle();
+            }
         }
 
-        $report['demo_creation']['status'] = count($created) === $count ? 'passed' : (count($created) > 0 ? 'partial' : 'failed');
+        $report['demo_creation']['status'] = match (true) {
+            count($created) === $count => 'passed',
+            data_get($report, 'demo_creation.batch_stop_reason') !== null => count($created) > 0 ? 'partial_blocked' : 'blocked',
+            count($created) > 0 => 'partial',
+            default => 'failed',
+        };
 
         return $created;
     }
@@ -257,6 +330,29 @@ class MetaQuotesDemoValidationService
             'credential' => null,
             'responses' => $responses,
         ];
+    }
+
+    /**
+     * @param  array{credential: array<string, mixed>|null, responses: list<array<string, mixed>>}  $attempt
+     */
+    private function demoBatchStopReason(array $attempt): ?string
+    {
+        $responses = $attempt['responses'] ?? [];
+        $lastKey = array_key_last($responses);
+        $last = $lastKey !== null ? $responses[$lastKey] : null;
+
+        return is_array($last) ? $this->metaApiStopReason($last) : null;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $responses
+     */
+    private function lastRetryAfter(array $responses): ?string
+    {
+        $lastKey = array_key_last($responses);
+        $last = $lastKey !== null ? $responses[$lastKey] : null;
+
+        return is_array($last) ? ($last['retry_after'] ?? null) : null;
     }
 
     /**
@@ -377,6 +473,14 @@ class MetaQuotesDemoValidationService
         $accountReport['deploy'] = $this->summarizeResponse($deployResult);
         $accountReport['deploy']['reason'] = $this->deployFailureReason($deployResult, $metaApiAccountId);
 
+        $deployStopReason = $this->metaApiStopReason($deployResult);
+
+        if ($deployStopReason !== null) {
+            $accountReport['polls_skipped_reason'] = $deployStopReason;
+
+            return $accountReport;
+        }
+
         $polls = max(1, (int) ($options['polls'] ?? config('services.metaapi.validation.polls', 2)));
 
         for ($poll = 1; $poll <= $polls; $poll++) {
@@ -405,6 +509,51 @@ class MetaQuotesDemoValidationService
     }
 
     /**
+     * @param  array<string, mixed>  $accountReport
+     */
+    private function accountBatchStopReason(array $accountReport): ?string
+    {
+        foreach (['create_account', 'deploy'] as $key) {
+            $response = $accountReport[$key] ?? null;
+
+            if (! is_array($response)) {
+                continue;
+            }
+
+            $stopReason = $this->metaApiStopReason($response);
+
+            if ($stopReason !== null) {
+                return $key.':'.$stopReason;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function metaApiStopReason(array $response): ?string
+    {
+        $status = (int) ($response['status'] ?? 0);
+        $error = Str::lower(trim((string) ($response['error'] ?? '')));
+
+        if ($status === 429) {
+            return 'rate_limited';
+        }
+
+        if ($status === 403 && Str::contains($error, ['top up', 'billing', 'quota', 'high reliability', 'deployment'])) {
+            return 'billing_or_feature_top_up_required';
+        }
+
+        if ($status === 402) {
+            return 'payment_required';
+        }
+
+        return null;
+    }
+
+    /**
      * @param  array<string, mixed>  $credential
      * @param  array<string, mixed>  $options
      * @return array<string, mixed>
@@ -420,6 +569,7 @@ class MetaQuotesDemoValidationService
             'platform' => 'mt5',
             'magic' => 20260525,
             'type' => config('services.metaapi.account_type'),
+            'reliability' => config('services.metaapi.account_reliability'),
             'provisioningProfileId' => $this->provisioningProfileIdForCreate(),
             'keywords' => $this->keywords($options, (string) $credential['server']),
         ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
@@ -1536,13 +1686,21 @@ class MetaQuotesDemoValidationService
 
     private function throttle(): void
     {
-        $milliseconds = max(0, (int) config('services.metaapi.validation.throttle_delay_ms', 1500));
+        $milliseconds = $this->effectiveThrottleMilliseconds();
 
         if ($milliseconds <= 0 || app()->runningUnitTests()) {
             return;
         }
 
         usleep($milliseconds * 1000);
+    }
+
+    private function effectiveThrottleMilliseconds(): int
+    {
+        $configured = max(0, (int) config('services.metaapi.validation.throttle_delay_ms', 65000));
+        $minimum = max(0, (int) config('services.metaapi.validation.minimum_throttle_delay_ms', 65000));
+
+        return max($configured, $minimum);
     }
 
     private function sleep(int $seconds): void

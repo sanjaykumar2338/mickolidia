@@ -99,6 +99,12 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('MT5', data_get($entry->meta, 'platform'));
         $this->assertSame($accountId, data_get($entry->meta, 'metaapi_account_id'));
 
+        $createAccountRequest = collect(Http::recorded())
+            ->first(fn (array $record): bool => $record[0]->method() === 'POST'
+                && $record[0]->url() === 'https://metaapi-provisioning.test/users/current/accounts');
+
+        $this->assertSame('regular', $createAccountRequest[0]->data()['reliability'] ?? null);
+
         $this->assertNotEmpty(Storage::disk('local')->files('diagnostics'));
     }
 
@@ -492,6 +498,164 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('degraded_non_blocking', data_get($report, 'stability.trade_history'));
         $this->assertCount(3, data_get($report, 'accounts.0.polls.0.history_orders.attempts'));
         $this->assertCount(3, data_get($report, 'accounts.0.polls.0.history_deals.attempts'));
+    }
+
+    public function test_pool_only_demo_creation_stores_inventory_without_metaapi_registration_or_deploy(): void
+    {
+        Http::fake([
+            'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts' => Http::response([
+                'login' => '107990001',
+                'password' => 'main-secret',
+                'investorPassword' => 'investor-secret',
+                'serverName' => 'MetaQuotes-Demo',
+            ], 201),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--create-demo' => true,
+            '--pool-only' => true,
+            '--count' => 1,
+            '--server' => 'MetaQuotes-Demo',
+            '--pool' => 'metaquotes_demo_pool',
+            '--source-file' => 'metaquotes_demo_pool',
+            '--email' => 'support@example.test',
+            '--name' => 'Wolforix Test',
+            '--phone' => '+4915510194439',
+            '--account-type' => 'Forex Hedged USD',
+            '--balance' => 5000,
+        ])->assertSuccessful();
+
+        Http::assertNotSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://metaapi-provisioning.test/users/current/accounts');
+        Http::assertNotSent(fn ($request): bool => str_contains($request->url(), '/deploy'));
+
+        $entry = Mt5AccountPoolEntry::query()
+            ->where('login', '107990001')
+            ->firstOrFail();
+
+        $this->assertSame('metaquotes_demo_pool', $entry->source_pool);
+        $this->assertSame('metaquotes_demo_pool', $entry->source_file);
+        $this->assertTrue($entry->is_available);
+        $this->assertNull(data_get($entry->meta, 'metaapi_account_id'));
+        $this->assertSame('pool_only', data_get($entry->meta, 'metaapi_workflow.status'));
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('pool_only', data_get($report, 'accounts.0.status'));
+        $this->assertSame('skipped_pool_only', data_get($report, 'accounts.0.create_account.status'));
+        $this->assertSame('skipped_pool_only', data_get($report, 'accounts.0.deploy.status'));
+        $this->assertSame('Pool-only mode completed. MetaApi registration, deployment, and sync were intentionally skipped.', data_get($report, 'stability.summary'));
+    }
+
+    public function test_demo_creation_stops_batch_after_billing_block(): void
+    {
+        Http::fake([
+            'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts' => Http::response([
+                'message' => 'To allow mt demo account generator please top up your account.',
+            ], 403),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--create-demo' => true,
+            '--count' => 3,
+            '--force-many' => true,
+            '--server' => 'MetaQuotes-Demo',
+            '--email' => 'support@example.test',
+            '--name' => 'Wolforix Test',
+            '--phone' => '+4915510194439',
+            '--account-type' => 'Forex Hedged USD',
+        ])->assertSuccessful();
+
+        $createDemoRequests = collect(Http::recorded())
+            ->filter(fn (array $record): bool => $record[0]->method() === 'POST'
+                && $record[0]->url() === 'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts')
+            ->values();
+
+        $this->assertCount(1, $createDemoRequests);
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('blocked', data_get($report, 'demo_creation.status'));
+        $this->assertSame('billing_or_feature_top_up_required', data_get($report, 'demo_creation.batch_stop_reason'));
+        $this->assertSame('No credentials were available for MetaApi registration.', data_get($report, 'stability.summary'));
+    }
+
+    public function test_account_registration_stops_batch_after_high_reliability_billing_block(): void
+    {
+        Http::fake([
+            'https://metaapi-provisioning.test/users/current/accounts' => Http::response([
+                'message' => 'To allow high reliability please top up your account.',
+            ], 403),
+            'https://metaapi-provisioning.test/users/current/accounts?query=*' => Http::response([], 200),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--login' => ['770006', '770007'],
+            '--password' => ['main-secret'],
+            '--server' => 'MetaQuotes-Demo',
+            '--store-pool' => true,
+        ])->assertSuccessful();
+
+        $createAccountRequests = collect(Http::recorded())
+            ->filter(fn (array $record): bool => $record[0]->method() === 'POST'
+                && $record[0]->url() === 'https://metaapi-provisioning.test/users/current/accounts')
+            ->values();
+
+        $this->assertCount(1, $createAccountRequests);
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertCount(1, data_get($report, 'accounts'));
+        $this->assertSame('create_account:billing_or_feature_top_up_required', data_get($report, 'metaapi_batch_stop_reason'));
+        $this->assertSame('MetaApi validation stopped early after a billing/quota/rate-limit response: create_account:billing_or_feature_top_up_required', data_get($report, 'stability.summary'));
+    }
+
+    public function test_deploy_billing_block_skips_terminal_polling(): void
+    {
+        $accountId = 'ed749805-4cad-4622-a0bc-3b1c8dd241d2';
+
+        Http::fake([
+            'https://metaapi-provisioning.test/users/current/accounts' => Http::response([
+                'id' => $accountId,
+                'state' => 'UNDEPLOYED',
+            ], 201),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}" => Http::response([
+                '_id' => $accountId,
+                'login' => '770008',
+                'server' => 'MetaQuotes-Demo',
+                'state' => 'UNDEPLOYED',
+                'connectionStatus' => 'DISCONNECTED',
+            ], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/replicas" => Http::response([], 200),
+            "https://metaapi-provisioning.test/users/current/accounts/{$accountId}/deploy" => Http::response([
+                'message' => 'To allow trading account deployment please top up your account.',
+            ], 403),
+            'https://metaapi-client.test/*' => Http::response([
+                'message' => 'Polling should be skipped after deployment billing block.',
+            ], 500),
+        ]);
+
+        $this->artisan('metaquotes:validate-demo', [
+            '--live' => true,
+            '--login' => ['770008'],
+            '--password' => ['main-secret'],
+            '--server' => 'MetaQuotes-Demo',
+            '--store-pool' => true,
+        ])->assertSuccessful();
+
+        $clientRequests = collect(Http::recorded())
+            ->filter(fn (array $record): bool => str_starts_with($record[0]->url(), 'https://metaapi-client.test/'))
+            ->values();
+
+        $this->assertCount(0, $clientRequests);
+
+        $report = $this->latestDiagnosticReport();
+
+        $this->assertSame('billing_or_feature_top_up_required', data_get($report, 'accounts.0.polls_skipped_reason'));
+        $this->assertSame('deploy:billing_or_feature_top_up_required', data_get($report, 'metaapi_batch_stop_reason'));
     }
 
     public function test_diagnose_metaapi_pool_repairs_corrupted_credentials(): void

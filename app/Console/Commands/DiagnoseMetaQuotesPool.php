@@ -36,6 +36,7 @@ class DiagnoseMetaQuotesPool extends Command
             ['Allocated accounts', (string) data_get($diagnostic, 'allocated_accounts', 0)],
             ['Stale allocations', (string) data_get($diagnostic, 'stale_allocations', 0)],
             ['Missing MetaApi mapping', (string) data_get($diagnostic, 'missing_metaapi_mapping', 0)],
+            ['Assigned pending MetaApi', (string) data_get($diagnostic, 'assigned_pending_metaapi', 0)],
             ['Duplicate login risk', (string) data_get($diagnostic, 'duplicate_login_risk', 0)],
         ]);
 

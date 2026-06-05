@@ -12,6 +12,7 @@ class ValidateMetaQuotesDemo extends Command
     protected $signature = 'metaquotes:validate-demo
         {--live : Call MetaApi. Without this flag the command only writes a dry-run architecture report}
         {--create-demo : Create MetaQuotes/MT5 demo accounts through MetaApi before registering them}
+        {--pool-only : Store created/existing MT5 credentials as pool inventory without MetaApi account registration, deployment, or sync}
         {--count=1 : Number of demo accounts to create when --create-demo is used}
         {--login=* : Existing MT5 demo login to register in MetaApi}
         {--password=* : MT5 main password for --login; pass once for all logins or once per login}
@@ -46,6 +47,7 @@ class ValidateMetaQuotesDemo extends Command
             $report = $validationService->run([
                 'live' => (bool) $this->option('live'),
                 'create_demo' => (bool) $this->option('create-demo'),
+                'pool_only' => (bool) $this->option('pool-only'),
                 'count' => (int) $this->option('count'),
                 'login' => (array) $this->option('login'),
                 'password' => (array) $this->option('password'),
