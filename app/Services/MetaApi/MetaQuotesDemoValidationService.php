@@ -258,11 +258,24 @@ class MetaQuotesDemoValidationService
 
             $transactionId = $this->metaApi->transactionId();
             $attempt = $this->createDemoWithRetries($payload, $transactionId);
+            $stopReason = $attempt['credential'] === null ? $this->demoBatchStopReason($attempt) : null;
+
+            foreach ($attempt['responses'] as $responseIndex => $response) {
+                $this->recordDebugResponse(
+                    $options,
+                    'create_mt5_demo_account.attempt_'.$index.'.response_'.($responseIndex + 1),
+                    $response,
+                    $attempt['credential'] ?? [],
+                    $payload,
+                );
+            }
+
             $report['demo_creation']['attempts'][] = [
                 'email' => $email,
                 'transaction_id' => $transactionId,
                 'responses' => $this->summarizeResponses($attempt['responses']),
                 'credential_received' => $attempt['credential'] !== null,
+                'batch_stop_reason' => $stopReason,
             ];
 
             if ($attempt['credential'] !== null) {
@@ -270,8 +283,6 @@ class MetaQuotesDemoValidationService
                     'balance' => (float) $payload['balance'],
                 ]);
             }
-
-            $stopReason = $attempt['credential'] === null ? $this->demoBatchStopReason($attempt) : null;
 
             if ($stopReason !== null) {
                 $report['demo_creation']['batch_stop_reason'] = $stopReason;
@@ -1556,15 +1567,20 @@ class MetaQuotesDemoValidationService
      */
     private function summarizeResponse(array $response): array
     {
+        $payload = is_array($response['payload'] ?? null) ? $response['payload'] : [];
+
         return [
             'action' => $response['action'] ?? null,
             'status' => $response['status'] ?? null,
             'ok' => $response['ok'] ?? null,
             'retry_after' => $response['retry_after'] ?? null,
-            'error' => $response['error'] ?? null,
-            'payload_keys' => is_array($response['payload'] ?? null) ? array_keys($response['payload']) : [],
-            'id' => data_get($response, 'payload.id'),
-            'state' => data_get($response, 'payload.state'),
+            'error' => $this->sanitizeForDebug(data_get($payload, 'error') ?? ($response['error'] ?? null), []),
+            'message' => $this->sanitizeForDebug(data_get($payload, 'message'), []),
+            'details' => $this->sanitizeForDebug(data_get($payload, 'details'), []),
+            'batch_stop_reason' => $this->metaApiStopReason($response),
+            'payload_keys' => array_keys($payload),
+            'id' => data_get($payload, 'id'),
+            'state' => data_get($payload, 'state'),
         ];
     }
 

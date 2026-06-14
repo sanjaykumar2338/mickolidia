@@ -115,6 +115,17 @@ class ValidateMetaQuotesDemo extends Command
             );
         }
 
+        $demoResponses = $this->demoCreationResponses($report);
+
+        if ($demoResponses !== []) {
+            $this->newLine();
+            $this->info('Demo creation responses');
+            $this->table(
+                ['Attempt', 'Status', 'Error', 'Message', 'Details', 'Retry after', 'Batch stop reason'],
+                $demoResponses,
+            );
+        }
+
         if (($assignment = data_get($report, 'pool.assignment')) !== null) {
             $this->newLine();
             $this->info('Pool assignment');
@@ -142,5 +153,47 @@ class ValidateMetaQuotesDemo extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @param  array<string, mixed>  $report
+     * @return list<array<int, string>>
+     */
+    private function demoCreationResponses(array $report): array
+    {
+        $rows = [];
+
+        foreach ((array) data_get($report, 'demo_creation.attempts', []) as $attemptIndex => $attempt) {
+            foreach ((array) data_get($attempt, 'responses', []) as $response) {
+                if (! is_array($response)) {
+                    continue;
+                }
+
+                $rows[] = [
+                    (string) ((int) $attemptIndex + 1),
+                    (string) ($response['status'] ?? '-'),
+                    $this->formatDiagnosticValue($response['error'] ?? null),
+                    $this->formatDiagnosticValue($response['message'] ?? null),
+                    $this->formatDiagnosticValue($response['details'] ?? null),
+                    $this->formatDiagnosticValue($response['retry_after'] ?? null),
+                    $this->formatDiagnosticValue($response['batch_stop_reason'] ?? data_get($attempt, 'batch_stop_reason')),
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    private function formatDiagnosticValue(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '-';
+        }
+
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+
+        return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[unprintable]';
     }
 }

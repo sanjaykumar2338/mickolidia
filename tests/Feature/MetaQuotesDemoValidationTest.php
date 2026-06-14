@@ -524,6 +524,7 @@ class MetaQuotesDemoValidationTest extends TestCase
             '--phone' => '+4915510194439',
             '--account-type' => 'Forex Hedged USD',
             '--balance' => 5000,
+            '--debug-metaapi' => true,
         ])->assertSuccessful();
 
         Http::assertNotSent(fn ($request): bool => $request->method() === 'POST'
@@ -545,6 +546,12 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('pool_only', data_get($report, 'accounts.0.status'));
         $this->assertSame('skipped_pool_only', data_get($report, 'accounts.0.create_account.status'));
         $this->assertSame('skipped_pool_only', data_get($report, 'accounts.0.deploy.status'));
+        $this->assertSame('create_mt5_demo_account.attempt_1.response_1', data_get($report, 'debug_metaapi.responses.0.label'));
+        $this->assertSame('107990001', data_get($report, 'debug_metaapi.responses.0.response_payload.login'));
+        $this->assertSame('[redacted]', data_get($report, 'debug_metaapi.responses.0.response_payload.password'));
+        $this->assertSame('[redacted]', data_get($report, 'debug_metaapi.responses.0.response_payload.investorPassword'));
+        $this->assertStringNotContainsString('main-secret', json_encode($report));
+        $this->assertStringNotContainsString('investor-secret', json_encode($report));
         $this->assertSame('Pool-only mode completed. MetaApi registration, deployment, and sync were intentionally skipped.', data_get($report, 'stability.summary'));
     }
 
@@ -586,8 +593,13 @@ class MetaQuotesDemoValidationTest extends TestCase
     {
         Http::fake([
             'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts' => Http::response([
-                'message' => 'To allow mt demo account generator please top up your account.',
-            ], 403),
+                'error' => 'Validation failed',
+                'message' => 'The given demo account data was invalid.',
+                'details' => [
+                    'phone' => ['The phone field is invalid.'],
+                    'password' => 'server-side secret should not leak',
+                ],
+            ], 400),
         ]);
 
         $this->artisan('metaquotes:validate-demo', [
@@ -607,6 +619,7 @@ class MetaQuotesDemoValidationTest extends TestCase
         ])
             ->expectsOutputToContain('Demo creation status')
             ->expectsOutputToContain('Pool entries stored')
+            ->expectsOutputToContain('Demo creation responses')
             ->assertSuccessful();
 
         Http::assertNotSent(fn ($request): bool => $request->method() === 'POST'
@@ -617,10 +630,16 @@ class MetaQuotesDemoValidationTest extends TestCase
 
         $report = $this->latestDiagnosticReport();
 
-        $this->assertSame('blocked', data_get($report, 'demo_creation.status'));
-        $this->assertSame('billing_or_feature_top_up_required', data_get($report, 'demo_creation.batch_stop_reason'));
+        $this->assertSame('failed', data_get($report, 'demo_creation.status'));
+        $this->assertNull(data_get($report, 'demo_creation.batch_stop_reason'));
+        $this->assertSame(400, data_get($report, 'demo_creation.attempts.0.responses.0.status'));
+        $this->assertSame('Validation failed', data_get($report, 'demo_creation.attempts.0.responses.0.error'));
+        $this->assertSame('The given demo account data was invalid.', data_get($report, 'demo_creation.attempts.0.responses.0.message'));
+        $this->assertSame(['The phone field is invalid.'], data_get($report, 'demo_creation.attempts.0.responses.0.details.phone'));
+        $this->assertSame('[redacted]', data_get($report, 'demo_creation.attempts.0.responses.0.details.password'));
+        $this->assertNull(data_get($report, 'demo_creation.attempts.0.responses.0.batch_stop_reason'));
         $this->assertSame(
-            'Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: blocked. Reason: billing_or_feature_top_up_required.',
+            'Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: failed.',
             data_get($report, 'stability.summary'),
         );
     }
