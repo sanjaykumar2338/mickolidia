@@ -273,7 +273,7 @@ class MetaQuotesDemoValidationService
             $report['demo_creation']['attempts'][] = [
                 'email' => $email,
                 'transaction_id' => $transactionId,
-                'responses' => $this->summarizeResponses($attempt['responses']),
+                'responses' => $this->summarizeDemoCreationResponses($attempt['responses']),
                 'credential_received' => $attempt['credential'] !== null,
                 'batch_stop_reason' => $stopReason,
             ];
@@ -352,7 +352,7 @@ class MetaQuotesDemoValidationService
         $lastKey = array_key_last($responses);
         $last = $lastKey !== null ? $responses[$lastKey] : null;
 
-        return is_array($last) ? $this->metaApiStopReason($last) : null;
+        return is_array($last) ? $this->demoCreationStopReason($last) : null;
     }
 
     /**
@@ -583,6 +583,50 @@ class MetaQuotesDemoValidationService
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function demoCreationStopReason(array $response): ?string
+    {
+        $stopReason = $this->metaApiStopReason($response);
+
+        if ($stopReason !== null) {
+            return $stopReason;
+        }
+
+        $status = (int) ($response['status'] ?? 0);
+        $payload = is_array($response['payload'] ?? null) ? $response['payload'] : [];
+        $details = data_get($payload, 'details');
+        $text = Str::lower(trim(implode(' ', array_filter([
+            (string) ($response['error'] ?? ''),
+            (string) data_get($payload, 'error', ''),
+            (string) data_get($payload, 'message', ''),
+            is_scalar($details) ? (string) $details : (json_encode($details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: ''),
+        ]))));
+
+        if ($status === 0) {
+            return 'transport_or_timeout';
+        }
+
+        if ($status === 202) {
+            return 'demo_creation_pending_timeout';
+        }
+
+        if ($status === 400 && Str::contains($text, [
+            'too many demo accounts',
+            'specific email, user name or phone number',
+            'please use the name, email and phone number of your end users',
+        ])) {
+            return 'identity_limit';
+        }
+
+        if ($status === 400 && Str::contains($text, ['validation', 'invalid', 'should include'])) {
+            return 'validation_error';
+        }
+
+        return $status >= 400 ? 'http_'.$status : null;
     }
 
     /**
@@ -1559,6 +1603,20 @@ class MetaQuotesDemoValidationService
     private function summarizeResponses(array $responses): array
     {
         return array_map(fn (array $response): array => $this->summarizeResponse($response), $responses);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $responses
+     * @return list<array<string, mixed>>
+     */
+    private function summarizeDemoCreationResponses(array $responses): array
+    {
+        return array_map(function (array $response): array {
+            $summary = $this->summarizeResponse($response);
+            $summary['batch_stop_reason'] = $this->demoCreationStopReason($response);
+
+            return $summary;
+        }, $responses);
     }
 
     /**

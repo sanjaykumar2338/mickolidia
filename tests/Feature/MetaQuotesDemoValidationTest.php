@@ -606,7 +606,8 @@ class MetaQuotesDemoValidationTest extends TestCase
             '--live' => true,
             '--create-demo' => true,
             '--pool-only' => true,
-            '--count' => 1,
+            '--count' => 3,
+            '--force-many' => true,
             '--server' => 'MetaQuotes-Demo',
             '--pool' => 'metaquotes_demo_pool',
             '--source-file' => 'metaquotes_demo_pool',
@@ -625,21 +626,24 @@ class MetaQuotesDemoValidationTest extends TestCase
         Http::assertNotSent(fn ($request): bool => $request->method() === 'POST'
             && $request->url() === 'https://metaapi-provisioning.test/users/current/accounts');
         Http::assertNotSent(fn ($request): bool => str_contains($request->url(), '/deploy'));
+        $this->assertCount(1, collect(Http::recorded())
+            ->filter(fn (array $record): bool => $record[0]->method() === 'POST'
+                && $record[0]->url() === 'https://metaapi-provisioning.test/users/current/provisioning-profiles/default/mt5-demo-accounts'));
 
         $this->assertDatabaseCount('mt5_account_pool_entries', 0);
 
         $report = $this->latestDiagnosticReport();
 
-        $this->assertSame('failed', data_get($report, 'demo_creation.status'));
-        $this->assertNull(data_get($report, 'demo_creation.batch_stop_reason'));
+        $this->assertSame('blocked', data_get($report, 'demo_creation.status'));
+        $this->assertSame('validation_error', data_get($report, 'demo_creation.batch_stop_reason'));
         $this->assertSame(400, data_get($report, 'demo_creation.attempts.0.responses.0.status'));
         $this->assertSame('Validation failed', data_get($report, 'demo_creation.attempts.0.responses.0.error'));
         $this->assertSame('The given demo account data was invalid.', data_get($report, 'demo_creation.attempts.0.responses.0.message'));
         $this->assertSame(['The phone field is invalid.'], data_get($report, 'demo_creation.attempts.0.responses.0.details.phone'));
         $this->assertSame('[redacted]', data_get($report, 'demo_creation.attempts.0.responses.0.details.password'));
-        $this->assertNull(data_get($report, 'demo_creation.attempts.0.responses.0.batch_stop_reason'));
+        $this->assertSame('validation_error', data_get($report, 'demo_creation.attempts.0.responses.0.batch_stop_reason'));
         $this->assertSame(
-            'Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: failed.',
+            'Pool-only demo creation did not return credentials; no pool entries were stored. Demo creation status: blocked. Reason: validation_error.',
             data_get($report, 'stability.summary'),
         );
     }
