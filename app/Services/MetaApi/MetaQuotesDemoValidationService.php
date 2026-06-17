@@ -1565,14 +1565,26 @@ class MetaQuotesDemoValidationService
         }
 
         $path = 'diagnostics/metaquotes-demo-validation-'.now()->format('Ymd-His').'-'.Str::lower(Str::random(6)).'.json';
+        $supportReportPath = (bool) data_get($report, 'demo_creation.requested', false)
+            ? str_replace('.json', '-metaapi-support.md', $path)
+            : null;
+
+        $report['report_path'] = Storage::disk('local')->path($path);
+
+        if ($supportReportPath !== null) {
+            $report['support_report_path'] = Storage::disk('local')->path($supportReportPath);
+        }
 
         Storage::disk('local')->put($path, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        $report['report_path'] = Storage::disk('local')->path($path);
+        if ($supportReportPath !== null) {
+            Storage::disk('local')->put($supportReportPath, $this->metaApiSupportReportMarkdown($report));
+        }
 
         Log::info('Phase 1A MetaQuotes demo validation report written.', [
             'mode' => $report['mode'],
             'report_path' => $report['report_path'],
+            'support_report_path' => $report['support_report_path'] ?? null,
             'accounts' => count($report['accounts'] ?? []),
             'stability' => $report['stability']['summary'] ?? null,
         ]);
@@ -1626,15 +1638,23 @@ class MetaQuotesDemoValidationService
     private function summarizeResponse(array $response): array
     {
         $payload = is_array($response['payload'] ?? null) ? $response['payload'] : [];
+        $errorCode = data_get($payload, 'error') ?? ($response['error_code'] ?? null);
+        $errorMessage = data_get($payload, 'message') ?? ($response['error_message'] ?? $response['error'] ?? null);
 
         return [
             'action' => $response['action'] ?? null,
             'status' => $response['status'] ?? null,
             'ok' => $response['ok'] ?? null,
             'retry_after' => $response['retry_after'] ?? null,
-            'error' => $this->sanitizeForDebug(data_get($payload, 'error') ?? ($response['error'] ?? null), []),
+            'error' => $this->sanitizeForDebug($errorCode ?? ($response['error'] ?? null), []),
+            'error_code' => $this->sanitizeForDebug($errorCode, []),
             'message' => $this->sanitizeForDebug(data_get($payload, 'message'), []),
+            'error_message' => $this->sanitizeForDebug($errorMessage, []),
             'details' => $this->sanitizeForDebug(data_get($payload, 'details'), []),
+            'request_id' => $response['request_id'] ?? null,
+            'trace_id' => $response['trace_id'] ?? data_get($payload, 'traceId'),
+            'transaction_id' => $response['transaction_id'] ?? data_get($response, 'request.transaction_id'),
+            'request' => $this->sanitizeForDebug($response['request'] ?? null, []),
             'batch_stop_reason' => $this->metaApiStopReason($response),
             'payload_keys' => array_keys($payload),
             'id' => data_get($payload, 'id'),
@@ -1660,8 +1680,17 @@ class MetaQuotesDemoValidationService
             'status' => $response['status'] ?? null,
             'ok' => $response['ok'] ?? null,
             'retry_after' => $response['retry_after'] ?? null,
+            'request_id' => $response['request_id'] ?? null,
+            'trace_id' => $response['trace_id'] ?? data_get($response, 'payload.traceId'),
+            'transaction_id' => $response['transaction_id'] ?? data_get($response, 'request.transaction_id'),
+            'error_code' => $this->sanitizeForDebug($response['error_code'] ?? data_get($response, 'payload.error'), $credential),
+            'error_message' => $this->sanitizeForDebug($response['error_message'] ?? $response['error'] ?? null, $credential),
             'error' => $this->sanitizeForDebug($response['error'] ?? null, $credential),
-            'request_payload' => $requestPayload !== null ? $this->sanitizeForDebug($requestPayload, $credential) : null,
+            'details' => $this->sanitizeForDebug($response['details'] ?? data_get($response, 'payload.details'), $credential),
+            'request' => $this->sanitizeForDebug($response['request'] ?? null, $credential),
+            'request_payload' => $requestPayload !== null
+                ? $this->sanitizeForDebug($requestPayload, $credential)
+                : $this->sanitizeForDebug(data_get($response, 'request.payload'), $credential),
             'response_payload' => $this->sanitizeForDebug($response['payload'] ?? null, $credential),
             'response_body' => $this->sanitizeForDebug($response['body'] ?? null, $credential),
         ];
@@ -1706,6 +1735,114 @@ class MetaQuotesDemoValidationService
         }
 
         return $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $report
+     */
+    private function metaApiSupportReportMarkdown(array $report): string
+    {
+        $lines = [
+            '# MetaApi Support Report: MetaQuotes MT5 Demo Creation',
+            '',
+            'Generated by Wolforix `metaquotes:validate-demo` on '.(string) data_get($report, 'completed_at', now()->toIso8601String()).'.',
+            '',
+            '## Summary',
+            '',
+            '- Mode: '.(string) data_get($report, 'mode', '-'),
+            '- Demo creation status: '.(string) data_get($report, 'demo_creation.status', '-'),
+            '- Batch stop reason: '.(string) (data_get($report, 'demo_creation.batch_stop_reason') ?: '-'),
+            '- MetaApi provisioning base URL: '.(string) data_get($report, 'config.provisioning_base_url', '-'),
+            '- Provisioning profile ID: '.(string) data_get($report, 'config.profile_id', '-'),
+            '- Requested server: '.(string) data_get($report, 'config.server', '-'),
+            '- Account type: '.(string) data_get($report, 'config.account_type', '-'),
+            '- JSON diagnostic path: '.(string) data_get($report, 'report_path', '-'),
+            '',
+            '## Demo Creation Attempts',
+            '',
+        ];
+
+        $attempts = (array) data_get($report, 'demo_creation.attempts', []);
+
+        if ($attempts === []) {
+            $lines[] = 'No demo creation attempts were recorded.';
+            $lines[] = '';
+
+            return implode("\n", $lines);
+        }
+
+        foreach ($attempts as $attemptIndex => $attempt) {
+            if (! is_array($attempt)) {
+                continue;
+            }
+
+            $lines[] = '### Attempt '.((int) $attemptIndex + 1);
+            $lines[] = '';
+            $lines[] = '- Email: '.(string) ($attempt['email'] ?? '-');
+            $lines[] = '- Transaction ID: '.(string) ($attempt['transaction_id'] ?? '-');
+            $lines[] = '- Credential received: '.((bool) ($attempt['credential_received'] ?? false) ? 'yes' : 'no');
+            $lines[] = '- Attempt stop reason: '.(string) (($attempt['batch_stop_reason'] ?? null) ?: '-');
+            $lines[] = '';
+
+            foreach ((array) ($attempt['responses'] ?? []) as $responseIndex => $response) {
+                if (! is_array($response)) {
+                    continue;
+                }
+
+                $lines[] = '#### Response '.((int) $responseIndex + 1);
+                $lines[] = '';
+                $lines[] = '- HTTP status: '.$this->markdownValue($response['status'] ?? null);
+                $lines[] = '- Error code: '.$this->markdownValue($response['error_code'] ?? $response['error'] ?? null);
+                $lines[] = '- Error message: '.$this->markdownValue($response['error_message'] ?? $response['message'] ?? null);
+                $lines[] = '- Request ID: '.$this->markdownValue($response['request_id'] ?? null);
+                $lines[] = '- Trace ID: '.$this->markdownValue($response['trace_id'] ?? null);
+                $lines[] = '- Transaction ID: '.$this->markdownValue($response['transaction_id'] ?? $attempt['transaction_id'] ?? null);
+                $lines[] = '- Retry after: '.$this->markdownValue($response['retry_after'] ?? null);
+                $lines[] = '';
+                $lines[] = 'Request payload sent to MetaApi:';
+                $lines[] = $this->jsonBlock(data_get($response, 'request.payload'));
+                $lines[] = 'Equivalent curl command:';
+                $lines[] = '```bash';
+                $lines[] = (string) (data_get($response, 'request.curl') ?: '[curl unavailable]');
+                $lines[] = '```';
+                $lines[] = 'Full details array:';
+                $lines[] = $this->jsonBlock($response['details'] ?? null);
+                $lines[] = '';
+            }
+        }
+
+        $debugResponses = collect((array) data_get($report, 'debug_metaapi.responses', []))
+            ->filter(fn (mixed $response): bool => is_array($response)
+                && Str::startsWith((string) ($response['label'] ?? ''), 'create_mt5_demo_account.'))
+            ->values()
+            ->all();
+
+        if ($debugResponses !== []) {
+            $lines[] = '## Sanitized Raw MetaApi Creation Logs';
+            $lines[] = '';
+            $lines[] = $this->jsonBlock($debugResponses);
+            $lines[] = '';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function markdownValue(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '-';
+        }
+
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+
+        return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[unprintable]';
+    }
+
+    private function jsonBlock(mixed $value): string
+    {
+        return "```json\n".(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: 'null')."\n```";
     }
 
     /**

@@ -94,6 +94,7 @@ class ValidateMetaQuotesDemo extends Command
             ['Demo stop reason', (string) data_get($report, 'demo_creation.batch_stop_reason', '-')],
             ['Pool entries stored', (string) count((array) data_get($report, 'pool.stored', []))],
             ['Report', (string) data_get($report, 'report_path')],
+            ['Support report', (string) data_get($report, 'support_report_path', '-')],
             ['Stability', (string) data_get($report, 'stability.summary')],
         ]);
 
@@ -121,7 +122,7 @@ class ValidateMetaQuotesDemo extends Command
             $this->newLine();
             $this->info('Demo creation responses');
             $this->table(
-                ['Attempt', 'Status', 'Error', 'Message', 'Details', 'Retry after', 'Batch stop reason'],
+                ['Attempt', 'Status', 'Error code', 'Message', 'Request ID', 'Trace ID', 'Transaction ID', 'Details', 'Retry after', 'Batch stop reason'],
                 $demoResponses,
             );
         }
@@ -172,8 +173,11 @@ class ValidateMetaQuotesDemo extends Command
                 $rows[] = [
                     (string) ((int) $attemptIndex + 1),
                     (string) ($response['status'] ?? '-'),
-                    $this->formatDiagnosticValue($response['error'] ?? null),
-                    $this->formatDiagnosticValue($response['message'] ?? null),
+                    $this->formatDiagnosticValue($response['error_code'] ?? $response['error'] ?? null),
+                    $this->formatDiagnosticValue($response['error_message'] ?? $response['message'] ?? null),
+                    $this->formatDiagnosticValue($response['request_id'] ?? null),
+                    $this->formatDiagnosticValue($response['trace_id'] ?? null),
+                    $this->formatDiagnosticValue($response['transaction_id'] ?? data_get($attempt, 'transaction_id')),
                     $this->formatDiagnosticValue($response['details'] ?? null),
                     $this->formatDiagnosticValue($response['retry_after'] ?? null),
                     $this->formatDiagnosticValue($response['batch_stop_reason'] ?? data_get($attempt, 'batch_stop_reason')),

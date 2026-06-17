@@ -508,7 +508,9 @@ class MetaQuotesDemoValidationTest extends TestCase
                 'password' => 'main-secret',
                 'investorPassword' => 'investor-secret',
                 'serverName' => 'MetaQuotes-Demo',
-            ], 201),
+            ], 201, [
+                'request-id' => 'req-demo-creation-1',
+            ]),
         ]);
 
         $this->artisan('metaquotes:validate-demo', [
@@ -550,9 +552,34 @@ class MetaQuotesDemoValidationTest extends TestCase
         $this->assertSame('107990001', data_get($report, 'debug_metaapi.responses.0.response_payload.login'));
         $this->assertSame('[redacted]', data_get($report, 'debug_metaapi.responses.0.response_payload.password'));
         $this->assertSame('[redacted]', data_get($report, 'debug_metaapi.responses.0.response_payload.investorPassword'));
+        $this->assertSame('req-demo-creation-1', data_get($report, 'demo_creation.attempts.0.responses.0.request_id'));
+        $this->assertSame(
+            data_get($report, 'demo_creation.attempts.0.transaction_id'),
+            data_get($report, 'demo_creation.attempts.0.responses.0.transaction_id'),
+        );
+        $this->assertSame('support@example.test', data_get($report, 'demo_creation.attempts.0.responses.0.request.payload.email'));
+        $this->assertSame('[redacted]', data_get($report, 'demo_creation.attempts.0.responses.0.request.headers.auth-token'));
+        $this->assertStringContainsString("curl --request 'POST'", data_get($report, 'demo_creation.attempts.0.responses.0.request.curl'));
+        $this->assertStringContainsString("'auth-token: [redacted]'", data_get($report, 'demo_creation.attempts.0.responses.0.request.curl'));
+        $this->assertSame('[redacted]', data_get($report, 'debug_metaapi.responses.0.request.headers.auth-token'));
         $this->assertStringNotContainsString('main-secret', json_encode($report));
         $this->assertStringNotContainsString('investor-secret', json_encode($report));
+        $this->assertStringNotContainsString('test-token', json_encode($report));
         $this->assertSame('Pool-only mode completed. MetaApi registration, deployment, and sync were intentionally skipped.', data_get($report, 'stability.summary'));
+
+        $supportReportPath = collect(Storage::disk('local')->files('diagnostics'))
+            ->first(fn (string $path): bool => str_ends_with($path, '-metaapi-support.md'));
+
+        $this->assertNotNull($supportReportPath);
+
+        $supportReport = Storage::disk('local')->get($supportReportPath);
+
+        $this->assertStringContainsString('MetaApi Support Report: MetaQuotes MT5 Demo Creation', $supportReport);
+        $this->assertStringContainsString('Request ID: req-demo-creation-1', $supportReport);
+        $this->assertStringContainsString("curl --request 'POST'", $supportReport);
+        $this->assertStringNotContainsString('main-secret', $supportReport);
+        $this->assertStringNotContainsString('investor-secret', $supportReport);
+        $this->assertStringNotContainsString('test-token', $supportReport);
     }
 
     public function test_demo_creation_stops_batch_after_billing_block(): void
