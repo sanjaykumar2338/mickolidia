@@ -438,6 +438,9 @@ return [
         'notice' => 'Your selected challenge and currency will be preserved after login or registration and you will return directly to checkout.',
         'home_action' => 'Return Home',
         'dashboard_action' => 'Dashboard',
+        'recaptcha' => [
+            'failed' => 'Please complete the reCAPTCHA check before continuing.',
+        ],
         'login' => [
             'title' => 'Sign in',
             'copy' => 'Use your existing Wolforix account credentials to continue to secure checkout.',

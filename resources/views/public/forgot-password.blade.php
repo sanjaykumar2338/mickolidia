@@ -40,6 +40,8 @@
                         >
                     </label>
 
+                    @include('partials.recaptcha')
+
                     <div class="flex flex-wrap gap-4">
                         <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.auth.passwords.request.submit') }}

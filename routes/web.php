@@ -1,14 +1,14 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminClientController;
 use App\Http\Controllers\AdminMt5PromoCodeController;
 use App\Http\Controllers\AdminReviewRequestController;
-use App\Http\Controllers\CTraderAuthController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CTraderAuthController;
 use App\Http\Controllers\DashboardCertificateController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardInvoiceController;
 use App\Http\Controllers\DashboardMt5ConnectorController;
 use App\Http\Controllers\DashboardWolfiController;
@@ -43,7 +43,9 @@ Route::post('/payments/stripe/webhook', StripeWebhookController::class)->name('p
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+    Route::post('/register', [AuthController::class, 'register'])
+        ->middleware('throttle:6,1')
+        ->name('register.store');
     Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
         ->where('provider', 'google|facebook|apple')
         ->name('social.redirect');
@@ -51,7 +53,9 @@ Route::middleware('guest')->group(function (): void {
         ->where('provider', 'google|facebook|apple')
         ->name('social.callback');
     Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
-    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
+        ->middleware('throttle:6,1')
+        ->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'resetPasswordForm'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
@@ -68,7 +72,9 @@ Route::post('/assistant/speech', VoiceAssistantSpeechController::class)
     ->middleware('throttle:20,1')
     ->name('assistant.speech');
 Route::get('/trial/register', [TrialController::class, 'create'])->name('trial.register');
-Route::post('/trial/register', [TrialController::class, 'store'])->name('trial.store');
+Route::post('/trial/register', [TrialController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('trial.store');
 Route::get('/terms', [PublicPageController::class, 'legal'])->defaults('slug', 'terms')->name('terms');
 Route::get('/risk-disclosure', [PublicPageController::class, 'legal'])->defaults('slug', 'risk-disclosure')->name('risk-disclosure');
 Route::get('/payout-policy', [PublicPageController::class, 'legal'])->defaults('slug', 'payout-policy')->name('payout-policy');

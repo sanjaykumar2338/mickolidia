@@ -25,6 +25,9 @@
     <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if ((bool) config('services.recaptcha.enabled', false) && filled(config('services.recaptcha.site_key')) && request()->routeIs('login', 'password.request', 'trial.register'))
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    @endif
 </head>
 @php
     $hasPostMainSections = ! request()->routeIs('checkout.*', 'login', 'password.*');

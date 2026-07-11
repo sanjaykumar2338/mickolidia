@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Models\UserProfile;
+use App\Services\Security\RecaptchaVerifier;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -56,8 +57,10 @@ class AuthController extends Controller
         return redirect()->intended(route('home'));
     }
 
-    public function sendResetLink(Request $request): RedirectResponse
+    public function sendResetLink(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
+        $recaptcha->validate($request);
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
         ]);
@@ -128,8 +131,10 @@ class AuthController extends Controller
             ->with('status', $this->passwordStatusMessage($status));
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
+        $recaptcha->validate($request, 'register');
+
         $validated = $request->validateWithBag('register', [
             'register_name' => ['required', 'string', 'max:120'],
             'register_email' => ['required', 'email', 'max:255', 'unique:users,email'],

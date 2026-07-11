@@ -9,10 +9,12 @@ use App\Models\TradingAccount;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Mt5\Mt5AccountDeactivationService;
+use App\Services\Security\RecaptchaVerifier;
 use App\Services\Trials\TrialAccountCreator;
 use App\Support\Mt5ConnectorCredentials;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -45,11 +47,13 @@ class TrialController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
         if ($redirect = $this->redirectAuthenticatedUserToTrial($request)) {
             return $redirect;
         }
+
+        $recaptcha->validate($request);
 
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
@@ -750,7 +754,7 @@ class TrialController extends Controller
 
         if (is_string($value) && trim($value) !== '') {
             try {
-                return \Illuminate\Support\Carbon::parse($value)->format('M j, Y g:i A');
+                return Carbon::parse($value)->format('M j, Y g:i A');
             } catch (\Throwable) {
                 return $value;
             }
