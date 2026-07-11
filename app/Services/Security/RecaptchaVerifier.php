@@ -10,9 +10,9 @@ use Throwable;
 
 class RecaptchaVerifier
 {
-    public function validate(Request $request, string $errorBag = 'default'): void
+    public function validate(Request $request, string $errorBag = 'default', ?string $action = null): void
     {
-        if ($this->verify($request)) {
+        if ($this->verify($request, $action)) {
             return;
         }
 
@@ -25,7 +25,7 @@ class RecaptchaVerifier
         throw $exception;
     }
 
-    public function verify(Request $request): bool
+    public function verify(Request $request, ?string $action = null): bool
     {
         if (! $this->enabled()) {
             return true;
@@ -62,7 +62,26 @@ class RecaptchaVerifier
             return false;
         }
 
-        return (bool) data_get($response->json(), 'success', false);
+        $result = $response->json();
+
+        if (! (bool) data_get($result, 'success', false)) {
+            return false;
+        }
+
+        if (! $this->usesScore()) {
+            return true;
+        }
+
+        if ($action !== null && (string) data_get($result, 'action', '') !== $action) {
+            Log::warning('Google reCAPTCHA verification returned an unexpected action.', [
+                'expected_action' => $action,
+                'actual_action' => data_get($result, 'action'),
+            ]);
+
+            return false;
+        }
+
+        return (float) data_get($result, 'score', 0) >= $this->scoreThreshold();
     }
 
     public function enabled(): bool
@@ -73,6 +92,21 @@ class RecaptchaVerifier
     private function secretKey(): string
     {
         return trim((string) config('services.recaptcha.secret_key', ''));
+    }
+
+    private function usesScore(): bool
+    {
+        return $this->type() === 'v3';
+    }
+
+    private function type(): string
+    {
+        return strtolower(trim((string) config('services.recaptcha.type', 'v3'))) ?: 'v3';
+    }
+
+    private function scoreThreshold(): float
+    {
+        return max(0, min(1, (float) config('services.recaptcha.score_threshold', 0.5)));
     }
 
     private function verifyUrl(): string

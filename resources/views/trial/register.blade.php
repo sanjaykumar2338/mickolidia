@@ -69,7 +69,7 @@
                         >
                     </label>
 
-                    @include('partials.recaptcha')
+                    @include('partials.recaptcha', ['action' => 'trial_register'])
 
                     <button type="submit" class="primary-cta w-full rounded-full px-8 py-4 text-base font-semibold">
                         {{ __('site.trial.register.submit') }}

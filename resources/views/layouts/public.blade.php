@@ -25,8 +25,63 @@
     <link rel="icon" type="image/png" href="{{ asset('newfolder/IMG_8542.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('newfolder/IMG_8542.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @if ((bool) config('services.recaptcha.enabled', false) && filled(config('services.recaptcha.site_key')) && request()->routeIs('login', 'password.request', 'trial.register'))
-        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    @php
+        $recaptchaEnabled = (bool) config('services.recaptcha.enabled', false);
+        $recaptchaSiteKey = trim((string) config('services.recaptcha.site_key', ''));
+        $recaptchaType = strtolower(trim((string) config('services.recaptcha.type', 'v3'))) ?: 'v3';
+        $recaptchaProtectedPage = request()->routeIs('login', 'password.request', 'trial.register');
+    @endphp
+    @if ($recaptchaEnabled && $recaptchaSiteKey !== '' && $recaptchaProtectedPage)
+        @if ($recaptchaType === 'checkbox')
+            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        @else
+            <script src="https://www.google.com/recaptcha/api.js?render={{ urlencode($recaptchaSiteKey) }}" async defer></script>
+            <script>
+                document.addEventListener('submit', function (event) {
+                    const form = event.target;
+
+                    if (!(form instanceof HTMLFormElement)) {
+                        return;
+                    }
+
+                    const tokenInput = form.querySelector('[data-recaptcha-token]');
+
+                    if (!(tokenInput instanceof HTMLInputElement) || tokenInput.value !== '') {
+                        return;
+                    }
+
+                    if (!window.grecaptcha || typeof window.grecaptcha.ready !== 'function') {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    if (form.dataset.recaptchaPending === '1') {
+                        return;
+                    }
+
+                    form.dataset.recaptchaPending = '1';
+
+                    window.grecaptcha.ready(function () {
+                        window.grecaptcha.execute(@json($recaptchaSiteKey), {
+                            action: tokenInput.dataset.recaptchaAction || 'form_submit',
+                        }).then(function (token) {
+                            tokenInput.value = token;
+                            delete form.dataset.recaptchaPending;
+
+                            if (typeof form.requestSubmit === 'function') {
+                                form.requestSubmit();
+                                return;
+                            }
+
+                            form.submit();
+                        }).catch(function () {
+                            delete form.dataset.recaptchaPending;
+                        });
+                    });
+                }, true);
+            </script>
+        @endif
     @endif
 </head>
 @php

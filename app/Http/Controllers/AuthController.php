@@ -59,7 +59,7 @@ class AuthController extends Controller
 
     public function sendResetLink(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
-        $recaptcha->validate($request);
+        $recaptcha->validate($request, action: 'password_reset');
 
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
@@ -133,7 +133,7 @@ class AuthController extends Controller
 
     public function register(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
-        $recaptcha->validate($request, 'register');
+        $recaptcha->validate($request, 'register', 'register');
 
         $validated = $request->validateWithBag('register', [
             'register_name' => ['required', 'string', 'max:120'],

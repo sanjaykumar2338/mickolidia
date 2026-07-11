@@ -40,7 +40,7 @@
                         >
                     </label>
 
-                    @include('partials.recaptcha')
+                    @include('partials.recaptcha', ['action' => 'password_reset'])
 
                     <div class="flex flex-wrap gap-4">
                         <button type="submit" class="primary-cta rounded-full px-8 py-4 text-base font-semibold">

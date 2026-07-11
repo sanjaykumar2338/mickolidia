@@ -39,8 +39,10 @@ return [
 
     'recaptcha' => [
         'enabled' => filter_var(env('RECAPTCHA_ENABLED', false), FILTER_VALIDATE_BOOL),
+        'type' => env('RECAPTCHA_TYPE', 'v3'),
         'site_key' => env('RECAPTCHA_SITE_KEY'),
         'secret_key' => env('RECAPTCHA_SECRET_KEY'),
+        'score_threshold' => (float) env('RECAPTCHA_SCORE_THRESHOLD', 0.5),
         'verify_url' => env('RECAPTCHA_VERIFY_URL', 'https://www.google.com/recaptcha/api/siteverify'),
         'timeout' => (int) env('RECAPTCHA_TIMEOUT', 5),
     ],

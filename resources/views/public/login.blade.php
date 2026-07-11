@@ -143,7 +143,7 @@
                             >
                         </label>
 
-                        @include('partials.recaptcha')
+                        @include('partials.recaptcha', ['action' => 'register'])
 
                         <button type="submit" class="ghost-cta w-full rounded-full px-8 py-4 text-base font-semibold">
                             {{ __('site.auth.register.submit') }}

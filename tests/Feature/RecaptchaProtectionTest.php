@@ -22,8 +22,10 @@ class RecaptchaProtectionTest extends TestCase
         $this->withoutMiddleware(ValidateCsrfToken::class);
 
         config()->set('services.recaptcha.enabled', true);
+        config()->set('services.recaptcha.type', 'v3');
         config()->set('services.recaptcha.site_key', 'test-site-key');
         config()->set('services.recaptcha.secret_key', 'test-secret-key');
+        config()->set('services.recaptcha.score_threshold', 0.5);
         config()->set('services.recaptcha.verify_url', 'https://www.google.com/recaptcha/api/siteverify');
         config()->set('services.recaptcha.timeout', 5);
     }
@@ -55,10 +57,20 @@ class RecaptchaProtectionTest extends TestCase
         foreach ([route('login'), route('password.request'), route('trial.register')] as $url) {
             $this->get($url)
                 ->assertOk()
-                ->assertSee('https://www.google.com/recaptcha/api.js', false)
-                ->assertSee('class="g-recaptcha"', false)
-                ->assertSee('data-sitekey="test-site-key"', false);
+                ->assertSee('https://www.google.com/recaptcha/api.js?render=test-site-key', false)
+                ->assertSee('data-recaptcha-token', false);
         }
+    }
+
+    public function test_recaptcha_checkbox_widget_can_be_enabled_for_v2_keys(): void
+    {
+        config()->set('services.recaptcha.type', 'checkbox');
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('https://www.google.com/recaptcha/api.js', false)
+            ->assertSee('class="g-recaptcha"', false)
+            ->assertSee('data-sitekey="test-site-key"', false);
     }
 
     public function test_registration_continues_after_recaptcha_passes(): void
@@ -67,6 +79,8 @@ class RecaptchaProtectionTest extends TestCase
         Http::fake([
             'https://www.google.com/recaptcha/api/siteverify' => Http::response([
                 'success' => true,
+                'score' => 0.9,
+                'action' => 'register',
             ]),
         ]);
 

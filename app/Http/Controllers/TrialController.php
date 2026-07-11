@@ -53,7 +53,7 @@ class TrialController extends Controller
             return $redirect;
         }
 
-        $recaptcha->validate($request);
+        $recaptcha->validate($request, action: 'trial_register');
 
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
