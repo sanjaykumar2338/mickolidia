@@ -53,11 +53,15 @@ class TrialController extends Controller
             return $redirect;
         }
 
+        $request->merge([
+            'email' => Str::lower(trim((string) $request->input('email'))),
+        ]);
+
         $recaptcha->validate($request, action: 'trial_register');
 
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $existingUser = User::query()->where('email', $validated['email'])->first();
@@ -422,7 +426,7 @@ class TrialController extends Controller
 
     private function demoRegistrationUrl(): string
     {
-        return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/de/open-trading-account/demo');
+        return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/en/open-trading-account/demo');
     }
 
     private function markLastActivity(TradingAccount $trialAccount): void

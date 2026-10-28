@@ -18,5 +18,8 @@
             data-recaptcha-token
             data-recaptcha-action="{{ $recaptchaAction }}"
         >
+        <p data-recaptcha-status class="hidden rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
+            {{ __('site.auth.recaptcha.failed') }}
+        </p>
     @endif
 @endif

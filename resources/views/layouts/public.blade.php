@@ -29,7 +29,7 @@
         $recaptchaEnabled = (bool) config('services.recaptcha.enabled', false);
         $recaptchaSiteKey = trim((string) config('services.recaptcha.site_key', ''));
         $recaptchaType = strtolower(trim((string) config('services.recaptcha.type', 'v3'))) ?: 'v3';
-        $recaptchaProtectedPage = request()->routeIs('login', 'password.request', 'trial.register');
+        $recaptchaProtectedPage = request()->routeIs('login', 'register', 'password.request', 'trial.register');
     @endphp
     @if ($recaptchaEnabled && $recaptchaSiteKey !== '' && $recaptchaProtectedPage)
         @if ($recaptchaType === 'checkbox')
@@ -50,24 +50,79 @@
                         return;
                     }
 
-                    if (!window.grecaptcha || typeof window.grecaptcha.ready !== 'function') {
-                        return;
-                    }
-
                     event.preventDefault();
 
                     if (form.dataset.recaptchaPending === '1') {
                         return;
                     }
 
+                    const status = form.querySelector('[data-recaptcha-status]');
+                    const submitButton = form.querySelector('[type="submit"]');
+                    let timeoutId = null;
+                    let completed = false;
+                    const showError = function () {
+                        completed = true;
+
+                        if (timeoutId !== null) {
+                            window.clearTimeout(timeoutId);
+                        }
+
+                        if (status instanceof HTMLElement) {
+                            status.classList.remove('hidden');
+                        }
+
+                        if (submitButton instanceof HTMLButtonElement) {
+                            submitButton.disabled = false;
+                            submitButton.removeAttribute('aria-busy');
+                        }
+
+                        delete form.dataset.recaptchaPending;
+                    };
+
+                    if (!window.grecaptcha || typeof window.grecaptcha.ready !== 'function') {
+                        showError();
+                        return;
+                    }
+
                     form.dataset.recaptchaPending = '1';
 
+                    if (status instanceof HTMLElement) {
+                        status.classList.add('hidden');
+                    }
+
+                    if (submitButton instanceof HTMLButtonElement) {
+                        submitButton.disabled = true;
+                        submitButton.setAttribute('aria-busy', 'true');
+                    }
+
+                    timeoutId = window.setTimeout(showError, 10000);
+
                     window.grecaptcha.ready(function () {
+                        if (completed) {
+                            return;
+                        }
+
                         window.grecaptcha.execute(@json($recaptchaSiteKey), {
                             action: tokenInput.dataset.recaptchaAction || 'form_submit',
                         }).then(function (token) {
+                            if (completed) {
+                                return;
+                            }
+
+                            if (typeof token !== 'string' || token === '') {
+                                showError();
+                                return;
+                            }
+
+                            completed = true;
+                            window.clearTimeout(timeoutId);
                             tokenInput.value = token;
                             delete form.dataset.recaptchaPending;
+
+                            if (submitButton instanceof HTMLButtonElement) {
+                                submitButton.disabled = false;
+                                submitButton.removeAttribute('aria-busy');
+                            }
 
                             if (typeof form.requestSubmit === 'function') {
                                 form.requestSubmit();
@@ -75,9 +130,7 @@
                             }
 
                             form.submit();
-                        }).catch(function () {
-                            delete form.dataset.recaptchaPending;
-                        });
+                        }).catch(showError);
                     });
                 }, true);
             </script>

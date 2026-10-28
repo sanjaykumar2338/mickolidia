@@ -276,10 +276,6 @@ $socialLinks = [
         'label' => 'Instagram',
         'url' => $instagramUrl,
     ],
-    'telegram' => [
-        'label' => 'Telegram',
-        'url' => 'https://t.me/wolforix',
-    ],
     'x' => [
         'label' => 'X',
         'url' => 'https://x.com/wolforixhq',
@@ -373,7 +369,7 @@ return [
     ],
 
     'trial' => [
-        'demo_registration_url' => env('WOLFORIX_TRIAL_DEMO_REGISTRATION_URL', 'https://www.icmarkets.eu/de/open-trading-account/demo'),
+        'demo_registration_url' => env('WOLFORIX_TRIAL_DEMO_REGISTRATION_URL', 'https://www.icmarkets.eu/en/open-trading-account/demo'),
         'starting_balance' => 10000,
         'account_type' => 'Trial (Demo)',
         'allowed_symbols' => [

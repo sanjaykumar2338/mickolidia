@@ -54,11 +54,12 @@ class RecaptchaProtectionTest extends TestCase
 
     public function test_recaptcha_widget_renders_on_protected_public_forms(): void
     {
-        foreach ([route('login'), route('password.request'), route('trial.register')] as $url) {
+        foreach ([route('login'), route('register'), route('password.request'), route('trial.register')] as $url) {
             $this->get($url)
                 ->assertOk()
                 ->assertSee('https://www.google.com/recaptcha/api.js?render=test-site-key', false)
-                ->assertSee('data-recaptcha-token', false);
+                ->assertSee('data-recaptcha-token', false)
+                ->assertSee('data-recaptcha-status', false);
         }
     }
 
@@ -112,6 +113,7 @@ class RecaptchaProtectionTest extends TestCase
         $this->post(route('trial.store'), [
             'email' => 'trial-captcha@example.com',
             'password' => 'password123',
+            'password_confirmation' => 'password123',
             'g-recaptcha-response' => 'invalid-token',
         ])
             ->assertRedirect()

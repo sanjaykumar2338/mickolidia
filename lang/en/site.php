@@ -567,8 +567,8 @@ return [
         'eyebrow' => 'Free Trial',
         'register' => [
             'title' => 'Start Your Free Trial',
-            'description' => 'Register with your email and password to access a demo-only Wolforix trial account with the same displayed execution logic and rule visibility as the main challenge environment.',
-            'what_you_get_title' => 'Included instantly',
+            'description' => 'Create your Wolforix profile first. You will then open a separate MT5 demo account, install the Wolforix connector, and wait for the first successful sync before trading activity can appear in your dashboard.',
+            'what_you_get_title' => 'Trial conditions',
             'take_profit_line' => 'Take profit target: :percent%',
             'minimum_days_line' => 'Minimum trading days: :days',
             'restrictions_line' => 'Demo only. No withdrawals. Not counted as a challenge.',
@@ -577,21 +577,21 @@ return [
             'password_placeholder' => 'Minimum 8 characters',
             'submit' => 'Create Free Trial Account',
             'recover_password' => 'Recover Password',
-            'success' => 'Your free trial account is ready.',
+            'success' => 'Your Wolforix trial profile was created. Complete the MT5 demo and connector steps below; the dashboard will show Connected only after the first successful sync.',
             'existing_account_error' => 'This email already has a Wolforix account. Enter the correct password here to continue into Free Trial.',
         ],
         'setup' => [
             'title' => 'Connect Your MT5 Demo Account',
-            'description' => 'Create your IC Markets MT5 demo account, install the Wolforix MT5 connector, and enter the credentials below inside MetaTrader 5. Wolforix does not collect the account number on the website.',
+            'description' => 'Create a separate IC Markets MT5 demo account, install the Wolforix MT5 connector, and enter the connector values shown below inside MetaTrader 5. Creating a Wolforix profile does not create the broker demo account, and Wolforix does not collect the MT5 account number in this form.',
             'process_label' => 'Trial process',
             'steps' => [
                 [
                     'title' => 'Step 1: Register for Free Trial',
-                    'body' => 'Sign up with your email and password to create your Wolforix trial dashboard.',
+                    'body' => 'Create your Wolforix profile with your email and password. This step does not provision an MT5 account.',
                 ],
                 [
                     'title' => 'Step 2: Create Your IC Markets MT5 Demo Account',
-                    'body' => 'Open your MT5 demo account with IC Markets. You will be redirected to their website.',
+                    'body' => 'Open the English IC Markets demo registration page, use the same email, select MetaTrader 5, and save the credentials issued by the provider.',
                 ],
                 [
                     'title' => 'Step 3: Download Wolforix MT5 Connector',
@@ -611,12 +611,12 @@ return [
                 ],
                 [
                     'title' => 'Step 7: Wait for First Sync',
-                    'body' => 'Your trial dashboard will show Connected after the EA sends its first update.',
+                    'body' => 'Wait for the first successful MT5 sync. Until the status shows Connected, Wolforix has not confirmed the demo connection.',
                 ],
             ],
             'step_two_label' => 'Step 2',
             'open_demo_title' => 'Open Your Demo Account',
-            'open_demo_copy' => 'Click the button below to open your MT5 demo account with IC Markets. You will be redirected to their website.',
+            'open_demo_copy' => 'This opens the configured provider in a new tab. Complete registration there, select MetaTrader 5, and keep the login, password, and server details they issue. Wolforix cannot confirm that external account until the connector sends its first successful sync.',
             'important_items' => [
                 'Use the same email you used to register.',
                 'Select MT5 as your platform.',
@@ -624,14 +624,14 @@ return [
             ],
             'open_demo_button' => 'Open Demo Account',
             'step_three_label' => 'Step 3',
-            'continue_button' => 'Go to Trial Dashboard',
-            'continue_success' => 'Your connector details are ready. Install the EA in MT5 and your dashboard will update automatically after the first sync.',
+            'continue_button' => 'Continue to Trial Dashboard',
+            'continue_success' => 'Setup is still pending. The dashboard will show Connected only after the Wolforix EA sends a successful update from MT5.',
             'help_title' => 'Need help?',
             'help_copy' => 'If you have any issues creating your demo account, contact our support team at',
         ],
         'connector' => [
             'title' => 'Connect Your MT5 Demo Account',
-            'description' => 'Connection happens inside MetaTrader 5 using the Wolforix connector Expert Advisor. Create your IC Markets demo account, install the connector, paste these details into the EA inputs, then click OK.',
+            'description' => 'Connection happens inside MetaTrader 5 using the Wolforix connector Expert Advisor. After the provider issues your MT5 demo credentials, install the connector, paste these Wolforix values into the EA inputs, attach it to an active chart, and wait for the status to become Connected.',
             'download_title' => 'MT5 Connector',
             'download_copy' => 'Download the zip package. It includes the EA source file and the required Include folder.',
             'download_button' => 'Download MT5 Connector',
@@ -1535,7 +1535,7 @@ return [
                         'question' => 'How is working?',
                         'answer_paragraphs' => [
                             'Step 1: Register for Free Trial on Wolforix with your email and password.',
-                            'Step 2: Create your IC Markets MT5 demo account using the button in the trial setup screen. You will be redirected to https://www.icmarkets.eu/de/open-trading-account/demo.',
+                            'Step 2: Create your IC Markets MT5 demo account using the button in the trial setup screen. You will be redirected to the configured English registration page.',
                             'Important: use the same email you used to register on Wolforix, select MT5 as your platform, and save your login details.',
                             'Step 3: Download the Wolforix MT5 connector from your trial dashboard.',
                             'Step 4: Install the EA files in MetaTrader 5.',

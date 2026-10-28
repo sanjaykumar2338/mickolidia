@@ -13,7 +13,7 @@
     <section class="px-6 pt-6 lg:px-8 lg:pt-8">
         <div class="mx-auto max-w-7xl">
             <div class="grid gap-6 lg:grid-cols-2">
-                <section class="surface-panel rounded-[2rem] p-6 sm:p-7">
+                <section class="surface-panel rounded-[2rem] p-6 sm:p-7 {{ request()->routeIs('register') ? 'order-2 lg:order-1' : '' }}">
                     <span class="section-label">{{ __('site.auth.eyebrow') }}</span>
                     <p class="mt-4 text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.auth.login.title') }}</p>
                     <h1 class="mt-5 text-3xl font-semibold text-white sm:text-[2.2rem]">{{ __('site.auth.title') }}</h1>
@@ -86,7 +86,7 @@
                     </form>
                 </section>
 
-                <section class="surface-card rounded-[2rem] p-6 sm:p-7">
+                <section id="register" class="surface-card rounded-[2rem] p-6 sm:p-7 {{ request()->routeIs('register') ? 'order-1 lg:order-2' : '' }}">
                     <p class="text-sm font-semibold uppercase tracking-[0.26em] text-amber-300">{{ __('site.auth.register.title') }}</p>
                     <p class="mt-3 text-sm leading-7 text-slate-400">{{ __('site.auth.register.copy') }}</p>
 
@@ -109,6 +109,7 @@
                                 type="text"
                                 name="register_name"
                                 value="{{ old('register_name') }}"
+                                @if (request()->routeIs('register')) autofocus @endif
                                 class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
                                 placeholder="{{ __('site.auth.register.name') }}"
                             >

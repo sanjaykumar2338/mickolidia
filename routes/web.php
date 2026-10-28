@@ -42,6 +42,7 @@ Route::post('/payments/stripe/webhook', StripeWebhookController::class)->name('p
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
+    Route::get('/register', [AuthController::class, 'create'])->name('register');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
     Route::post('/register', [AuthController::class, 'register'])
         ->middleware('throttle:6,1')

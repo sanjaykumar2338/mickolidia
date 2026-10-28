@@ -13,7 +13,7 @@
 
     <x-slot:intro>
         Hello,<br><br>
-        Thank you for registering for your Wolforix Trial Account.
+        Thank you for creating your Wolforix trial profile. The MT5 demo account is a separate step and is not created until the external provider issues credentials.
     </x-slot:intro>
 
     <p style="margin:0; color:#f4b74a; font-size:12px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;">Get Started</p>
@@ -22,7 +22,7 @@
     </p>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">
-        First, create your IC Markets MT5 demo account using the link below:
+        Next, open the configured English registration page and create your IC Markets MT5 demo account using the same email. Select MetaTrader 5 and save the login, password, and server details issued by the provider:
     </p>
 
     <p style="margin:14px 0 0 0; color:#f8d57c; font-size:14px; line-height:1.8; word-break:break-all;">
@@ -47,7 +47,7 @@
     </div>
 
     <ol style="margin:18px 0 0 20px; padding:0; color:#d5deea; font-size:14px; line-height:1.8;">
-        <li>Register for Free Trial on Wolforix.</li>
+        <li>Create your Wolforix trial profile. This does not provision an MT5 account.</li>
         <li>Create your IC Markets MT5 demo account.</li>
         <li>Log in to your Wolforix dashboard and open the trial setup page.</li>
         <li>Watch the MT5 setup tutorial video before connecting your account.</li>
@@ -57,7 +57,7 @@
         <li>Open Tools &gt; Options &gt; Expert Advisors, tick Allow WebRequest for listed URL, then add https://www.wolforix.com and https://wolforix.com.</li>
         <li>Copy the Base URL, Account Reference, and Secret Token from your dashboard.</li>
         <li>Attach the EA to a chart, paste the values into the EA settings popup inside MT5, then click OK.</li>
-        <li>Wait for your dashboard status to become Connected after the EA sends its first update.</li>
+        <li>Wait for your dashboard status to become Connected after the EA sends its first successful update. Until then, Wolforix has not confirmed the demo connection.</li>
     </ol>
 
     <p style="margin:18px 0 0 0; color:#d5deea; font-size:14px; line-height:1.8;">

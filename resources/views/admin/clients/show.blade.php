@@ -165,7 +165,9 @@
                         <div class="rounded-2xl border border-white/6 bg-black/15 px-4 py-3">
                             <dt class="text-slate-400">Challenge Status</dt>
                             <dd class="mt-2 font-semibold text-white">
-                                @php($selectedAccountStatus = (string) ($selectedAccount->challenge_status ?: $selectedAccount->account_status))
+                                @php
+                                    $selectedAccountStatus = (string) ($selectedAccount->challenge_status ?: $selectedAccount->account_status);
+                                @endphp
                                 {{ $selectedAccountStatus === 'failed' ? 'Breached' : str($selectedAccountStatus)->replace('_', ' ')->title() }}
                             </dd>
                         </div>

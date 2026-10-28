@@ -107,6 +107,6 @@ class TrialAccountCreator
 
     private function demoRegistrationUrl(): string
     {
-        return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/de/open-trading-account/demo');
+        return (string) config('wolforix.trial.demo_registration_url', 'https://www.icmarkets.eu/en/open-trading-account/demo');
     }
 }

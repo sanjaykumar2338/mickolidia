@@ -58,6 +58,7 @@ class WolforixPlatformTest extends TestCase
     {
         parent::setUp();
 
+        Carbon::setTestNow(Carbon::parse('2026-06-15 12:00:00'));
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Storage::fake('public');
         $launchDiscount = [
@@ -90,6 +91,13 @@ class WolforixPlatformTest extends TestCase
         $socialLinks['instagram']['url'] = self::TEST_INSTAGRAM_URL;
         config()->set('wolforix.social', $socialLinks);
         config()->set('wolforix.social_links', $socialLinks);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
     }
 
     public function test_public_pages_render_successfully(): void
@@ -214,9 +222,10 @@ class WolforixPlatformTest extends TestCase
             ->assertSee('data-footer-brand', false)
             ->assertSee('https://www.tiktok.com/@wolforixhq?_r=1&amp;_t=ZG-96KJYhlgHVR', false)
             ->assertSee(config('wolforix.social.instagram.url'), false)
-            ->assertSee('https://t.me/wolforix', false)
             ->assertSee('https://x.com/wolforixhq', false)
             ->assertSee('https://youtube.com/@wolforix', false)
+            ->assertDontSee('https://t.me/wolforix', false)
+            ->assertDontSee('chat.whatsapp.com', false)
             ->assertDontSee('mibextid', false)
             ->assertDontSee('v3aluoTJ6BAc1gh7kuZvMg', false);
     }
@@ -799,8 +808,8 @@ class WolforixPlatformTest extends TestCase
             ->assertDontSee('Open main navigation')
             ->assertSee('https://youtube.com/@wolforix?si=NtJ-jmS20024s7m3', false)
             ->assertSee(config('wolforix.social.instagram.url'), false)
-            ->assertSee('https://t.me/wolforix', false)
-            ->assertSee('https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t', false)
+            ->assertDontSee('https://t.me/wolforix', false)
+            ->assertDontSee('chat.whatsapp.com', false)
             ->assertSee('Back to top')
             ->assertSee('Company Number: 17111904')
             ->assertSee('By using this website, you agree to our Terms and Conditions, Privacy Policy, Payout Policy, Refund Policy, and all related legal documents.')
@@ -3170,7 +3179,7 @@ class WolforixPlatformTest extends TestCase
             'Wolforix Step-1 Instant',
             'Wolforix Step-Pro',
             'support@wolforix.com',
-            'https://www.icmarkets.eu/de/open-trading-account/demo',
+            'https://www.icmarkets.eu/en/open-trading-account/demo',
         ];
 
         foreach (['de', 'es', 'fr', 'hi', 'it', 'pt'] as $locale) {
@@ -4378,6 +4387,7 @@ class WolforixPlatformTest extends TestCase
         $response = $this->post(route('trial.store'), [
             'email' => 'trial@example.com',
             'password' => 'password123',
+            'password_confirmation' => 'password123',
         ]);
 
         $user = User::query()->where('email', 'trial@example.com')->firstOrFail();
@@ -4399,7 +4409,7 @@ class WolforixPlatformTest extends TestCase
         Mail::assertSent(TrialAccountInstructionsMail::class, function (TrialAccountInstructionsMail $mail) use ($user): bool {
             return $mail->hasTo($user->email)
                 && $mail->envelope()->subject === 'Your Wolforix Trial Account – Get Started'
-                && str_contains($mail->render(), 'https://www.icmarkets.eu/de/open-trading-account/demo')
+                && str_contains($mail->render(), 'https://www.icmarkets.eu/en/open-trading-account/demo')
                 && str_contains($mail->render(), 'File &gt; Open Data Folder')
                 && str_contains($mail->render(), 'MQL5 &gt; Experts')
                 && str_contains($mail->render(), 'MQL5 &gt; Include')
@@ -4713,6 +4723,7 @@ class WolforixPlatformTest extends TestCase
         $response = $this->post(route('trial.store'), [
             'email' => $user->email,
             'password' => 'password123',
+            'password_confirmation' => 'password123',
         ]);
 
         $response

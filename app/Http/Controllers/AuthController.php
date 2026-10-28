@@ -133,6 +133,11 @@ class AuthController extends Controller
 
     public function register(Request $request, RecaptchaVerifier $recaptcha): RedirectResponse
     {
+        $request->merge([
+            'register_name' => trim((string) $request->input('register_name')),
+            'register_email' => Str::lower(trim((string) $request->input('register_email'))),
+        ]);
+
         $recaptcha->validate($request, 'register', 'register');
 
         $validated = $request->validateWithBag('register', [

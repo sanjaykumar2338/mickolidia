@@ -172,6 +172,19 @@ class Mt5AccountAllocator
         return $entry;
     }
 
+    public function hasReadableCredentials(Mt5AccountPoolEntry $entry): bool
+    {
+        try {
+            $this->credentialsFor($entry);
+
+            return true;
+        } catch (DecryptException $exception) {
+            $this->reportInvalidCredentials($entry, $exception);
+
+            return false;
+        }
+    }
+
     /**
      * @param  array{password: string|null, investor_password: string|null}  $entryCredentials
      */

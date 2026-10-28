@@ -302,7 +302,8 @@ class MetaQuotesPoolProvisioningService
             ->where('account_size', (int) $account->account_size)
             ->orderBy('source_created_at')
             ->orderBy('id')
-            ->first();
+            ->get()
+            ->first(fn (Mt5AccountPoolEntry $entry): bool => $this->allocator->hasReadableCredentials($entry));
     }
 
     /**

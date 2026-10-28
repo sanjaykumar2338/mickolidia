@@ -69,6 +69,16 @@
                         >
                     </label>
 
+                    <label class="block">
+                        <span class="mb-2 block text-sm font-medium text-slate-200">{{ __('site.auth.register.password_confirmation') }}</span>
+                        <input
+                            type="password"
+                            name="password_confirmation"
+                            class="w-full rounded-2xl border border-white/10 bg-white/4 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-amber-400/35"
+                            required
+                        >
+                    </label>
+
                     @include('partials.recaptcha', ['action' => 'trial_register'])
 
                     <button type="submit" class="primary-cta w-full rounded-full px-8 py-4 text-base font-semibold">

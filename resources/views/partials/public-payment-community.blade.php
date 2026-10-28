@@ -45,14 +45,10 @@
     $communityImageSets = [
         'en' => [
             'tiktok' => 'tiktok.webp',
-            'telegram' => 'photo/mickolidia-attachments-englsih/866B008F-4AC9-4341-ADBB-74AF5B7C0584.png',
-            'whatsapp' => 'photo/mickolidia-attachments-englsih/7C41556E-3E1A-407A-97CD-22A84970EA82.png',
             'youtube' => 'photo/mickolidia-attachments-englsih/DECE0553-9101-497D-AF85-8B62BB21A3EA.png',
         ],
         'es' => [
             'tiktok' => 'tiktok.webp',
-            'telegram' => 'photo/mickolidia-attachments-spanish/2E180800-8FFA-44FA-B231-C84F32D425C8.png',
-            'whatsapp' => 'photo/mickolidia-attachments-spanish/3D3A8551-F94D-4B95-AD71-51B381E7D2A5.png',
             'youtube' => 'photo/mickolidia-attachments-spanish/A3EBA35E-6E4D-42C6-86C3-60261AB729ED.png',
         ],
         'fr' => [
@@ -94,23 +90,6 @@
             'description' => __('site.footer.community.channels.instagram.description'),
             'url' => data_get(config('wolforix.social.instagram', []), 'url', 'https://www.instagram.com/'),
             'media' => 'instagram',
-        ],
-        [
-            'key' => 'telegram',
-            'platform' => 'Telegram',
-            'title' => 'English Community',
-            'suffix_html' => '&#127468;&#127463;',
-            'description' => 'Access daily market insights',
-            'url' => 'https://t.me/wolforix',
-            'image' => asset($communityImages['telegram']),
-        ],
-        [
-            'key' => 'whatsapp',
-            'platform' => 'WhatsApp',
-            'title' => 'Spanish-Speaking Community',
-            'description_html' => 'Accede a informaci&oacute;n diaria de mercado',
-            'url' => 'https://chat.whatsapp.com/KSvvnEQFDUgKDM8EQXNWIT?mode=gi_t',
-            'image' => asset($communityImages['whatsapp']),
         ],
         [
             'key' => 'youtube',
